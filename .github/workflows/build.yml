@@ -34,6 +34,11 @@ jobs:
         run: echo "tag=sha-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_OUTPUT"
       - name: Build the container tarball
         run: nix build .#container -o result
+      - name: Push to Attic
+        run: |
+          set -euo pipefail
+          command -v attic >/dev/null || { echo "attic not installed; skipping"; exit 0; }
+          XDG_CONFIG_HOME=/etc attic push 2143nix ./result || echo "::warning::attic push failed"
       - name: Push to GHCR
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
         run: |
