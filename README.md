@@ -51,7 +51,7 @@ The data is pinned to the repoe-fork export of 3.29.3.3 (commit `d8635430f4005fa
 
 - Prices are entered by hand. The defaults are a poe.ninja snapshot from 2026-11-02.
 - The crafting state is one item. An Awakener's Orb donor is something you declare and price, not something the tree crafts.
-- Not modelled yet: imprints, magic-item routes, "Cannot roll Attack/Caster Modifiers", essences, fossils, eldritch currency, veiled mods, fracturing, and the 3.29 bench "reroll" crafts.
+- Every open pull request from this repository gets a preview at `https://how-<PR number>.john2143.com`, built from the PR's head commit. Previews scale to zero after 30 idle minutes; the first request after that waits a few seconds while the pod starts. Pull requests from forks get no image and no working preview.
 - Some mechanics are not documented by GGG. Each one sits behind a single constant, so it can be flipped when evidence turns up:
   - Catalysts: quality raises matching mod weights, and any other currency use removes it (`CATALYST_AFFECTS_WEIGHTS`, `CATALYST_CONSUMED_BY_CURRENCY`). Catalyst magnitude adds to the Simplex's +100% (`CATALYST_STACKING`). 20 catalysts reach full quality (`CATALYSTS_FOR_FULL_QUALITY`).
   - The harvest influenced reforge respects "Cannot Be Changed" locks, and its first new mod comes from the influenced pool (`HARVEST_INFLUENCED_RESPECTS_LOCKS`, `HARVEST_FIRST_DRAW_INFLUENCED`).
