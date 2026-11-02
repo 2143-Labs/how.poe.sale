@@ -128,7 +128,26 @@ impl RawTranslation {
 struct RawEnglish {
     string: String,
     #[serde(default)]
+    format: Option<Vec<String>>,
+    #[serde(default)]
     index_handlers: Option<Vec<Vec<String>>>,
+}
+
+/// The `{k}` placeholders of a translation string, in text order. `None` when one is out of
+/// range or repeated.
+fn placeholders(s: &str, n_ids: usize) -> Option<Vec<usize>> {
+    let mut out = Vec::new();
+    let mut rest = s;
+    while let Some(open) = rest.find('{') {
+        let close = rest[open..].find('}')? + open;
+        let k: usize = rest[open + 1..close].parse().ok()?;
+        if k >= n_ids || out.contains(&k) {
+            return None;
+        }
+        out.push(k);
+        rest = &rest[close + 1..];
+    }
+    Some(out)
 }
 
 #[derive(Deserialize)]
@@ -283,11 +302,12 @@ struct FossilOut {
     supported: bool,
 }
 
+/// One way a line can read: `key` with each value replaced by `#`, and per `#` in text order the
+/// stat it shows and whether the shown number is the stat negated.
 #[derive(Serialize)]
 struct TranslationOut {
     key: String,
-    stat: u16,
-    negate: bool,
+    slots: Vec<(u16, bool)>,
 }
 
 fn is_false(b: &bool) -> bool {
@@ -563,9 +583,9 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
         .collect();
 
     // Translations first, so their stat ids join the table the mods index into.
-    let mut translations_out: Vec<TranslationOut> = Vec::new();
     let mut trade_stats: BTreeMap<String, String> = BTreeMap::new();
     let mut stat_set: BTreeSet<&str> = BTreeSet::new();
+    let mut rows: Vec<(String, Vec<(&str, bool)>)> = Vec::new();
     for t in &translations {
         for ts in t.trade_stats() {
             if ts.id.starts_with("explicit.")
@@ -576,25 +596,28 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
                     .or_insert_with(|| ts.id.clone());
             }
         }
-        if t.ids().len() != 1 {
-            continue;
-        }
-        let stat = t.ids()[0].as_str();
+        let ids = t.ids();
         for e in t.english.iter().flatten() {
-            if e.string.matches("{0}").count() != 1 {
+            let Some(order) = placeholders(&e.string, ids.len()) else {
+                continue;
+            };
+            let shown = |k: usize| e.format.as_ref().and_then(|f| f.get(k)).map(String::as_str);
+            if order.is_empty() || order.iter().any(|&k| shown(k) == Some("ignore")) {
                 continue;
             }
-            stat_set.insert(stat);
-            let negate = e
-                .index_handlers
-                .as_ref()
-                .and_then(|h| h.first())
-                .is_some_and(|h| h.iter().any(|x| x == "negate"));
-            translations_out.push(TranslationOut {
-                key: e.string.replace("{0}", "#"),
-                stat: 0, // filled in below once the table is complete
-                negate,
-            });
+            let mut key = e.string.clone();
+            let mut slots = Vec::with_capacity(order.len());
+            for &k in &order {
+                key = key.replace(&format!("{{{k}}}"), "#");
+                let negate = e
+                    .index_handlers
+                    .as_ref()
+                    .and_then(|h| h.get(k))
+                    .is_some_and(|h| h.iter().any(|x| x == "negate"));
+                stat_set.insert(ids[k].as_str());
+                slots.push((ids[k].as_str(), negate));
+            }
+            rows.push((key, slots));
         }
     }
     for (_, m) in &kept_mods {
@@ -608,24 +631,16 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
         .enumerate()
         .map(|(i, s)| (s.as_str(), i as u16))
         .collect();
-    // Fill in the stat index now that the table is complete; rows were emitted in this same order.
-    {
-        let mut gi = 0usize;
-        for t in &translations {
-            if t.ids().len() != 1 {
-                continue;
-            }
-            let stat = t.ids()[0].as_str();
-            for e in t.english.iter().flatten() {
-                if e.string.matches("{0}").count() != 1 {
-                    continue;
-                }
-                translations_out[gi].stat = stat_idx[stat];
-                gi += 1;
-            }
-        }
-        debug_assert_eq!(gi, translations_out.len());
-    }
+    let translations_out: Vec<TranslationOut> = rows
+        .into_iter()
+        .map(|(key, slots)| TranslationOut {
+            key,
+            slots: slots
+                .into_iter()
+                .map(|(stat, negate)| (stat_idx[stat], negate))
+                .collect(),
+        })
+        .collect();
 
     // ---- mods
     let mut mods_out = Vec::with_capacity(kept_mods.len());
@@ -744,7 +759,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     }
 
     Ok(Bundle {
-        format: 2,
+        format: 3,
         patch: PATCH.to_string(),
         source: Source {
             repo: "repoe-fork",

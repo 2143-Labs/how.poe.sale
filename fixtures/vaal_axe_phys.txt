@@ -1,0 +1,28 @@
+Item Class: Two Hand Axes
+Rarity: Rare
+Gale Edge
+Vaal Axe
+--------
+Two Hand Axe
+Physical Damage: 553-977 (augmented)
+Critical Strike Chance: 5.00%
+Attacks per Second: 1.37 (augmented)
+Weapon Range: 1.3 metres
+--------
+Requirements:
+Level: 77
+Str: 158
+Dex: 76
+--------
+Sockets: R-R-R-R-R-G
+--------
+Item Level: 84
+--------
+25% chance to Maim on Hit (implicit)
+--------
+74% increased Physical Damage
++165 to Accuracy Rating
+153% increased Physical Damage
+Adds 37 to 75 Physical Damage
+19% increased Attack Speed
++36% to Global Critical Strike Multiplier
