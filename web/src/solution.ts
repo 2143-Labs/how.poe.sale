@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
-import type { Solution, SolutionEdge, SolutionNode, SolutionStats } from './types'
+import { INFLUENCES } from './types'
+import type { ProblemTarget, Solution, SolutionEdge, SolutionNode, SolutionStats } from './types'
 
 export type StateNodeData = { node: SolutionNode }
 
@@ -67,6 +68,8 @@ function normalizeStats(raw: unknown): SolutionStats | null {
     sdCost: typeof s.sdCost === 'number' ? s.sdCost : 0,
     expectedSeconds: typeof s.expectedSeconds === 'number' ? s.expectedSeconds : 0,
     expectedSpend: (s.expectedSpend as Record<string, number>) ?? {},
+    expectedBuyChaos: typeof s.expectedBuyChaos === 'number' ? s.expectedBuyChaos : 0,
+    expectedSellChaos: typeof s.expectedSellChaos === 'number' ? s.expectedSellChaos : 0,
     quantiles: (s.quantiles as SolutionStats['quantiles']) ?? null,
   }
 }
@@ -183,10 +186,10 @@ export function formatPercent(p: number): string {
   return `${text === '' || text === '-0' ? '0' : text}%`
 }
 
+/** Whole chaos from 1,000 up; below that keep up to two decimals (58.4 catalysts, 2.72 exalts). */
 export function formatChaos(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—'
-  const rounded = Math.sign(value) * Math.round(Math.abs(value))
-  return rounded.toLocaleString('en-US')
+  return value.toLocaleString('en-US', { maximumFractionDigits: Math.abs(value) < 1000 ? 2 : 0 })
 }
 
 export function formatDivine(chaos: number | null | undefined, divinePrice: number): string {
@@ -200,4 +203,101 @@ export function formatDuration(seconds: number | null | undefined): string {
   const minutes = seconds / 60
   if (minutes < 60) return `${minutes.toFixed(1)} min`
   return `${(minutes / 60).toFixed(2)} h`
+}
+
+// ------------------------------------------------------------------ state keys
+
+type RawSide = {
+  wanted?: { req?: number; value_ok?: boolean }[]
+  blocked?: unknown[]
+  untracked?: number
+  untracked_influenced?: number
+}
+
+type RawState = {
+  influences?: number
+  catalyst?: [number, number] | null
+  prefixes?: RawSide
+  suffixes?: RawSide
+  lock?: number
+}
+
+function parseStateKey(key: string): RawState | null {
+  if (!key.startsWith('{')) return null
+  try {
+    const state = JSON.parse(key) as RawState | null
+    return state && typeof state === 'object' ? state : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Catalyst index → display name, learned from the solution itself (node views
+ * and ApplyCatalyst labels); the bundle lives in the worker.
+ */
+export function catalystNames(solution: Solution): Map<number, string> {
+  const names = new Map<number, string>()
+  for (const node of solution.nodes) {
+    const state = node.state as RawState | null
+    const catalyst = state && Array.isArray(state.catalyst) ? state.catalyst : null
+    if (catalyst && node.view?.catalyst) names.set(catalyst[0], node.view.catalyst.replace(/\s+\d+%$/, ''))
+  }
+  const learn = (action: unknown, label: string) => {
+    const a = action as { kind?: unknown; catalyst?: unknown } | null
+    if (a && a.kind === 'ApplyCatalyst' && typeof a.catalyst === 'number' && !names.has(a.catalyst)) {
+      names.set(a.catalyst, label)
+    }
+  }
+  for (const edge of solution.edges) learn(edge.action, edge.label)
+  for (const list of Object.values(solution.proposals)) for (const proposal of list) learn(proposal.action, proposal.label)
+  return names
+}
+
+function influenceNames(bits: number): string[] {
+  return INFLUENCES.filter((_, i) => (bits & (1 << i)) !== 0)
+}
+
+/**
+ * One line describing a state from its key (the `ItemState` JSON), so proposals
+ * whose labels are identical — e.g. a reforge and its catalyst-steered twin —
+ * can be told apart before the state is in the graph. `null` for `start`/`goal`.
+ */
+export function summarizeStateKey(
+  key: string,
+  target: ProblemTarget | null,
+  catalysts: Map<number, string> = new Map(),
+): string | null {
+  const state = parseStateKey(key)
+  if (!state) return null
+  const side = (name: string, raw: RawSide | undefined) => {
+    const parts: string[] = []
+    for (const hit of raw?.wanted ?? []) {
+      const label = (hit.req != null ? target?.requirements[hit.req]?.label : undefined) ?? 'requirement'
+      parts.push(hit.value_ok === false ? `${label} (low roll)` : label)
+    }
+    const blocked = raw?.blocked?.length ?? 0
+    if (blocked > 0) parts.push(`${blocked} other tier`)
+    const untracked = raw?.untracked ?? 0
+    const influenced = raw?.untracked_influenced ?? 0
+    if (untracked - influenced > 0) parts.push(`${untracked - influenced} other`)
+    if (influenced > 0) parts.push(`${influenced} other influenced`)
+    return `${name}: ${parts.length > 0 ? parts.join(', ') : 'none'}`
+  }
+  const out = [side('prefixes', state.prefixes), side('suffixes', state.suffixes)]
+  const bits = state.influences ?? 0
+  const targetBits = (target?.influences ?? []).reduce(
+    (acc, name) => acc | (1 << (INFLUENCES as readonly string[]).indexOf(name)),
+    0,
+  )
+  if (target && bits !== targetBits) {
+    const influences = influenceNames(bits)
+    out.unshift(influences.length > 0 ? influences.join(' + ') : 'no influence')
+  }
+  if ((state.lock ?? 0) & 1) out.push('Prefixes Cannot Be Changed')
+  if ((state.lock ?? 0) & 2) out.push('Suffixes Cannot Be Changed')
+  if (Array.isArray(state.catalyst)) {
+    out.push(`${catalysts.get(state.catalyst[0]) ?? 'catalyst'} ${state.catalyst[1]}%`)
+  }
+  return out.join(' · ')
 }

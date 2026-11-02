@@ -136,6 +136,9 @@ export interface SolutionStats {
   sdCost: number
   expectedSeconds: number
   expectedSpend: Record<string, number>
+  /** chaos spent on Buy edges / recovered on Sell edges, per completed run (both positive) */
+  expectedBuyChaos: number
+  expectedSellChaos: number
   quantiles: { cost: Q4; seconds: Q4 } | null
 }
 

@@ -67,6 +67,10 @@ function withValue(record: Record<string, number>, key: string, value: number | 
   return next
 }
 
+function goalOnly(record: Record<string, number>): Record<string, number> {
+  return 'goal' in record ? { goal: record.goal } : {}
+}
+
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
@@ -120,6 +124,8 @@ function fromStorage(): PersistedState | null {
 interface Initial {
   state: PersistedState
   notice: string | null
+  /** the problem came from a `#p=` fragment (valid or not) */
+  fromLink: boolean
 }
 
 /**
@@ -130,16 +136,17 @@ export function initialState(): Initial {
   const hash = typeof location === 'undefined' ? '' : location.hash
   const shared = parseShareHash(hash)
   if (shared.kind === 'ok') {
-    return { state: { ...stateFromProblem(shared.problem), positions: {} }, notice: null }
+    return { state: { ...stateFromProblem(shared.problem), positions: {} }, notice: null, fromLink: true }
   }
   const saved = fromStorage()
   if (shared.kind === 'invalid') {
     return {
       state: saved ?? emptyProblemState(),
       notice: 'Could not read the shared link. Showing your saved problem instead.',
+      fromLink: true,
     }
   }
-  return { state: saved ?? emptyProblemState(), notice: null }
+  return { state: saved ?? emptyProblemState(), notice: null, fromLink: false }
 }
 
 const initial = initialState()
@@ -159,7 +166,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       set({ notice: 'No base item was recognised in that text, so the target was left unchanged.' })
       return
     }
-    const { prices, buy } = get()
+    const { prices, buy, sell } = get()
     let nextBuy = buy
     let notice: string | null = null
     if (draft.buyNote) {
@@ -171,7 +178,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
         notice = `No price is set for “${draft.buyNote.currency}”, so the buy price was not changed.`
       }
     }
-    set({ target, buy: nextBuy, added: [], expanded: ['goal'], disabled: [], notice })
+    // State keys index the old target's requirements, so everything keyed by them goes with the
+    // tree; only the goal's prices carry over.
+    set({
+      target,
+      buy: goalOnly(nextBuy),
+      sell: goalOnly(sell),
+      positions: {},
+      added: [],
+      expanded: ['goal'],
+      disabled: [],
+      notice,
+    })
   },
 
   setPrice: (key, value) => set((state) => ({ prices: withValue(state.prices, key, value) })),
@@ -211,12 +229,25 @@ export function persistedState(state: AppState): PersistedState {
   }
 }
 
+function save(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // quota or private mode: the app keeps working without persistence
+  }
+}
+
+const PERSISTED_FIELDS = Object.keys(emptyProblemState()) as (keyof PersistedState)[]
+
 if (typeof localStorage !== 'undefined') {
-  useAppStore.subscribe((state) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState(state)))
-    } catch {
-      // quota or private mode: the app keeps working without persistence
-    }
+  // Only problem edits are written; solutions and the busy flag change far more often.
+  useAppStore.subscribe((state, previous) => {
+    if (PERSISTED_FIELDS.some((field) => state[field] !== previous[field])) save(persistedState(state))
   })
+  if (initial.fromLink && typeof history !== 'undefined') {
+    // An opened link becomes the current problem: keep it and drop the fragment, so a later
+    // reload restores the user's edits instead of re-reading the link over them.
+    if (initial.notice === null) save(persistedState(useAppStore.getState()))
+    history.replaceState(null, '', location.pathname + location.search)
+  }
 }

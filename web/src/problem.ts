@@ -76,13 +76,44 @@ export function draftToTarget(draft: TargetDraft): ProblemTarget | null {
   if (!draft.base) return null
   return {
     base: draft.base,
-    ilvlMin: draft.ilvl ?? 0,
+    ilvlMin: draft.ilvl ?? 1,
     influences: [...draft.influences],
     rarity: draft.rarity,
     catalyst: draft.catalyst,
     minHits: draft.minHits,
     requirements: draft.requirements.map((requirement) => ({ ...requirement, accepted: [...requirement.accepted] })),
   }
+}
+
+/** The applied target as an editable draft, so its rows stay editable after a reload. */
+export function targetToDraft(target: ProblemTarget): TargetDraft {
+  return {
+    itemClass: null,
+    base: target.base,
+    rarity: target.rarity,
+    ilvl: target.ilvlMin,
+    influences: [...target.influences],
+    catalyst: target.catalyst,
+    requirements: target.requirements.map((requirement) => ({ ...requirement, accepted: [...requirement.accepted] })),
+    minHits: target.minHits,
+    buyNote: null,
+    unmatched: [],
+    warnings: [],
+  }
+}
+
+/** Key-order-independent identity of a target, to tell whether applying a draft changes anything. */
+export function targetSignature(target: ProblemTarget | null): string {
+  if (!target) return 'null'
+  return JSON.stringify([
+    target.base,
+    target.ilvlMin,
+    target.influences,
+    target.rarity,
+    target.catalyst ? [target.catalyst.name, target.catalyst.quality] : null,
+    target.minHits,
+    target.requirements.map((r) => [r.group, r.side, r.accepted, r.minValue, r.label]),
+  ])
 }
 
 const RARITIES = ['Normal', 'Magic', 'Rare'] as const

@@ -9,7 +9,7 @@
       "state": null,
       "view": null,
       "value": 311600.01,
-      "expanded": true,
+      "expanded": false,
       "inR": true
     },
     {
@@ -31,15 +31,29 @@
         "influences": 33,
         "catalyst": null,
         "prefixes": {
-          "wanted": [{ "req": 0, "idx": 0, "value_ok": true }],
+          "wanted": [
+            {
+              "req": 0,
+              "idx": 0,
+              "value_ok": true
+            }
+          ],
           "blocked": [],
           "untracked": 0,
           "untracked_influenced": 0
         },
         "suffixes": {
           "wanted": [
-            { "req": 1, "idx": 0, "value_ok": true },
-            { "req": 2, "idx": 0, "value_ok": true }
+            {
+              "req": 1,
+              "idx": 0,
+              "value_ok": true
+            },
+            {
+              "req": 2,
+              "idx": 0,
+              "value_ok": true
+            }
           ],
           "blocked": [],
           "untracked": 0,
@@ -49,15 +63,30 @@
       },
       "view": {
         "title": "Rare Simplex Amulet",
-        "influences": ["Shaper", "Warlord"],
+        "influences": [
+          "Shaper",
+          "Warlord"
+        ],
         "catalyst": null,
         "lock": null,
         "prefixes": [
-          { "kind": "wanted", "text": "2% increased Damage per 15 Strength", "ok": true }
+          {
+            "kind": "wanted",
+            "text": "2% increased Damage per 15 Strength",
+            "ok": true
+          }
         ],
         "suffixes": [
-          { "kind": "wanted", "text": "26% increased Strength", "ok": true },
-          { "kind": "wanted", "text": "19% increased Attributes", "ok": true }
+          {
+            "kind": "wanted",
+            "text": "26% increased Strength",
+            "ok": true
+          },
+          {
+            "kind": "wanted",
+            "text": "19% increased Attributes",
+            "ok": true
+          }
         ]
       },
       "value": 58.4,
@@ -81,8 +110,16 @@
         },
         "suffixes": {
           "wanted": [
-            { "req": 1, "idx": 0, "value_ok": true },
-            { "req": 2, "idx": 0, "value_ok": true }
+            {
+              "req": 1,
+              "idx": 0,
+              "value_ok": true
+            },
+            {
+              "req": 2,
+              "idx": 0,
+              "value_ok": true
+            }
           ],
           "blocked": [],
           "untracked": 0,
@@ -92,13 +129,24 @@
       },
       "view": {
         "title": "Rare Simplex Amulet",
-        "influences": ["Shaper", "Warlord"],
+        "influences": [
+          "Shaper",
+          "Warlord"
+        ],
         "catalyst": null,
         "lock": "Suffixes Cannot Be Changed",
         "prefixes": [],
         "suffixes": [
-          { "kind": "wanted", "text": "26% increased Strength", "ok": true },
-          { "kind": "wanted", "text": "19% increased Attributes", "ok": true }
+          {
+            "kind": "wanted",
+            "text": "26% increased Strength",
+            "ok": true
+          },
+          {
+            "kind": "wanted",
+            "text": "19% increased Attributes",
+            "ok": true
+          }
         ]
       },
       "value": 6485.03,
@@ -116,14 +164,27 @@
         "catalyst": null,
         "prefixes": {
           "wanted": [],
-          "blocked": [{ "group": 0, "influence": false }],
+          "blocked": [
+            {
+              "group": 0,
+              "influence": false
+            }
+          ],
           "untracked": 0,
           "untracked_influenced": 0
         },
         "suffixes": {
           "wanted": [
-            { "req": 1, "idx": 0, "value_ok": true },
-            { "req": 2, "idx": 0, "value_ok": true }
+            {
+              "req": 1,
+              "idx": 0,
+              "value_ok": true
+            },
+            {
+              "req": 2,
+              "idx": 0,
+              "value_ok": true
+            }
           ],
           "blocked": [],
           "untracked": 0,
@@ -133,15 +194,30 @@
       },
       "view": {
         "title": "Rare Simplex Amulet",
-        "influences": ["Shaper", "Warlord"],
+        "influences": [
+          "Shaper",
+          "Warlord"
+        ],
         "catalyst": null,
         "lock": null,
         "prefixes": [
-          { "kind": "blocked", "text": "DamagePer15Attributes (other tier)", "ok": false }
+          {
+            "kind": "blocked",
+            "text": "DamagePer15Attributes (other tier)",
+            "ok": false
+          }
         ],
         "suffixes": [
-          { "kind": "wanted", "text": "26% increased Strength", "ok": true },
-          { "kind": "wanted", "text": "19% increased Attributes", "ok": true }
+          {
+            "kind": "wanted",
+            "text": "26% increased Strength",
+            "ok": true
+          },
+          {
+            "kind": "wanted",
+            "text": "19% increased Attributes",
+            "ok": true
+          }
         ]
       },
       "value": 6486.03,
@@ -164,7 +240,13 @@
           "untracked_influenced": 1
         },
         "suffixes": {
-          "wanted": [{ "req": 1, "idx": 0, "value_ok": true }],
+          "wanted": [
+            {
+              "req": 1,
+              "idx": 0,
+              "value_ok": true
+            }
+          ],
           "blocked": [],
           "untracked": 0,
           "untracked_influenced": 0
@@ -173,13 +255,26 @@
       },
       "view": {
         "title": "Rare Simplex Amulet",
-        "influences": ["Shaper", "Warlord"],
+        "influences": [
+          "Shaper",
+          "Warlord"
+        ],
         "catalyst": null,
         "lock": null,
         "prefixes": [
-          { "kind": "otherInfluenced", "text": "other influenced mod", "ok": false }
+          {
+            "kind": "otherInfluenced",
+            "text": "other influenced mod",
+            "ok": false
+          }
         ],
-        "suffixes": [{ "kind": "wanted", "text": "26% increased Strength", "ok": true }]
+        "suffixes": [
+          {
+            "kind": "wanted",
+            "text": "26% increased Strength",
+            "ok": true
+          }
+        ]
       },
       "value": 1200,
       "expanded": false,
@@ -195,19 +290,32 @@
       "label": "Buy",
       "cost": 311600.01,
       "seconds": 60,
-      "outcomes": [["goal", 1]],
+      "outcomes": [
+        [
+          "goal",
+          1
+        ]
+      ],
       "q": 311600.01,
       "chosen": true
     },
     {
       "from": "state:ideal",
       "kind": "craft",
-      "action": { "kind": "ApplyCatalyst", "catalyst": 4 },
+      "action": {
+        "kind": "ApplyCatalyst",
+        "catalyst": 4
+      },
       "actionKey": "{\"kind\":\"ApplyCatalyst\",\"catalyst\":4}",
-      "label": "Apply Catalyst",
+      "label": "Intrinsic Catalyst",
       "cost": 58.4,
       "seconds": 4,
-      "outcomes": [["goal", 1]],
+      "outcomes": [
+        [
+          "goal",
+          1
+        ]
+      ],
       "q": 58.4,
       "chosen": true
     },
@@ -219,7 +327,12 @@
       "label": "Buy",
       "cost": 400.01,
       "seconds": 60,
-      "outcomes": [["state:ideal", 1]],
+      "outcomes": [
+        [
+          "state:ideal",
+          1
+        ]
+      ],
       "q": 458.41,
       "chosen": false
     },
@@ -231,43 +344,73 @@
       "label": "Buy",
       "cost": 900.01,
       "seconds": 60,
-      "outcomes": [["state:locked", 1]],
+      "outcomes": [
+        [
+          "state:locked",
+          1
+        ]
+      ],
       "q": 7385.04,
       "chosen": false
     },
     {
       "from": "state:locked",
       "kind": "craft",
-      "action": { "kind": "HarvestInfluenced" },
+      "action": {
+        "kind": "HarvestInfluenced"
+      },
       "actionKey": "{\"kind\":\"HarvestInfluenced\"}",
       "label": "Harvest: reforge influenced rare",
       "cost": 273.46,
       "seconds": 12,
-      "outcomes": [["state:ideal", 0.0427], ["state:miss", 0.9573]],
+      "outcomes": [
+        [
+          "state:ideal",
+          0.0427
+        ],
+        [
+          "state:miss",
+          0.9573
+        ]
+      ],
       "q": 6485.03,
       "chosen": true
     },
     {
       "from": "state:locked",
       "kind": "craft",
-      "action": { "kind": "Annul" },
+      "action": {
+        "kind": "Annul"
+      },
       "actionKey": "{\"kind\":\"Annul\"}",
       "label": "Orb of Annulment",
       "cost": 15.55,
       "seconds": 2,
-      "outcomes": [["state:brick", 1]],
+      "outcomes": [
+        [
+          "state:brick",
+          1
+        ]
+      ],
       "q": 1215.56,
       "chosen": false
     },
     {
       "from": "state:miss",
       "kind": "craft",
-      "action": { "kind": "Chaos" },
+      "action": {
+        "kind": "Chaos"
+      },
       "actionKey": "{\"kind\":\"Chaos\"}",
       "label": "Chaos Orb",
       "cost": 1,
       "seconds": 2,
-      "outcomes": [["state:locked", 1]],
+      "outcomes": [
+        [
+          "state:locked",
+          1
+        ]
+      ],
       "q": 6486.03,
       "chosen": true
     },
@@ -279,7 +422,12 @@
       "label": "Sell",
       "cost": -399.99,
       "seconds": 0,
-      "outcomes": [["start", 1]],
+      "outcomes": [
+        [
+          "start",
+          1
+        ]
+      ],
       "q": 311200.02,
       "chosen": false
     },
@@ -291,7 +439,12 @@
       "label": "Sell",
       "cost": -899.99,
       "seconds": 0,
-      "outcomes": [["start", 1]],
+      "outcomes": [
+        [
+          "start",
+          1
+        ]
+      ],
       "q": 310700.02,
       "chosen": false
     },
@@ -303,7 +456,12 @@
       "label": "Sell",
       "cost": -899.99,
       "seconds": 0,
-      "outcomes": [["start", 1]],
+      "outcomes": [
+        [
+          "start",
+          1
+        ]
+      ],
       "q": 310700.02,
       "chosen": false
     },
@@ -315,7 +473,12 @@
       "label": "Sell",
       "cost": -399.99,
       "seconds": 0,
-      "outcomes": [["start", 1]],
+      "outcomes": [
+        [
+          "start",
+          1
+        ]
+      ],
       "q": 311200.02,
       "chosen": false
     }
@@ -324,18 +487,33 @@
     "expectedCost": 311600.01,
     "sdCost": 0,
     "expectedSeconds": 60,
-    "expectedSpend": { "divine": 800 },
+    "expectedSpend": {},
+    "expectedBuyChaos": 311600.01,
+    "expectedSellChaos": 0,
     "quantiles": {
-      "cost": { "p50": 311600.01, "p90": 311600.01, "p95": 311600.01, "p99": 311600.01 },
-      "seconds": { "p50": 60, "p90": 60, "p95": 60, "p99": 60 }
+      "cost": {
+        "p50": 311600.01,
+        "p90": 311600.01,
+        "p95": 311600.01,
+        "p99": 311600.01
+      },
+      "seconds": {
+        "p50": 60,
+        "p90": 60,
+        "p95": 60,
+        "p99": 60
+      }
     }
   },
   "proposals": {
     "goal": [
       {
-        "action": { "kind": "ApplyCatalyst", "catalyst": 4 },
+        "action": {
+          "kind": "ApplyCatalyst",
+          "catalyst": 4
+        },
         "actionKey": "{\"kind\":\"ApplyCatalyst\",\"catalyst\":4}",
-        "label": "Apply Intrinsic Catalyst",
+        "label": "Intrinsic Catalyst",
         "pre": "state:ideal",
         "pReach": 1,
         "pMods": 1,
@@ -346,7 +524,9 @@
     ],
     "state:ideal": [
       {
-        "action": { "kind": "Divine" },
+        "action": {
+          "kind": "Divine"
+        },
         "actionKey": "{\"kind\":\"Divine\"}",
         "label": "Divine Orb",
         "pre": "state:ideal-low",
@@ -357,7 +537,9 @@
         "status": "Ready"
       },
       {
-        "action": { "kind": "HarvestInfluenced" },
+        "action": {
+          "kind": "HarvestInfluenced"
+        },
         "actionKey": "{\"kind\":\"HarvestInfluenced\"}",
         "label": "Harvest: reforge influenced rare",
         "pre": "state:locked",
@@ -368,9 +550,12 @@
         "status": "Ready"
       },
       {
-        "action": { "kind": "Combine", "donor": 0 },
+        "action": {
+          "kind": "Combine",
+          "donor": 0
+        },
         "actionKey": "{\"kind\":\"Combine\",\"donor\":0}",
-        "label": "Awakener's Orb",
+        "label": "Awakener's Orb (Warlord amulet, t1 increased Strength)",
         "pre": "state:shaper",
         "pReach": 0.000319,
         "pMods": 0.005051,
@@ -379,7 +564,9 @@
         "status": "NeedsInput"
       },
       {
-        "action": { "kind": "Chaos" },
+        "action": {
+          "kind": "Chaos"
+        },
         "actionKey": "{\"kind\":\"Chaos\"}",
         "label": "Chaos Orb",
         "pre": "state:chaos",

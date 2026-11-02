@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { draftToTarget, targetSignature, targetToDraft } from '../problem'
 import { useAppStore } from '../store'
 import type { Requirement, Side, TargetDraft } from '../types'
 
@@ -21,7 +22,8 @@ export function TargetEditor({ parse }: TargetEditorProps) {
   const target = useAppStore((state) => state.target)
   const applyDraft = useAppStore((state) => state.applyDraft)
   const [text, setText] = useState('')
-  const [draft, setDraft] = useState<TargetDraft | null>(null)
+  // Seeded from the applied target so its rows stay editable after a reload.
+  const [draft, setDraft] = useState<TargetDraft | null>(() => (target ? targetToDraft(target) : null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -50,6 +52,20 @@ export function TargetEditor({ parse }: TargetEditorProps) {
     setDraft((current) =>
       current ? { ...current, requirements: current.requirements.filter((_, i) => i !== index) } : current,
     )
+  }
+
+  const unchanged =
+    draft != null && draft.buyNote == null && targetSignature(draftToTarget(draft)) === targetSignature(target)
+  const applyTitle = !draft?.base
+    ? 'the parser did not recognise a base item'
+    : unchanged
+      ? 'this is the target already in use'
+      : 'applying a target clears the tree you built for the previous one'
+
+  function apply(current: TargetDraft) {
+    applyDraft(current)
+    // The buy note has been turned into the goal's buy price; re-applying must not reset the tree again.
+    setDraft({ ...current, buyNote: null })
   }
 
   return (
@@ -168,16 +184,11 @@ export function TargetEditor({ parse }: TargetEditorProps) {
           )}
 
           <div className="row-actions">
-            <button
-              type="button"
-              disabled={!draft.base}
-              onClick={() => applyDraft(draft)}
-              title={draft.base ? undefined : 'the parser did not recognise a base item'}
-            >
+            <button type="button" disabled={!draft.base || unchanged} onClick={() => apply(draft)} title={applyTitle}>
               Apply target
             </button>
-            <button type="button" onClick={() => setDraft(null)}>
-              Discard draft
+            <button type="button" onClick={() => setDraft(target ? targetToDraft(target) : null)}>
+              {target ? 'Revert edits' : 'Discard draft'}
             </button>
           </div>
         </div>

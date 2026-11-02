@@ -59,9 +59,23 @@ function App() {
     return () => clearTimeout(timer)
   }, [problem])
 
+  // Fall back to the goal only when a fresh solution lacks the selected node; a key the user just
+  // seeded with Use is kept even if an older solution (without it) is still on screen.
   useEffect(() => {
-    if (solution && !solution.nodes.some((node) => node.key === selected)) setSelected('goal')
-  }, [solution, selected])
+    if (!solution) return
+    setSelected((current) =>
+      current === 'goal' ||
+      solution.nodes.some((node) => node.key === current) ||
+      useAppStore.getState().added.includes(current)
+        ? current
+        : 'goal',
+    )
+  }, [solution])
+
+  // A new target invalidates every state key.
+  useEffect(() => {
+    setSelected('goal')
+  }, [target])
 
   function share() {
     if (!problem) return

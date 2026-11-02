@@ -83,6 +83,9 @@ describe('formatting', () => {
 
   it('formats chaos with thousands separators', () => {
     expect(formatChaos(311600.01)).toBe('311,600')
+    expect(formatChaos(58.4)).toBe('58.4')
+    expect(formatChaos(273.4625)).toBe('273.46')
+    expect(formatChaos(-399.99)).toBe('-399.99')
     expect(formatChaos(null)).toBe('—')
   })
 })

@@ -20,6 +20,8 @@ export function Stats() {
   const stats = solution?.stats ?? null
   const warnings = solution?.warnings ?? []
   const divine = prices.divine ?? 0
+  // Line items the policy never reaches come back as 0 (or float dust); they are not spend.
+  const spend = Object.entries(stats?.expectedSpend ?? {}).filter(([, amount]) => Math.abs(amount) > 1e-9)
 
   return (
     <section className="panel">
@@ -39,6 +41,10 @@ export function Stats() {
             <dd>{formatChaos(stats.sdCost)} chaos</dd>
             <dt>Expected time</dt>
             <dd>{formatDuration(stats.expectedSeconds)}</dd>
+            <dt>Spent buying</dt>
+            <dd>{formatChaos(stats.expectedBuyChaos)} chaos</dd>
+            <dt>Recovered selling</dt>
+            <dd>{formatChaos(stats.expectedSellChaos)} chaos</dd>
           </dl>
           <table className="quantiles">
             <thead>
@@ -58,12 +64,12 @@ export function Stats() {
           <h3>Expected spend</h3>
           <table className="spend">
             <tbody>
-              {Object.entries(stats.expectedSpend).length === 0 ? (
+              {spend.length === 0 ? (
                 <tr>
                   <td>—</td>
                 </tr>
               ) : (
-                Object.entries(stats.expectedSpend).map(([key, amount]) => (
+                spend.map(([key, amount]) => (
                   <tr key={key}>
                     <td>{key.replace(/-/g, ' ')}</td>
                     <td>{amount.toFixed(2)}</td>

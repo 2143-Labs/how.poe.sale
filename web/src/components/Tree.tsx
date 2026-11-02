@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Background, Controls, Handle, Position, ReactFlow, applyNodeChanges } from '@xyflow/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Background, Controls, Handle, MiniMap, Position, ReactFlow, applyNodeChanges } from '@xyflow/react'
 import type { NodeChange, NodeProps, NodeTypes, OnNodeDrag, ReactFlowInstance } from '@xyflow/react'
-import { layoutFlow } from '../layout'
+import { NODE_WIDTH, estimateNodeHeight, layoutFlow } from '../layout'
 import { formatChaos, toFlow, type FlowEdge, type FlowNode } from '../solution'
 import { useAppStore } from '../store'
 import type { NodeChip, Solution } from '../types'
@@ -79,6 +79,8 @@ export function Tree({ solution, selected, onSelect }: TreeProps) {
   const signature = useMemo(() => solution.nodes.map((node) => node.key).join('|'), [solution.nodes])
   const [layoutPositions, setLayoutPositions] = useState<Record<string, { x: number; y: number }>>({})
   const [instance, setInstance] = useState<ReactFlowInstance<FlowNode, FlowEdge> | null>(null)
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
 
   useEffect(() => {
     let cancelled = false
@@ -98,9 +100,22 @@ export function Tree({ solution, selected, onSelect }: TreeProps) {
     // `flow` is derived from `solution`; re-layout only when the node set changes.
   }, [signature])
 
+  // One expansion fans out into ~80 leaves in a single layer (~25,000 px wide), and
+  // the expanded states end up far apart, so a fit-to-all view is unreadable. After
+  // each layout, center on the node being worked on (Use selects it); the minimap
+  // and the fit-view control give the overview.
   useEffect(() => {
     if (!instance) return
-    const handle = requestAnimationFrame(() => instance.fitView({ padding: 0.15 }))
+    const key = selectedRef.current
+    const position = positions[key] ?? layoutPositions[key]
+    const node = solution.nodes.find((candidate) => candidate.key === key)
+    const handle = requestAnimationFrame(() => {
+      if (position && node) {
+        instance.setCenter(position.x + NODE_WIDTH / 2, position.y + estimateNodeHeight(node) / 2, { zoom: 0.8 })
+      } else {
+        instance.fitView({ padding: 0.2, maxZoom: 1 })
+      }
+    })
     return () => cancelAnimationFrame(handle)
   }, [instance, layoutPositions, signature])
 
@@ -144,11 +159,24 @@ export function Tree({ solution, selected, onSelect }: TreeProps) {
         onNodeClick={(_event, node) => onSelect(node.id)}
         onInit={setInstance}
         nodesConnectable={false}
-        fitView
+        minZoom={0.02}
         proOptions={{ hideAttribution: true }}
       >
         <Background />
         <Controls showInteractive={false} />
+        <MiniMap<FlowNode>
+          pannable
+          zoomable
+          bgColor="#0e0f14"
+          maskColor="rgba(18, 19, 26, 0.7)"
+          nodeColor={(node) =>
+            node.id === selected
+              ? '#f0b44d'
+              : node.data.node.kind !== 'state' || node.data.node.expanded
+                ? '#63d18a'
+                : '#4a4f66'
+          }
+        />
       </ReactFlow>
     </div>
   )
