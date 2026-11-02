@@ -1,0 +1,28 @@
+{
+  "name": "how-poe-sale-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "stage": "bash scripts/stage.sh",
+    "dev": "bash scripts/stage.sh && vite",
+    "build": "bash scripts/stage.sh && tsc -b && vite build",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@xyflow/react": "12.12.0",
+    "elkjs": "0.12.1",
+    "lz-string": "1.5.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zustand": "5.0.16"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "~6.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

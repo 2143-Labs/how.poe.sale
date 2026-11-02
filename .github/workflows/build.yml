@@ -1,0 +1,72 @@
+name: build
+# A newer push cancels the older run, so an older SHA never deploys last; a run cancelled mid-deploy leaves
+# prod on the previous tag (the argo push is atomic), and the newer run then bumps to its own SHA.
+concurrency: { group: "build-${{ github.ref }}", cancel-in-progress: true }
+on:
+  push: { branches: ["main"] }
+  pull_request: { branches: ["main"] }
+  workflow_dispatch:
+permissions: { contents: read, packages: write }
+jobs:
+  test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, nixos]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - run: nix develop -c bash scripts/fetch-data.sh
+      - run: nix develop -c cargo run -p datagen --release -- --raw data/raw --out data/bundle.json
+      - run: nix develop -c cargo fmt --all -- --check
+      - run: nix develop -c cargo clippy --workspace --all-targets -- -D warnings
+      - run: nix develop -c cargo test --workspace --release
+      # `npm run build` before `npm test`: a TypeScript or Vite error must fail here, not after the image job's build.
+      - run: nix develop -c bash -c 'cd web && npm ci && npm run build && npm test'
+  image:
+    needs: test
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, nixos]
+    timeout-minutes: 60
+    outputs: { tag: "${{ steps.tag.outputs.tag }}" }
+    steps:
+      - uses: actions/checkout@v5
+      - id: tag
+        name: Tag is the commit that produced the image
+        run: echo "tag=sha-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_OUTPUT"
+      - name: Build the container tarball
+        run: nix build .#container -o result
+      - name: Push to GHCR
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: |
+          set -euo pipefail
+          RESULT=$(readlink -f ./result)   # buildLayeredImage emits a gzipped tar, not a directory
+          printf '%s' "$GITHUB_TOKEN" | skopeo login --username "${{ github.actor }}" --password-stdin ghcr.io
+          skopeo copy "docker-archive:$RESULT" "docker://ghcr.io/2143-labs/how-poe-sale:${{ steps.tag.outputs.tag }}"
+  deploy:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency: { group: how-poe-sale-argo-bump, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v5
+        with: { repository: 2143-Labs/argo, ssh-key: "${{ secrets.DEPLOY_KEY_ARGO }}" }
+      # On the very first run apps/how-poe-sale.yaml already carries this SHA (written by hand when the app
+      # was added to argo), so the job exits 0 with "already at sha-…" and no commit. That is success.
+      - env: { NEW_TAG: "${{ needs.image.outputs.tag }}" }
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          file=apps/how-poe-sale.yaml
+          for attempt in 1 2 3; do
+            git fetch origin main && git reset --hard origin/main
+            hits=$(grep -c -- '- { name: image.tag, value: ' "$file" || true)
+            [ "$hits" = "1" ] || { echo "expected one image.tag parameter in $file, found $hits" >&2; exit 1; }
+            sed -i -E "s|(- \{ name: image\.tag, value: )[^ ]+( \})|\1${NEW_TAG}\2|" "$file"
+            grep -q -- "- { name: image.tag, value: ${NEW_TAG} }" "$file"
+            if git diff --quiet -- "$file"; then echo "already at ${NEW_TAG}"; exit 0; fi
+            git add -- "$file" && git commit -m "bump how-poe-sale image to ${NEW_TAG}"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 5))
+          done
+          echo "push failed after 3 attempts" >&2; exit 1
