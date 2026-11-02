@@ -129,6 +129,77 @@ pub fn ideal_state(_b: &Bundle, t: &Target) -> ItemState {
     s
 }
 
+/// `s` (described against `from`) described against `to`: each hit moves to `to`'s requirement
+/// with the same (group, side), keeping its tier and `value_ok`; a hit or blocked tier `to` does
+/// not track becomes one untracked mod on its side. Everything else is copied.
+pub fn remap(b: &Bundle, from: &Target, to: &Target, s: &ItemState) -> ItemState {
+    let side_remap = |side: Side, ss: &crate::item::SideState| -> crate::item::SideState {
+        let mut out = crate::item::SideState {
+            untracked: ss.untracked,
+            untracked_influenced: ss.untracked_influenced,
+            ..Default::default()
+        };
+        for hit in &ss.wanted {
+            let Some(r) = from.requirements.get(hit.req as usize) else {
+                continue;
+            };
+            let Some(m) = r.accepted.get(hit.idx as usize).copied() else {
+                continue;
+            };
+            let target = to
+                .requirements
+                .iter()
+                .position(|x| x.side == side && x.group == r.group);
+            match target {
+                Some(j) => match to.requirements[j].accepted.iter().position(|x| *x == m) {
+                    Some(idx) => out.wanted.push(Hit {
+                        req: j as u16,
+                        idx: idx as u8,
+                        value_ok: hit.value_ok,
+                    }),
+                    None => out.blocked.push(crate::item::Blocked {
+                        group: r.group,
+                        influence: b.mod_at(m).influence,
+                    }),
+                },
+                None => {
+                    out.untracked += 1;
+                    if b.mod_at(m).influence {
+                        out.untracked_influenced += 1;
+                    }
+                }
+            }
+        }
+        for x in &ss.blocked {
+            if to
+                .requirements
+                .iter()
+                .any(|r| r.side == side && r.group == x.group)
+            {
+                out.blocked.push(*x);
+            } else {
+                out.untracked += 1;
+                if x.influence {
+                    out.untracked_influenced += 1;
+                }
+            }
+        }
+        out.wanted.sort();
+        out.blocked.sort();
+        out
+    };
+    let mut out = s.clone();
+    out.prefixes = side_remap(Side::Prefix, &s.prefixes);
+    out.suffixes = side_remap(Side::Suffix, &s.suffixes);
+    out.imprint = s.imprint.as_ref().map(|imp| {
+        Box::new((
+            side_remap(Side::Prefix, &imp.0),
+            side_remap(Side::Suffix, &imp.1),
+        ))
+    });
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

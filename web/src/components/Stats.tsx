@@ -17,8 +17,8 @@ function QuantileRow({ name, q }: { name: string; q: Q4 | null | undefined }) {
 export function Stats() {
   const solution = useAppStore((state) => state.solution)
   const prices = useAppStore((state) => state.prices)
-  const stats = solution?.stats ?? null
-  const warnings = solution?.warnings ?? []
+  const stats = solution?.focus?.stats ?? null
+  const warnings = [...(solution?.warnings ?? []), ...(solution?.focus?.warnings ?? [])]
   const divine = prices.divine ?? 0
   // Line items the policy never reaches come back as 0 (or float dust); they are not spend.
   const spend = Object.entries(stats?.expectedSpend ?? {}).filter(([, amount]) => Math.abs(amount) > 1e-9)

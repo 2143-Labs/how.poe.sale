@@ -2,26 +2,31 @@ import { StrictMode, useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@xyflow/react/dist/style.css'
 import './styles.css'
+import { CraftList } from './components/CraftList'
 import { Donors } from './components/Donors'
+import { GoodPanel } from './components/GoodPanel'
+import { Market } from './components/Market'
 import { NodePanel } from './components/NodePanel'
 import { Prices } from './components/Prices'
 import { Stats } from './components/Stats'
 import { TargetEditor } from './components/TargetEditor'
 import { Tree } from './components/Tree'
-import { buildProblem } from './problem'
+import { buildProblem, targetSignature } from './problem'
 import { buildShareUrl } from './share'
 import { solver } from './solver'
 import { useAppStore } from './store'
+import type { ContractJson } from './types'
 
 function App() {
-  const target = useAppStore((state) => state.target)
+  const goods = useAppStore((state) => state.goods)
+  const processes = useAppStore((state) => state.processes)
+  const root = useAppStore((state) => state.root)
+  const focus = useAppStore((state) => state.focus)
   const prices = useAppStore((state) => state.prices)
   const donors = useAppStore((state) => state.donors)
-  const added = useAppStore((state) => state.added)
-  const expanded = useAppStore((state) => state.expanded)
-  const disabled = useAppStore((state) => state.disabled)
-  const buy = useAppStore((state) => state.buy)
-  const sell = useAppStore((state) => state.sell)
+  const authoredRecipes = useAppStore((state) => state.authoredRecipes)
+  const view = useAppStore((state) => state.view)
+  const setView = useAppStore((state) => state.setView)
   const solution = useAppStore((state) => state.solution)
   const busy = useAppStore((state) => state.busy)
   const error = useAppStore((state) => state.error)
@@ -30,6 +35,7 @@ function App() {
   const clearNotice = useAppStore((state) => state.clearNotice)
 
   const [version, setVersion] = useState<string | null>(null)
+  const [contracts, setContracts] = useState<ContractJson[]>([])
   const [copied, setCopied] = useState(false)
   const [selected, setSelected] = useState('goal')
 
@@ -43,14 +49,22 @@ function App() {
       .catch(() => {
         // the worker reports load failures through the solve error banner
       })
+    solver
+      .contracts()
+      .then((list) => {
+        if (!cancelled) setContracts(list)
+      })
+      .catch(() => {
+        // the craft list stays empty until the bridge answers
+      })
     return () => {
       cancelled = true
     }
   }, [])
 
   const problem = useMemo(
-    () => buildProblem({ target, prices, donors, added, expanded, disabled, buy, sell }),
-    [target, prices, donors, added, expanded, disabled, buy, sell],
+    () => buildProblem({ goods, processes, root, focus, prices, donors, authoredRecipes }),
+    [goods, processes, root, focus, prices, donors, authoredRecipes],
   )
 
   useEffect(() => {
@@ -59,23 +73,24 @@ function App() {
     return () => clearTimeout(timer)
   }, [problem])
 
-  // Fall back to the goal only when a fresh solution lacks the selected node; a key the user just
-  // seeded with Use is kept even if an older solution (without it) is still on screen.
+  // Fall back to the goal only when a fresh tree lacks the selected node; a key the user just
+  // seeded with Use is kept even if an older tree (without it) is still on screen.
+  const tree = solution?.focus ?? null
   useEffect(() => {
-    if (!solution) return
+    if (!tree) return
+    const added = processes.find((process) => process.id === focus)?.added ?? []
     setSelected((current) =>
-      current === 'goal' ||
-      solution.nodes.some((node) => node.key === current) ||
-      useAppStore.getState().added.includes(current)
+      current === 'goal' || tree.nodes.some((node) => node.key === current) || added.includes(current)
         ? current
         : 'goal',
     )
-  }, [solution])
+  }, [tree, processes, focus])
 
-  // A new target invalidates every state key.
+  // A new root target invalidates every state key of the focus tree.
+  const rootSignature = targetSignature(problem?.goods.find((good) => good.id === problem.root)?.target ?? null)
   useEffect(() => {
     setSelected('goal')
-  }, [target])
+  }, [rootSignature])
 
   function share() {
     if (!problem) return
@@ -116,17 +131,36 @@ function App() {
       )}
 
       <main>
-        <TargetEditor parse={solver.parse} />
+        <TargetEditor parse={solver.parse} modTiers={solver.modTiers} />
 
         <div className="workspace">
           <section className="panel graph-panel">
             <header className="panel-header">
-              <h2>Tree</h2>
-              <span className="hint">craft edges are solid on the solved policy, dashed when they close a cycle</span>
+              <h2>{view === 'market' ? 'Market' : 'Tree'}</h2>
+              <div className="view-tabs">
+                <button type="button" className={view === 'market' ? 'is-active' : ''} onClick={() => setView('market')}>
+                  Market
+                </button>
+                <button
+                  type="button"
+                  className={view === 'process' ? 'is-active' : ''}
+                  onClick={() => setView('process')}
+                  disabled={!solution?.focus}
+                >
+                  Process tree
+                </button>
+              </div>
+              <span className="hint">
+                {view === 'market'
+                  ? 'one node per good, one edge per input → output; the chosen process is solid'
+                  : 'craft edges are solid on the solved policy, dashed when they close a cycle'}
+              </span>
               {solution?.error && <span className="error-inline">{solution.error.message}</span>}
             </header>
-            {solution ? (
-              <Tree solution={solution} selected={selected} onSelect={setSelected} />
+            {view === 'market' ? (
+              <Market />
+            ) : tree ? (
+              <Tree solution={tree} selected={selected} onSelect={setSelected} />
             ) : (
               <div className="graph-empty">
                 {problem ? 'Solving…' : 'Paste a target item to start. The tree grows from the goal backwards.'}
@@ -135,15 +169,21 @@ function App() {
           </section>
 
           <aside className="side">
-            <NodePanel selected={selected} onSelect={setSelected} />
+            {view === 'market' ? (
+              <GoodPanel proposeProcesses={solver.proposeProcesses} contracts={contracts} modTiers={solver.modTiers} />
+            ) : (
+              <NodePanel selected={selected} onSelect={setSelected} />
+            )}
             <Stats />
           </aside>
         </div>
 
         <div className="lower">
           <Prices />
-          <Donors influenceMods={solver.influenceMods} />
+          <CraftList contracts={contracts} />
         </div>
+
+        <Donors influenceMods={solver.influenceMods} />
       </main>
     </div>
   )

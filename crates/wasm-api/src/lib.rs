@@ -20,12 +20,34 @@ impl Bridge {
         format!("{} / data {}", env!("CARGO_PKG_VERSION"), self.bundle.patch)
     }
 
-    /// `Problem` JSON in, `Solution` JSON out. Only malformed JSON throws; solver errors are
-    /// reported inside the solution.
+    /// `Problem` JSON (v1 or v3) in, `SolutionV3` JSON out. Only malformed JSON throws; solver
+    /// errors are reported inside the solution.
     pub fn solve(&self, problem_json: &str) -> Result<String, JsValue> {
-        let problem: poe1::api::Problem = serde_json::from_str(problem_json).map_err(js_error)?;
-        let solution = poe1::api::solve(&self.bundle, &problem);
+        let solution = poe1::api::solve_json(&self.bundle, problem_json).map_err(js_error)?;
         serde_json::to_string(&solution).map_err(js_error)
+    }
+
+    /// `ProcessProposalJson[]` for one good of a v1/v3 problem.
+    pub fn propose_processes(&self, problem_json: &str, good_id: &str) -> Result<String, JsValue> {
+        let list =
+            poe1::api::propose_processes(&self.bundle, problem_json, good_id).map_err(js_error)?;
+        serde_json::to_string(&list).map_err(js_error)
+    }
+
+    /// `ContractJson[]`: every craft's declared behaviour.
+    pub fn contracts(&self) -> Result<String, JsValue> {
+        serde_json::to_string(&poe1::api::contracts_json(&self.bundle)).map_err(js_error)
+    }
+
+    /// `RecipeDef[]`: the compiled-in recipes.
+    pub fn recipes(&self) -> Result<String, JsValue> {
+        serde_json::to_string(poe1::recipe::recipes()).map_err(js_error)
+    }
+
+    /// `TierJson[]` for the tier picker.
+    pub fn mod_tiers(&self, base: &str, group: &str, side: &str) -> Result<String, JsValue> {
+        let tiers = poe1::api::mod_tiers(&self.bundle, base, group, side).map_err(js_error)?;
+        serde_json::to_string(&tiers).map_err(js_error)
     }
 
     /// Pasted tooltip text -> `TargetDraft` JSON.

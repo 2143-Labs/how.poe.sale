@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '../store'
+import { rootTarget, useAppStore } from '../store'
 import { INFLUENCES } from '../types'
 import type { Donor, InfluenceModEntry } from '../types'
 
@@ -14,7 +14,7 @@ function newDonor(base: string, ilvl: number): Donor {
 export function Donors({ influenceMods }: DonorsProps) {
   const donors = useAppStore((state) => state.donors)
   const setDonors = useAppStore((state) => state.setDonors)
-  const target = useAppStore((state) => state.target)
+  const target = useAppStore(rootTarget)
   const [mods, setMods] = useState<Record<string, InfluenceModEntry[]>>({})
 
   useEffect(() => {

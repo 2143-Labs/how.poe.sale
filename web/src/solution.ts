@@ -1,6 +1,25 @@
 import type { Edge, Node } from '@xyflow/react'
 import { INFLUENCES } from './types'
-import type { ProblemTarget, Solution, SolutionEdge, SolutionNode, SolutionStats } from './types'
+import type {
+  ContractJson,
+  ExitJson,
+  GoodJson,
+  GoodValueJson,
+  NodeView,
+  ProblemTarget,
+  ProcessJson,
+  ProcessProposalJson,
+  ProcessValueJson,
+  RecipeDef,
+  Solution,
+  SolutionEdge,
+  SolutionError,
+  SolutionNode,
+  SolutionStats,
+  SolutionV3,
+  StepJson,
+  TierJson,
+} from './types'
 
 export type StateNodeData = { node: SolutionNode }
 
@@ -300,4 +319,259 @@ export function summarizeStateKey(
     out.push(`${catalysts.get(state.catalyst[0]) ?? 'catalyst'} ${state.catalyst[1]}%`)
   }
   return out.join(' · ')
+}
+
+// ------------------------------------------------------------------ market v3
+
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function asPairs<T extends string | number>(value: unknown, cast: 'string' | 'number'): [string, T][] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((pair) => {
+    if (!Array.isArray(pair) || pair.length !== 2) return []
+    const [first, second] = pair
+    if (typeof first !== 'string') return []
+    if (cast === 'number' && (typeof second !== 'number' || !Number.isFinite(second))) return []
+    if (cast === 'string' && typeof second !== 'string') return []
+    return [[first, second] as unknown as [string, T]]
+  })
+}
+
+function emptyView(title: string): NodeView {
+  return { title, influences: [], catalyst: null, lock: null, prefixes: [], suffixes: [] }
+}
+
+function normalizeGoodValue(raw: unknown): GoodValueJson | null {
+  const g = asRecord(raw)
+  if (typeof g.id !== 'string') return null
+  const name = asString(g.name, g.id)
+  return {
+    id: g.id,
+    name,
+    value: asNumber(g.value),
+    sd: asNumber(g.sd),
+    seconds: asNumber(g.seconds),
+    via: typeof g.via === 'string' ? g.via : null,
+    needed: g.needed === true,
+    view: (g.view as GoodValueJson['view']) ?? emptyView(name),
+  }
+}
+
+function normalizeExit(raw: unknown): ExitJson | null {
+  const e = asRecord(raw)
+  const p = asNumber(e.p)
+  if (p == null) return null
+  const target = asRecord(e.target)
+  return {
+    good: typeof e.good === 'string' ? e.good : null,
+    unpriced: typeof e.unpriced === 'string' ? e.unpriced : null,
+    p,
+    label: asString(e.label, 'other outcome'),
+    // The engine's TargetJson for this outcome; trusted as-is (it comes from the same wasm).
+    target: Array.isArray(target.requirements) ? (target as unknown as ProblemTarget) : undefined,
+  }
+}
+
+function normalizeStep(raw: unknown): StepJson | null {
+  const s = asRecord(raw)
+  if (typeof s.label !== 'string') return null
+  return { label: s.label, cost: asPairs<number>(s.cost, 'number'), changes: asStringArray(s.changes) }
+}
+
+function normalizeExits(value: unknown): ExitJson[] {
+  return Array.isArray(value) ? value.map(normalizeExit).filter((e): e is ExitJson => e !== null) : []
+}
+
+function normalizeProcessValue(raw: unknown): ProcessValueJson | null {
+  const p = asRecord(raw)
+  if (typeof p.id !== 'string') return null
+  const status = p.status === 'Unreachable' || p.status === 'NeedsInput' || p.status === 'Error' ? p.status : 'Ready'
+  const spend = asRecord(p.spend)
+  return {
+    id: p.id,
+    output: asString(p.output),
+    recipe: typeof p.recipe === 'string' ? p.recipe : null,
+    kind: p.kind === 'recombine' ? 'recombine' : 'craft',
+    inputs: asStringArray(p.inputs),
+    name: asString(p.name, p.kind === 'recombine' ? 'Recombine' : 'Craft'),
+    cost: asNumber(p.cost),
+    sd: asNumber(p.sd),
+    seconds: asNumber(p.seconds),
+    pSuccess: asNumber(p.pSuccess),
+    attempts: asNumber(p.attempts),
+    spend: Object.fromEntries(
+      Object.entries(spend).flatMap(([key, value]) => {
+        const n = asNumber(value)
+        return n == null ? [] : [[key, n] as [string, number]]
+      }),
+    ),
+    steps: Array.isArray(p.steps) ? p.steps.map(normalizeStep).filter((s): s is StepJson => s !== null) : [],
+    core: normalizeExits(p.core),
+    exits: normalizeExits(p.exits),
+    status,
+    error: typeof p.error === 'string' ? p.error : null,
+  }
+}
+
+function normalizeProcessJson(raw: unknown): ProcessJson | null {
+  const p = asRecord(raw)
+  if (typeof p.id !== 'string' || typeof p.output !== 'string') return null
+  const kindRaw = asRecord(p.kind)
+  let kind: ProcessJson['kind']
+  if (kindRaw.recombine) {
+    const r = asRecord(kindRaw.recombine)
+    if (typeof r.a !== 'string' || typeof r.b !== 'string') return null
+    kind = { recombine: { a: r.a, b: r.b } }
+  } else {
+    const c = asRecord(kindRaw.craft ?? kindRaw)
+    kind = {
+      craft: { from: typeof c.from === 'string' ? c.from : null, allowed: asStringArray(c.allowed) },
+    }
+  }
+  return {
+    id: p.id,
+    output: p.output,
+    recipe: typeof p.recipe === 'string' ? p.recipe : null,
+    kind,
+    expanded: Array.isArray(p.expanded) ? asStringArray(p.expanded) : null,
+    added: asStringArray(p.added),
+    disabled: asPairs<string>(p.disabled, 'string'),
+    buy: asPairs<number>(p.buy, 'number'),
+    sell: asPairs<number>(p.sell, 'number'),
+  }
+}
+
+function normalizeGoodJson(raw: unknown): GoodJson | null {
+  const g = asRecord(raw)
+  if (typeof g.id !== 'string' || !g.target || typeof g.target !== 'object') return null
+  return {
+    id: g.id,
+    name: asString(g.name, g.id),
+    target: g.target as GoodJson['target'],
+    buy: asNumber(g.buy),
+    sell: asNumber(g.sell),
+  }
+}
+
+function normalizeProposal(raw: unknown): ProcessProposalJson | null {
+  const p = asRecord(raw)
+  const process = normalizeProcessJson(p.process)
+  if (!process) return null
+  const status =
+    p.status === 'NeedsInput' || p.status === 'Unreachable' ? p.status : ('Ready' as ProcessProposalJson['status'])
+  return {
+    process,
+    newGoods: Array.isArray(p.newGoods)
+      ? p.newGoods.map(normalizeGoodJson).filter((g): g is GoodJson => g !== null)
+      : [],
+    name: asString(p.name, process.id),
+    cost: asNumber(p.cost),
+    pSuccess: asNumber(p.pSuccess),
+    status,
+    reason: typeof p.reason === 'string' ? p.reason : null,
+  }
+}
+
+/** Tolerates a partially populated market answer, so the canvas never crashes on a missing field. */
+export function normalizeSolutionV3(raw: unknown): SolutionV3 {
+  const s = asRecord(raw)
+  const market = asRecord(s.market)
+  const proposals: Record<string, ProcessProposalJson[]> = {}
+  for (const [goodId, list] of Object.entries(asRecord(s.proposals))) {
+    if (!Array.isArray(list)) continue
+    proposals[goodId] = list.map(normalizeProposal).filter((p): p is ProcessProposalJson => p !== null)
+  }
+  return {
+    version: 3,
+    error: (s.error as SolutionError | null) ?? null,
+    warnings: asStringArray(s.warnings),
+    market: {
+      goods: Array.isArray(market.goods)
+        ? market.goods.map(normalizeGoodValue).filter((g): g is GoodValueJson => g !== null)
+        : [],
+      processes: Array.isArray(market.processes)
+        ? market.processes.map(normalizeProcessValue).filter((p): p is ProcessValueJson => p !== null)
+        : [],
+    },
+    focus: s.focus ? normalizeSolution(s.focus) : null,
+    proposals,
+  }
+}
+
+export function normalizeProposalList(raw: unknown): ProcessProposalJson[] {
+  return Array.isArray(raw) ? raw.map(normalizeProposal).filter((p): p is ProcessProposalJson => p !== null) : []
+}
+
+export function normalizeContracts(raw: unknown): ContractJson[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((entry) => {
+    const c = asRecord(entry)
+    if (typeof c.id !== 'string') return []
+    return [
+      {
+        id: c.id,
+        name: asString(c.name, c.id),
+        requires: asString(c.requires),
+        effect: asString(c.effect),
+        cost: asPairs<number>(c.cost, 'number'),
+        seconds: asNumber(c.seconds) ?? 0,
+      } satisfies ContractJson,
+    ]
+  })
+}
+
+export function normalizeRecipes(raw: unknown): RecipeDef[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((entry) => {
+    const r = asRecord(entry)
+    if (typeof r.id !== 'string' || typeof r.name !== 'string') return []
+    const kind = r.kind === 'recombine' ? 'recombine' : 'craft'
+    const input = r.input === 'normal-base' || r.input === 'same-base' ? r.input : undefined
+    const rarity = r.rarity === 'Normal' || r.rarity === 'Magic' || r.rarity === 'Rare' ? r.rarity : 'Rare'
+    return [
+      {
+        id: r.id,
+        name: r.name,
+        kind,
+        rarity,
+        ...(input ? { input } : {}),
+        ...(Array.isArray(r.allowed) ? { allowed: asStringArray(r.allowed) } : {}),
+      } satisfies RecipeDef,
+    ]
+  })
+}
+
+export function normalizeTiers(raw: unknown): TierJson[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((entry) => {
+    const t = asRecord(entry)
+    if (typeof t.id !== 'string') return []
+    return [
+      {
+        id: t.id,
+        text: asString(t.text, t.id),
+        ilvl: asNumber(t.ilvl) ?? 0,
+        min: asNumber(t.min) ?? 0,
+        max: asNumber(t.max) ?? (asNumber(t.min) ?? 0),
+      } satisfies TierJson,
+    ]
+  })
+}
+
+/** Four significant digits, as the market tables quote probabilities. */
+export function formatProbability(p: number | null | undefined): string {
+  if (p == null || !Number.isFinite(p)) return '—'
+  const value = p * 100
+  if (value > 0 && value < 0.0001) return '<0.0001%'
+  return `${Number(value.toPrecision(4))}%`
 }

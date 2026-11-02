@@ -23,4 +23,9 @@ pub trait Domain {
     fn ignore_values(&self, s: &Self::State) -> Self::State {
         s.clone()
     }
+    /// What `s` sells for as a finished item other than the goal (a brick), if anything. The graph
+    /// prices each Sell edge at the larger of this and the problem's own sell price for the node.
+    fn sell_value(&self, _s: &Self::State) -> Option<f64> {
+        None
+    }
 }

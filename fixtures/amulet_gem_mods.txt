@@ -1,0 +1,7 @@
+Item Class: Amulets
+Rarity: Magic
+Lapis Amulet of Lightning
+--------
+Item Level: 84
+--------
++1 to Level of all Lightning Skill Gems

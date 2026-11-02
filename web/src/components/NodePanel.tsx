@@ -9,20 +9,27 @@ interface NodePanelProps {
 
 export function NodePanel({ selected, onSelect }: NodePanelProps) {
   const solution = useAppStore((state) => state.solution)
-  const target = useAppStore((state) => state.target)
+  const goods = useAppStore((state) => state.goods)
+  const processes = useAppStore((state) => state.processes)
+  const focus = useAppStore((state) => state.focus)
+  const setView = useAppStore((state) => state.setView)
+  const tree = solution?.focus ?? null
+  const focusProcess = processes.find((process) => process.id === focus) ?? null
+  const target = goods.find((good) => good.id === focusProcess?.output)?.target ?? null
   const prices = useAppStore((state) => state.prices)
-  const buy = useAppStore((state) => state.buy)
-  const sell = useAppStore((state) => state.sell)
+
   const setBuy = useAppStore((state) => state.setBuy)
   const setSell = useAppStore((state) => state.setSell)
   const addSeed = useAppStore((state) => state.addSeed)
   const expand = useAppStore((state) => state.expand)
   const hide = useAppStore((state) => state.hide)
 
-  const node = solution?.nodes.find((candidate) => candidate.key === selected) ?? null
-  const proposals = solution?.proposals[selected] ?? []
+  const buy = Object.fromEntries(focusProcess?.buy ?? []) as Record<string, number>
+  const sell = Object.fromEntries(focusProcess?.sell ?? []) as Record<string, number>
+  const node = tree?.nodes.find((candidate) => candidate.key === selected) ?? null
+  const proposals = tree?.proposals[selected] ?? []
   const divine = prices.divine ?? 0
-  const catalysts = useMemo(() => (solution ? catalystNames(solution) : new Map<number, string>()), [solution])
+  const catalysts = useMemo(() => (tree ? catalystNames(tree) : new Map<number, string>()), [tree])
   const title =
     selected === 'goal' ? 'Goal' : selected === 'start' ? 'Start' : (node?.view?.title ?? 'Selected state')
   const summary = summarizeStateKey(selected, target, catalysts)
@@ -44,6 +51,10 @@ export function NodePanel({ selected, onSelect }: NodePanelProps) {
     <section className="panel node-panel">
       <header className="panel-header">
         <h2 title={selected}>{title}</h2>
+        <span className="hint">{focusProcess?.recipe ?? focusProcess?.id ?? 'no process'}</span>
+        <button type="button" onClick={() => setView('market')}>
+          Market
+        </button>
         {node && node.kind === 'state' && !node.expanded && (
           <button type="button" onClick={() => expand(node.key)}>
             Expand node
@@ -76,7 +87,7 @@ export function NodePanel({ selected, onSelect }: NodePanelProps) {
       </div>
 
       <h3>Proposals</h3>
-      {solution === null ? (
+      {tree === null ? (
         <p className="hint">Waiting for the first solve…</p>
       ) : proposals.length === 0 ? (
         <p className="hint">

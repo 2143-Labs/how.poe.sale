@@ -124,6 +124,15 @@ impl Bundle {
     }
 }
 
+/// Whether `needle` occurs in `hay` on word boundaries.
+fn contains_words(hay: &str, needle: &str) -> bool {
+    hay.match_indices(needle).any(|(i, _)| {
+        let before = hay[..i].chars().next_back();
+        let after = hay[i + needle.len()..].chars().next();
+        before.is_none_or(|c| c == ' ') && after.is_none_or(|c| c == ' ')
+    })
+}
+
 /// Build a target draft from pasted tooltip text.
 pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
     let lines: Vec<&str> = text
@@ -132,7 +141,23 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
         .filter(|l| !l.is_empty() && *l != "--------")
         .collect();
 
-    let base = lines.iter().find_map(|l| b.base_by_name(l));
+    // A rare's base has a line of its own; a magic item's name wraps it in affix words
+    // ("Thaumaturgist's Lapis Amulet of the Fox"), so fall back to the longest base name inside
+    // the line after "Rarity:".
+    let mut name_line: Option<&str> = None;
+    let base = lines.iter().find_map(|l| b.base_by_name(l)).or_else(|| {
+        let i = lines.iter().position(|l| l.starts_with("Rarity:"))?;
+        let line = *lines.get(i + 1)?;
+        let found = b
+            .bases
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| contains_words(line, &x.name))
+            .max_by_key(|(_, x)| x.name.len())
+            .map(|(i, _)| i as u16)?;
+        name_line = Some(line);
+        Some(found)
+    });
 
     let mut draft = TargetDraft {
         item_class: None,
@@ -155,7 +180,7 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
 
     let mut mod_lines: Vec<&str> = Vec::new();
     for line in &lines {
-        if Some(*line) == base_name.as_deref() {
+        if Some(*line) == base_name.as_deref() || Some(*line) == name_line {
             continue;
         }
         if let Some(rest) = line.strip_prefix("Item Class:") {
@@ -246,6 +271,7 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
 
     let tags = b.item_tags(base, draft.influences);
     let item_class = b.base_at(base).class.clone();
+    let ctx = crate::weights::SourceCtx::new(b, base, draft.influences);
 
     struct Pending {
         group: u16,
@@ -271,48 +297,60 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
             continue;
         };
         let mut any = false;
-        for row in rows {
-            let translation = &b.translations[row as usize];
-            let value = if translation.negate {
-                -raw_value
-            } else {
-                raw_value
-            };
-            for (i, m) in b.mods.iter().enumerate() {
-                let bench_ok = b
-                    .bench_by_mod
-                    .get(&m.id)
-                    .is_some_and(|e| b.bench[*e as usize].classes.contains(&item_class));
-                if !bench_ok && spawn_weight(m, &tags) == 0 {
-                    continue;
-                }
-                let Some(stat) = m.stats.iter().find(|s| s.stat == translation.stat) else {
-                    continue;
-                };
-                let scale = 1.0 + effect(b, base, draft.catalyst, i as u32) / 100.0;
-                let (lo, hi) = if translation.negate {
-                    (-stat.max, -stat.min)
+        // Pass 0: tiers that roll on the item as it is (or bench crafts). Pass 1, only when pass 0
+        // found nothing: any tier some modelled mechanic can place (influence, essence, fossil,
+        // recombine), per `weights::sources`.
+        for wide in [false, true] {
+            if any {
+                break;
+            }
+            for row in rows.iter().copied() {
+                let translation = &b.translations[row as usize];
+                let value = if translation.negate {
+                    -raw_value
                 } else {
-                    (stat.min, stat.max)
+                    raw_value
                 };
-                if lo < (value + 1.0) / scale && hi >= value / scale {
-                    any = true;
-                    match pending
-                        .iter_mut()
-                        .find(|p| p.group == m.group && p.side == m.generation)
-                    {
-                        Some(p) => {
-                            if !p.accepted.contains(&(i as u32)) {
-                                p.accepted.push(i as u32);
+                for (i, m) in b.mods.iter().enumerate() {
+                    let reachable = if wide {
+                        !ctx.sources(i as u32).is_empty()
+                    } else {
+                        b.bench_by_mod
+                            .get(&m.id)
+                            .is_some_and(|e| b.bench[*e as usize].classes.contains(&item_class))
+                            || (!m.fossil_only && spawn_weight(m, &tags) > 0)
+                    };
+                    if !reachable {
+                        continue;
+                    }
+                    let Some(stat) = m.stats.iter().find(|s| s.stat == translation.stat) else {
+                        continue;
+                    };
+                    let scale = 1.0 + effect(b, base, draft.catalyst, i as u32) / 100.0;
+                    let (lo, hi) = if translation.negate {
+                        (-stat.max, -stat.min)
+                    } else {
+                        (stat.min, stat.max)
+                    };
+                    if lo < (value + 1.0) / scale && hi >= value / scale {
+                        any = true;
+                        match pending
+                            .iter_mut()
+                            .find(|p| p.group == m.group && p.side == m.generation)
+                        {
+                            Some(p) => {
+                                if !p.accepted.contains(&(i as u32)) {
+                                    p.accepted.push(i as u32);
+                                }
                             }
+                            None => pending.push(Pending {
+                                group: m.group,
+                                side: m.generation,
+                                accepted: vec![i as u32],
+                                min_value: value,
+                                label: (*line).to_string(),
+                            }),
                         }
-                        None => pending.push(Pending {
-                            group: m.group,
-                            side: m.generation,
-                            accepted: vec![i as u32],
-                            min_value: value,
-                            label: (*line).to_string(),
-                        }),
                     }
                 }
             }
@@ -347,6 +385,25 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_a_magic_item_name() {
+        let b = crate::test_bundle();
+        let d = parse_target(b, include_str!("../../../fixtures/amulet_gem_mods.txt"));
+        assert_eq!(
+            d.base.map(|i| b.base_at(i).name.clone()),
+            Some("Lapis Amulet".to_string())
+        );
+        assert_eq!(d.rarity, Rarity::Magic);
+        assert!(d.unmatched.is_empty(), "{:?}", d.unmatched);
+        assert_eq!(d.requirements.len(), 1);
+        assert!(
+            d.requirements[0]
+                .accepted
+                .iter()
+                .any(|i| b.mod_at(*i).id == "GlobalLightningGemLevel1")
+        );
+    }
 
     #[test]
     fn parses_the_simplex_fixture() {

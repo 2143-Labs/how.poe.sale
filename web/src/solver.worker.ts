@@ -40,6 +40,26 @@ self.onmessage = async (event: MessageEvent) => {
           mods: parseJson(b.influence_mods(message.base, message.influence)),
         }
         break
+      case 'proposeProcesses':
+        response = {
+          type: 'proposeProcesses',
+          id: message.id,
+          proposals: parseJson(b.propose_processes(JSON.stringify(message.problem), message.goodId)),
+        }
+        break
+      case 'contracts':
+        response = { type: 'contracts', id: message.id, contracts: parseJson(b.contracts()) }
+        break
+      case 'recipes':
+        response = { type: 'recipes', id: message.id, recipes: parseJson(b.recipes()) }
+        break
+      case 'modTiers':
+        response = {
+          type: 'modTiers',
+          id: message.id,
+          tiers: parseJson(b.mod_tiers(message.base, message.group, message.side)),
+        }
+        break
     }
     self.postMessage(response)
   } catch (error) {

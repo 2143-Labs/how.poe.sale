@@ -8,6 +8,8 @@ pub mod data;
 pub mod engine;
 pub mod item;
 pub mod kernels;
+pub mod market;
+pub mod recipe;
 pub mod registry;
 pub mod target;
 pub mod text;

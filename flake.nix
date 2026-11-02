@@ -31,6 +31,8 @@
           { name = "item_classes"; hash = "sha256-Z4+jumU8J1DDjduk7tLA99bF7AQLK7wHvFAv7WnF5jI="; }
           { name = "stat_translations"; hash = "sha256-PmIQZ4Lu6e5t1o8Ed65TdSIgCXACCLmgsTQ1ooLTvvo="; }
           { name = "crafting_bench_options"; hash = "sha256-D+UasWV86mnFM7sGEOOT8QQBFWFA3ojt9oYSBIPNKEU="; }
+          { name = "essences"; hash = "sha256-AcatVYZt9nPdJamwhXfuIoAq07jwZxsBnLTPUjub1wA="; }
+          { name = "fossils"; hash = "sha256-4XHBGfh0tPK+Kpg2avYcWiCRyib1CLL1uda1Ubud8YE="; }
           { name = "tags"; hash = "sha256-Jd+ROr1Fm+3T3BtknjRLNT4nHtCjIWLxFtZgNKMmm1A="; }
         ];
         repoeRaw = pkgs.linkFarm "repoe-raw-3.29.3.3" (map

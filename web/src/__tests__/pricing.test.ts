@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import draftJson from '../__fixtures__/simplexDraft.json'
 import { DEFAULT_PRICES, DEFAULT_PRICES_DATE } from '../defaultPrices'
 import pricesJson from '../defaultPrices.json'
-import { buildProblem, draftToTarget, normalizeDraft, type ProblemState } from '../problem'
+import { buildProblem, draftToTarget, normalizeDraft, type MarketState } from '../problem'
+import type { GoodJson } from '../types'
 
 /** The Allflame snapshot from the plan's Verified facts (2026-11-02). */
 const VERIFIED: Record<string, number> = {
@@ -40,28 +41,31 @@ const VERIFIED: Record<string, number> = {
 
 const target = draftToTarget(normalizeDraft(draftJson))!
 
-function stateWith(overrides: Partial<ProblemState> = {}): ProblemState {
+const main: GoodJson = { id: 'main', name: 'Rare Simplex Amulet ilvl 84', target, buy: null, sell: null }
+
+function stateWith(overrides: Partial<MarketState> = {}): MarketState {
   return {
-    target,
+    goods: [main],
+    processes: [],
+    root: 'main',
+    focus: null,
     prices: { ...DEFAULT_PRICES },
     donors: [],
-    added: [],
-    expanded: ['goal'],
-    disabled: [],
-    buy: {},
-    sell: {},
+    authoredRecipes: [],
     ...overrides,
   }
 }
 
 describe('default prices', () => {
-  it('ships the verified 2026-11-02 snapshot', () => {
+  it('keeps the verified 2026-11-02 snapshot for the M1 currencies', () => {
     expect(DEFAULT_PRICES_DATE).toBe('2026-11-02')
-    expect(DEFAULT_PRICES).toEqual(VERIFIED)
+    // Later milestones add essence, fossil and typed keys: the verified rows must not move.
+    expect(DEFAULT_PRICES).toMatchObject(VERIFIED)
   })
 
   it('is the same table the Rust tests read', () => {
-    expect(pricesJson.prices).toEqual(VERIFIED)
+    expect(pricesJson.prices).toEqual(DEFAULT_PRICES)
+    expect(pricesJson.prices).toMatchObject(VERIFIED)
   })
 })
 
@@ -72,31 +76,40 @@ describe('buildProblem', () => {
     expect(problem.prices).toEqual(prices)
   })
 
-  it('is null without a target', () => {
-    expect(buildProblem(stateWith({ target: null }))).toBeNull()
+  it('is null without a good', () => {
+    expect(buildProblem(stateWith({ goods: [] }))).toBeNull()
+    expect(buildProblem(stateWith({ root: null }))).toBeNull()
   })
 
-  it('sorts buy and sell entries and copies the target', () => {
+  it('emits a v3 problem with the goods, the root and the ignored node keys', () => {
     const problem = buildProblem(
       stateWith({
-        buy: { goal: 311600, 'state:x': 5 },
-        sell: { 'state:y': 2000 },
-        added: ['state:x'],
-        expanded: ['goal', 'state:x'],
-        disabled: [['state:x', '{"kind":"Chaos"}']],
+        goods: [main, { id: 'brick-1', name: 'brick', target, buy: null, sell: 30 }],
+        processes: [
+          {
+            id: 'p1',
+            output: 'main',
+            recipe: null,
+            kind: { craft: { from: null, allowed: [] } },
+            expanded: ['goal', 'state:x'],
+            added: [],
+            disabled: [['state:x', '{"kind":"Chaos"}']],
+            buy: [['goal', 311600]],
+            sell: [],
+          },
+        ],
+        focus: 'p1',
       }),
     )!
-    expect(problem.version).toBe(1)
+    expect(problem.version).toBe(3)
     expect(problem.bundlePatch).toBe('3.29.3.3')
-    expect(problem.buy).toEqual([
-      ['goal', 311600],
-      ['state:x', 5],
-    ])
-    expect(problem.sell).toEqual([['state:y', 2000]])
-    expect(problem.disabled).toEqual([['state:x', '{"kind":"Chaos"}']])
-    expect(problem.target).toEqual(target)
-    expect(problem.added).toEqual(['state:x'])
-    expect(problem.expanded).toEqual(['goal', 'state:x'])
+    expect(problem.root).toBe('main')
+    expect(problem.focus).toBe('p1')
+    expect(problem.goods.map((good) => good.id)).toEqual(['main', 'brick-1'])
+    expect(problem.goods[1].sell).toBe(30)
+    expect(problem.processes[0].expanded).toEqual(['goal', 'state:x'])
+    expect(problem.processes[0].disabled).toEqual([['state:x', '{"kind":"Chaos"}']])
+    expect(problem.processes[0].buy).toEqual([['goal', 311600]])
   })
 
   it('drops donors that cannot be resolved by name', () => {
@@ -111,5 +124,12 @@ describe('buildProblem', () => {
     )!
     expect(problem.donors).toHaveLength(1)
     expect(problem.donors[0].label).toBe('complete')
+  })
+
+  it('copies the goods so a later edit cannot mutate the sent problem', () => {
+    const state = stateWith({ goods: [{ ...main, target: structuredClone(main.target) }] })
+    const problem = buildProblem(state)!
+    state.goods[0].target.requirements[0].minValue = 999
+    expect(problem.goods[0].target.requirements[0].minValue).not.toBe(999)
   })
 })

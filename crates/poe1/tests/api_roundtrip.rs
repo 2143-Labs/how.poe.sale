@@ -112,7 +112,8 @@ fn parse_target_json_matches_contract() {
         "side": "Prefix",
         "accepted": ["DamagePer15StrengthInfluence1"],
         "minValue": 2.0,
-        "label": "2% increased Damage per 15 Strength"
+        "label": "2% increased Damage per 15 Strength",
+        "sources": ["Native"]
     })));
 }
 
