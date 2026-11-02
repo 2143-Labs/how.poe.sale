@@ -84,13 +84,18 @@ where
                 }
             }
 
-            // V'(o): the solved value when the outcome is part of the plan, otherwise what the
-            // outcome is worth as a finished item — a fresh start minus what selling it recovers.
-            let key = d.key(&o);
-            let known = g.node(&key).and_then(|i| s.value[i]);
-            let value = match known {
-                Some(v) => Some(v),
-                None => start_value.map(|sv| sv - g.effective_sell(&key)),
+            // V'(o): 0 for a goal state (the graph interns every goal outcome as `goal`, so it is
+            // never found under its own key); the solved value when the outcome is part of the plan;
+            // otherwise what the outcome is worth as a finished item — a fresh start minus what
+            // selling it recovers.
+            let value = if is_goal {
+                Some(0.0)
+            } else {
+                let key = d.key(&o);
+                match g.node(&key).and_then(|i| s.value[i]) {
+                    Some(v) => Some(v),
+                    None => start_value.map(|sv| sv - g.effective_sell(&key)),
+                }
             };
             match value {
                 Some(v) => {

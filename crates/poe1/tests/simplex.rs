@@ -94,6 +94,9 @@ fn simplex_v8() {
     assert!(matches!(apply.action, Action::ApplyCatalyst { .. }));
     assert!(close(apply.cost, 20.0 * 2.92, 1e-9), "{}", apply.cost);
     assert_eq!(apply.p_reach, 1.0);
+    // A goal outcome is worth 0, so the only cost of reaching the goal from here is the catalysts.
+    let q = apply.q.expect("a goal outcome always has a value");
+    assert!(close(q, 20.0 * 2.92, 1e-9), "goal proposal q {q}");
     println!("goal <- {} cost {:.4}", apply.label, apply.cost);
 
     // Use it: the uncatalysed ideal state.
