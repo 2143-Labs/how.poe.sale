@@ -1608,6 +1608,9 @@ pub fn propose_processes(
 }
 
 fn describe_pre(c: &registry::Contract) -> String {
+    if c.id == "recombine" {
+        return "two Magic or Rare items of the same class".to_string();
+    }
     let r = &c.requires;
     let mut parts = vec![match r.rarity {
         Some(x) => x.name().to_string(),

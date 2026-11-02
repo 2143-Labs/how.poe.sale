@@ -604,26 +604,12 @@ fn entry_group(t: &Target, e: &PoolMod2) -> u16 {
     }
 }
 
-/// Every k-subset of `0..n`, in lexicographic order.
-fn subsets(n: usize, k: usize) -> Vec<Vec<usize>> {
-    let mut out = Vec::new();
-    let mut cur = Vec::with_capacity(k);
-    fn rec(start: usize, n: usize, k: usize, cur: &mut Vec<usize>, out: &mut Vec<Vec<usize>>) {
-        if cur.len() == k {
-            out.push(cur.clone());
-            return;
-        }
-        for i in start..n {
-            cur.push(i);
-            rec(i + 1, n, k, cur, out);
-            cur.pop();
-        }
-    }
-    rec(0, n, k, &mut cur, &mut out);
-    out
-}
-
 /// Distribution of one side of a recombined item: (side state, probability).
+///
+/// `N` comes from `RECOMBINE_MOD_COUNT` over the pooled count; the kept mods are then drawn one at
+/// a time, uniformly among the eligible entries, and a drawn mod makes every entry of its group
+/// ineligible. A mod on both inputs is two entries: it raises the pooled count and its chance to
+/// be drawn, but it is kept at most once. When the eligible entries run out first, fewer are kept.
 fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, f64)> {
     let n = pool.len();
     if n == 0 {
@@ -631,57 +617,76 @@ fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, 
     }
     let row = registry::RECOMBINE_MOD_COUNT[n.min(6) - 1];
     let mut out: Vec<(SideState, f64)> = Vec::new();
+    let mut used = vec![false; n];
     for (k, pk) in row.iter().enumerate() {
-        if *pk <= 0.0 || k > n {
-            continue;
-        }
-        let subs = subsets(n, k);
-        let p_sub = pk / subs.len() as f64;
-        for sub in subs {
-            // Entries of one group collapse to one mod; each duplicate is the survivor equally often.
-            let mut groups: Vec<(u16, Vec<PoolMod2>)> = Vec::new();
-            for i in sub {
-                let e = pool[i];
-                let g = entry_group(t, &e);
-                match groups.iter_mut().find(|(x, _)| *x == g) {
-                    Some((_, v)) => v.push(e),
-                    None => groups.push((g, vec![e])),
-                }
-            }
-            let mut partial: Vec<(SideState, f64)> = vec![(SideState::default(), p_sub)];
-            for (_, choices) in groups {
-                let share = 1.0 / choices.len() as f64;
-                let mut next = Vec::new();
-                for (ss, p) in &partial {
-                    for e in &choices {
-                        match e {
-                            PoolMod2::Blocked(x) => {
-                                let mut s2 = ss.clone();
-                                s2.blocked.push(*x);
-                                next.push((s2, p * share));
-                            }
-                            PoolMod2::Hit(h) => {
-                                let m = t.requirements[h.req as usize].accepted[h.idx as usize];
-                                let pok = target::p_value_ok(b, t, h.req, m);
-                                for value_ok in [true, false] {
-                                    let pv = if value_ok { pok } else { 1.0 - pok };
-                                    if pv <= 0.0 {
-                                        continue;
-                                    }
-                                    let mut s2 = ss.clone();
-                                    s2.wanted.push(Hit { value_ok, ..*h });
-                                    next.push((s2, p * share * pv));
-                                }
-                            }
-                        }
-                    }
-                }
-                partial = next;
-            }
-            out.extend(partial);
+        if *pk > 0.0 {
+            draw_kept(
+                b,
+                t,
+                pool,
+                &mut used,
+                k,
+                SideState::default(),
+                *pk,
+                &mut out,
+            );
         }
     }
     out
+}
+
+/// Draw `left` more mods from the eligible entries of `pool` onto `ss` (see [`recombine_side`]).
+#[allow(clippy::too_many_arguments)]
+fn draw_kept(
+    b: &Bundle,
+    t: &Target,
+    pool: &[PoolMod2],
+    used: &mut [bool],
+    left: usize,
+    ss: SideState,
+    p: f64,
+    out: &mut Vec<(SideState, f64)>,
+) {
+    let eligible: Vec<usize> = (0..pool.len()).filter(|&i| !used[i]).collect();
+    if left == 0 || eligible.is_empty() {
+        out.push((ss, p));
+        return;
+    }
+    let share = p / eligible.len() as f64;
+    for &i in &eligible {
+        let group = entry_group(t, &pool[i]);
+        let same: Vec<usize> = eligible
+            .iter()
+            .copied()
+            .filter(|&j| entry_group(t, &pool[j]) == group)
+            .collect();
+        for &j in &same {
+            used[j] = true;
+        }
+        match pool[i] {
+            PoolMod2::Blocked(x) => {
+                let mut s2 = ss.clone();
+                s2.blocked.push(x);
+                draw_kept(b, t, pool, used, left - 1, s2, share, out);
+            }
+            PoolMod2::Hit(h) => {
+                let m = t.requirements[h.req as usize].accepted[h.idx as usize];
+                let pok = target::p_value_ok(b, t, h.req, m);
+                for value_ok in [true, false] {
+                    let pv = if value_ok { pok } else { 1.0 - pok };
+                    if pv <= 0.0 {
+                        continue;
+                    }
+                    let mut s2 = ss.clone();
+                    s2.wanted.push(Hit { value_ok, ..h });
+                    draw_kept(b, t, pool, used, left - 1, s2, share * pv, out);
+                }
+            }
+        }
+        for &j in &same {
+            used[j] = false;
+        }
+    }
 }
 
 fn side_pool(a: &SideState, c: &SideState) -> Vec<PoolMod2> {
@@ -696,8 +701,8 @@ fn side_pool(a: &SideState, c: &SideState) -> Vec<PoolMod2> {
 /// Why two items cannot be recombined, or `None` when they can.
 pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'static str> {
     use crate::item::Rarity;
-    if a.rarity != Rarity::Rare || c.rarity != Rarity::Rare {
-        return Some("both items must be rare");
+    if [a, c].iter().any(|s| s.rarity == Rarity::Normal) {
+        return Some("both items must be magic or rare");
     }
     if b.base_at(a.base).class != b.base_at(c.base).class {
         return Some("both items must be the same item class");
@@ -711,12 +716,16 @@ pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'s
     None
 }
 
-/// The Recombinator: base 1/2 each, ilvl `min(higher, average + 2)`, influence/catalyst/lock lost,
-/// and per side `N` of the pooled mods kept (`RECOMBINE_MOD_COUNT`), chosen uniformly.
+/// The Recombinator on two magic or rare items: base 1/2 each, ilvl `min(higher, average + 2)`,
+/// influence/catalyst/lock lost, and per side `N` of the pooled mods kept ([`recombine_side`]).
+/// From two magic items the result is magic when its mods fit a magic item of that base (normal
+/// with none); otherwise, and whenever an input is rare, it is rare.
 pub fn recombine(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<(ItemState, f64)> {
+    use crate::item::Rarity;
     if recombine_blocker(b, a, c).is_some() {
         return Vec::new();
     }
+    let both_magic = a.rarity == Rarity::Magic && c.rarity == Rarity::Magic;
     let ilvl = {
         let (x, y) = (a.ilvl as u16, c.ilvl as u16);
         x.max(y).min((x + y) / 2 + 2) as u8
@@ -732,9 +741,18 @@ pub fn recombine(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<(I
     for base in [a.base, c.base] {
         for (ps, pp) in &prefixes {
             for (ss, sp) in &suffixes {
-                let mut st = ItemState::new(base, ilvl, crate::item::Rarity::Rare, influences);
+                let mut st = ItemState::new(base, ilvl, Rarity::Magic, influences);
                 st.prefixes = ps.clone();
                 st.suffixes = ss.clone();
+                let (np, ns) = (ps.slots_used(), ss.slots_used());
+                let (mp, ms) = st.caps(b);
+                st.rarity = if !both_magic || np > mp || ns > ms {
+                    Rarity::Rare
+                } else if np + ns == 0 {
+                    Rarity::Normal
+                } else {
+                    Rarity::Magic
+                };
                 outs.push((st, 0.5 * pp * sp));
             }
         }

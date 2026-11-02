@@ -249,8 +249,8 @@ pub const CONTRACTS: [Contract; 20] = [
     Contract {
         id: "recombine",
         name: "Recombinator",
-        requires: pre(RARE, false, None, 0),
-        effect: eff(R3, R3, RARE),
+        requires: pre(None, false, None, 0),
+        effect: eff(R3, R3, None),
         seconds: 20.0,
     },
 ];
