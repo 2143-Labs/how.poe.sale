@@ -1101,6 +1101,9 @@ pub struct StepJson {
 #[serde(rename_all = "camelCase")]
 pub struct ExitJson {
     pub good: Option<String>,
+    /// A good without a sell price that this outcome satisfies (counted at 0).
+    #[serde(default)]
+    pub unpriced: Option<String>,
     pub p: f64,
     pub label: String,
     /// The outcome as a good's target ("make this brick a good").
@@ -1371,7 +1374,13 @@ fn exit_target(b: &Bundle, m: &Market, s: &ItemState) -> TargetJson {
     for side in Side::ALL {
         for hit in &s.side(side).wanted {
             if let Some(r) = m.universe.requirements.get(hit.req as usize) {
-                requirements.push(requirement_json(b, r));
+                // The brick wants the mod it holds, not every mod the universe accepts in this group.
+                let mut one = r.clone();
+                if let Some(id) = r.accepted.get(hit.idx as usize) {
+                    one.accepted = vec![*id];
+                    one.label = b.mod_at(*id).text.clone();
+                }
+                requirements.push(requirement_json(b, &one));
             }
         }
     }
@@ -1389,6 +1398,7 @@ fn exit_target(b: &Bundle, m: &Market, s: &ItemState) -> TargetJson {
 fn exit_json(b: &Bundle, m: &Market, e: &market::Exit) -> ExitJson {
     ExitJson {
         good: e.good.map(|g| m.goods[g].id.clone()),
+        unpriced: e.unpriced.map(|g| m.goods[g].id.clone()),
         p: e.p,
         label: match (e.good, e.unpriced) {
             (Some(g), _) => m.goods[g].name.clone(),

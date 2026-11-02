@@ -54,6 +54,7 @@ export function Market() {
   const positions = useAppStore((state) => state.positions)
   const setPosition = useAppStore((state) => state.setPosition)
   const setFocus = useAppStore((state) => state.setFocus)
+  const addBrickGood = useAppStore((state) => state.addBrickGood)
   const selectGood = useAppStore((state) => state.selectGood)
   const selectedGood = useAppStore((state) => state.selectedGood)
 
@@ -100,10 +101,6 @@ export function Market() {
     (_event, edge) => {
       const processId = edge.data?.processId
       if (!processId) return
-      if (edge.data?.kind === 'craft') {
-        setFocus(processId)
-        return
-      }
       const value = solution?.market.processes.find((process) => process.id === processId) ?? null
       setOpenProcess(value)
     },
@@ -151,7 +148,17 @@ export function Market() {
       )}
       {openProcess && (
         <div className="process-card-wrap">
-          <RecipeCard process={openProcess} goods={goods} onHide={() => setOpenProcess(null)} />
+          <RecipeCard
+            process={openProcess}
+            goods={goods}
+            onHide={() => setOpenProcess(null)}
+            onOpenTree={
+              processes.some((p) => p.id === openProcess.id && 'craft' in p.kind)
+                ? () => setFocus(openProcess.id)
+                : undefined
+            }
+            onMakeBrick={(fromGoodId, name, target) => addBrickGood(fromGoodId, name, target)}
+          />
         </div>
       )}
     </div>

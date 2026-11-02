@@ -126,6 +126,17 @@ describe('market edits', () => {
     expect(state.selectedGood).toBe('brick-2')
   })
 
+  it('adds a pasted item as another good without replacing the market', () => {
+    const id = useAppStore.getState().addGoodFromDraft(draft)
+    const state = useAppStore.getState()
+    expect(id).toBe('good-1')
+    expect(state.root).toBe('main')
+    expect(state.goods.map((g) => g.id)).toEqual(['main', 'good-1'])
+    expect(state.goods[1].buy).toBeNull()
+    expect(state.goods[1].sell).toBeNull()
+    expect(state.selectedGood).toBe('good-1')
+  })
+
   it('drops the stale expansion when a good target is edited', () => {
     useAppStore.getState().useProcessProposal({ ...proposal, process: { ...proposal.process, expanded: ['goal'] } })
     const target = useAppStore.getState().goods[0].target

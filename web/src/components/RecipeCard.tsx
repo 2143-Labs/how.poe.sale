@@ -1,6 +1,6 @@
 import { processInputs } from '../market'
 import { formatChaos, formatDuration, formatProbability } from '../solution'
-import type { ExitJson, GoodJson, ProcessProposalJson, ProcessValueJson } from '../types'
+import type { ExitJson, GoodJson, ProblemTarget, ProcessProposalJson, ProcessValueJson } from '../types'
 
 interface RecipeCardProps {
   /** an evaluated process of the market solution */
@@ -10,8 +10,10 @@ interface RecipeCardProps {
   goods: GoodJson[]
   onUse?: (proposal: ProcessProposalJson) => void
   onHide?: () => void
+  /** a craft process: open its tree */
+  onOpenTree?: () => void
   /** clone a good's target into a new, unpriced brick good */
-  onMakeBrick?: (fromGoodId: string, name: string) => void
+  onMakeBrick?: (fromGoodId: string, name: string, target?: ProblemTarget) => void
 }
 
 function costText(cost: [string, number][]): string {
@@ -30,7 +32,7 @@ function ExitTable({
   rows: ExitJson[]
   output: string | null
   goods: GoodJson[]
-  onMakeBrick?: (fromGoodId: string, name: string) => void
+  onMakeBrick?: (fromGoodId: string, name: string, target?: ProblemTarget) => void
 }) {
   if (rows.length === 0) return null
   return (
@@ -48,14 +50,18 @@ function ExitTable({
         <tbody>
           {rows.map((row, index) => {
             const good = row.good ? goods.find((candidate) => candidate.id === row.good) : undefined
-            const isBrick = row.good !== output
+            // Only an outcome holding some tracked mod and not already a good can become one.
+            const isBrick =
+              row.good == null && !row.unpriced && (row.target == null || row.target.requirements.length > 0)
             return (
               <tr key={`${row.good ?? 'none'}|${index}`}>
                 <td>{row.label}</td>
                 <td>{formatProbability(row.p)}</td>
                 <td>
                   {row.good == null ? (
-                    <span className="hint">brick: unpriced</span>
+                    <span className="hint">
+                      {row.unpriced ? `${goods.find((g) => g.id === row.unpriced)?.name ?? row.unpriced}: needs a sell price` : 'brick: unpriced'}
+                    </span>
                   ) : (
                     <>
                       {good?.name ?? row.good}
@@ -66,7 +72,7 @@ function ExitTable({
                 </td>
                 <td>
                   {isBrick && onMakeBrick && output && (
-                    <button type="button" onClick={() => onMakeBrick(output, row.label)}>
+                    <button type="button" onClick={() => onMakeBrick(output, row.label, row.target)}>
                       Make brick a good
                     </button>
                   )}
@@ -85,7 +91,7 @@ function ExitTable({
  * outcome tables, and the cost statistics. Used both for a proposal (with
  * **Use**) and for a process already in the market.
  */
-export function RecipeCard({ process, proposal, goods, onUse, onHide, onMakeBrick }: RecipeCardProps) {
+export function RecipeCard({ process, proposal, goods, onUse, onHide, onOpenTree, onMakeBrick }: RecipeCardProps) {
   const source = process ?? null
   const kind = proposal
     ? 'recombine' in proposal.process.kind
@@ -184,6 +190,11 @@ export function RecipeCard({ process, proposal, goods, onUse, onHide, onMakeBric
         {proposal && onUse && (
           <button type="button" onClick={() => onUse(proposal)}>
             Use
+          </button>
+        )}
+        {onOpenTree && (
+          <button type="button" onClick={onOpenTree}>
+            Process tree
           </button>
         )}
         {onHide && (

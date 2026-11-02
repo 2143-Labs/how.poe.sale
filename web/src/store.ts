@@ -50,6 +50,8 @@ export interface AppState extends PersistedState {
   proposals: Record<string, ProcessProposalJson[]>
 
   applyDraft: (draft: TargetDraft) => void
+  /** Add the draft as another, unpriced good next to the current target. */
+  addGoodFromDraft: (draft: TargetDraft) => string | null
   setPrice: (key: string, value: number | null) => void
   resetPrices: () => void
   setDonors: (donors: Donor[]) => void
@@ -58,7 +60,7 @@ export interface AppState extends PersistedState {
   updateGoodTarget: (id: string, target: ProblemTarget) => void
   useProcessProposal: (proposal: ProcessProposalJson) => void
   removeProcess: (id: string) => void
-  addBrickGood: (fromGoodId: string, name: string) => string | null
+  addBrickGood: (fromGoodId: string, name: string, target?: ProblemTarget) => string | null
   setFocus: (processId: string | null) => void
   setView: (view: View) => void
   selectGood: (id: string | null) => void
@@ -255,6 +257,22 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })
   },
 
+  addGoodFromDraft: (draft) => {
+    const target = draftToTarget(draft)
+    if (!target) {
+      set({ notice: 'No base item was recognised in that text, so no good was added.' })
+      return null
+    }
+    const used = new Set(get().goods.map((good) => good.id))
+    let n = 1
+    while (used.has(`good-${n}`)) n += 1
+    const id = `good-${n}`
+    const label = target.requirements.map((r) => r.label).join(', ')
+    const good: GoodJson = { id, name: label || goodName(target), target, buy: null, sell: null }
+    set((state) => ({ goods: [...state.goods, good], selectedGood: id, view: 'market' }))
+    return id
+  },
+
   setPrice: (key, value) => set((state) => ({ prices: withValue(state.prices, key, value) })),
   resetPrices: () => set({ prices: { ...DEFAULT_PRICES } }),
   setDonors: (donors) => set({ donors }),
@@ -309,7 +327,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       view: state.focus === id ? 'market' : state.view,
     })),
 
-  addBrickGood: (fromGoodId, name) => {
+  addBrickGood: (fromGoodId, name, target) => {
     const source = get().goods.find((good) => good.id === fromGoodId)
     if (!source) return null
     const used = new Set(get().goods.map((good) => good.id))
@@ -319,7 +337,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const good: GoodJson = {
       id,
       name: name.trim() !== '' ? name.trim() : `Brick ${n}`,
-      target: cloneTarget(source.target),
+      target: cloneTarget(target ?? source.target),
       buy: null,
       sell: null,
     }

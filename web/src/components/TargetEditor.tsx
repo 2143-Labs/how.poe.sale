@@ -236,6 +236,7 @@ interface TargetEditorProps {
 export function TargetEditor({ parse, modTiers }: TargetEditorProps) {
   const target = useAppStore(rootTarget)
   const applyDraft = useAppStore((state) => state.applyDraft)
+  const addGoodFromDraft = useAppStore((state) => state.addGoodFromDraft)
   const [text, setText] = useState('')
   // Seeded from the root good so its rows stay editable after a reload.
   const [draft, setDraft] = useState<TargetDraft | null>(() => (target ? targetToDraft(target) : null))
@@ -332,6 +333,16 @@ export function TargetEditor({ parse, modTiers }: TargetEditorProps) {
             <button type="button" disabled={!draft.base || unchanged} onClick={() => apply(draft)} title={applyTitle}>
               Apply target
             </button>
+            {target && (
+              <button
+                type="button"
+                disabled={!draft.base || unchanged}
+                onClick={() => addGoodFromDraft(draft)}
+                title="keep the current target and add this item as another good (a brick or an input) to price"
+              >
+                Add as good
+              </button>
+            )}
             <button type="button" onClick={() => setDraft(target ? targetToDraft(target) : null)}>
               {target ? 'Revert edits' : 'Discard draft'}
             </button>

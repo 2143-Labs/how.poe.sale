@@ -248,8 +248,12 @@ export interface StepJson {
 export interface ExitJson {
   /** good id the outcome satisfies (output or a brick good); `null` = nothing priced */
   good: string | null
+  /** an unpriced good this outcome satisfies (counted at 0) */
+  unpriced?: string | null
   p: number
   label: string
+  /** the outcome as an item target, for "Make brick a good" */
+  target?: ProblemTarget
 }
 
 export type ProcessStatus = 'Ready' | 'Unreachable' | 'NeedsInput' | 'Error'

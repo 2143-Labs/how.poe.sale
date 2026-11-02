@@ -371,7 +371,15 @@ function normalizeExit(raw: unknown): ExitJson | null {
   const e = asRecord(raw)
   const p = asNumber(e.p)
   if (p == null) return null
-  return { good: typeof e.good === 'string' ? e.good : null, p, label: asString(e.label, 'other outcome') }
+  const target = asRecord(e.target)
+  return {
+    good: typeof e.good === 'string' ? e.good : null,
+    unpriced: typeof e.unpriced === 'string' ? e.unpriced : null,
+    p,
+    label: asString(e.label, 'other outcome'),
+    // The engine's TargetJson for this outcome; trusted as-is (it comes from the same wasm).
+    target: Array.isArray(target.requirements) ? (target as unknown as ProblemTarget) : undefined,
+  }
 }
 
 function normalizeStep(raw: unknown): StepJson | null {

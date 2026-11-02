@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { authoredProposal } from '../market'
 import { buildProblem, draftToTarget, targetToDraft } from '../problem'
 import { formatChaos } from '../solution'
@@ -59,13 +59,19 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
     [goods, processes, root, focus, prices, donors, authoredRecipes],
   )
 
+  // Proposals are evaluated against current values, so any market or price edit refreshes them.
+  const fetchKey = problem && selectedGood ? `${selectedGood}\u0000${JSON.stringify(problem)}` : null
+  const fetchedFor = useRef<string | null>(null)
   const cached = selectedGood ? proposals[selectedGood] : undefined
   useEffect(() => {
-    if (!problem || !selectedGood || cached) return
+    if (!problem || !selectedGood || !fetchKey) return
+    if (cached && fetchedFor.current === fetchKey) return
     let cancelled = false
     proposeProcesses(problem, selectedGood)
       .then((list) => {
-        if (!cancelled) setProposals(selectedGood, list)
+        if (cancelled) return
+        fetchedFor.current = fetchKey
+        setProposals(selectedGood, list)
       })
       .catch(() => {
         // the engine reports why a proposal list is empty through `reason`
@@ -73,7 +79,7 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
     return () => {
       cancelled = true
     }
-  }, [problem, selectedGood, cached, proposeProcesses, setProposals])
+  }, [problem, selectedGood, fetchKey, cached, proposeProcesses, setProposals])
 
   const authored = useMemo(() => {
     if (!good) return []
@@ -218,7 +224,7 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
               proposal={proposal}
               goods={goods}
               onUse={(chosen) => useProcessProposal(chosen)}
-              onMakeBrick={(fromGoodId, name) => addBrickGood(fromGoodId, name)}
+              onMakeBrick={(fromGoodId, name, target) => addBrickGood(fromGoodId, name, target)}
             />
           ))}
         </div>
