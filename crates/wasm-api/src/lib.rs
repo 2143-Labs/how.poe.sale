@@ -20,19 +20,25 @@ impl Bridge {
         format!("{} / data {}", env!("CARGO_PKG_VERSION"), self.bundle.patch)
     }
 
-    /// Step 8 replaces this with `poe1::api::solve`.
-    pub fn solve(&self, _problem_json: &str) -> Result<String, JsValue> {
-        Ok(r#"{"version":1}"#.into())
+    /// `Problem` JSON in, `Solution` JSON out. Only malformed JSON throws; solver errors are
+    /// reported inside the solution.
+    pub fn solve(&self, problem_json: &str) -> Result<String, JsValue> {
+        let problem: poe1::api::Problem = serde_json::from_str(problem_json).map_err(js_error)?;
+        let solution = poe1::api::solve(&self.bundle, &problem);
+        serde_json::to_string(&solution).map_err(js_error)
     }
 
-    /// Step 5 replaces this with the tooltip parser.
-    pub fn parse_target(&self, _text: &str) -> Result<String, JsValue> {
-        Ok("{}".into())
+    /// Pasted tooltip text -> `TargetDraft` JSON.
+    pub fn parse_target(&self, text: &str) -> Result<String, JsValue> {
+        let draft = poe1::api::parse_target_api(&self.bundle, text);
+        serde_json::to_string(&draft).map_err(js_error)
     }
 
-    /// Step 8 replaces this with the influence-mod list for the donor editor.
-    pub fn influence_mods(&self, _base: &str, _influence: &str) -> Result<String, JsValue> {
-        Ok("[]".into())
+    /// JSON `[{"id","text","side"}]` of the influence mods that spawn on `base` with exactly
+    /// `influence`.
+    pub fn influence_mods(&self, base: &str, influence: &str) -> Result<String, JsValue> {
+        let mods = poe1::api::influence_mods(&self.bundle, base, influence).map_err(js_error)?;
+        serde_json::to_string(&mods).map_err(js_error)
     }
 }
 
