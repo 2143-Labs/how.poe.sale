@@ -100,11 +100,80 @@ pub struct PoolEntry {
     pub influence: bool,
 }
 
+/// Changes a reforge makes to the pool beyond the filter: fossil weights and fossil-added mods.
+#[derive(Clone, Debug, Default)]
+pub struct PoolMod {
+    /// Combined fossil multiplier per implicit tag (`0.0` blocks); empty means no fossils.
+    pub tag_multipliers: Vec<(String, f64)>,
+    /// Fossil-only mods the fossils add to the pool.
+    pub added: Vec<u32>,
+}
+
+impl PoolMod {
+    /// Fossil weights combine additively per tag: each fossil adds `weight / 100 - 1` to a base
+    /// of 1 (so 1000 is ×10 alone), and any fossil listing a tag at 0 blocks it.
+    pub fn fossils(b: &Bundle, fossils: &[u16]) -> PoolMod {
+        let mut mult: Vec<(String, f64, bool)> = Vec::new();
+        let mut added: Vec<u32> = Vec::new();
+        for f in fossils {
+            let Some(fossil) = b.fossils.get(*f as usize) else {
+                continue;
+            };
+            for (tag, weight) in &fossil.weights {
+                let slot = match mult.iter().position(|(t, _, _)| t == tag) {
+                    Some(i) => i,
+                    None => {
+                        mult.push((tag.clone(), 1.0, false));
+                        mult.len() - 1
+                    }
+                };
+                if *weight == 0 {
+                    mult[slot].2 = true;
+                } else {
+                    mult[slot].1 += *weight as f64 / 100.0 - 1.0;
+                }
+            }
+            for id in &fossil.added_mods {
+                if let Some(i) = b.mod_by_id(id)
+                    && !added.contains(&i)
+                {
+                    added.push(i);
+                }
+            }
+        }
+        PoolMod {
+            tag_multipliers: mult
+                .into_iter()
+                .map(|(t, m, blocked)| (t, if blocked { 0.0 } else { m.max(0.0) }))
+                .collect(),
+            added,
+        }
+    }
+
+    fn multiplier(&self, m: &ModData) -> f64 {
+        let mut out = 1.0;
+        for (tag, factor) in &self.tag_multipliers {
+            if m.implicit_tags_sorted.binary_search(tag).is_ok() {
+                out *= factor;
+            }
+        }
+        out
+    }
+}
+
 /// Every mod that can spawn on the side under the filter, in bundle order, with its effective weight.
 pub fn pool(b: &Bundle, f: &PoolFilter) -> Vec<PoolEntry> {
+    pool_with(b, f, &PoolMod::default())
+}
+
+/// [`pool`] with fossil weights applied and fossil-only mods admitted when a fossil adds them.
+pub fn pool_with(b: &Bundle, f: &PoolFilter, pm: &PoolMod) -> Vec<PoolEntry> {
     let mut out = Vec::new();
     for (i, m) in b.mods.iter().enumerate() {
         if m.crafted || m.generation != f.side || m.ilvl > f.ilvl as u16 {
+            continue;
+        }
+        if m.fossil_only && !pm.added.contains(&(i as u32)) {
             continue;
         }
         if f.excluded_groups.contains(&m.group) {
@@ -117,7 +186,10 @@ pub fn pool(b: &Bundle, f: &PoolFilter) -> Vec<PoolEntry> {
         if base == 0 {
             continue;
         }
-        let mut weight = base as f64;
+        let mut weight = base as f64 * pm.multiplier(m);
+        if weight <= 0.0 {
+            continue;
+        }
         if CATALYST_AFFECTS_WEIGHTS
             && let Some((tags, quality)) = f.catalyst
             && m.implicit_tags_sorted
@@ -134,6 +206,159 @@ pub fn pool(b: &Bundle, f: &PoolFilter) -> Vec<PoolEntry> {
         });
     }
     out
+}
+
+/// How a mod can reach an item: the mechanic that can place it there.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize)]
+pub enum ModSource {
+    /// Rolls naturally on the item as it is.
+    Native,
+    /// Rolls once the item gains this influence bit index (0 Shaper .. 5 Warlord).
+    Influence(u8),
+    /// Placed by this essence (`Bundle::essences` index).
+    Essence(u16),
+    /// Added to the pool by this fossil (`Bundle::fossils` index).
+    Fossil(u16),
+    /// A crafting-bench option for the item's class.
+    Bench,
+    /// Rolls on this other base of the same item class; reaches this item only by recombining.
+    Foreign(u16),
+}
+
+impl ModSource {
+    /// Sort rank for recipe ordering: the scarcer mechanic first, plain rolling last.
+    pub fn rank(self) -> u8 {
+        match self {
+            ModSource::Essence(_) => 0,
+            ModSource::Influence(_) => 1,
+            ModSource::Fossil(_) => 2,
+            ModSource::Foreign(_) => 3,
+            ModSource::Bench => 4,
+            ModSource::Native => 5,
+        }
+    }
+
+    /// Display name, as the target editor's badge shows it.
+    pub fn describe(self, b: &Bundle) -> String {
+        match self {
+            ModSource::Native => "Native".to_string(),
+            ModSource::Influence(bit) => format!(
+                "{} influence",
+                INFLUENCE_NAMES
+                    .get(bit as usize)
+                    .copied()
+                    .unwrap_or("Unknown")
+            ),
+            ModSource::Essence(e) => format!(
+                "Essence: {}",
+                b.essences
+                    .get(e as usize)
+                    .map(|x| x.name.as_str())
+                    .unwrap_or("essence")
+            ),
+            ModSource::Fossil(f) => format!(
+                "Fossil: {}",
+                b.fossils
+                    .get(f as usize)
+                    .map(|x| x.name.as_str())
+                    .unwrap_or("fossil")
+            ),
+            ModSource::Bench => "Bench".to_string(),
+            ModSource::Foreign(base) => {
+                format!("Recombine with {}", b.base_at(base).name)
+            }
+        }
+    }
+}
+
+/// Every mechanic that can place `mod_index` on `base` carrying `influences`, in [`ModSource`]
+/// order. Empty means no modelled mechanic can; only then is a requirement "not understood".
+pub fn sources(b: &Bundle, base: u16, influences: u8, mod_index: u32) -> Vec<ModSource> {
+    SourceCtx::new(b, base, influences).sources(mod_index)
+}
+
+/// The tag sets [`sources`] compares against, built once per (base, influences).
+pub struct SourceCtx<'a> {
+    b: &'a Bundle,
+    base: u16,
+    class: String,
+    tags: TagSet,
+    /// (influence bit index, tags with that influence added) for influences the item lacks and
+    /// its class supports.
+    with_influence: Vec<(u8, TagSet)>,
+    /// Other bases of the same class, with their plain tags.
+    siblings: Vec<(u16, TagSet)>,
+}
+
+impl<'a> SourceCtx<'a> {
+    pub fn new(b: &'a Bundle, base: u16, influences: u8) -> SourceCtx<'a> {
+        let class = b.base_at(base).class.clone();
+        let tags = b.item_tags(base, influences);
+        let with_influence = (0..INFLUENCE_NAMES.len() as u8)
+            .filter(|bit| influences & (1 << bit) == 0)
+            .map(|bit| (bit, b.item_tags(base, influences | (1 << bit))))
+            .filter(|(_, with)| *with != tags)
+            .collect();
+        let siblings = (0..b.bases.len() as u16)
+            .filter(|i| *i != base && b.base_at(*i).class == class)
+            .map(|i| (i, b.item_tags(i, 0)))
+            .collect();
+        SourceCtx {
+            b,
+            base,
+            class,
+            tags,
+            with_influence,
+            siblings,
+        }
+    }
+
+    pub fn base(&self) -> u16 {
+        self.base
+    }
+
+    pub fn sources(&self, mod_index: u32) -> Vec<ModSource> {
+        let b = self.b;
+        let m = b.mod_at(mod_index);
+        let mut out = Vec::new();
+        let natural = !m.crafted && !m.fossil_only;
+        let native = natural && spawn_weight(m, &self.tags) > 0;
+        if native {
+            out.push(ModSource::Native);
+        }
+        if natural && !native {
+            for (bit, with) in &self.with_influence {
+                if spawn_weight(m, with) > 0 {
+                    out.push(ModSource::Influence(*bit));
+                }
+            }
+        }
+        for e in b.essences_for_mod(mod_index, &self.class) {
+            out.push(ModSource::Essence(e));
+        }
+        // A fossil adds its mods to the pool, but they still need this item's tags to roll.
+        if m.fossil_only && spawn_weight(m, &self.tags) > 0 {
+            for f in b.fossils_adding(mod_index) {
+                out.push(ModSource::Fossil(f));
+            }
+        }
+        if b.bench_by_mod
+            .get(&m.id)
+            .is_some_and(|e| b.bench[*e as usize].classes.contains(&self.class))
+        {
+            out.push(ModSource::Bench);
+        }
+        if natural
+            && !native
+            && let Some((other, _)) = self
+                .siblings
+                .iter()
+                .find(|(_, tags)| spawn_weight(m, tags) > 0)
+        {
+            out.push(ModSource::Foreign(*other));
+        }
+        out
+    }
 }
 
 #[cfg(test)]

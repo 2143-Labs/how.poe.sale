@@ -111,6 +111,10 @@ pub struct ItemState {
     pub suffixes: SideState,
     /// bit0 Prefixes Cannot Be Changed, bit1 Suffixes Cannot Be Changed
     pub lock: u8,
+    /// A Craicic Chimeral imprint of this item's (prefixes, suffixes), taken while it was magic.
+    /// Omitted from the key when absent, so states without an imprint keep their v1 keys.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub imprint: Option<Box<(SideState, SideState)>>,
 }
 
 pub const INFLUENCE_NAMES: [&str; 6] = [
@@ -138,6 +142,7 @@ impl ItemState {
             prefixes: SideState::default(),
             suffixes: SideState::default(),
             lock: 0,
+            imprint: None,
         }
     }
 

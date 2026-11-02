@@ -8,7 +8,7 @@ use crate::data::Bundle;
 use crate::item::{Blocked, Hit, ItemState, Side, SideState};
 use crate::registry::{self, DonorSpec};
 use crate::target::{self, Target};
-use crate::weights::{PoolFilter, pool};
+use crate::weights::{PoolFilter, PoolMod, pool_with};
 
 /// Whether any currency use consumes a catalyst's quality (user-stated 3.29 behaviour).
 pub const CATALYST_CONSUMED_BY_CURRENCY: bool = true;
@@ -35,6 +35,28 @@ pub enum Action {
     },
     Combine {
         donor: u8,
+    },
+    /// Normal -> magic with one mod.
+    Transmute,
+    /// Magic -> magic, its mods re-rolled; the mod count is kept.
+    Alteration,
+    /// Magic with a free slot -> one more mod.
+    Augmentation,
+    /// Magic -> rare with one more mod.
+    Regal,
+    /// Removes every mod on unlocked sides and the lock.
+    Scour,
+    /// Craicic Chimeral: stores the magic item's mods.
+    Imprint,
+    /// The item becomes its imprint again; the imprint is spent.
+    Restore,
+    /// Reforge as a rare with the essence's mod placed first (`essence` indexes `Bundle::essences`).
+    Essence {
+        essence: u16,
+    },
+    /// Reforge as a rare with the fossils' weights (`fossils` index `Bundle::fossils`, sorted).
+    Fossil {
+        fossils: Vec<u16>,
     },
 }
 
@@ -130,7 +152,7 @@ fn present_groups(t: &Target, s: &ItemState) -> Vec<u16> {
     groups
 }
 
-fn build_model(b: &Bundle, t: &Target, s: &ItemState, excluded: &[u16]) -> Model {
+fn build_model(b: &Bundle, t: &Target, s: &ItemState, excluded: &[u16], pm: &PoolMod) -> Model {
     let tags = b.item_tags(s.base, s.influences);
     let mut model = Model {
         entries: Vec::new(),
@@ -152,7 +174,7 @@ fn build_model(b: &Bundle, t: &Target, s: &ItemState, excluded: &[u16]) -> Model
         if free == 0 {
             continue;
         }
-        let entries = pool(
+        let entries = pool_with(
             b,
             &PoolFilter {
                 side,
@@ -162,6 +184,7 @@ fn build_model(b: &Bundle, t: &Target, s: &ItemState, excluded: &[u16]) -> Model
                 influence_only: false,
                 catalyst,
             },
+            pm,
         );
         for e in entries {
             let req = registry::requirement_for(t, side, e.group);
@@ -359,8 +382,30 @@ pub fn fill(
     n_new: u8,
     first_influence_only: bool,
 ) -> Vec<(ItemState, f64)> {
-    let excluded = present_groups(t, s);
-    let mut model = build_model(b, t, s, &excluded);
+    fill_with(
+        b,
+        t,
+        s,
+        n_new,
+        first_influence_only,
+        &PoolMod::default(),
+        &[],
+    )
+}
+
+/// [`fill`] over a fossil-modified pool, with extra groups (an untracked forced mod's) excluded.
+fn fill_with(
+    b: &Bundle,
+    t: &Target,
+    s: &ItemState,
+    n_new: u8,
+    first_influence_only: bool,
+    pm: &PoolMod,
+    extra_excluded: &[u16],
+) -> Vec<(ItemState, f64)> {
+    let mut excluded = present_groups(t, s);
+    excluded.extend_from_slice(extra_excluded);
+    let mut model = build_model(b, t, s, &excluded, pm);
     let mut out = Vec::new();
     draw_all(
         b,
@@ -384,8 +429,31 @@ fn reforge(
     respect_locks: bool,
     first_influence_only: bool,
 ) -> Vec<(ItemState, f64)> {
+    reforge_with(
+        b,
+        t,
+        s,
+        respect_locks,
+        first_influence_only,
+        &PoolMod::default(),
+        None,
+    )
+}
+
+/// A rare reforge: unlocked sides cleared, the lock removed, then 4/5/6 mods in total (8:3:1),
+/// the `forced` mod (an essence's) placed first, the rest drawn from the `pm`-modified pool.
+fn reforge_with(
+    b: &Bundle,
+    t: &Target,
+    s: &ItemState,
+    respect_locks: bool,
+    first_influence_only: bool,
+    pm: &PoolMod,
+    forced: Option<u32>,
+) -> Vec<(ItemState, f64)> {
     let mut base = s.clone();
     base.lock = 0;
+    base.rarity = crate::item::Rarity::Rare;
     let mut kept = 0u8;
     for side in Side::ALL {
         if respect_locks && registry::side_locked(s, side) {
@@ -394,13 +462,281 @@ fn reforge(
             *base.side_mut(side) = SideState::default();
         }
     }
+    let starts: Vec<(ItemState, f64, Vec<u16>)> = match forced {
+        Some(m) => {
+            kept += 1;
+            place_mod(b, t, &base, m)
+                .into_iter()
+                .map(|(st, p)| (st, p, vec![b.mod_at(m).group]))
+                .collect()
+        }
+        None => vec![(base.clone(), 1.0, Vec::new())],
+    };
     let (cap_p, cap_s) = base.caps(b);
     let capacity = (cap_p + cap_s).saturating_sub(kept);
     let mut outs = Vec::new();
-    for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
-        let n_new = k.saturating_sub(kept).min(capacity);
-        for (state, p) in fill(b, t, &base, n_new, first_influence_only) {
-            outs.push((state, p * weight));
+    for (start, p_start, excluded) in &starts {
+        for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
+            let n_new = k.saturating_sub(kept).min(capacity);
+            for (state, p) in fill_with(b, t, start, n_new, first_influence_only, pm, excluded) {
+                outs.push((state, p * weight * p_start));
+            }
+        }
+    }
+    finish(false, outs)
+}
+
+/// `s` with one specific mod added on its own side: a hit (its value rolled), a blocked tier, or an
+/// untracked mod.
+fn place_mod(b: &Bundle, t: &Target, s: &ItemState, mod_index: u32) -> Vec<(ItemState, f64)> {
+    let m = b.mod_at(mod_index);
+    let side = m.generation;
+    let mut out = Vec::new();
+    match registry::requirement_for(t, side, m.group) {
+        Some(req) => match accepted_position(t, req, mod_index) {
+            Some(idx) => {
+                let pok = target::p_value_ok(b, t, req, mod_index);
+                for value_ok in [true, false] {
+                    let p = if value_ok { pok } else { 1.0 - pok };
+                    if p <= 0.0 {
+                        continue;
+                    }
+                    let mut st = s.clone();
+                    st.side_mut(side).wanted.push(Hit { req, idx, value_ok });
+                    out.push((st, p));
+                }
+            }
+            None => {
+                let mut st = s.clone();
+                st.side_mut(side).blocked.push(Blocked {
+                    group: m.group,
+                    influence: m.influence,
+                });
+                out.push((st, 1.0));
+            }
+        },
+        None => {
+            let mut st = s.clone();
+            st.side_mut(side).untracked += 1;
+            if m.influence {
+                st.side_mut(side).untracked_influenced += 1;
+            }
+            out.push((st, 1.0));
+        }
+    }
+    out
+}
+
+// ------------------------------------------------------------------ normal and magic crafts
+
+fn cleared(s: &ItemState) -> ItemState {
+    let mut st = s.clone();
+    st.prefixes = SideState::default();
+    st.suffixes = SideState::default();
+    st.lock = 0;
+    st
+}
+
+fn transmute(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut st = cleared(s);
+    st.rarity = crate::item::Rarity::Magic;
+    fill(b, t, &st, 1, false)
+}
+
+/// The mod count is kept: a one-mod item re-rolls to one mod, a two-mod item to two.
+fn alteration(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
+    let n = s.mod_count().clamp(1, 2);
+    fill(b, t, &cleared(s), n, false)
+}
+
+fn regal(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut st = s.clone();
+    st.rarity = crate::item::Rarity::Rare;
+    fill(b, t, &st, 1, false)
+}
+
+/// Unlocked sides and the lock go; an item left with no mods becomes normal.
+fn scour(s: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut st = s.clone();
+    for side in Side::ALL {
+        if !registry::side_locked(s, side) {
+            *st.side_mut(side) = SideState::default();
+        }
+    }
+    st.lock = 0;
+    if st.mod_count() == 0 {
+        st.rarity = crate::item::Rarity::Normal;
+    }
+    vec![(st, 1.0)]
+}
+
+fn imprint(s: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut st = s.clone();
+    st.imprint = Some(Box::new((s.prefixes.clone(), s.suffixes.clone())));
+    vec![(st, 1.0)]
+}
+
+fn restore(s: &ItemState) -> Vec<(ItemState, f64)> {
+    let Some(imp) = &s.imprint else {
+        return vec![(s.clone(), 1.0)];
+    };
+    let mut st = s.clone();
+    st.prefixes = imp.0.clone();
+    st.suffixes = imp.1.clone();
+    st.rarity = crate::item::Rarity::Magic;
+    st.lock = 0;
+    st.imprint = None;
+    vec![(st, 1.0)]
+}
+
+// ------------------------------------------------------------------ recombine (two items)
+
+#[derive(Clone, Copy, PartialEq)]
+enum PoolMod2 {
+    Hit(Hit),
+    Blocked(Blocked),
+}
+
+fn entry_group(t: &Target, e: &PoolMod2) -> u16 {
+    match e {
+        PoolMod2::Hit(h) => t.requirements[h.req as usize].group,
+        PoolMod2::Blocked(x) => x.group,
+    }
+}
+
+/// Every k-subset of `0..n`, in lexicographic order.
+fn subsets(n: usize, k: usize) -> Vec<Vec<usize>> {
+    let mut out = Vec::new();
+    let mut cur = Vec::with_capacity(k);
+    fn rec(start: usize, n: usize, k: usize, cur: &mut Vec<usize>, out: &mut Vec<Vec<usize>>) {
+        if cur.len() == k {
+            out.push(cur.clone());
+            return;
+        }
+        for i in start..n {
+            cur.push(i);
+            rec(i + 1, n, k, cur, out);
+            cur.pop();
+        }
+    }
+    rec(0, n, k, &mut cur, &mut out);
+    out
+}
+
+/// Distribution of one side of a recombined item: (side state, probability).
+fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, f64)> {
+    let n = pool.len();
+    if n == 0 {
+        return vec![(SideState::default(), 1.0)];
+    }
+    let row = registry::RECOMBINE_MOD_COUNT[n.min(6) - 1];
+    let mut out: Vec<(SideState, f64)> = Vec::new();
+    for (k, pk) in row.iter().enumerate() {
+        if *pk <= 0.0 || k > n {
+            continue;
+        }
+        let subs = subsets(n, k);
+        let p_sub = pk / subs.len() as f64;
+        for sub in subs {
+            // Entries of one group collapse to one mod; each duplicate is the survivor equally often.
+            let mut groups: Vec<(u16, Vec<PoolMod2>)> = Vec::new();
+            for i in sub {
+                let e = pool[i];
+                let g = entry_group(t, &e);
+                match groups.iter_mut().find(|(x, _)| *x == g) {
+                    Some((_, v)) => v.push(e),
+                    None => groups.push((g, vec![e])),
+                }
+            }
+            let mut partial: Vec<(SideState, f64)> = vec![(SideState::default(), p_sub)];
+            for (_, choices) in groups {
+                let share = 1.0 / choices.len() as f64;
+                let mut next = Vec::new();
+                for (ss, p) in &partial {
+                    for e in &choices {
+                        match e {
+                            PoolMod2::Blocked(x) => {
+                                let mut s2 = ss.clone();
+                                s2.blocked.push(*x);
+                                next.push((s2, p * share));
+                            }
+                            PoolMod2::Hit(h) => {
+                                let m = t.requirements[h.req as usize].accepted[h.idx as usize];
+                                let pok = target::p_value_ok(b, t, h.req, m);
+                                for value_ok in [true, false] {
+                                    let pv = if value_ok { pok } else { 1.0 - pok };
+                                    if pv <= 0.0 {
+                                        continue;
+                                    }
+                                    let mut s2 = ss.clone();
+                                    s2.wanted.push(Hit { value_ok, ..*h });
+                                    next.push((s2, p * share * pv));
+                                }
+                            }
+                        }
+                    }
+                }
+                partial = next;
+            }
+            out.extend(partial);
+        }
+    }
+    out
+}
+
+fn side_pool(a: &SideState, c: &SideState) -> Vec<PoolMod2> {
+    let mut pool = Vec::new();
+    for ss in [a, c] {
+        pool.extend(ss.wanted.iter().map(|h| PoolMod2::Hit(*h)));
+        pool.extend(ss.blocked.iter().map(|x| PoolMod2::Blocked(*x)));
+    }
+    pool
+}
+
+/// Why two items cannot be recombined, or `None` when they can.
+pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'static str> {
+    use crate::item::Rarity;
+    if a.rarity != Rarity::Rare || c.rarity != Rarity::Rare {
+        return Some("both items must be rare");
+    }
+    if b.base_at(a.base).class != b.base_at(c.base).class {
+        return Some("both items must be the same item class");
+    }
+    if a.prefixes.untracked + a.suffixes.untracked + c.prefixes.untracked + c.suffixes.untracked > 0
+    {
+        return Some(
+            "this item has mods the target does not track, so recombine cannot be modelled precisely",
+        );
+    }
+    None
+}
+
+/// The Recombinator: base 1/2 each, ilvl `min(higher, average + 2)`, influence/catalyst/lock lost,
+/// and per side `N` of the pooled mods kept (`RECOMBINE_MOD_COUNT`), chosen uniformly.
+pub fn recombine(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<(ItemState, f64)> {
+    if recombine_blocker(b, a, c).is_some() {
+        return Vec::new();
+    }
+    let ilvl = {
+        let (x, y) = (a.ilvl as u16, c.ilvl as u16);
+        x.max(y).min((x + y) / 2 + 2) as u8
+    };
+    let prefixes = recombine_side(b, t, &side_pool(&a.prefixes, &c.prefixes));
+    let suffixes = recombine_side(b, t, &side_pool(&a.suffixes, &c.suffixes));
+    let influences = if registry::RECOMBINE_KEEPS_INFLUENCE {
+        a.influences & c.influences
+    } else {
+        0
+    };
+    let mut outs = Vec::new();
+    for base in [a.base, c.base] {
+        for (ps, pp) in &prefixes {
+            for (ss, sp) in &suffixes {
+                let mut st = ItemState::new(base, ilvl, crate::item::Rarity::Rare, influences);
+                st.prefixes = ps.clone();
+                st.suffixes = ss.clone();
+                outs.push((st, 0.5 * pp * sp));
+            }
         }
     }
     finish(false, outs)
@@ -717,6 +1053,23 @@ pub fn outcomes(
             vec![(st, 1.0)]
         }
         Action::Combine { donor } => combine(b, t, donors, s, *donor),
+        Action::Transmute => transmute(b, t, s),
+        Action::Alteration => alteration(b, t, s),
+        Action::Augmentation => fill(b, t, s, 1, false),
+        Action::Regal => regal(b, t, s),
+        Action::Scour => scour(s),
+        Action::Imprint => imprint(s),
+        Action::Restore => restore(s),
+        Action::Essence { essence } => {
+            let class = &b.base_at(s.base).class;
+            match b.essence_mod(*essence, class) {
+                Some(m) => reforge_with(b, t, s, true, false, &PoolMod::default(), Some(m)),
+                None => Vec::new(),
+            }
+        }
+        Action::Fossil { fossils } => {
+            reforge_with(b, t, s, true, false, &PoolMod::fossils(b, fossils), None)
+        }
     };
     finish(consume_catalyst(a), outs)
 }
@@ -885,13 +1238,102 @@ pub fn predecessors(
         with_steering(&mut out, Action::Exalted, st, &catalysts);
     }
 
-    // Chaos: a fresh rare.
-    let fresh = ItemState::new(s.base, s.ilvl, s.rarity, s.influences);
-    with_steering(&mut out, Action::Chaos, fresh, &catalysts);
+    use crate::item::Rarity;
+    match s.rarity {
+        Rarity::Rare => {
+            // Chaos: a fresh rare.
+            let fresh = ItemState::new(s.base, s.ilvl, s.rarity, s.influences);
+            with_steering(&mut out, Action::Chaos, fresh, &catalysts);
+
+            // Essence: the hit is the essence's mod; the item before was a normal one.
+            let class = b.base_at(s.base).class.clone();
+            for (_, hit) in all_hits(s) {
+                let Some(m) = t
+                    .requirements
+                    .get(hit.req as usize)
+                    .and_then(|r| r.accepted.get(hit.idx as usize))
+                    .copied()
+                else {
+                    continue;
+                };
+                for e in b.essences_for_mod(m, &class) {
+                    let normal = ItemState::new(s.base, s.ilvl, Rarity::Normal, s.influences);
+                    out.push((Action::Essence { essence: e }, normal));
+                }
+                for f in b.fossils_adding(m) {
+                    let normal = ItemState::new(s.base, s.ilvl, Rarity::Normal, s.influences);
+                    out.push((Action::Fossil { fossils: vec![f] }, normal));
+                }
+            }
+
+            // Regal: a magic item with one fewer mod.
+            if s.mod_count() >= 1 && s.mod_count() <= 3 {
+                for (side, hit) in all_hits(s) {
+                    let mut st = s.clone();
+                    st.rarity = Rarity::Magic;
+                    st.side_mut(side).wanted.retain(|h| *h != hit);
+                    let (p, q) = (st.prefixes.slots_used(), st.suffixes.slots_used());
+                    if p <= 1 && q <= 1 {
+                        out.push((Action::Regal, st));
+                    }
+                }
+            }
+        }
+        Rarity::Magic => {
+            // Alteration from a magic item holding the same number of other mods.
+            let mut st = ItemState::new(s.base, s.ilvl, Rarity::Magic, s.influences);
+            let n = s.mod_count().clamp(1, 2);
+            st.prefixes.untracked = n.min(1);
+            if n == 2 {
+                st.suffixes.untracked = 1;
+            }
+            if st != *s {
+                out.push((Action::Alteration, st));
+            }
+            // Transmute from the normal base.
+            if s.mod_count() == 1 {
+                out.push((
+                    Action::Transmute,
+                    ItemState::new(s.base, s.ilvl, Rarity::Normal, s.influences),
+                ));
+            }
+            // Augmentation: one fewer mod.
+            if s.mod_count() == 2 {
+                for (side, hit) in all_hits(s) {
+                    let mut st = s.clone();
+                    st.side_mut(side).wanted.retain(|h| *h != hit);
+                    out.push((Action::Augmentation, st));
+                }
+            }
+        }
+        Rarity::Normal => {}
+    }
 
     let mut set: BTreeSet<(Action, ItemState)> = BTreeSet::new();
     for pair in out {
         set.insert(pair);
     }
-    set.into_iter().collect()
+    let mut list: Vec<(Action, ItemState)> = set
+        .into_iter()
+        .filter(|(a, pre)| {
+            registry::contract(a)
+                .requires
+                .rarity
+                .is_none_or(|r| r == pre.rarity)
+        })
+        .collect();
+    // Scarcer mechanics first (essence, influence, fossil, bench, then plain rolling); stable.
+    list.sort_by_key(|(a, _)| source_rank(a));
+    list
+}
+
+/// [`crate::weights::ModSource::rank`] of the mechanic an action delivers.
+fn source_rank(a: &Action) -> u8 {
+    match a {
+        Action::Essence { .. } => 0,
+        Action::InfluenceExalt { .. } | Action::Combine { .. } | Action::HarvestInfluenced => 1,
+        Action::Fossil { .. } => 2,
+        Action::BenchLock { .. } => 4,
+        _ => 5,
+    }
 }

@@ -1,13 +1,21 @@
-import { useState } from 'react'
-import { draftToTarget, targetSignature, targetToDraft } from '../problem'
-import { useAppStore } from '../store'
-import type { Requirement, Side, TargetDraft } from '../types'
-
-interface TargetEditorProps {
-  parse: (text: string) => Promise<TargetDraft>
-}
+import { useEffect, useState } from 'react'
+import { draftToTarget, minValueFor, targetSignature, targetToDraft, type TierMode } from '../problem'
+import { rootTarget, useAppStore } from '../store'
+import type { Requirement, Rarity, Side, TargetDraft, TierJson } from '../types'
 
 const SIDES: Side[] = ['Prefix', 'Suffix']
+const RARITIES: Rarity[] = ['Normal', 'Magic', 'Rare']
+
+export interface ModTierLookup {
+  (base: string, group: string, side: Side): Promise<TierJson[]>
+}
+
+interface RequirementsEditorProps {
+  draft: TargetDraft
+  onChange: (draft: TargetDraft) => void
+  /** the tier picker's data source; without it the rows keep their typed minimum */
+  modTiers?: ModTierLookup
+}
 
 function describeDraft(draft: TargetDraft): string {
   const parts = [draft.base ?? 'unknown base']
@@ -18,11 +26,218 @@ function describeDraft(draft: TargetDraft): string {
   return parts.join(' · ')
 }
 
-export function TargetEditor({ parse }: TargetEditorProps) {
-  const target = useAppStore((state) => state.target)
+type Mode = TierMode | 'custom'
+
+function modeFor(requirement: Requirement, tier: TierJson | undefined): Mode {
+  if (!tier) return 'custom'
+  if (requirement.minValue === tier.min) return 'any'
+  if (requirement.minValue === tier.max) return 'perfect'
+  return 'custom'
+}
+
+/**
+ * One requirement row: tier picker (fed by `mod_tiers`), roll mode and the
+ * sources badge that says how the mod is obtained at all.
+ */
+function RequirementRow({
+  requirement,
+  base,
+  modTiers,
+  onPatch,
+  onRemove,
+}: {
+  requirement: Requirement
+  base: string | null
+  modTiers?: ModTierLookup
+  onPatch: (change: Partial<Requirement>) => void
+  onRemove: () => void
+}) {
+  const [tiers, setTiers] = useState<TierJson[]>([])
+
+  useEffect(() => {
+    if (!modTiers || !base || requirement.group === '') {
+      setTiers([])
+      return
+    }
+    let cancelled = false
+    modTiers(base, requirement.group, requirement.side)
+      .then((list) => {
+        if (!cancelled) setTiers(list)
+      })
+      .catch(() => {
+        if (!cancelled) setTiers([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [base, modTiers, requirement.group, requirement.side])
+
+  const tier = tiers.find((candidate) => candidate.id === requirement.accepted[0]) ?? tiers[0]
+  const mode = modeFor(requirement, tier)
+  const source = requirement.sources?.[0]
+  const badge = source && source !== 'Native' ? `only from: ${source}` : null
+
+  function selectTier(id: string) {
+    const next = tiers.find((candidate) => candidate.id === id)
+    if (!next) return
+    onPatch({
+      accepted: [id],
+      label: next.text,
+      minValue: minValueFor(next, mode === 'perfect' ? 'perfect' : 'any'),
+    })
+  }
+
+  function selectMode(value: Mode) {
+    if (!tier || value === 'custom') return
+    onPatch({ minValue: minValueFor(tier, value) })
+  }
+
+  return (
+    <tr>
+      <td>
+        <input value={requirement.label} onChange={(event) => onPatch({ label: event.target.value })} />
+        {badge && <div className="source-badge">{badge}</div>}
+      </td>
+      <td>
+        {tiers.length > 0 ? (
+          <select value={tier?.id ?? ''} onChange={(event) => selectTier(event.target.value)}>
+            {tiers.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                ilvl {candidate.ilvl} · {candidate.min}–{candidate.max} · {candidate.text}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="hint">{requirement.group}</span>
+        )}
+      </td>
+      <td>
+        <select value={mode} onChange={(event) => selectMode(event.target.value as Mode)} aria-label="roll">
+          <option value="any">any roll</option>
+          <option value="perfect">perfect</option>
+          <option value="custom" disabled>
+            typed
+          </option>
+        </select>
+      </td>
+      <td>
+        <input
+          type="number"
+          step="any"
+          value={requirement.minValue}
+          onChange={(event) => onPatch({ minValue: Number(event.target.value) })}
+        />
+      </td>
+      <td>
+        <select
+          value={requirement.side}
+          onChange={(event) => onPatch({ side: event.target.value as Side })}
+        >
+          {SIDES.map((side) => (
+            <option key={side} value={side}>
+              {side}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <button type="button" onClick={onRemove} aria-label="remove requirement">
+          ×
+        </button>
+      </td>
+    </tr>
+  )
+}
+
+/** The editable body of a target: rarity, item level, requirements and minimum hits. */
+export function RequirementsEditor({ draft, onChange, modTiers }: RequirementsEditorProps) {
+  function patchRequirement(index: number, change: Partial<Requirement>) {
+    onChange({
+      ...draft,
+      requirements: draft.requirements.map((requirement, i) =>
+        i === index ? { ...requirement, ...change } : requirement,
+      ),
+    })
+  }
+
+  return (
+    <div className="draft">
+      <div className="price-row">
+        <label>
+          rarity
+          <select
+            value={draft.rarity}
+            onChange={(event) => onChange({ ...draft, rarity: event.target.value as Rarity })}
+          >
+            {RARITIES.map((rarity) => (
+              <option key={rarity} value={rarity}>
+                {rarity}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          ilvl
+          <input
+            type="number"
+            min="1"
+            value={draft.ilvl ?? 1}
+            onChange={(event) => onChange({ ...draft, ilvl: Number(event.target.value) })}
+          />
+        </label>
+      </div>
+
+      <table className="requirements">
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>tier</th>
+            <th>roll</th>
+            <th>min</th>
+            <th>side</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {draft.requirements.map((requirement, index) => (
+            <RequirementRow
+              key={`${requirement.group}|${index}`}
+              requirement={requirement}
+              base={draft.base}
+              modTiers={modTiers}
+              onPatch={(change) => patchRequirement(index, change)}
+              onRemove={() =>
+                onChange({ ...draft, requirements: draft.requirements.filter((_, i) => i !== index) })
+              }
+            />
+          ))}
+        </tbody>
+      </table>
+
+      <label className="inline-field">
+        min hits
+        <input
+          type="number"
+          min="0"
+          value={draft.minHits}
+          onChange={(event) => onChange({ ...draft, minHits: Number(event.target.value) })}
+        />
+      </label>
+    </div>
+  )
+}
+
+interface TargetEditorProps {
+  parse: (text: string) => Promise<TargetDraft>
+  modTiers?: ModTierLookup
+}
+
+/** Paste a tooltip, edit what the parser found, and make it the root good. */
+export function TargetEditor({ parse, modTiers }: TargetEditorProps) {
+  const target = useAppStore(rootTarget)
   const applyDraft = useAppStore((state) => state.applyDraft)
   const [text, setText] = useState('')
-  // Seeded from the applied target so its rows stay editable after a reload.
+  // Seeded from the root good so its rows stay editable after a reload.
   const [draft, setDraft] = useState<TargetDraft | null>(() => (target ? targetToDraft(target) : null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,31 +255,17 @@ export function TargetEditor({ parse }: TargetEditorProps) {
     }
   }
 
-  function patchRequirement(index: number, change: Partial<Requirement>) {
-    setDraft((current) =>
-      current
-        ? { ...current, requirements: current.requirements.map((r, i) => (i === index ? { ...r, ...change } : r)) }
-        : current,
-    )
-  }
-
-  function removeRequirement(index: number) {
-    setDraft((current) =>
-      current ? { ...current, requirements: current.requirements.filter((_, i) => i !== index) } : current,
-    )
-  }
-
   const unchanged =
     draft != null && draft.buyNote == null && targetSignature(draftToTarget(draft)) === targetSignature(target)
   const applyTitle = !draft?.base
     ? 'the parser did not recognise a base item'
     : unchanged
       ? 'this is the target already in use'
-      : 'applying a target clears the tree you built for the previous one'
+      : 'applying a target replaces the market built for the previous one'
 
   function apply(current: TargetDraft) {
     applyDraft(current)
-    // The buy note has been turned into the goal's buy price; re-applying must not reset the tree again.
+    // The buy note has been turned into the root good's buy price; re-applying must not reset the market.
     setDraft({ ...current, buyNote: null })
   }
 
@@ -100,64 +301,8 @@ export function TargetEditor({ parse }: TargetEditorProps) {
       {error && <p className="error-inline">{error}</p>}
 
       {draft && (
-        <div className="draft">
-          <table className="requirements">
-            <thead>
-              <tr>
-                <th>Requirement</th>
-                <th>min</th>
-                <th>side</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {draft.requirements.map((requirement, index) => (
-                <tr key={`${requirement.group}|${index}`}>
-                  <td>
-                    <input
-                      value={requirement.label}
-                      onChange={(event) => patchRequirement(index, { label: event.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="any"
-                      value={requirement.minValue}
-                      onChange={(event) => patchRequirement(index, { minValue: Number(event.target.value) })}
-                    />
-                  </td>
-                  <td>
-                    <select
-                      value={requirement.side}
-                      onChange={(event) => patchRequirement(index, { side: event.target.value as Side })}
-                    >
-                      {SIDES.map((side) => (
-                        <option key={side} value={side}>
-                          {side}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <button type="button" onClick={() => removeRequirement(index)} aria-label="remove requirement">
-                      ×
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <label className="inline-field">
-            min hits
-            <input
-              type="number"
-              min="0"
-              value={draft.minHits}
-              onChange={(event) => setDraft({ ...draft, minHits: Number(event.target.value) })}
-            />
-          </label>
+        <>
+          <RequirementsEditor draft={draft} onChange={setDraft} modTiers={modTiers} />
 
           {draft.unmatched.length > 0 && (
             <div>
@@ -178,7 +323,7 @@ export function TargetEditor({ parse }: TargetEditorProps) {
           )}
           {draft.buyNote && (
             <p className="hint">
-              Buy note: {draft.buyNote.amount} {draft.buyNote.currency} — the goal&rsquo;s buy price is set from the
+              Buy note: {draft.buyNote.amount} {draft.buyNote.currency} — the root good&rsquo;s buy price is set from the
               current price table.
             </p>
           )}
@@ -191,7 +336,7 @@ export function TargetEditor({ parse }: TargetEditorProps) {
               {target ? 'Revert edits' : 'Discard draft'}
             </button>
           </div>
-        </div>
+        </>
       )}
     </section>
   )

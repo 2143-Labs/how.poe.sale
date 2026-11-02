@@ -22,6 +22,290 @@ pub const INFLUENCE_EXALT_KEYS: [&str; 6] = [
     "warlords-exalted-orb",
 ];
 
+/// Price keys of the chaotic resonators, by socket count 1..=4.
+pub const RESONATOR_KEYS: [&str; 4] = [
+    "primitive-chaotic-resonator",
+    "potent-chaotic-resonator",
+    "powerful-chaotic-resonator",
+    "prime-chaotic-resonator",
+];
+
+/// What a craft does to one affix side.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SideEffect {
+    /// Unchanged.
+    Keep,
+    /// Emptied, unless the item's own lock protects it.
+    Clear,
+    /// Replaced by at most `n` fresh mods (a locked side is kept).
+    Reroll(u8),
+    /// Kept, and the action adds exactly `n` mods over both sides together.
+    Add(u8),
+    /// Kept minus exactly `n` mods over both sides together (or the lock).
+    Remove(u8),
+}
+
+/// What a craft does to an item.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Effect {
+    pub prefixes: SideEffect,
+    pub suffixes: SideEffect,
+    /// The rarity afterwards, when the craft sets one.
+    pub rarity: Option<Rarity>,
+    pub consumes_quality: bool,
+}
+
+/// What an item must be for a craft to apply. Action-specific numeric checks (donor class,
+/// essence class, fossil tags, reforge capacity) stay in [`applicable`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Pre {
+    pub rarity: Option<Rarity>,
+    /// No "Cannot Be Changed" metamod on the item.
+    pub lock_free: bool,
+    pub max_influences: Option<u8>,
+    /// Free affix slots needed (on either side).
+    pub needs_free: u8,
+}
+
+/// The declared behaviour of one craft: the single table the UI, `applicable` and the tests read.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Contract {
+    pub id: &'static str,
+    pub name: &'static str,
+    pub requires: Pre,
+    pub effect: Effect,
+    pub seconds: f64,
+}
+
+const fn pre(
+    rarity: Option<Rarity>,
+    lock_free: bool,
+    max_influences: Option<u8>,
+    needs_free: u8,
+) -> Pre {
+    Pre {
+        rarity,
+        lock_free,
+        max_influences,
+        needs_free,
+    }
+}
+
+const fn eff(prefixes: SideEffect, suffixes: SideEffect, rarity: Option<Rarity>) -> Effect {
+    Effect {
+        prefixes,
+        suffixes,
+        rarity,
+        consumes_quality: true,
+    }
+}
+
+const RARE: Option<Rarity> = Some(Rarity::Rare);
+const MAGIC: Option<Rarity> = Some(Rarity::Magic);
+const R3: SideEffect = SideEffect::Reroll(3);
+const R1: SideEffect = SideEffect::Reroll(1);
+const KEEP: SideEffect = SideEffect::Keep;
+
+/// Every craft, in `Action` declaration order, followed by the two-item recombine.
+pub const CONTRACTS: [Contract; 20] = [
+    Contract {
+        id: "chaos",
+        name: "Chaos Orb",
+        requires: pre(RARE, false, None, 0),
+        effect: eff(R3, R3, None),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "exalted",
+        name: "Exalted Orb",
+        requires: pre(RARE, false, None, 1),
+        effect: eff(SideEffect::Add(1), SideEffect::Add(1), None),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "influence-exalt",
+        name: "Influenced Exalted Orb",
+        requires: pre(RARE, false, Some(0), 1),
+        effect: eff(SideEffect::Add(1), SideEffect::Add(1), None),
+        seconds: 3.0,
+    },
+    Contract {
+        id: "annul",
+        name: "Orb of Annulment",
+        requires: pre(RARE, false, None, 0),
+        effect: eff(SideEffect::Remove(1), SideEffect::Remove(1), None),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "divine",
+        name: "Divine Orb",
+        requires: pre(RARE, false, None, 0),
+        effect: eff(KEEP, KEEP, None),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "harvest-influenced",
+        name: "Harvest: reforge influenced rare",
+        requires: pre(RARE, false, None, 0),
+        effect: eff(R3, R3, None),
+        seconds: 12.0,
+    },
+    Contract {
+        id: "harvest-randomise-influence",
+        name: "Harvest: randomise influence",
+        requires: pre(RARE, true, Some(1), 0),
+        effect: eff(R3, R3, None),
+        seconds: 12.0,
+    },
+    Contract {
+        id: "bench-lock",
+        name: "Bench: Cannot Be Changed",
+        requires: pre(RARE, true, None, 0),
+        effect: eff(KEEP, KEEP, None),
+        seconds: 8.0,
+    },
+    Contract {
+        id: "apply-catalyst",
+        name: "Catalyst",
+        requires: pre(RARE, false, None, 0),
+        effect: Effect {
+            prefixes: KEEP,
+            suffixes: KEEP,
+            rarity: None,
+            consumes_quality: false,
+        },
+        seconds: 4.0,
+    },
+    Contract {
+        id: "awakener",
+        name: "Awakener's Orb",
+        requires: pre(RARE, false, Some(1), 0),
+        effect: eff(R3, R3, None),
+        seconds: 10.0,
+    },
+    Contract {
+        id: "transmute",
+        name: "Orb of Transmutation",
+        requires: pre(Some(Rarity::Normal), false, None, 0),
+        effect: eff(R1, R1, MAGIC),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "alteration",
+        name: "Orb of Alteration",
+        requires: pre(MAGIC, false, None, 0),
+        effect: eff(R1, R1, MAGIC),
+        seconds: 1.0,
+    },
+    Contract {
+        id: "augmentation",
+        name: "Orb of Augmentation",
+        requires: pre(MAGIC, false, None, 1),
+        effect: eff(SideEffect::Add(1), SideEffect::Add(1), MAGIC),
+        seconds: 1.0,
+    },
+    Contract {
+        id: "regal",
+        name: "Regal Orb",
+        requires: pre(MAGIC, false, None, 0),
+        effect: eff(SideEffect::Add(1), SideEffect::Add(1), RARE),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "scour",
+        name: "Orb of Scouring",
+        requires: pre(None, false, None, 0),
+        effect: eff(SideEffect::Clear, SideEffect::Clear, None),
+        seconds: 2.0,
+    },
+    Contract {
+        id: "imprint",
+        name: "Craicic Chimeral: imprint",
+        requires: pre(MAGIC, false, None, 0),
+        effect: eff(KEEP, KEEP, MAGIC),
+        seconds: 30.0,
+    },
+    Contract {
+        id: "restore",
+        name: "Restore imprint",
+        requires: pre(None, false, None, 0),
+        effect: eff(R1, R1, MAGIC),
+        seconds: 5.0,
+    },
+    Contract {
+        id: "essence",
+        name: "Essence",
+        requires: pre(None, false, None, 0),
+        effect: eff(R3, R3, RARE),
+        seconds: 3.0,
+    },
+    Contract {
+        id: "fossil",
+        name: "Fossil reforge",
+        requires: pre(None, false, None, 0),
+        effect: eff(R3, R3, RARE),
+        seconds: 6.0,
+    },
+    Contract {
+        id: "recombine",
+        name: "Recombinator",
+        requires: pre(RARE, false, None, 0),
+        effect: eff(R3, R3, RARE),
+        seconds: 20.0,
+    },
+];
+
+/// The recombine's contract (it is a market process, not an [`Action`]).
+pub fn recombine_contract() -> &'static Contract {
+    &CONTRACTS[19]
+}
+
+/// The declared contract of `a`.
+pub fn contract(a: &Action) -> &'static Contract {
+    let i = match a {
+        Action::Chaos => 0,
+        Action::Exalted => 1,
+        Action::InfluenceExalt { .. } => 2,
+        Action::Annul => 3,
+        Action::Divine => 4,
+        Action::HarvestInfluenced => 5,
+        Action::HarvestRandomiseInfluence => 6,
+        Action::BenchLock { .. } => 7,
+        Action::ApplyCatalyst { .. } => 8,
+        Action::Combine { .. } => 9,
+        Action::Transmute => 10,
+        Action::Alteration => 11,
+        Action::Augmentation => 12,
+        Action::Regal => 13,
+        Action::Scour => 14,
+        Action::Imprint => 15,
+        Action::Restore => 16,
+        Action::Essence { .. } => 17,
+        Action::Fossil { .. } => 18,
+    };
+    &CONTRACTS[i]
+}
+
+/// The contract with this id.
+pub fn contract_by_id(id: &str) -> Option<&'static Contract> {
+    CONTRACTS.iter().find(|c| c.id == id)
+}
+
+/// Recombinator output mod count per side, by pool size 1..=6 (clamped): `[P(0), P(1), P(2), P(3)]`.
+/// The user's 66.7%/33.3% row is read as exactly 2/3 and 1/3.
+pub const RECOMBINE_MOD_COUNT: [[f64; 4]; 6] = [
+    [0.41, 0.59, 0.0, 0.0],
+    [0.0, 2.0 / 3.0, 1.0 / 3.0, 0.0],
+    [0.0, 0.40, 0.50, 0.10],
+    [0.0, 0.10, 0.60, 0.30],
+    [0.0, 0.0, 0.43, 0.57],
+    [0.0, 0.0, 0.30, 0.70],
+];
+/// Fossil sets the engine offers per state, best single-draw share first.
+pub const FOSSIL_TOP_K: usize = 3;
+/// Recombine drops influence, catalyst quality and fractured state (user-stated).
+pub const RECOMBINE_KEEPS_INFLUENCE: bool = false;
+
 /// A declared purchase used as an Awakener's Orb donor.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DonorSpec {
@@ -169,22 +453,52 @@ pub fn cost(b: &Bundle, a: &Action, _donors: &[DonorSpec]) -> Vec<(String, f64)>
             (format!("donor:{donor}"), 1.0),
             ("awakeners-orb".into(), 1.0),
         ],
+        Action::Transmute => vec![("transmute".into(), 1.0)],
+        Action::Alteration => vec![("alt".into(), 1.0)],
+        Action::Augmentation => vec![("aug".into(), 1.0)],
+        Action::Regal => vec![("regal".into(), 1.0)],
+        Action::Scour => vec![("scour".into(), 1.0)],
+        Action::Imprint => vec![("craicic-croaker".into(), 1.0)],
+        Action::Restore => Vec::new(),
+        Action::Essence { essence } => vec![(
+            b.essences
+                .get(*essence as usize)
+                .map(|e| e.price_key.clone())
+                .unwrap_or_else(|| "essence".into()),
+            1.0,
+        )],
+        Action::Fossil { fossils } => {
+            let mut out: Vec<(String, f64)> = fossils
+                .iter()
+                .filter_map(|f| b.fossils.get(*f as usize))
+                .map(|f| (f.price_key.clone(), 1.0))
+                .collect();
+            out.push((RESONATOR_KEYS[fossils.len().clamp(1, 4) - 1].into(), 1.0));
+            out
+        }
     }
 }
 
 pub fn seconds(a: &Action) -> f64 {
-    match a {
-        Action::Chaos | Action::Exalted | Action::Annul | Action::Divine => 2.0,
-        Action::InfluenceExalt { .. } => 3.0,
-        Action::HarvestInfluenced | Action::HarvestRandomiseInfluence => 12.0,
-        Action::BenchLock { .. } => 8.0,
-        Action::ApplyCatalyst { .. } => 4.0,
-        Action::Combine { .. } => 10.0,
-    }
+    contract(a).seconds
 }
 
 pub fn applicable(b: &Bundle, t: &Target, s: &ItemState, a: &Action, donors: &[DonorSpec]) -> bool {
-    if s.rarity != Rarity::Rare {
+    let c = contract(a);
+    if let Some(r) = c.requires.rarity
+        && s.rarity != r
+    {
+        return false;
+    }
+    if c.requires.lock_free && s.lock != 0 {
+        return false;
+    }
+    if let Some(max) = c.requires.max_influences
+        && s.influences.count_ones() as u8 > max
+    {
+        return false;
+    }
+    if c.requires.needs_free > 0 && !s.any_free(b) {
         return false;
     }
     match a {
@@ -221,6 +535,43 @@ pub fn applicable(b: &Bundle, t: &Target, s: &ItemState, a: &Action, donors: &[D
                 && d.influence.count_ones() == 1
                 && d.influence & s.influences == 0
                 && b.base_at(d.base).class == b.base_at(s.base).class
+        }
+        Action::Transmute | Action::Augmentation | Action::Regal => true,
+        Action::Alteration => true,
+        Action::Scour => s.mod_count() > 0 || s.lock != 0,
+        Action::Imprint => s.imprint.is_none() && s.mod_count() > 0,
+        Action::Restore => s.imprint.is_some(),
+        Action::Essence { essence } => {
+            let class = &b.base_at(s.base).class;
+            let Some(m) = b.essence_mod(*essence, class) else {
+                return false;
+            };
+            matches!(s.rarity, Rarity::Normal | Rarity::Rare)
+                && !side_locked(s, b.mod_at(m).generation)
+                && b.mod_at(m).ilvl <= s.ilvl as u16
+        }
+        Action::Fossil { fossils } => {
+            if !matches!(s.rarity, Rarity::Normal | Rarity::Rare)
+                || fossils.is_empty()
+                || fossils.len() > 4
+            {
+                return false;
+            }
+            let tags = &b.base_at(s.base).tags;
+            fossils.iter().all(|f| {
+                b.fossils.get(*f as usize).is_some_and(|fossil| {
+                    fossil.supported
+                        && fossil
+                            .forbidden_tags
+                            .iter()
+                            .all(|t| !tags.iter().any(|x| b.tag(*x) == t))
+                        && (fossil.allowed_tags.is_empty()
+                            || fossil
+                                .allowed_tags
+                                .iter()
+                                .any(|t| tags.iter().any(|x| b.tag(*x) == t)))
+                })
+            })
         }
     }
 }

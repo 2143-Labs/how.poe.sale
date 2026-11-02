@@ -31,5 +31,7 @@ base_items.json sha256-SK+wel9A61FVL5DBfVMYZGnbKCoudZ2re0bn+dKg9Ys=
 item_classes.json sha256-Z4+jumU8J1DDjduk7tLA99bF7AQLK7wHvFAv7WnF5jI=
 stat_translations.json sha256-PmIQZ4Lu6e5t1o8Ed65TdSIgCXACCLmgsTQ1ooLTvvo=
 crafting_bench_options.json sha256-D+UasWV86mnFM7sGEOOT8QQBFWFA3ojt9oYSBIPNKEU=
+essences.json sha256-AcatVYZt9nPdJamwhXfuIoAq07jwZxsBnLTPUjub1wA=
+fossils.json sha256-4XHBGfh0tPK+Kpg2avYcWiCRyib1CLL1uda1Ubud8YE=
 tags.json sha256-Jd+ROr1Fm+3T3BtknjRLNT4nHtCjIWLxFtZgNKMmm1A=
 EOF

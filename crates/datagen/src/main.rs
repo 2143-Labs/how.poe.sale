@@ -136,6 +136,44 @@ struct RawTradeStat {
     id: String,
 }
 
+#[derive(Deserialize)]
+struct RawEssence {
+    name: String,
+    #[serde(default)]
+    mods: BTreeMap<String, Option<String>>,
+    #[serde(rename = "type")]
+    kind: RawEssenceType,
+}
+
+#[derive(Deserialize)]
+struct RawEssenceType {
+    #[serde(default)]
+    tier: u8,
+    #[serde(default)]
+    is_corruption_only: bool,
+}
+
+#[derive(Deserialize)]
+struct RawFossil {
+    name: String,
+    #[serde(default)]
+    added_mods: Vec<String>,
+    #[serde(default)]
+    positive_mod_weights: Vec<RawFossilWeight>,
+    #[serde(default)]
+    negative_mod_weights: Vec<RawFossilWeight>,
+    #[serde(default)]
+    forbidden_tags: Vec<String>,
+    #[serde(default)]
+    allowed_tags: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct RawFossilWeight {
+    tag: String,
+    weight: u32,
+}
+
 // ---------------------------------------------------------------- bundle shapes
 
 #[derive(Serialize)]
@@ -151,6 +189,8 @@ struct Bundle {
     classes: Vec<ClassOut>,
     bench: Vec<BenchOut>,
     catalysts: Vec<CatalystOut>,
+    essences: Vec<EssenceOut>,
+    fossils: Vec<FossilOut>,
     translations: Vec<TranslationOut>,
     trade_stats: BTreeMap<String, String>,
 }
@@ -176,6 +216,8 @@ struct ModOut {
     implicit_tags: Vec<String>,
     influence: bool,
     weights: Vec<(u16, u32)>,
+    #[serde(skip_serializing_if = "is_false")]
+    fossil_only: bool,
 }
 
 #[derive(Serialize)]
@@ -221,6 +263,27 @@ struct CatalystOut {
 }
 
 #[derive(Serialize)]
+struct EssenceOut {
+    name: String,
+    price_key: String,
+    tier: u8,
+    /// bundle class name -> bundle mod id.
+    mods: BTreeMap<String, String>,
+}
+
+#[derive(Serialize)]
+struct FossilOut {
+    name: String,
+    price_key: String,
+    /// `positive_mod_weights` then `negative_mod_weights`, in file order.
+    weights: Vec<(String, u32)>,
+    added_mods: Vec<String>,
+    forbidden_tags: Vec<String>,
+    allowed_tags: Vec<String>,
+    supported: bool,
+}
+
+#[derive(Serialize)]
 struct TranslationOut {
     key: String,
     stat: u16,
@@ -243,6 +306,34 @@ fn influence_name(tag: &str) -> Option<&'static str> {
         _ => return None,
     })
 }
+
+/// `price_key` for an essence or fossil: lowercase, spaces to '-', apostrophes dropped.
+fn price_key(name: &str) -> String {
+    name.to_lowercase()
+        .replace(['\'', '\u{2019}'], "")
+        .replace(' ', "-")
+}
+
+/// Essences whose corruption-only mods are still modelled as sources.
+const CORRUPTION_ESSENCES: [&str; 4] = ["Hysteria", "Horror", "Delirium", "Insanity"];
+
+/// Every essence is a modelled source: RePoE's `type.tier` is the essence *family* tier
+/// (1-6 in this export), not the ladder tier, and the engine counts 45 essence-only amulet
+/// mods only when all of them are present. Corruption-only essences are skipped except
+/// Hysteria/Horror/Delirium/Insanity, which the plan models.
+fn keep_essence(name: &str, corruption_only: bool) -> bool {
+    !corruption_only || CORRUPTION_ESSENCES.iter().any(|s| name.contains(s))
+}
+
+/// Fossils whose crafting behaviour is not modelled; they still get a name and price.
+const UNSUPPORTED_FOSSILS: [&str; 6] = [
+    "bloodstained",
+    "fractured",
+    "gilded",
+    "glyphic",
+    "hollow",
+    "sanctified",
+];
 
 /// The catalyst table is a hand-maintained constant, not repoe data.
 const CATALYSTS: &[CatalystOut] = &[
@@ -321,6 +412,8 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     let classes: BTreeMap<String, RawClass> = load_json(raw, "item_classes.json")?;
     let bench: Vec<RawBench> = load_json(raw, "crafting_bench_options.json")?;
     let translations: Vec<RawTranslation> = load_json(raw, "stat_translations.json")?;
+    let essences: BTreeMap<String, RawEssence> = load_json(raw, "essences.json")?;
+    let fossils: BTreeMap<String, RawFossil> = load_json(raw, "fossils.json")?;
 
     // Classes with influence tags: the only bases a crafting solver models for now.
     let influenced_classes: BTreeMap<String, &RawClass> = classes
@@ -329,13 +422,98 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
         .map(|(k, c)| (k.clone(), c))
         .collect();
 
+    // ---- essences and fossils (before the mod filter: their mod ids must be kept)
+    let referenced_mods: BTreeSet<&str> = essences
+        .values()
+        .flat_map(|e| e.mods.values().flatten().map(String::as_str))
+        .chain(
+            fossils
+                .values()
+                .flat_map(|f| f.added_mods.iter().map(String::as_str)),
+        )
+        .collect();
+
+    let mut essences_out: Vec<EssenceOut> = Vec::new();
+    for e in essences.values() {
+        if !keep_essence(&e.name, e.kind.is_corruption_only) {
+            continue;
+        }
+        let class_mods: BTreeMap<String, String> = e
+            .mods
+            .iter()
+            .filter_map(|(class, id)| {
+                let id = id.as_deref()?;
+                (influenced_classes.contains_key(class) && mods.0.contains_key(id))
+                    .then(|| (class.clone(), id.to_string()))
+            })
+            .collect();
+        if class_mods.is_empty() {
+            continue;
+        }
+        essences_out.push(EssenceOut {
+            name: e.name.clone(),
+            price_key: price_key(&e.name),
+            tier: e.kind.tier,
+            mods: class_mods,
+        });
+    }
+    essences_out.sort_by(|a, b| a.name.cmp(&b.name));
+
+    let mut fossils_out: Vec<FossilOut> = Vec::new();
+    for f in fossils.values() {
+        // `RandomFossilOutcome*` placeholders (Tangled Fossil's random rolls) carry no name.
+        if f.name.trim().is_empty() {
+            continue;
+        }
+        let lower = f.name.to_lowercase();
+        let supported = !UNSUPPORTED_FOSSILS.iter().any(|w| lower.contains(w));
+        let mut weights: Vec<(String, u32)> =
+            Vec::with_capacity(f.positive_mod_weights.len() + f.negative_mod_weights.len());
+        weights.extend(
+            f.positive_mod_weights
+                .iter()
+                .map(|w| (w.tag.clone(), w.weight)),
+        );
+        weights.extend(
+            f.negative_mod_weights
+                .iter()
+                .map(|w| (w.tag.clone(), w.weight)),
+        );
+        fossils_out.push(FossilOut {
+            name: f.name.clone(),
+            price_key: price_key(&f.name),
+            weights,
+            added_mods: f
+                .added_mods
+                .iter()
+                .filter(|id| mods.0.contains_key(*id))
+                .cloned()
+                .collect(),
+            forbidden_tags: f.forbidden_tags.clone(),
+            allowed_tags: f.allowed_tags.clone(),
+            supported,
+        });
+    }
+    fossils_out.sort_by(|a, b| a.name.cmp(&b.name));
+
+    let fossil_only: BTreeSet<&str> = fossils_out
+        .iter()
+        .filter(|f| f.supported)
+        .flat_map(|f| f.added_mods.iter().map(String::as_str))
+        .collect();
+
     let kept_mods: Vec<(&String, &RawMod)> = mods
         .0
         .iter()
-        .filter(|(_, m)| {
-            matches!(m.domain.as_str(), "item" | "crafted")
+        .filter(|(id, m)| {
+            let modelled = matches!(m.domain.as_str(), "item" | "crafted")
                 && matches!(m.generation_type.as_str(), "prefix" | "suffix")
-                && !m.stats.is_empty()
+                && !m.stats.is_empty();
+            // Essence and fossil mods may live outside the modelled domain (delve), but the
+            // bundle must still be able to resolve them by id.
+            let referenced = referenced_mods.contains(id.as_str())
+                && matches!(m.generation_type.as_str(), "prefix" | "suffix");
+            modelled || referenced
         })
         .collect();
 
@@ -489,6 +667,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             implicit_tags: m.implicit_tags.clone(),
             influence: m.implicit_tags.iter().any(|t| t == "influence_mod"),
             weights,
+            fossil_only: fossil_only.contains(id.as_str()),
         });
     }
 
@@ -565,7 +744,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     }
 
     Ok(Bundle {
-        format: 1,
+        format: 2,
         patch: PATCH.to_string(),
         source: Source {
             repo: "repoe-fork",
@@ -587,6 +766,8 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
                 tags: c.tags,
             })
             .collect(),
+        essences: essences_out,
+        fossils: fossils_out,
         translations: translations_out,
         trade_stats,
     })

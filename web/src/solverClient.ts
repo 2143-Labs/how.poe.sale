@@ -1,7 +1,23 @@
 import { normalizeDraft } from './problem'
-import { normalizeSolution } from './solution'
+import {
+  normalizeContracts,
+  normalizeProposalList,
+  normalizeRecipes,
+  normalizeSolutionV3,
+  normalizeTiers,
+} from './solution'
 import type { SolverRequest, SolverResponse } from './protocol'
-import type { InfluenceModEntry, Problem, Solution, TargetDraft } from './types'
+import type {
+  AnyProblem,
+  ContractJson,
+  InfluenceModEntry,
+  ProcessProposalJson,
+  RecipeDef,
+  Side,
+  SolutionV3,
+  TargetDraft,
+  TierJson,
+} from './types'
 
 /** The slice of `Worker` this client needs, so tests can drive a fake one. */
 export interface WorkerLike {
@@ -12,15 +28,19 @@ export interface WorkerLike {
 }
 
 export interface SolverCallbacks {
-  onSolution: (solution: Solution) => void
+  onSolution: (solution: SolutionV3) => void
   onBusy: (busy: boolean) => void
   onError: (message: string | null) => void
 }
 
 export interface SolverClient {
-  solve(problem: Problem): void
+  solve(problem: AnyProblem): void
   parse(text: string): Promise<TargetDraft>
   influenceMods(base: string, influence: string): Promise<InfluenceModEntry[]>
+  proposeProcesses(problem: AnyProblem, goodId: string): Promise<ProcessProposalJson[]>
+  contracts(): Promise<ContractJson[]>
+  recipes(): Promise<RecipeDef[]>
+  modTiers(base: string, group: string, side: Side): Promise<TierJson[]>
   version(): Promise<string>
   dispose(): void
 }
@@ -61,7 +81,7 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
         return
       }
       callbacks.onError(null)
-      callbacks.onSolution(normalizeSolution(response.solution))
+      callbacks.onSolution(normalizeSolutionV3(response.solution))
       return
     }
 
@@ -72,9 +92,29 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
       pending.reject(new Error(response.error))
       return
     }
-    if (response.type === 'version') pending.resolve(response.version ?? '')
-    else if (response.type === 'parse') pending.resolve(normalizeDraft(response.draft))
-    else pending.resolve(Array.isArray(response.mods) ? response.mods : [])
+    switch (response.type) {
+      case 'version':
+        pending.resolve(response.version ?? '')
+        return
+      case 'parse':
+        pending.resolve(normalizeDraft(response.draft))
+        return
+      case 'influenceMods':
+        pending.resolve(Array.isArray(response.mods) ? response.mods : [])
+        return
+      case 'proposeProcesses':
+        pending.resolve(normalizeProposalList(response.proposals))
+        return
+      case 'contracts':
+        pending.resolve(normalizeContracts(response.contracts))
+        return
+      case 'recipes':
+        pending.resolve(normalizeRecipes(response.recipes))
+        return
+      case 'modTiers':
+        pending.resolve(normalizeTiers(response.tiers))
+        return
+    }
   }
 
   worker.addEventListener('message', onMessage)
@@ -94,6 +134,22 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
 
     influenceMods(base, influence) {
       return request<InfluenceModEntry[]>({ type: 'influenceMods', id: nextId++, base, influence })
+    },
+
+    proposeProcesses(problem, goodId) {
+      return request<ProcessProposalJson[]>({ type: 'proposeProcesses', id: nextId++, problem, goodId })
+    },
+
+    contracts() {
+      return request<ContractJson[]>({ type: 'contracts', id: nextId++ })
+    },
+
+    recipes() {
+      return request<RecipeDef[]>({ type: 'recipes', id: nextId++ })
+    },
+
+    modTiers(base, group, side) {
+      return request<TierJson[]>({ type: 'modTiers', id: nextId++, base, group, side })
     },
 
     version() {

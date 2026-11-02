@@ -162,9 +162,20 @@ impl<S: Clone, A: Clone> Graph<S, A> {
         }
 
         // Every state node can be sold, which is what makes a dead end a recovery rather than a loss.
+        let mut sell_map = input.sell.clone();
         for (ni, node) in nodes.iter().enumerate().skip(2) {
             let key = node.key.clone();
-            let sell = input.sell.get(&key).copied().unwrap_or(0.0);
+            let brick = node.state.as_ref().and_then(|s| d.sell_value(s));
+            let own = input.sell.get(&key).copied();
+            let sell = match (own, brick) {
+                (Some(a), Some(b)) => a.max(b),
+                (Some(a), None) => a,
+                (None, Some(b)) => b,
+                (None, None) => 0.0,
+            };
+            if brick.is_some() {
+                sell_map.insert(key.clone(), sell);
+            }
             let buy = input.buy.get(&key).copied().unwrap_or(f64::INFINITY);
             edges.push(Edge {
                 from: ni,
@@ -207,7 +218,7 @@ impl<S: Clone, A: Clone> Graph<S, A> {
             out,
             prices: input.prices.clone(),
             buy: input.buy.clone(),
-            sell: input.sell.clone(),
+            sell: sell_map,
             disabled: input.disabled.clone(),
             trade_penalty: input.trade_penalty,
             index,

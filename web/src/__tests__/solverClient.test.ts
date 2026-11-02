@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSolverClient, type WorkerLike } from '../solverClient'
 import type { SolverRequest, SolverResponse } from '../protocol'
-import type { Problem, Solution } from '../types'
+import type { Problem, SolutionV3 } from '../types'
 
 class MockWorker implements WorkerLike {
   readonly messages: SolverRequest[] = []
@@ -47,21 +47,34 @@ const problem: Problem = {
   seed: 1,
 }
 
-function solutionWith(key: string): Solution {
+function solutionWith(key: string): SolutionV3 {
   return {
-    version: 1,
+    version: 3,
     error: null,
     warnings: [],
-    nodes: [{ key, kind: 'state', state: null, view: null, value: null, expanded: false, inR: true }],
-    edges: [],
-    stats: null,
+    market: {
+      goods: [
+        {
+          id: key,
+          name: key,
+          value: null,
+          sd: null,
+          seconds: null,
+          via: null,
+          needed: false,
+          view: { title: key, influences: [], catalyst: null, lock: null, prefixes: [], suffixes: [] },
+        },
+      ],
+      processes: [],
+    },
+    focus: null,
     proposals: {},
   }
 }
 
 function harness() {
   const worker = new MockWorker()
-  const solutions: Solution[] = []
+  const solutions: SolutionV3[] = []
   const busy: boolean[] = []
   const errors: (string | null)[] = []
   const client = createSolverClient(worker, {
@@ -85,7 +98,8 @@ describe('solver client', () => {
 
     worker.respond({ type: 'solve', id: second.id, solution: solutionWith('fresh') })
     expect(solutions).toHaveLength(1)
-    expect(solutions[0].nodes[0].key).toBe('fresh')
+    expect(solutions[0].market.goods[0].id).toBe('fresh')
+    expect(solutions[0].version).toBe(3)
     expect(busy).toEqual([true, true, false])
   })
 
@@ -100,7 +114,7 @@ describe('solver client', () => {
     const second = worker.messages[1]
     worker.respond({ type: 'solve', id: second.id, error: 'MissingPrice(wild-lifeforce)' })
     expect(solutions).toHaveLength(1)
-    expect(solutions[0].nodes[0].key).toBe('good')
+    expect(solutions[0].market.goods[0].id).toBe('good')
     expect(errors.at(-1)).toBe('MissingPrice(wild-lifeforce)')
   })
 
@@ -124,5 +138,59 @@ describe('solver client', () => {
     const mods = client.influenceMods('Simplex Amulet', 'Warlord')
     worker.respond({ type: 'influenceMods', id: worker.messages[1].id, mods: [] })
     expect(await mods).toEqual([])
+  })
+
+  it('asks for proposals, contracts, recipes and tiers with the v3 method names', async () => {
+    const { worker, client } = harness()
+
+    const proposals = client.proposeProcesses(problem, 'main')
+    const proposeRequest = worker.messages[0]
+    expect(proposeRequest).toMatchObject({ type: 'proposeProcesses', goodId: 'main' })
+    worker.respond({
+      type: 'proposeProcesses',
+      id: proposeRequest.id,
+      proposals: [
+        {
+          process: {
+            id: 'p1',
+            output: 'main',
+            recipe: 'alt-spam',
+            kind: { craft: { from: 'base', allowed: ['transmute', 'alteration'] } },
+          },
+          newGoods: [],
+          name: 'Transmute, then alteration',
+          cost: 122,
+          pSuccess: 0.0009,
+          status: 'Ready',
+          reason: null,
+        },
+      ],
+    })
+    const list = await proposals
+    expect(list).toHaveLength(1)
+    expect(list[0].process.id).toBe('p1')
+    expect(list[0].process.expanded).toBeNull()
+    expect(list[0].status).toBe('Ready')
+
+    const contracts = client.contracts()
+    worker.respond({
+      type: 'contracts',
+      id: worker.messages[1].id,
+      contracts: [{ id: 'scour', name: 'Orb of Scouring', requires: 'any', effect: 'clear', cost: [['scour', 1]], seconds: 1 }],
+    })
+    expect((await contracts)[0].id).toBe('scour')
+
+    const recipes = client.recipes()
+    worker.respond({
+      type: 'recipes',
+      id: worker.messages[2].id,
+      recipes: [{ id: 'alt-spam', name: 'Alt spam', kind: 'craft', rarity: 'Magic', allowed: ['alteration'] }],
+    })
+    expect((await recipes)[0].kind).toBe('craft')
+
+    const tiers = client.modTiers('Lapis Amulet', 'PercentageStrength', 'Suffix')
+    expect(worker.messages[3]).toMatchObject({ type: 'modTiers', group: 'PercentageStrength', side: 'Suffix' })
+    worker.respond({ type: 'modTiers', id: worker.messages[3].id, tiers: [{ id: 'T1', text: '26%', ilvl: 84, min: 26, max: 28 }] })
+    expect(await tiers).toEqual([{ id: 'T1', text: '26%', ilvl: 84, min: 26, max: 28 }])
   })
 })

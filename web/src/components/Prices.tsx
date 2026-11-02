@@ -2,15 +2,37 @@ import { useMemo } from 'react'
 import { DEFAULT_PRICES, DEFAULT_PRICES_DATE } from '../defaultPrices'
 import { useAppStore } from '../store'
 
+/** Prices with no poe.ninja exchange listing: typed by the user, empty by default. */
+export const TYPED_PRICE_KEYS = ['craicic-croaker', 'recombiner'] as const
+
 function label(key: string): string {
   return key.replace(/-/g, ' ')
 }
 
 export function Prices() {
   const prices = useAppStore((state) => state.prices)
+  const processes = useAppStore((state) => state.processes)
+  const solution = useAppStore((state) => state.solution)
   const setPrice = useAppStore((state) => state.setPrice)
   const resetPrices = useAppStore((state) => state.resetPrices)
-  const keys = useMemo(() => Array.from(new Set([...Object.keys(DEFAULT_PRICES), ...Object.keys(prices)])).sort(), [prices])
+
+  const keys = useMemo(
+    () =>
+      Array.from(new Set([...Object.keys(DEFAULT_PRICES), ...TYPED_PRICE_KEYS, ...Object.keys(prices)])).sort(),
+    [prices],
+  )
+
+  const needed = useMemo(() => {
+    const set = new Set<string>()
+    for (const process of processes) {
+      if ('recombine' in process.kind) set.add('recombiner')
+    }
+    for (const process of solution?.market.processes ?? []) {
+      for (const step of process.steps) for (const [key] of step.cost) set.add(key)
+      for (const key of Object.keys(process.spend)) set.add(key)
+    }
+    return set
+  }, [processes, solution])
 
   return (
     <section className="panel">
@@ -31,7 +53,10 @@ export function Prices() {
         <tbody>
           {keys.map((key) => (
             <tr key={key}>
-              <td>{label(key)}</td>
+              <td>
+                {label(key)}
+                {needed.has(key) && <span className="badge badge-unreachable">needed</span>}
+              </td>
               <td>
                 <input
                   type="number"
