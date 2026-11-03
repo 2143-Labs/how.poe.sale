@@ -97,6 +97,29 @@ textarea {
   flex: 1;
 }
 
+.demo-menu {
+  position: relative;
+}
+
+.demo-menu summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.demo-menu-list {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
 .banner {
   display: flex;
   justify-content: space-between;

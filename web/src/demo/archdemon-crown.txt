@@ -1,0 +1,32 @@
+Item Class: Helmets
+Rarity: Rare
+Empyrean Star
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+Armour: 440 (augmented)
+Energy Shield: 90 (augmented)
+[Intangibility|Intangibility]: 97%
+--------
+Requirements:
+Level: 75
+Str: 79
+Int: 79
+--------
+Sockets: B-B-B-B
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
++2 to Level of Socketed AoE Gems
+Socketed Gems are Supported by Level 16 Increased Area of Effect
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
+88% increased Armour and Energy Shield
+17% increased Area of Effect
+15% increased Effect of Cold Ailments
+--------
+Shaper Item

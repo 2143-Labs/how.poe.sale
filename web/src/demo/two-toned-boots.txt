@@ -1,0 +1,14 @@
+Item Class: Boots
+Rarity: Rare
+Gale Stride
+Two-Toned Boots
+--------
+Item Level: 84
+--------
++(8-12)% to Fire and Lightning Resistances
+--------
+30% increased Movement Speed
++120 to maximum Life
++46% to Fire Resistance
++46% to Cold Resistance
++46% to Lightning Resistance

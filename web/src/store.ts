@@ -62,6 +62,9 @@ export interface AppState extends PersistedState {
   error: string | null
   /** per-good proposal lists fetched from `propose_processes` */
   proposals: Record<string, ProcessProposalJson[]>
+  /** text an example asked the target editor to paste and parse; never saved or shared */
+  pasteRequest: { text: string; nonce: number } | null
+  requestPaste: (text: string) => void
 
   applyDraft: (draft: TargetDraft) => void
   /** Add the draft as another, unpriced good next to the current target. */
@@ -242,6 +245,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
   busy: false,
   error: null,
   proposals: {},
+  pasteRequest: null,
+
+  requestPaste: (text) =>
+    set((state) => ({ pasteRequest: { text, nonce: (state.pasteRequest?.nonce ?? 0) + 1 } })),
 
   applyDraft: (draft) => {
     const target = draftToTarget(draft)

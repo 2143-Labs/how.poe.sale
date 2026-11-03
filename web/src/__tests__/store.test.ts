@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import draftJson from '../__fixtures__/simplexDraft.json'
 import { normalizeDraft } from '../problem'
-import { emptyProblemState, useAppStore } from '../store'
+import { emptyProblemState, persistedState, useAppStore } from '../store'
 import type { ProcessProposalJson } from '../types'
 
 const draft = normalizeDraft(draftJson)
@@ -185,5 +185,16 @@ describe('addCustomCraft', () => {
       useAppStore.getState().addCustomCraft({ ...base, cost: 1, chance: 0, input: { kind: 'none' } }),
     ).toBeNull()
     expect(useAppStore.getState().processes).toHaveLength(0)
+  })
+})
+
+describe('requestPaste', () => {
+  it('bumps the nonce on every request and is never saved', () => {
+    useAppStore.setState({ pasteRequest: null })
+    useAppStore.getState().requestPaste('a')
+    expect(useAppStore.getState().pasteRequest).toEqual({ text: 'a', nonce: 1 })
+    useAppStore.getState().requestPaste('a')
+    expect(useAppStore.getState().pasteRequest).toEqual({ text: 'a', nonce: 2 })
+    expect('pasteRequest' in persistedState(useAppStore.getState())).toBe(false)
   })
 })
