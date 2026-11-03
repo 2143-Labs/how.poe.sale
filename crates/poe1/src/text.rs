@@ -73,6 +73,58 @@ fn last_number(s: &str) -> Option<(usize, usize, f64)> {
     found
 }
 
+/// Every numeric token in `s`, in order.
+fn all_numbers(s: &str) -> Vec<(usize, usize, f64)> {
+    let mut out = Vec::new();
+    let mut offset = 0;
+    while let Some((start, end, value)) = first_number(&s[offset..]) {
+        out.push((start + offset, end + offset, value));
+        offset += end;
+        if offset >= s.len() {
+            break;
+        }
+    }
+    out
+}
+
+/// `s` with every number replaced by `#` (a `+` sign directly before a number goes too).
+fn hash_all_numbers(s: &str) -> String {
+    let mut out = String::new();
+    let mut last = 0;
+    for (start, end, _) in all_numbers(s) {
+        let lead = if s[..start].ends_with('+') {
+            start - 1
+        } else {
+            start
+        };
+        out.push_str(&s[last..lead.max(last)]);
+        out.push('#');
+        last = end;
+    }
+    out.push_str(&s[last..]);
+    out
+}
+
+/// Weapon and armour property lines: values of the base, not modifiers.
+const PROPERTY_PREFIXES: [&str; 16] = [
+    "Physical Damage:",
+    "Elemental Damage:",
+    "Chaos Damage:",
+    "Critical Strike Chance:",
+    "Attacks per Second:",
+    "Weapon Range:",
+    "Armour:",
+    "Evasion Rating:",
+    "Energy Shield:",
+    "Ward:",
+    "Chance to Block:",
+    "Str:",
+    "Dex:",
+    "Int:",
+    "Sockets:",
+    "Stack Size:",
+];
+
 /// Replace the first number in `s` with `#`.
 fn hash_first_number(s: &str) -> Option<String> {
     first_number(s).map(|(start, end, _)| format!("{}#{}", &s[..start], &s[end..]))
@@ -248,7 +300,10 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
             }
             continue;
         }
-        if line.starts_with("Allocates ") && line.ends_with("(enchant)") {
+        if line.ends_with("(enchant)") || line.ends_with("(implicit)") {
+            continue;
+        }
+        if PROPERTY_PREFIXES.iter().any(|p| line.starts_with(p)) {
             continue;
         }
         if line.starts_with('[') && line.contains('|') {
@@ -257,6 +312,10 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
         if implicit_lines.iter().any(|im| im == line) {
             continue;
         }
+        let line = line
+            .strip_suffix(" (crafted)")
+            .or_else(|| line.strip_suffix(" (fractured)"))
+            .unwrap_or(line);
         mod_lines.push(line);
     }
 
@@ -273,103 +332,58 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
     let item_class = b.base_at(base).class.clone();
     let ctx = crate::weights::SourceCtx::new(b, base, draft.influences);
 
-    struct Pending {
-        group: u16,
-        side: crate::item::Side,
-        accepted: Vec<u32>,
-        min_value: f64,
-        label: String,
-    }
-    let mut pending: Vec<Pending> = Vec::new();
-    for line in &mod_lines {
-        let Some((_, _, raw_value)) = first_number(line) else {
-            continue;
-        };
-        // Tooltips show a leading `+` on positive values; the translation keys do not.
-        let text = line.strip_prefix('+').unwrap_or(line);
-        let rows = hash_first_number(text)
-            .and_then(|key| b.translations_by_key.get(&key).cloned())
-            .or_else(|| {
-                hash_last_number(text).and_then(|key| b.translations_by_key.get(&key).cloned())
+    let candidates: Vec<Vec<Cand>> = mod_lines
+        .iter()
+        .map(|line| {
+            // Pass 0: tiers that roll on the item as it is (or bench crafts). Pass 1, only when
+            // pass 0 found nothing: any tier some modelled mechanic can place (influence,
+            // essence, fossil, recombine), per `weights::sources`.
+            let native = line_candidates(b, base, draft.catalyst, line, |_, m| {
+                b.bench_by_mod
+                    .get(&m.id)
+                    .is_some_and(|e| b.bench[*e as usize].classes.contains(&item_class))
+                    || (!m.fossil_only && spawn_weight(m, &tags) > 0)
             });
-        let Some(rows) = rows else {
-            draft.unmatched.push((*line).to_string());
-            continue;
-        };
-        let mut any = false;
-        // Pass 0: tiers that roll on the item as it is (or bench crafts). Pass 1, only when pass 0
-        // found nothing: any tier some modelled mechanic can place (influence, essence, fossil,
-        // recombine), per `weights::sources`.
-        for wide in [false, true] {
-            if any {
-                break;
+            if !native.is_empty() {
+                return native;
             }
-            for row in rows.iter().copied() {
-                let translation = &b.translations[row as usize];
-                let value = if translation.negate {
-                    -raw_value
-                } else {
-                    raw_value
-                };
-                for (i, m) in b.mods.iter().enumerate() {
-                    let reachable = if wide {
-                        !ctx.sources(i as u32).is_empty()
-                    } else {
-                        b.bench_by_mod
-                            .get(&m.id)
-                            .is_some_and(|e| b.bench[*e as usize].classes.contains(&item_class))
-                            || (!m.fossil_only && spawn_weight(m, &tags) > 0)
-                    };
-                    if !reachable {
-                        continue;
-                    }
-                    let Some(stat) = m.stats.iter().find(|s| s.stat == translation.stat) else {
-                        continue;
-                    };
-                    let scale = 1.0 + effect(b, base, draft.catalyst, i as u32) / 100.0;
-                    let (lo, hi) = if translation.negate {
-                        (-stat.max, -stat.min)
-                    } else {
-                        (stat.min, stat.max)
-                    };
-                    if lo < (value + 1.0) / scale && hi >= value / scale {
-                        any = true;
-                        match pending
-                            .iter_mut()
-                            .find(|p| p.group == m.group && p.side == m.generation)
-                        {
-                            Some(p) => {
-                                if !p.accepted.contains(&(i as u32)) {
-                                    p.accepted.push(i as u32);
-                                }
-                            }
-                            None => pending.push(Pending {
-                                group: m.group,
-                                side: m.generation,
-                                accepted: vec![i as u32],
-                                min_value: value,
-                                label: (*line).to_string(),
-                            }),
-                        }
-                    }
-                }
-            }
-        }
-        if !any {
-            draft.unmatched.push((*line).to_string());
-        }
-    }
-
-    let requirements: Vec<Requirement> = pending
-        .into_iter()
-        .map(|p| Requirement {
-            group: p.group,
-            side: p.side,
-            accepted: p.accepted,
-            min_value: p.min_value,
-            label: p.label,
+            line_candidates(b, base, draft.catalyst, line, |i, _| {
+                !ctx.sources(i).is_empty()
+            })
         })
         .collect();
+    let shown = shown_stats(b);
+    let chosen = assign(b, &shown, &candidates);
+
+    let mut explained = vec![false; mod_lines.len()];
+    let mut requirements: Vec<Requirement> = Vec::new();
+    for c in &chosen {
+        for &l in &c.lines {
+            explained[l] = true;
+        }
+        // The requirement's value is the roll of the mod's first stat, as `p_value_ok` reads it.
+        let first = b.mod_at(c.tiers[0]).stats.first().map(|s| s.stat);
+        let min_value = c
+            .lines
+            .iter()
+            .flat_map(|&l| candidates[l].iter())
+            .find(|x| x.m == c.tiers[0] && first.is_some_and(|f| x.stats.contains(&f)))
+            .and_then(|x| first.and_then(|f| x.value_of(f)))
+            .unwrap_or_else(|| first_number(mod_lines[c.lines[0]]).map_or(0.0, |n| n.2));
+        let m = b.mod_at(c.tiers[0]);
+        requirements.push(Requirement {
+            group: m.group,
+            side: m.generation,
+            accepted: c.tiers.clone(),
+            min_value,
+            label: mod_lines[c.lines[0]].to_string(),
+        });
+    }
+    for (l, line) in mod_lines.iter().enumerate() {
+        if !explained[l] && first_number(line).is_some() {
+            draft.unmatched.push((*line).to_string());
+        }
+    }
 
     draft.requirements = requirements;
     draft.min_hits = draft.requirements.len() as u16;
@@ -380,6 +394,243 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
         );
     }
     draft
+}
+
+/// One reading of a line as (part of) one mod tier: the stats it shows and their values.
+#[derive(Clone, Debug)]
+struct Cand {
+    m: u32,
+    stats: Vec<u16>,
+    values: Vec<f64>,
+}
+
+impl Cand {
+    fn value_of(&self, stat: u16) -> Option<f64> {
+        self.stats
+            .iter()
+            .position(|s| *s == stat)
+            .map(|i| self.values[i])
+    }
+}
+
+/// Whether some roll in `[lo, hi]` shows as `value` at `scale` (display truncates toward zero).
+fn shows_as(lo: f64, hi: f64, value: f64, scale: f64) -> bool {
+    if value >= 0.0 {
+        lo < (value + 1.0) / scale && hi >= value / scale
+    } else {
+        lo <= value / scale && hi > (value - 1.0) / scale
+    }
+}
+
+/// Every mod tier (passing `reachable`) that can show `line`, with the stats the line covers.
+fn line_candidates(
+    b: &Bundle,
+    base: u16,
+    catalyst: Option<(u8, u8)>,
+    line: &str,
+    reachable: impl Fn(u32, &crate::data::ModData) -> bool,
+) -> Vec<Cand> {
+    let text = line.strip_prefix('+').unwrap_or(line);
+    let numbers: Vec<f64> = all_numbers(text).into_iter().map(|n| n.2).collect();
+    let mut readings: Vec<(String, Vec<f64>)> = vec![(hash_all_numbers(text), numbers.clone())];
+    if numbers.len() > 1 {
+        if let Some(k) = hash_first_number(text) {
+            readings.push((k, vec![numbers[0]]));
+        }
+        if let Some(k) = hash_last_number(text) {
+            readings.push((k, vec![numbers[numbers.len() - 1]]));
+        }
+    }
+    let mut out: Vec<Cand> = Vec::new();
+    for (key, values) in readings {
+        let Some(rows) = b.translations_by_key.get(&key) else {
+            continue;
+        };
+        for &row in rows {
+            let slots = &b.translations[row as usize].slots;
+            if slots.len() != values.len() {
+                continue;
+            }
+            let stats: Vec<u16> = slots.iter().map(|s| s.0).collect();
+            let signed: Vec<f64> = slots
+                .iter()
+                .zip(&values)
+                .map(|(s, v)| if s.1 { -v } else { *v })
+                .collect();
+            for (i, m) in b.mods.iter().enumerate() {
+                let i = i as u32;
+                if out.iter().any(|c| c.m == i) || !reachable(i, m) {
+                    continue;
+                }
+                let scale = 1.0 + effect(b, base, catalyst, i) / 100.0;
+                let fits = stats.iter().zip(&signed).all(|(stat, v)| {
+                    m.stats
+                        .iter()
+                        .find(|s| s.stat == *stat)
+                        .is_some_and(|s| shows_as(s.min, s.max, *v, scale))
+                });
+                if fits {
+                    out.push(Cand {
+                        m: i,
+                        stats: stats.clone(),
+                        values: signed.clone(),
+                    });
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Stats some translation shows; a mod's other stats need no line of their own.
+fn shown_stats(b: &Bundle) -> std::collections::HashSet<u16> {
+    b.translations
+        .iter()
+        .flat_map(|t| t.slots.iter().map(|s| s.0))
+        .collect()
+}
+
+/// One mod group read off the item: the tiers that fit every line it covers.
+#[derive(Clone, Debug)]
+struct Choice {
+    tiers: Vec<u32>,
+    lines: Vec<usize>,
+}
+
+/// Most search steps [`assign`] takes before settling for the best assignment found.
+const ASSIGN_BUDGET: usize = 200_000;
+
+/// Read the lines as mods: each line belongs to at most one mod, each group appears once, and a
+/// mod with several shown stats (a hybrid) claims one line per stat. Fewest unexplained lines
+/// wins, then fewest mods; ties go to the first found in line order.
+fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>]) -> Vec<Choice> {
+    struct Search<'a> {
+        b: &'a Bundle,
+        shown: &'a std::collections::HashSet<u16>,
+        cands: &'a [Vec<Cand>],
+        used: Vec<bool>,
+        groups: Vec<(u16, crate::item::Side)>,
+        cur: Vec<Choice>,
+        skipped: usize,
+        best: Option<(usize, usize, Vec<Choice>)>,
+        steps: usize,
+    }
+    impl Search<'_> {
+        /// The options for line `i`: (lines claimed, tiers), in first-seen order.
+        fn options(&self, i: usize) -> Vec<(Vec<usize>, Vec<u32>)> {
+            let mut opts: Vec<(u16, Vec<usize>, Vec<u32>)> = Vec::new();
+            for c in &self.cands[i] {
+                let m = self.b.mod_at(c.m);
+                if self.groups.contains(&(m.group, m.generation)) {
+                    continue;
+                }
+                // Each other shown stat of this tier needs a line of its own; try every choice.
+                let needed: Vec<u16> = m
+                    .stats
+                    .iter()
+                    .map(|s| s.stat)
+                    .filter(|s| self.shown.contains(s) && !c.stats.contains(s))
+                    .collect();
+                let mut sets: Vec<Vec<usize>> = vec![vec![i]];
+                for s in needed {
+                    let mut next = Vec::new();
+                    for set in &sets {
+                        let covers = |l: usize| {
+                            self.cands[l]
+                                .iter()
+                                .any(|x| x.m == c.m && x.stats.contains(&s))
+                        };
+                        if set.iter().any(|&l| covers(l)) {
+                            next.push(set.clone());
+                            continue;
+                        }
+                        for j in 0..self.cands.len() {
+                            if self.used[j] || set.contains(&j) {
+                                continue;
+                            }
+                            if covers(j) {
+                                let mut more = set.clone();
+                                more.push(j);
+                                next.push(more);
+                            }
+                        }
+                    }
+                    sets = next;
+                }
+                for mut lines in sets {
+                    lines.sort_unstable();
+                    match opts
+                        .iter_mut()
+                        .find(|(g, l, _)| *g == m.group && *l == lines)
+                    {
+                        Some((_, _, tiers)) => {
+                            if !tiers.contains(&c.m) {
+                                tiers.push(c.m)
+                            }
+                        }
+                        None => opts.push((m.group, lines, vec![c.m])),
+                    }
+                }
+            }
+            opts.into_iter().map(|(_, l, t)| (l, t)).collect()
+        }
+
+        fn run(&mut self) {
+            self.steps += 1;
+            if self.steps > ASSIGN_BUDGET {
+                return;
+            }
+            if let Some((skipped, _, _)) = &self.best
+                && self.skipped > *skipped
+            {
+                return;
+            }
+            let Some(i) = (0..self.cands.len()).find(|&i| !self.used[i]) else {
+                let better = match &self.best {
+                    None => true,
+                    Some((s, n, _)) => (self.skipped, self.cur.len()) < (*s, *n),
+                };
+                if better {
+                    self.best = Some((self.skipped, self.cur.len(), self.cur.clone()));
+                }
+                return;
+            };
+            for (lines, tiers) in self.options(i) {
+                let m = self.b.mod_at(tiers[0]);
+                for &l in &lines {
+                    self.used[l] = true;
+                }
+                self.groups.push((m.group, m.generation));
+                self.cur.push(Choice { tiers, lines });
+                self.run();
+                let c = self.cur.pop().expect("pushed above");
+                self.groups.pop();
+                for &l in &c.lines {
+                    self.used[l] = false;
+                }
+            }
+            self.used[i] = true;
+            self.skipped += 1;
+            self.run();
+            self.skipped -= 1;
+            self.used[i] = false;
+        }
+    }
+    let mut search = Search {
+        b,
+        shown,
+        cands,
+        used: vec![false; cands.len()],
+        groups: Vec::new(),
+        cur: Vec::new(),
+        skipped: 0,
+        best: None,
+        steps: 0,
+    };
+    search.run();
+    let mut out = search.best.map(|x| x.2).unwrap_or_default();
+    out.sort_by_key(|c| c.lines[0]);
+    out
 }
 
 #[cfg(test)]
@@ -458,6 +709,74 @@ mod tests {
         assert_eq!(d.requirements[1].min_value, 26.0);
         assert_eq!(d.requirements[2].min_value, 2.0);
         assert!(d.warnings.is_empty(), "{:?}", d.warnings);
+    }
+
+    /// (group, accepted mod ids, min value) per requirement.
+    fn found(b: &Bundle, d: &TargetDraft) -> Vec<(String, Vec<String>, f64)> {
+        d.requirements
+            .iter()
+            .map(|r| {
+                let ids = r.accepted.iter().map(|i| b.mod_at(*i).id.clone()).collect();
+                (b.group(r.group).to_string(), ids, r.min_value)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn parses_a_physical_weapon() {
+        let b = crate::test_bundle();
+        let d = parse_target(b, include_str!("../../../fixtures/vaal_axe_phys.txt"));
+        assert_eq!(
+            d.base.map(|i| b.base_at(i).name.clone()),
+            Some("Vaal Axe".to_string())
+        );
+        assert!(d.unmatched.is_empty(), "{:?}", d.unmatched);
+        assert!(d.warnings.is_empty(), "{:?}", d.warnings);
+        let f = found(b, &d);
+        for r in &f {
+            println!("{r:?}");
+        }
+        // 74% can only be the hybrid (153% cannot), so the accuracy line is its second half.
+        assert_eq!(f.len(), 5, "{f:?}");
+        assert_eq!(
+            f[0].1,
+            vec!["LocalIncreasedPhysicalDamagePercentAndAccuracyRating7".to_string()]
+        );
+        assert_eq!(f[0].2, 74.0);
+        assert_eq!(
+            f[1].1,
+            vec!["LocalIncreasedPhysicalDamagePercent6".to_string()]
+        );
+        assert_eq!(f[1].2, 153.0);
+        assert_eq!(f[2].1, vec!["LocalAddedPhysicalDamageTwoHand9".to_string()]);
+        assert_eq!(f[2].2, 37.0);
+        assert_eq!(d.min_hits, 5);
+    }
+
+    #[test]
+    fn parses_a_hybrid_beside_pure_percent_physical() {
+        let b = crate::test_bundle();
+        let text = "Item Class: Thrusting One Hand Swords\nRarity: Rare\nGrim Needle\nJewelled Foil\nItem Level: 84\n179% increased Physical Damage\n79% increased Physical Damage\n+200 to Accuracy Rating\nAdds 29 to 52 Physical Damage\n";
+        let d = parse_target(b, text);
+        assert!(d.unmatched.is_empty(), "{:?}", d.unmatched);
+        let f = found(b, &d);
+        for r in &f {
+            println!("{r:?}");
+        }
+        assert_eq!(f.len(), 3, "{f:?}");
+        assert_eq!(
+            f[0].1,
+            vec!["LocalIncreasedPhysicalDamagePercent8".to_string()]
+        );
+        assert_eq!(
+            f[1].1,
+            vec!["LocalIncreasedPhysicalDamagePercentAndAccuracyRating8".to_string()]
+        );
+        assert!(
+            f[2].1
+                .iter()
+                .all(|id| id.starts_with("LocalAddedPhysicalDamage"))
+        );
     }
 
     #[test]

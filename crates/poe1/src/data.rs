@@ -107,11 +107,12 @@ pub struct FossilData {
     pub supported: bool,
 }
 
+/// One way a tooltip line can read: `key` is the line with each value replaced by `#`; `slots`
+/// gives, per `#` in text order, the stat shown and whether the shown number is the stat negated.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Translation {
     pub key: String,
-    pub stat: u16,
-    pub negate: bool,
+    pub slots: Vec<(u16, bool)>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -310,7 +311,7 @@ mod tests {
     #[test]
     fn bundle_v2_carries_essences_and_fossils() {
         let b = crate::test_bundle();
-        assert_eq!(b.format, 2, "bundle format");
+        assert_eq!(b.format, 3, "bundle format");
 
         let rage = b
             .essences
