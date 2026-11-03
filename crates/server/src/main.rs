@@ -35,6 +35,15 @@ async fn main() {
     // A missing file under /assets or /data is a real 404; only unmatched paths get the SPA shell.
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
+        // The link-preview image is a real file, not the SPA shell: Discord and the
+        // other unfurlers fetch it without running JS (Anubis in front of this host
+        // lets exactly /og.png through for that reason).
+        .nest_service(
+            "/og.png",
+            ServiceBuilder::new()
+                .layer(cache("public, max-age=86400"))
+                .service(ServeFile::new(dir.join("og.png"))),
+        )
         .nest_service(
             "/assets",
             ServiceBuilder::new()
