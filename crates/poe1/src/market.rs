@@ -837,16 +837,20 @@ impl Solver<'_> {
                 }
                 Ok(r.0)
             }
-            ProcessKind::Custom { from, .. } => {
+            ProcessKind::Custom { from, chance, .. } => {
                 let from_good = from.as_ref().and_then(|f| self.m.good(f));
                 if let Some(f) = from_good
                     && self.vals[f].is_none()
                 {
-                    return Ok(ProcessValue::empty(
+                    // The chance is stated, so the edge can show it before the input is priced.
+                    let mut r = ProcessValue::empty(
                         &self.m.processes[p].id,
                         ProcessStatus::NeedsInput,
                         Some(format!("needs a price for {}", self.m.goods[f].name)),
-                    ));
+                    );
+                    r.p_success = Some(*chance);
+                    r.attempts = Some(1.0 / *chance);
+                    return Ok(r);
                 }
                 let from_val = from_good.and_then(|f| self.vals[f]);
                 Ok(eval_custom(self.b, self.m, p, from_good, from_val))

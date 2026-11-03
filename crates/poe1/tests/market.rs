@@ -279,6 +279,8 @@ fn custom_craft_closed_forms() {
     assert_eq!(sol.processes[0].status, market::ProcessStatus::NeedsInput);
     let error = sol.processes[0].error.clone().unwrap_or_default();
     assert!(error.contains("needs a price for"), "{error}");
+    // The stated chance shows before the input is priced.
+    assert_eq!(sol.processes[0].p_success, Some(0.25));
 }
 
 #[test]
