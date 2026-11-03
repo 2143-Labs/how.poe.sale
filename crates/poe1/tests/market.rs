@@ -68,8 +68,10 @@ fn pair(brick_sell: Option<f64>, va: f64, vb: f64) -> Market {
     let both = target("Lapis Amulet", 84, Rarity::Rare, reqs.clone());
     let a = target("Lapis Amulet", 84, Rarity::Rare, vec![reqs[0].clone()]);
     let c = target("Lapis Amulet", 84, Rarity::Rare, vec![reqs[1].clone()]);
+    // One of the two kept is a magic item.
     let mut one = both.clone();
     one.min_hits = 1;
+    one.rarity = Rarity::Magic;
     let mut goods = vec![
         good("main", both, None, None),
         good("a", a, Some(va), None),
@@ -85,28 +87,65 @@ fn pair(brick_sell: Option<f64>, va: f64, vb: f64) -> Market {
 fn recombine_closed_form() {
     let b = b();
     let mut prices = prices();
-    prices.insert("recombiner".into(), 5.0);
+    // One combine: 100k Thaumaturgic Dust and 12k Gold, priced per 1k.
+    let r = 100.0 * prices["thaumaturgic-dust-1k"] + 12.0 * prices["gold-1k"];
     let sol = market::solve(b, &pair(None, 10.0, 20.0), &prices, &[]).unwrap();
-    let r = &sol.processes[0];
-    assert!(close(r.p_success.unwrap(), 1.0 / 3.0, 1e-12));
-    assert!(close(r.cost.unwrap(), 105.0, 1e-12), "cost {:?}", r.cost);
+    let rp = &sol.processes[0];
+    // Both of two pooled prefixes kept: the count table's 33/100; one kept: 67/100.
+    let (both, one) = (33.0 / 100.0, 67.0 / 100.0);
+    assert!(close(rp.p_success.unwrap(), both, 1e-12));
+    assert!(
+        close(rp.cost.unwrap(), (30.0 + r) / both, 1e-12),
+        "cost {:?}",
+        rp.cost
+    );
     assert_eq!(sol.goods[0].via.as_deref(), Some("r"));
-    // "1 of 2 kept" priced 30 at probability 2/3: (35 - 20) * 3.
+    // A magic "1 of 2 kept" priced 30 is credited on every one-kept outcome.
     let sol = market::solve(b, &pair(Some(30.0), 10.0, 20.0), &prices, &[]).unwrap();
-    assert!(close(sol.processes[0].cost.unwrap(), 45.0, 1e-12));
-    // Recombiner repriced upward raises V(main).
-    prices.insert("recombiner".into(), 50.0);
+    let with_brick = (30.0 + r - 30.0 * one) / both;
+    assert!(close(sol.processes[0].cost.unwrap(), with_brick, 1e-12));
+    // Dearer Gold raises V(main).
+    prices.insert("gold-1k".into(), 5.0);
     let up = market::solve(b, &pair(Some(30.0), 10.0, 20.0), &prices, &[]).unwrap();
-    assert!(up.goods[0].value.unwrap() > 45.0);
+    assert!(up.goods[0].value.unwrap() > with_brick);
+}
+
+#[test]
+fn recombine_is_paid_in_dust_and_gold() {
+    let b = b();
+    let prices = prices();
+    // At the default prices one combine is 6 chaos of Gold and 0.6667 of Dust.
+    let unit: f64 = market::recombine_cost(false)
+        .iter()
+        .map(|(key, qty)| qty * prices[key])
+        .sum();
+    assert!((unit - 6.6667).abs() < 1e-4, "{unit}");
+    // An influenced input costs half as much again, once per combine.
+    let mut m = pair(None, 10.0, 20.0);
+    m.goods[1].spec.influences = 1;
+    let sol = market::solve(b, &m, &prices, &[]).unwrap();
+    assert_eq!(
+        sol.processes[0].steps[0].cost,
+        vec![
+            (market::DUST_KEY.to_string(), 150.0),
+            (market::GOLD_KEY.to_string(), 18.0)
+        ]
+    );
+    // Without a Gold price the recombine waits for one instead of costing it at 0.
+    let mut unpriced = prices.clone();
+    unpriced.remove("gold-1k");
+    let sol = market::solve(b, &pair(None, 10.0, 20.0), &unpriced, &[]).unwrap();
+    let rp = &sol.processes[0];
+    assert_eq!(rp.status, market::ProcessStatus::NeedsInput);
+    let error = rp.error.as_deref().unwrap_or("");
+    assert!(error.contains("gold-1k"), "{error}");
 }
 
 #[test]
 fn brick_paying_more_than_inputs_is_a_money_loop() {
     let b = b();
-    let mut prices = prices();
-    prices.insert("recombiner".into(), 5.0);
     let err =
-        market::solve(b, &pair(Some(1000.0), 10.0, 20.0), &prices, &[]).expect_err("money loop");
+        market::solve(b, &pair(Some(1000.0), 10.0, 20.0), &prices(), &[]).expect_err("money loop");
     assert!(err.to_string().contains("money loop"), "{err}");
 }
 

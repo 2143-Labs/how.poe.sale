@@ -1,6 +1,7 @@
 import type { Edge, Node } from '@xyflow/react'
 import { INFLUENCES } from './types'
 import type {
+  ClaimJson,
   ContractJson,
   ExitJson,
   GoodJson,
@@ -10,6 +11,7 @@ import type {
   ProcessJson,
   ProcessProposalJson,
   ProcessValueJson,
+  RangeJson,
   RecipeDef,
   Solution,
   SolutionEdge,
@@ -420,7 +422,38 @@ function normalizeProcessValue(raw: unknown): ProcessValueJson | null {
     exits: normalizeExits(p.exits),
     status,
     error: typeof p.error === 'string' ? p.error : null,
+    claims: asStringArray(p.claims),
   }
+}
+
+function normalizeClaims(raw: unknown): ClaimJson[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((entry) => {
+    const c = asRecord(entry)
+    if (
+      typeof c.id !== 'string' ||
+      typeof c.statement !== 'string' ||
+      typeof c.reason !== 'string' ||
+      typeof c.url !== 'string'
+    ) {
+      return []
+    }
+    return [{ id: c.id, statement: c.statement, reason: c.reason, url: c.url }]
+  })
+}
+
+function normalizeRange(raw: unknown): RangeJson | null {
+  const r = asRecord(raw)
+  const low = asNumber(r.low)
+  const high = asNumber(r.high)
+  if (low == null || high == null) return null
+  const readings = Array.isArray(r.readings)
+    ? r.readings.flatMap((entry) => {
+        const e = asRecord(entry)
+        return typeof e.label === 'string' ? [{ label: e.label, value: asNumber(e.value) }] : []
+      })
+    : []
+  return { low, high, readings }
 }
 
 function normalizeProcessJson(raw: unknown): ProcessJson | null {
@@ -505,6 +538,8 @@ export function normalizeSolutionV3(raw: unknown): SolutionV3 {
     },
     focus: s.focus ? normalizeSolution(s.focus) : null,
     proposals,
+    approximate: normalizeClaims(s.approximate),
+    range: normalizeRange(s.range),
   }
 }
 

@@ -4,7 +4,7 @@ mod common;
 
 use common::*;
 use poe1::item::{ItemState, Rarity, Side};
-use poe1::kernels::{self, Action};
+use poe1::kernels::{self, Action, RecombineRules};
 use poe1::registry::{self, Effect, SideEffect};
 use poe1::target::Target;
 
@@ -175,18 +175,38 @@ fn scour_keeps_a_locked_side_and_clears_the_rest() {
 }
 
 #[test]
-fn alteration_keeps_the_mod_count() {
+fn magic_rolls_hold_one_or_two_mods_half_each() {
     let b = b();
     let t = amulet(Rarity::Magic);
+    let by_count = |outs: &[(ItemState, f64)]| {
+        let mut p = [0.0; 3];
+        for (o, q) in outs {
+            assert_eq!(o.rarity, Rarity::Magic);
+            p[o.mod_count() as usize] += q;
+        }
+        p
+    };
+    let normal = state(&t, Rarity::Normal, &[]);
     let one = state(&t, Rarity::Magic, &[0]);
-    for (o, _) in kernels::outcomes(b, &t, &[], &one, &Action::Alteration) {
-        assert_eq!(o.mod_count(), 1);
-        assert_eq!(o.rarity, Rarity::Magic);
-    }
     let mut two = one.clone();
     two.suffixes.untracked = 1;
-    for (o, _) in kernels::outcomes(b, &t, &[], &two, &Action::Alteration) {
-        assert_eq!(o.mod_count(), 2);
+    let from_one = kernels::outcomes(b, &t, &[], &one, &Action::Alteration);
+    let from_two = kernels::outcomes(b, &t, &[], &two, &Action::Alteration);
+    for outs in [
+        kernels::outcomes(b, &t, &[], &normal, &Action::Transmute),
+        from_one.clone(),
+        from_two.clone(),
+    ] {
+        let p = by_count(&outs);
+        assert_eq!(p[0], 0.0);
+        assert!(close(p[1], 0.5, 1e-12), "{p:?}");
+        assert!(close(p[2], 0.5, 1e-12), "{p:?}");
+    }
+    // An Alteration rerolls everything: the old mod count does not matter.
+    assert_eq!(from_one.len(), from_two.len());
+    for ((o1, p1), (o2, p2)) in from_one.iter().zip(&from_two) {
+        assert_eq!(o1, o2);
+        assert!(close(*p1, *p2, 1e-12));
     }
 }
 
@@ -204,13 +224,9 @@ fn regal_adds_exactly_one_mod() {
 }
 
 #[test]
-fn transmute_and_augmentation_add_one_mod() {
+fn augmentation_adds_one_mod() {
     let b = b();
     let t = amulet(Rarity::Magic);
-    let normal = state(&t, Rarity::Normal, &[]);
-    for (o, _) in kernels::outcomes(b, &t, &[], &normal, &Action::Transmute) {
-        assert_eq!((o.rarity, o.mod_count()), (Rarity::Magic, 1));
-    }
     let magic = state(&t, Rarity::Magic, &[0]);
     assert!(registry::applicable(
         b,
@@ -249,7 +265,7 @@ fn restore_returns_the_imprinted_item() {
 fn every_cost_key_is_priced_or_typed() {
     let b = b();
     let prices = prices();
-    let typed = ["craicic-croaker", "recombiner"];
+    let typed = ["craicic-croaker"];
     let mut actions = single_actions();
     actions.push(Action::Essence { essence: 0 });
     for a in actions {
@@ -265,71 +281,79 @@ fn every_cost_key_is_priced_or_typed() {
 }
 
 /// Recombine two rares holding `na` and `nb` of the distinct prefixes of `t`.
-fn recombine_prefixes(t: &Target, na: usize, nb: usize) -> Vec<(ItemState, f64)> {
+fn recombine_prefixes(
+    t: &Target,
+    na: usize,
+    nb: usize,
+    rules: &RecombineRules,
+) -> Vec<(ItemState, f64)> {
     let a = state(t, Rarity::Rare, &(0..na).collect::<Vec<_>>());
     let c = state(t, Rarity::Rare, &(na..na + nb).collect::<Vec<_>>());
-    kernels::recombine(b(), t, &a, &c)
+    kernels::recombine(b(), t, &a, &c, rules)
+}
+
+/// Total probability of the outcomes holding exactly these prefix requirements.
+fn p_prefixes(outs: &[(ItemState, f64)], want: &[u16]) -> f64 {
+    outs.iter()
+        .filter(|(o, _)| {
+            let reqs: Vec<u16> = o.prefixes.wanted.iter().map(|h| h.req).collect();
+            reqs == want
+        })
+        .map(|(_, p)| p)
+        .sum()
 }
 
 #[test]
-fn recombine_count_table_rows() {
+fn recombine_keeps_the_drawn_subset() {
     let t = target(
         "Lapis Amulet",
         84,
         Rarity::Rare,
-        distinct_prefixes("Lapis Amulet", 6),
+        distinct_prefixes("Lapis Amulet", 4),
     );
-    let rows: [&[f64]; 6] = [
-        &[0.41, 0.59],
-        &[0.0, 2.0 / 3.0, 1.0 / 3.0],
-        &[0.0, 0.40, 0.50, 0.10],
-        &[0.0, 0.10, 0.60, 0.30],
-        &[0.0, 0.0, 0.43, 0.57],
-        &[0.0, 0.0, 0.30, 0.70],
-    ];
-    for (n, row) in (1..=6usize).zip(rows) {
-        let na = n.div_ceil(2);
-        let outs = recombine_prefixes(&t, na, n - na);
-        let mut by_count = [0.0; 4];
-        for (o, p) in &outs {
-            by_count[o.prefixes.wanted.len()] += p;
-        }
-        for (k, want) in row.iter().enumerate() {
-            assert!(
-                (by_count[k] - want).abs() < 1e-12,
-                "pool {n}: P({k} kept) = {}, table {want}",
-                by_count[k]
-            );
-        }
-    }
-    // Specific subsets: both of two kept 1/3; a specific 3 of 4 = 0.30 * 1/4.
-    let both = recombine_prefixes(&t, 1, 1)
+    let weights: Vec<f64> = t
+        .requirements
         .iter()
-        .filter(|(o, _)| o.prefixes.wanted.len() == 2)
-        .map(|(_, p)| p)
-        .sum::<f64>();
-    assert!((both - 1.0 / 3.0).abs() < 1e-12);
-    let three = recombine_prefixes(&t, 2, 2)
-        .iter()
-        .filter(|(o, _)| {
-            let reqs: Vec<u16> = o.prefixes.wanted.iter().map(|h| h.req).collect();
-            reqs == [0, 1, 2]
-        })
-        .map(|(_, p)| p)
-        .sum::<f64>();
-    assert!((three - 0.075).abs() < 1e-12, "specific 3 of 4 = {three}");
+        .map(|r| weight_on("Lapis Amulet", &b().mod_at(r.accepted[0]).id))
+        .collect();
+    let plan = RecombineRules::plan();
+    // Both of two kept: the table's 33/100, whatever the weights.
+    let both = p_prefixes(&recombine_prefixes(&t, 1, 1, &plan), &[0, 1]);
+    assert!(close(both, 33.0 / 100.0, 1e-12), "both of two = {both}");
+    // A specific 3 of 4: P(3 kept) = 31/101, times the chance the draw picks exactly that set.
+    let uniform = RecombineRules { alpha: 0.0, ..plan };
+    let three = p_prefixes(&recombine_prefixes(&t, 2, 2, &uniform), &[0, 1, 2]);
+    assert!(
+        close(three, 31.0 / 101.0 / 4.0, 1e-12),
+        "uniform specific 3 of 4 = {three}"
+    );
+    let three = p_prefixes(&recombine_prefixes(&t, 2, 2, &plan), &[0, 1, 2]);
+    let want = 31.0 / 101.0 * keep_set_prob(&weights, &[0, 1, 2], 3, plan.alpha);
+    assert!(
+        close(three, want, 1e-12),
+        "specific 3 of 4 = {three}, want {want}"
+    );
+    // The wiki's rounded table is read only when asked for: its P(3 of 4 kept) is 30/100.
+    let alt = RecombineRules::alt_table();
+    let three = p_prefixes(&recombine_prefixes(&t, 2, 2, &alt), &[0, 1, 2]);
+    let want = 30.0 / 100.0 * keep_set_prob(&weights, &[0, 1, 2], 3, alt.alpha);
+    assert!(
+        close(three, want, 1e-12),
+        "wiki specific 3 of 4 = {three}, want {want}"
+    );
 }
 
 #[test]
 fn recombine_base_and_item_level() {
     let b = b();
+    let rules = RecombineRules::plan();
     let t = target("Lapis Amulet", 1, Rarity::Rare, Vec::new());
     let onyx = base("Onyx Amulet");
     for ((x, y), want) in [((84, 86), 86), ((80, 84), 84), ((80, 80), 80)] {
         let mut a = ItemState::new(t.base, x, Rarity::Rare, 0);
         a.suffixes.wanted.clear();
         let c = ItemState::new(onyx, y, Rarity::Rare, 0);
-        let outs = kernels::recombine(b, &t, &a, &c);
+        let outs = kernels::recombine(b, &t, &a, &c, &rules);
         let mut on_a = 0.0;
         for (o, p) in &outs {
             assert_eq!(o.ilvl, want, "ilvl({x},{y})");
@@ -340,11 +364,137 @@ fn recombine_base_and_item_level() {
         }
         assert!((on_a - 0.5).abs() < 1e-12);
     }
+    // The chosen base carries its influence and its catalyst; the other base's are lost.
+    let shaper = ItemState::new(t.base, 84, Rarity::Rare, 1);
+    let plain = ItemState::new(t.base, 84, Rarity::Rare, 0);
+    let outs = kernels::recombine(b, &t, &shaper, &plain, &rules);
+    let p_shaper: f64 = outs
+        .iter()
+        .filter(|(o, _)| o.influences == 1)
+        .map(|(_, p)| p)
+        .sum();
+    assert!(close(p_shaper, 0.5, 1e-12), "{p_shaper}");
+    assert!(outs.iter().all(|(o, _)| o.influences <= 1));
+    let mut a = ItemState::new(t.base, 84, Rarity::Rare, 0);
+    a.catalyst = Some((0, 20));
+    let c = ItemState::new(onyx, 84, Rarity::Rare, 0);
+    for (o, _) in kernels::recombine(b, &t, &a, &c, &rules) {
+        let want = if o.base == t.base { a.catalyst } else { None };
+        assert_eq!(o.catalyst, want);
+    }
+    // A Shaper-only suffix travels only on the Shaper base: kept 59/100 of the time there, never
+    // on the plain base, where it still counts as one pooled mod.
+    let t = target(
+        "Lapis Amulet",
+        84,
+        Rarity::Rare,
+        vec![req(&["PercentageAllAttributesUberShaper1"])],
+    );
+    let mut a = ItemState::new(t.base, 84, Rarity::Rare, 1);
+    a.suffixes.wanted.push(poe1::item::Hit {
+        req: 0,
+        idx: 0,
+        value_ok: true,
+    });
+    let c = ItemState::new(t.base, 84, Rarity::Rare, 0);
+    let outs = kernels::recombine(b, &t, &a, &c, &rules);
+    let holding: f64 = outs
+        .iter()
+        .filter(|(o, _)| !o.suffixes.wanted.is_empty())
+        .map(|(_, p)| p)
+        .sum();
+    assert!(close(holding, 0.5 * 59.0 / 100.0, 1e-12), "{holding}");
+    for (o, _) in &outs {
+        if !o.suffixes.wanted.is_empty() {
+            assert_eq!(o.influences, 1);
+        }
+    }
     // Different classes and untracked mods are refused.
+    let t = target("Lapis Amulet", 1, Rarity::Rare, Vec::new());
     let wand = ItemState::new(base("Omen Wand"), 84, Rarity::Rare, 0);
     let a = ItemState::new(t.base, 84, Rarity::Rare, 0);
-    assert!(kernels::recombine(b, &t, &a, &wand).is_empty());
+    assert!(kernels::recombine(b, &t, &a, &wand, &rules).is_empty());
     let mut junk = a.clone();
     junk.prefixes.untracked = 1;
-    assert!(kernels::recombine(b, &t, &junk, &a).is_empty());
+    assert!(kernels::recombine(b, &t, &junk, &a, &rules).is_empty());
+}
+
+#[test]
+fn recombine_non_native_mod_never_transfers() {
+    let b = b();
+    let t = target(
+        "Convoking Wand",
+        84,
+        Rarity::Rare,
+        vec![
+            req(&["MinionAttackAndCastSpeed7"]),
+            req(&["IncreasedCastSpeed2"]),
+        ],
+    );
+    let hit = |r: u16| poe1::item::Hit {
+        req: r,
+        idx: 0,
+        value_ok: true,
+    };
+    let mut a = ItemState::new(t.base, 84, Rarity::Rare, 0);
+    a.suffixes.wanted.push(hit(0));
+    let omen = base("Omen Wand");
+    let mut c = ItemState::new(omen, 84, Rarity::Rare, 0);
+    c.suffixes.wanted.push(hit(1));
+    let outs = kernels::recombine(b, &t, &a, &c, &RecombineRules::plan());
+    let on_omen = |f: &dyn Fn(&ItemState) -> bool| -> f64 {
+        outs.iter()
+            .filter(|(o, _)| o.base == omen && f(o))
+            .map(|(_, p)| p)
+            .sum()
+    };
+    // The minion mod counts in the pool of two but never lands on the Omen Wand, so the cast
+    // speed mod is all a kept count of 1 or 2 can take there.
+    let with_minion = on_omen(&|o| o.suffixes.wanted.iter().any(|h| h.req == 0));
+    assert_eq!(with_minion, 0.0);
+    let only_cast = on_omen(&|o| o.suffixes.wanted.len() == 1 && o.suffixes.wanted[0].req == 1);
+    assert!(close(only_cast, 0.5, 1e-12), "{only_cast}");
+}
+
+#[test]
+fn recombine_output_rarity_follows_kept_mods() {
+    let b = b();
+    let rules = RecombineRules::plan();
+    let t = target(
+        "Lapis Amulet",
+        84,
+        Rarity::Rare,
+        distinct_prefixes("Lapis Amulet", 2),
+    );
+    let by_rarity = |outs: Vec<(ItemState, f64)>| {
+        let mut p = [0.0; 3];
+        for (o, q) in outs {
+            let n = o.prefixes.wanted.len();
+            let i = match o.rarity {
+                Rarity::Normal => 0,
+                Rarity::Magic => 1,
+                Rarity::Rare => 2,
+            };
+            assert_eq!(
+                (o.rarity, n),
+                ([Rarity::Normal, Rarity::Magic, Rarity::Rare][n.min(2)], n)
+            );
+            p[i] += q;
+        }
+        p
+    };
+    // Two rares: one prefix kept is a magic item, both a rare.
+    let a = state(&t, Rarity::Rare, &[0]);
+    let c = state(&t, Rarity::Rare, &[1]);
+    let p = by_rarity(kernels::recombine(b, &t, &a, &c, &rules));
+    assert_eq!(p[0], 0.0);
+    assert!(close(p[1], 67.0 / 100.0, 1e-12), "{p:?}");
+    assert!(close(p[2], 33.0 / 100.0, 1e-12), "{p:?}");
+    // A magic prefix and an empty magic item: nothing kept is a normal item.
+    let a = state(&t, Rarity::Magic, &[0]);
+    let c = state(&t, Rarity::Magic, &[]);
+    let p = by_rarity(kernels::recombine(b, &t, &a, &c, &rules));
+    assert!(close(p[0], 41.0 / 100.0, 1e-12), "{p:?}");
+    assert!(close(p[1], 59.0 / 100.0, 1e-12), "{p:?}");
+    assert_eq!(p[2], 0.0);
 }

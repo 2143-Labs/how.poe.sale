@@ -7,10 +7,11 @@ use serde::{Deserialize, Serialize};
 use solver::graph::{EdgeKind, Graph, START};
 use solver::{ProposalStatus, SolveError};
 
+use crate::claims;
 use crate::data::Bundle;
 use crate::engine::Engine;
 use crate::item::{INFLUENCE_NAMES, ItemState, Rarity, Side};
-use crate::kernels::Action;
+use crate::kernels::{self, Action};
 use crate::market::{self, CraftPlan, Good, Market, Process, ProcessKind};
 use crate::recipe;
 use crate::registry::{self, DonorSpec};
@@ -1130,6 +1131,9 @@ pub struct ProcessValueJson {
     pub exits: Vec<ExitJson>,
     pub status: String,
     pub error: Option<String>,
+    /// The claims (`rules/poe1-claims.json`) this process's evaluation read.
+    #[serde(default)]
+    pub claims: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1162,6 +1166,40 @@ pub struct SolutionV3 {
     /// Craft evaluations answered from the market cache (perf diagnostics).
     #[serde(default)]
     pub cache_hits: u32,
+    /// The approximate rules the root's chosen route rests on, sorted by id.
+    #[serde(default)]
+    pub approximate: Vec<ClaimJson>,
+    /// The root's value re-solved under the alternative readings of the approximate recombine
+    /// rules; `None` when the route has no recombine or the root has no value.
+    #[serde(default)]
+    pub range: Option<RangeJson>,
+}
+
+/// One approximate rule, as the answer cites it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClaimJson {
+    pub id: String,
+    pub statement: String,
+    pub reason: String,
+    pub url: String,
+}
+
+/// The root's value over the readings of the approximate rules, with the plan value included.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RangeJson {
+    pub low: f64,
+    pub high: f64,
+    pub readings: Vec<ReadingJson>,
+}
+
+/// The root's value under one alternative reading; `None` when the market does not solve.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingJson {
+    pub label: String,
+    pub value: Option<f64>,
 }
 
 impl SolutionV3 {
@@ -1177,6 +1215,8 @@ impl SolutionV3 {
             focus: None,
             proposals: BTreeMap::new(),
             cache_hits: 0,
+            approximate: Vec::new(),
+            range: None,
         }
     }
 }
@@ -1457,6 +1497,7 @@ fn process_value_json(
         exits: v.exits.iter().map(|e| exit_json(b, m, e)).collect(),
         status: v.status.name().to_string(),
         error: v.error.clone(),
+        claims: v.claims.iter().map(|c| c.to_string()).collect(),
     }
 }
 
@@ -1556,6 +1597,24 @@ fn solve_market_inner(
         .enumerate()
         .map(|(i, v)| process_value_json(b, &m, i, v))
         .collect();
+    let route = route_claims(&m, &values);
+    let approximate = route
+        .iter()
+        .map(|id| claims::claim(id))
+        .filter(|c| c.approximate)
+        .map(|c| ClaimJson {
+            id: c.id.clone(),
+            statement: c.statement.clone(),
+            reason: c.reason.clone().unwrap_or_default(),
+            url: c.url.clone(),
+        })
+        .collect();
+    let range = match values.goods[m.root].value {
+        Some(v) if route.iter().any(|id| id.starts_with("recombine.")) => {
+            Some(recombine_range(b, &m, &prices, &donors, v))
+        }
+        _ => None,
+    };
     Ok(SolutionV3 {
         version: VERSION_V3,
         error: None,
@@ -1564,7 +1623,79 @@ fn solve_market_inner(
         focus,
         proposals,
         cache_hits: values.cache_hits,
+        approximate,
+        range,
     })
+}
+
+/// The claims read by every process on the root's chosen route (following each good's `via`
+/// down to bought goods), sorted and deduplicated.
+fn route_claims(m: &Market, values: &market::MarketSolution) -> Vec<&'static str> {
+    let mut out: Vec<&'static str> = Vec::new();
+    let mut seen = vec![false; m.goods.len()];
+    let mut stack = vec![m.root];
+    while let Some(g) = stack.pop() {
+        if std::mem::replace(&mut seen[g], true) {
+            continue;
+        }
+        let Some(pi) = values.goods[g].via.as_deref().and_then(|id| m.process(id)) else {
+            continue;
+        };
+        out.extend(values.processes[pi].claims.iter().copied());
+        stack.extend(m.inputs(pi));
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// The root's value re-solved under each alternative reading of the approximate recombine rules:
+/// the selection exponent at both ends of its interval, and the wiki's count table.
+fn recombine_range(
+    b: &Bundle,
+    m: &Market,
+    prices: &BTreeMap<String, f64>,
+    donors: &[DonorSpec],
+    plan_value: f64,
+) -> RangeJson {
+    let plan = kernels::RecombineRules::plan();
+    let (_, low, high) = claims::recombine_alpha();
+    let readings_rules = [
+        (
+            format!("α {low:.1}"),
+            kernels::RecombineRules { alpha: low, ..plan },
+        ),
+        (
+            format!("α {high:.1}"),
+            kernels::RecombineRules {
+                alpha: high,
+                ..plan
+            },
+        ),
+        (
+            "wiki count table".to_string(),
+            kernels::RecombineRules::alt_table(),
+        ),
+    ];
+    let mut readings = Vec::new();
+    let (mut lo, mut hi) = (plan_value, plan_value);
+    for (label, rules) in readings_rules {
+        let mut alt = m.clone();
+        alt.recombine_rules = rules;
+        let value = market::solve(b, &alt, prices, donors)
+            .ok()
+            .and_then(|s| s.goods[alt.root].value);
+        if let Some(v) = value {
+            lo = lo.min(v);
+            hi = hi.max(v);
+        }
+        readings.push(ReadingJson { label, value });
+    }
+    RangeJson {
+        low: lo,
+        high: hi,
+        readings,
+    }
 }
 
 /// Requirements only a mechanic no recipe delivers can produce.
@@ -1608,6 +1739,9 @@ pub fn propose_processes(
 }
 
 fn describe_pre(c: &registry::Contract) -> String {
+    if c.id == "recombine" {
+        return "two Magic or Rare items of the same class".to_string();
+    }
     let r = &c.requires;
     let mut parts = vec![match r.rarity {
         Some(x) => x.name().to_string(),
@@ -1681,7 +1815,7 @@ pub fn contracts_json(b: &Bundle) -> Vec<ContractJson> {
             requires: describe_pre(c),
             effect: describe_effect(c),
             cost: match c.id {
-                "recombine" => vec![(market::RECOMBINER_KEY.to_string(), 1.0)],
+                "recombine" => market::recombine_cost(false),
                 "apply-catalyst" => vec![(
                     "<catalyst>".to_string(),
                     registry::CATALYSTS_FOR_FULL_QUALITY,

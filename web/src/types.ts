@@ -276,6 +276,29 @@ export interface ProcessValueJson {
   exits: ExitJson[]
   status: ProcessStatus
   error: string | null
+  /** ids of the rules (claims) this process's evaluation read */
+  claims: string[]
+}
+
+/** One approximate rule the answer rests on, with its public source. */
+export interface ClaimJson {
+  id: string
+  statement: string
+  reason: string
+  url: string
+}
+
+/** The root's value under one alternative reading of the approximate rules. */
+export interface ReadingJson {
+  label: string
+  value: number | null
+}
+
+/** How far the root's value moves over the readings (the plan value included). */
+export interface RangeJson {
+  low: number
+  high: number
+  readings: ReadingJson[]
 }
 
 export interface ProcessProposalJson {
@@ -295,6 +318,10 @@ export interface SolutionV3 {
   market: { goods: GoodValueJson[]; processes: ProcessValueJson[] }
   focus: Solution | null
   proposals: Record<string, ProcessProposalJson[]>
+  /** approximate rules on the root's chosen route */
+  approximate: ClaimJson[]
+  /** the root's value under the alternative readings; null without a recombine on the route */
+  range: RangeJson | null
 }
 
 export interface ContractJson {

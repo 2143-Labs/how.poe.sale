@@ -751,6 +751,12 @@ mod tests {
         assert_eq!(f[2].1, vec!["LocalAddedPhysicalDamageTwoHand9".to_string()]);
         assert_eq!(f[2].2, 37.0);
         assert_eq!(d.min_hits, 5);
+        // Battle Royale copies are not real tiers, so no line may resolve to one.
+        assert!(
+            f.iter()
+                .all(|r| r.1.iter().all(|id| !id.contains("Royale"))),
+            "{f:?}"
+        );
     }
 
     #[test]

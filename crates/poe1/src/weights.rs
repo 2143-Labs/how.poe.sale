@@ -4,6 +4,7 @@ use crate::data::{Bundle, ModData};
 use crate::item::{INFLUENCE_NAMES, Side};
 
 /// Whether catalyst quality steers spawn weights (user-stated 3.29 behaviour).
+/// Claim: catalyst.affects_weights
 pub const CATALYST_AFFECTS_WEIGHTS: bool = true;
 
 /// A sorted, deduplicated set of tag indices: the tags that decide a mod's spawn weight.
@@ -44,6 +45,21 @@ pub fn spawn_weight(m: &ModData, tags: &TagSet) -> u32 {
         }
     }
     0
+}
+
+/// The mod's generation-weight multiplier on an item with `tags`: the first listed tag the item
+/// has scales its spawn weight by `weight / 100`; no list or no match leaves it at 1.
+// Claim: pool.generation_weights
+pub fn generation_multiplier(m: &ModData, tags: &TagSet) -> f64 {
+    m.gen_weights
+        .iter()
+        .find(|(tag, _)| tags.contains(*tag))
+        .map_or(1.0, |(_, w)| *w as f64 / 100.0)
+}
+
+/// The weight a mod rolls with on an item with `tags`: spawn weight times generation multiplier.
+pub fn effective_weight(m: &ModData, tags: &TagSet) -> f64 {
+    spawn_weight(m, tags) as f64 * generation_multiplier(m, tags)
 }
 
 impl Bundle {
@@ -186,7 +202,7 @@ pub fn pool_with(b: &Bundle, f: &PoolFilter, pm: &PoolMod) -> Vec<PoolEntry> {
         if base == 0 {
             continue;
         }
-        let mut weight = base as f64 * pm.multiplier(m);
+        let mut weight = effective_weight(m, f.tags) * pm.multiplier(m);
         if weight <= 0.0 {
             continue;
         }
@@ -221,8 +237,6 @@ pub enum ModSource {
     Fossil(u16),
     /// A crafting-bench option for the item's class.
     Bench,
-    /// Rolls on this other base of the same item class; reaches this item only by recombining.
-    Foreign(u16),
 }
 
 impl ModSource {
@@ -232,7 +246,6 @@ impl ModSource {
             ModSource::Essence(_) => 0,
             ModSource::Influence(_) => 1,
             ModSource::Fossil(_) => 2,
-            ModSource::Foreign(_) => 3,
             ModSource::Bench => 4,
             ModSource::Native => 5,
         }
@@ -264,15 +277,14 @@ impl ModSource {
                     .unwrap_or("fossil")
             ),
             ModSource::Bench => "Bench".to_string(),
-            ModSource::Foreign(base) => {
-                format!("Recombine with {}", b.base_at(base).name)
-            }
         }
     }
 }
 
 /// Every mechanic that can place `mod_index` on `base` carrying `influences`, in [`ModSource`]
 /// order. Empty means no modelled mechanic can; only then is a requirement "not understood".
+/// Another base of the class is no source: a recombine never keeps a mod its chosen base cannot
+/// roll (claim recombine.non_native).
 pub fn sources(b: &Bundle, base: u16, influences: u8, mod_index: u32) -> Vec<ModSource> {
     SourceCtx::new(b, base, influences).sources(mod_index)
 }
@@ -286,8 +298,6 @@ pub struct SourceCtx<'a> {
     /// (influence bit index, tags with that influence added) for influences the item lacks and
     /// its class supports.
     with_influence: Vec<(u8, TagSet)>,
-    /// Other bases of the same class, with their plain tags.
-    siblings: Vec<(u16, TagSet)>,
 }
 
 impl<'a> SourceCtx<'a> {
@@ -299,17 +309,12 @@ impl<'a> SourceCtx<'a> {
             .map(|bit| (bit, b.item_tags(base, influences | (1 << bit))))
             .filter(|(_, with)| *with != tags)
             .collect();
-        let siblings = (0..b.bases.len() as u16)
-            .filter(|i| *i != base && b.base_at(*i).class == class)
-            .map(|i| (i, b.item_tags(i, 0)))
-            .collect();
         SourceCtx {
             b,
             base,
             class,
             tags,
             with_influence,
-            siblings,
         }
     }
 
@@ -347,15 +352,6 @@ impl<'a> SourceCtx<'a> {
             .is_some_and(|e| b.bench[*e as usize].classes.contains(&self.class))
         {
             out.push(ModSource::Bench);
-        }
-        if natural
-            && !native
-            && let Some((other, _)) = self
-                .siblings
-                .iter()
-                .find(|(_, tags)| spawn_weight(m, tags) > 0)
-        {
-            out.push(ModSource::Foreign(*other));
         }
         out
     }
@@ -463,7 +459,8 @@ mod tests {
                 influence_bits(&["Shaper", "Warlord"]),
                 None
             ),
-            143_700.0
+            // 143,700 less the Battle Royale cast-speed copy's amulet weight of 800.
+            143_700.0 - 800.0
         );
     }
 
@@ -479,7 +476,9 @@ mod tests {
                 influence_bits(&["Shaper", "Warlord"]),
                 Some((&tags, 20))
             ),
-            150_740.0
+            // 150,740 less the same 800: the copy has no `attribute` tag, so the catalyst
+            // never scaled it.
+            150_740.0 - 800.0
         );
     }
 
@@ -497,5 +496,34 @@ mod tests {
             ),
             99_000.0
         );
+    }
+
+    fn base_pool(name: &str, side: Side) -> f64 {
+        let b = crate::test_bundle();
+        let tags = b.item_tags(b.base_by_name(name).expect("base"), 0);
+        pool(
+            b,
+            &PoolFilter {
+                side,
+                tags: &tags,
+                ilvl: 84,
+                excluded_groups: &[],
+                influence_only: false,
+                catalyst: None,
+            },
+        )
+        .iter()
+        .map(|e| e.weight)
+        .sum()
+    }
+
+    #[test]
+    fn generation_weights_halve_staff_attack_mods() {
+        // A staff rolls the generation-weighted attack mods at half weight...
+        assert_eq!(base_pool("Eclipse Staff", Side::Prefix), 77_870.0);
+        assert_eq!(base_pool("Eclipse Staff", Side::Suffix), 78_075.0);
+        // ...a warstaff at full weight, so its pools are the plain spawn-weight sums.
+        assert_eq!(base_pool("Ezomyte Staff", Side::Prefix), 52_982.0);
+        assert_eq!(base_pool("Ezomyte Staff", Side::Suffix), 87_400.0);
     }
 }

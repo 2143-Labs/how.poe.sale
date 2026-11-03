@@ -42,6 +42,9 @@ pub struct ModData {
     pub influence: bool,
     /// Spawn weights in the order the game scans them: first tag present in the item's tag set wins.
     pub weights: Vec<(u16, u32)>,
+    /// Generation-weight multipliers (`weight / 100`), scanned like `weights`; empty means none.
+    #[serde(default)]
+    pub gen_weights: Vec<(u16, u32)>,
     /// True iff a supported fossil adds this mod directly (fossil-only reachability).
     #[serde(default)]
     pub fossil_only: bool,
@@ -311,7 +314,7 @@ mod tests {
     #[test]
     fn bundle_v2_carries_essences_and_fossils() {
         let b = crate::test_bundle();
-        assert_eq!(b.format, 3, "bundle format");
+        assert_eq!(b.format, 4, "bundle format");
 
         let rage = b
             .essences

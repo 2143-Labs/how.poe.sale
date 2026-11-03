@@ -45,6 +45,8 @@ struct RawMod {
     domain: String,
     generation_type: String,
     #[serde(default)]
+    generation_weights: Vec<RawWeight>,
+    #[serde(default)]
     groups: Vec<String>,
     #[serde(default)]
     implicit_tags: Vec<String>,
@@ -235,6 +237,9 @@ struct ModOut {
     implicit_tags: Vec<String>,
     influence: bool,
     weights: Vec<(u16, u32)>,
+    /// Generation-weight multipliers (`weight / 100`, first matching tag wins).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    gen_weights: Vec<(u16, u32)>,
     #[serde(skip_serializing_if = "is_false")]
     fossil_only: bool,
 }
@@ -526,9 +531,13 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
         .0
         .iter()
         .filter(|(id, m)| {
+            // Battle Royale copies of real mods carry `Royale` in their id; a league item cannot
+            // roll them.
+            // Claim: pool.royale_excluded
             let modelled = matches!(m.domain.as_str(), "item" | "crafted")
                 && matches!(m.generation_type.as_str(), "prefix" | "suffix")
-                && !m.stats.is_empty();
+                && !m.stats.is_empty()
+                && !id.contains("Royale");
             // Essence and fossil mods may live outside the modelled domain (delve), but the
             // bundle must still be able to resolve them by id.
             let referenced = referenced_mods.contains(id.as_str())
@@ -548,7 +557,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     let mut tag_set: BTreeSet<String> = BTreeSet::new();
     tag_set.insert("default".into());
     for (_, m) in &kept_mods {
-        for w in &m.spawn_weights {
+        for w in m.spawn_weights.iter().chain(&m.generation_weights) {
             tag_set.insert(w.tag.clone());
         }
     }
@@ -648,16 +657,18 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
         let Some(group) = m.groups.first().and_then(|g| group_idx.get(g.as_str())) else {
             bail!("mod {id} has no known group");
         };
-        let weights = m
-            .spawn_weights
-            .iter()
-            .map(|w| {
-                tag_idx
-                    .get(w.tag.as_str())
-                    .map(|i| (*i, w.weight))
-                    .with_context(|| format!("mod {id} spawn tag {} not in tag table", w.tag))
-            })
-            .collect::<anyhow::Result<Vec<_>>>()?;
+        let tag_weights = |list: &[RawWeight], what: &str| {
+            list.iter()
+                .map(|w| {
+                    tag_idx
+                        .get(w.tag.as_str())
+                        .map(|i| (*i, w.weight))
+                        .with_context(|| format!("mod {id} {what} tag {} not in tag table", w.tag))
+                })
+                .collect::<anyhow::Result<Vec<_>>>()
+        };
+        let weights = tag_weights(&m.spawn_weights, "spawn")?;
+        let gen_weights = tag_weights(&m.generation_weights, "generation")?;
         mods_out.push(ModOut {
             id: (*id).clone(),
             generation: if m.generation_type == "prefix" {
@@ -682,6 +693,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             implicit_tags: m.implicit_tags.clone(),
             influence: m.implicit_tags.iter().any(|t| t == "influence_mod"),
             weights,
+            gen_weights,
             fossil_only: fossil_only.contains(id.as_str()),
         });
     }
@@ -759,7 +771,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     }
 
     Ok(Bundle {
-        format: 3,
+        format: 4,
         patch: PATCH.to_string(),
         source: Source {
             repo: "repoe-fork",

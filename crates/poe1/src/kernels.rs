@@ -8,9 +8,12 @@ use crate::data::Bundle;
 use crate::item::{Blocked, Hit, ItemState, Side, SideState};
 use crate::registry::{self, DonorSpec};
 use crate::target::{self, Target};
-use crate::weights::{PoolFilter, PoolMod, pool_with};
+use crate::weights::{
+    ModSource, PoolFilter, PoolMod, SourceCtx, effective_weight, pool_with, spawn_weight,
+};
 
 /// Whether any currency use consumes a catalyst's quality (user-stated 3.29 behaviour).
+/// Claim: catalyst.consumed_by_currency
 pub const CATALYST_CONSUMED_BY_CURRENCY: bool = true;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -36,9 +39,9 @@ pub enum Action {
     Combine {
         donor: u8,
     },
-    /// Normal -> magic with one mod.
+    /// Normal -> magic with 1 or 2 mods, 1/2 each (claim magic.mod_count).
     Transmute,
-    /// Magic -> magic, its mods re-rolled; the mod count is kept.
+    /// Magic -> magic, rerolled to 1 or 2 mods, 1/2 each.
     Alteration,
     /// Magic with a free slot -> one more mod.
     Augmentation,
@@ -476,7 +479,7 @@ fn reforge_with(
     let capacity = (cap_p + cap_s).saturating_sub(kept);
     let mut outs = Vec::new();
     for (start, p_start, excluded) in &starts {
-        for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
+        for (k, weight) in crate::claims::chaos_count_weights() {
             let n_new = k.saturating_sub(kept).min(capacity);
             for (state, p) in fill_with(b, t, start, n_new, first_influence_only, pm, excluded) {
                 outs.push((state, p * weight * p_start));
@@ -537,16 +540,26 @@ fn cleared(s: &ItemState) -> ItemState {
     st
 }
 
+/// A fresh magic roll on `st`: 1 or 2 mods by the magic mod-count claim, all from one shared pool.
+fn magic_roll(b: &Bundle, t: &Target, st: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut outs = Vec::new();
+    for (n, w) in crate::claims::magic_mod_count_weights() {
+        for (o, p) in fill(b, t, st, n, false) {
+            outs.push((o, p * w));
+        }
+    }
+    finish(false, outs)
+}
+
 fn transmute(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
     let mut st = cleared(s);
     st.rarity = crate::item::Rarity::Magic;
-    fill(b, t, &st, 1, false)
+    magic_roll(b, t, &st)
 }
 
-/// The mod count is kept: a one-mod item re-rolls to one mod, a two-mod item to two.
+/// Every mod is rerolled to a fresh 1 or 2, whatever the item held before.
 fn alteration(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
-    let n = s.mod_count().clamp(1, 2);
-    fill(b, t, &cleared(s), n, false)
+    magic_roll(b, t, &cleared(s))
 }
 
 fn regal(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
@@ -591,113 +604,287 @@ fn restore(s: &ItemState) -> Vec<(ItemState, f64)> {
 
 // ------------------------------------------------------------------ recombine (two items)
 
+/// The recombine rules whose evidence is weak enough that an answer re-solves under alternatives.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RecombineRules {
+    /// Selection exponent: an eligible pooled mod is kept with chance ∝ weight^alpha (0: uniform).
+    pub alpha: f64,
+    /// Kept-count table: row = pooled count 1..=6 (clamped), column = mods kept 0..=3.
+    pub count_table: [[f64; 4]; 6],
+}
+
+impl RecombineRules {
+    /// The plan readings: α's plan value and the guide's count table.
+    pub fn plan() -> RecombineRules {
+        RecombineRules {
+            alpha: crate::claims::recombine_alpha().0,
+            count_table: crate::claims::recombine_count_table("recombine.count_table"),
+        }
+    }
+
+    /// The plan α with the wiki's rounded count table.
+    pub fn alt_table() -> RecombineRules {
+        RecombineRules {
+            count_table: crate::claims::recombine_count_table("recombine.count_table_alt"),
+            ..RecombineRules::plan()
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum PoolMod2 {
     Hit(Hit),
     Blocked(Blocked),
 }
 
-fn entry_group(t: &Target, e: &PoolMod2) -> u16 {
-    match e {
-        PoolMod2::Hit(h) => t.requirements[h.req as usize].group,
-        PoolMod2::Blocked(x) => x.group,
-    }
+/// One pooled mod of a recombine side, as the output on the chosen base sees it.
+#[derive(Clone, Copy)]
+struct Pooled {
+    item: PoolMod2,
+    group: u16,
+    /// Selection weight on the chosen base, always > 0.
+    weight: f64,
+    /// Whether the chosen base can carry the mod; a non-native one counts but is never kept.
+    native: bool,
+    /// Whether the weight is the exclusive-mod fallback of a keepable mod.
+    exclusive: bool,
 }
 
-/// Every k-subset of `0..n`, in lexicographic order.
-fn subsets(n: usize, k: usize) -> Vec<Vec<usize>> {
-    let mut out = Vec::new();
-    let mut cur = Vec::with_capacity(k);
-    fn rec(start: usize, n: usize, k: usize, cur: &mut Vec<usize>, out: &mut Vec<Vec<usize>>) {
-        if cur.len() == k {
-            out.push(cur.clone());
-            return;
+/// The pooled mods of one side, `a`'s hits and blocked tiers then `c`'s, weighed on the output
+/// shell `x` (the chosen base with its influences and the output's item level).
+// Claim: recombine.non_native
+fn side_pool(
+    b: &Bundle,
+    t: &Target,
+    a: &ItemState,
+    c: &ItemState,
+    x: &ItemState,
+    side: Side,
+) -> Vec<Pooled> {
+    let tags = b.item_tags(x.base, x.influences);
+    let ctx = SourceCtx::new(b, x.base, x.influences);
+    let fallback = crate::claims::exclusive_weight();
+    let mut pool = Vec::new();
+    for s in [a, c] {
+        let ss = s.side(side);
+        for h in &ss.wanted {
+            let r = &t.requirements[h.req as usize];
+            let mod_index = r.accepted[h.idx as usize];
+            let m = b.mod_at(mod_index);
+            let native = spawn_weight(m, &tags) > 0
+                || ctx
+                    .sources(mod_index)
+                    .iter()
+                    .any(|src| matches!(src, ModSource::Essence(_) | ModSource::Bench));
+            let w = effective_weight(m, &tags);
+            pool.push(Pooled {
+                item: PoolMod2::Hit(*h),
+                group: r.group,
+                weight: if w > 0.0 { w } else { fallback },
+                native,
+                exclusive: native && w <= 0.0,
+            });
         }
-        for i in start..n {
-            cur.push(i);
-            rec(i + 1, n, k, cur, out);
-            cur.pop();
+        for blocked in &ss.blocked {
+            // An unknown non-accepted tier of the group: its expected weight when tiers are drawn
+            // in proportion to weight, Σw² / Σw.
+            let accepted: &[u32] = registry::requirement_for(t, side, blocked.group)
+                .map(|r| t.requirements[r as usize].accepted.as_slice())
+                .unwrap_or(&[]);
+            let (mut sum, mut sq) = (0.0, 0.0);
+            for (i, m) in b.mods.iter().enumerate() {
+                if m.group != blocked.group
+                    || m.generation != side
+                    || m.crafted
+                    || m.ilvl > x.ilvl as u16
+                    || accepted.contains(&(i as u32))
+                {
+                    continue;
+                }
+                let w = effective_weight(m, &tags);
+                if w > 0.0 {
+                    sum += w;
+                    sq += w * w;
+                }
+            }
+            pool.push(Pooled {
+                item: PoolMod2::Blocked(*blocked),
+                group: blocked.group,
+                weight: if sum > 0.0 { sq / sum } else { fallback },
+                native: sum > 0.0,
+                exclusive: false,
+            });
         }
     }
-    rec(0, n, k, &mut cur, &mut out);
-    out
+    debug_assert!(pool.iter().all(|e| e.weight > 0.0));
+    pool
 }
 
 /// Distribution of one side of a recombined item: (side state, probability).
-fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, f64)> {
+///
+/// `N` comes from the count table over the pooled count (non-native mods included), capped at the
+/// side's `cap`; the kept mods are then drawn one at a time ([`Draw::kept`]). An empty side keeps
+/// nothing.
+fn recombine_side(
+    b: &Bundle,
+    t: &Target,
+    pool: &[Pooled],
+    cap: u8,
+    rules: &RecombineRules,
+) -> Vec<(SideState, f64)> {
     let n = pool.len();
     if n == 0 {
         return vec![(SideState::default(), 1.0)];
     }
-    let row = registry::RECOMBINE_MOD_COUNT[n.min(6) - 1];
+    let row = rules.count_table[n.min(6) - 1];
+    let draw = Draw {
+        pool,
+        alpha: rules.alpha,
+    };
     let mut out: Vec<(SideState, f64)> = Vec::new();
+    let mut used = vec![false; n];
     for (k, pk) in row.iter().enumerate() {
-        if *pk <= 0.0 || k > n {
-            continue;
-        }
-        let subs = subsets(n, k);
-        let p_sub = pk / subs.len() as f64;
-        for sub in subs {
-            // Entries of one group collapse to one mod; each duplicate is the survivor equally often.
-            let mut groups: Vec<(u16, Vec<PoolMod2>)> = Vec::new();
-            for i in sub {
-                let e = pool[i];
-                let g = entry_group(t, &e);
-                match groups.iter_mut().find(|(x, _)| *x == g) {
-                    Some((_, v)) => v.push(e),
-                    None => groups.push((g, vec![e])),
-                }
-            }
-            let mut partial: Vec<(SideState, f64)> = vec![(SideState::default(), p_sub)];
-            for (_, choices) in groups {
-                let share = 1.0 / choices.len() as f64;
-                let mut next = Vec::new();
-                for (ss, p) in &partial {
-                    for e in &choices {
-                        match e {
-                            PoolMod2::Blocked(x) => {
-                                let mut s2 = ss.clone();
-                                s2.blocked.push(*x);
-                                next.push((s2, p * share));
-                            }
-                            PoolMod2::Hit(h) => {
-                                let m = t.requirements[h.req as usize].accepted[h.idx as usize];
-                                let pok = target::p_value_ok(b, t, h.req, m);
-                                for value_ok in [true, false] {
-                                    let pv = if value_ok { pok } else { 1.0 - pok };
-                                    if pv <= 0.0 {
-                                        continue;
-                                    }
-                                    let mut s2 = ss.clone();
-                                    s2.wanted.push(Hit { value_ok, ..*h });
-                                    next.push((s2, p * share * pv));
-                                }
-                            }
-                        }
-                    }
-                }
-                partial = next;
-            }
-            out.extend(partial);
+        if *pk > 0.0 {
+            draw.kept(
+                b,
+                t,
+                &mut used,
+                k.min(cap as usize),
+                SideState::default(),
+                *pk,
+                &mut out,
+            );
         }
     }
     out
 }
 
-fn side_pool(a: &SideState, c: &SideState) -> Vec<PoolMod2> {
-    let mut pool = Vec::new();
-    for ss in [a, c] {
-        pool.extend(ss.wanted.iter().map(|h| PoolMod2::Hit(*h)));
-        pool.extend(ss.blocked.iter().map(|x| PoolMod2::Blocked(*x)));
+/// The sequential draw of kept mods from one side's pool.
+struct Draw<'a> {
+    pool: &'a [Pooled],
+    alpha: f64,
+}
+
+impl Draw<'_> {
+    /// Draw `left` more mods onto `ss`. Eligible entries are unused and native; each is chosen
+    /// with chance ∝ weight^alpha, and choosing one makes every entry of its group ineligible. A
+    /// mod on both inputs is two entries: it raises the pooled count and its chance to be drawn,
+    /// but it is kept at most once. When the eligible entries run out first, fewer are kept.
+    // Claim: recombine.pools_and_groups
+    // Claim: recombine.selection_alpha
+    #[allow(clippy::too_many_arguments)]
+    fn kept(
+        &self,
+        b: &Bundle,
+        t: &Target,
+        used: &mut [bool],
+        left: usize,
+        ss: SideState,
+        p: f64,
+        out: &mut Vec<(SideState, f64)>,
+    ) {
+        let pool = self.pool;
+        let eligible: Vec<usize> = (0..pool.len())
+            .filter(|&i| !used[i] && pool[i].native)
+            .collect();
+        if left == 0 || eligible.is_empty() {
+            out.push((ss, p));
+            return;
+        }
+        let total: f64 = eligible
+            .iter()
+            .map(|&i| pool[i].weight.powf(self.alpha))
+            .sum();
+        for &i in &eligible {
+            let share = p * pool[i].weight.powf(self.alpha) / total;
+            let same: Vec<usize> = (0..pool.len())
+                .filter(|&j| !used[j] && pool[j].group == pool[i].group)
+                .collect();
+            for &j in &same {
+                used[j] = true;
+            }
+            for (s2, pv) in keep(b, t, &ss, pool[i].item) {
+                self.kept(b, t, used, left - 1, s2, share * pv, out);
+            }
+            for &j in &same {
+                used[j] = false;
+            }
+        }
     }
-    pool
+}
+
+/// `ss` with `item` kept: a hit with its value rolled ok or not, a blocked tier as it is.
+fn keep(b: &Bundle, t: &Target, ss: &SideState, item: PoolMod2) -> Vec<(SideState, f64)> {
+    match item {
+        PoolMod2::Blocked(x) => {
+            let mut s2 = ss.clone();
+            s2.blocked.push(x);
+            vec![(s2, 1.0)]
+        }
+        PoolMod2::Hit(h) => {
+            let m = t.requirements[h.req as usize].accepted[h.idx as usize];
+            let pok = target::p_value_ok(b, t, h.req, m);
+            let mut out = Vec::new();
+            for value_ok in [true, false] {
+                let pv = if value_ok { pok } else { 1.0 - pok };
+                if pv <= 0.0 {
+                    continue;
+                }
+                let mut s2 = ss.clone();
+                s2.wanted.push(Hit { value_ok, ..h });
+                out.push((s2, pv));
+            }
+            out
+        }
+    }
+}
+
+/// A lone pooled prefix against a lone pooled suffix: prefix only, suffix only or both, 1/3
+/// each. A non-native mod is simply absent from its outcome.
+// Claim: recombine.one_prefix_one_suffix
+fn one_and_one(
+    b: &Bundle,
+    t: &Target,
+    pre: &Pooled,
+    suf: &Pooled,
+) -> Vec<(SideState, SideState, f64)> {
+    let side = |e: &Pooled, take: bool| {
+        if take && e.native {
+            keep(b, t, &SideState::default(), e.item)
+        } else {
+            vec![(SideState::default(), 1.0)]
+        }
+    };
+    let mut out = Vec::new();
+    for (take_p, take_s) in [(true, false), (false, true), (true, true)] {
+        for (ps, pp) in side(pre, take_p) {
+            for (ss, sp) in side(suf, take_s) {
+                out.push((ps.clone(), ss, pp * sp / 3.0));
+            }
+        }
+    }
+    out
+}
+
+/// Normal with no mods, magic with at most one prefix and one suffix, rare otherwise.
+// Claim: recombine.output_rarity
+fn recombined_rarity(prefixes: u8, suffixes: u8) -> crate::item::Rarity {
+    use crate::item::Rarity;
+    if prefixes + suffixes == 0 {
+        Rarity::Normal
+    } else if prefixes <= 1 && suffixes <= 1 {
+        Rarity::Magic
+    } else {
+        Rarity::Rare
+    }
 }
 
 /// Why two items cannot be recombined, or `None` when they can.
+// Claim: recombine.inputs
 pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'static str> {
     use crate::item::Rarity;
-    if a.rarity != Rarity::Rare || c.rarity != Rarity::Rare {
-        return Some("both items must be rare");
+    if [a, c].iter().any(|s| s.rarity == Rarity::Normal) {
+        return Some("both items must be magic or rare");
     }
     if b.base_at(a.base).class != b.base_at(c.base).class {
         return Some("both items must be the same item class");
@@ -711,32 +898,91 @@ pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'s
     None
 }
 
-/// The Recombinator: base 1/2 each, ilvl `min(higher, average + 2)`, influence/catalyst/lock lost,
-/// and per side `N` of the pooled mods kept (`RECOMBINE_MOD_COUNT`), chosen uniformly.
-pub fn recombine(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<(ItemState, f64)> {
+/// The output shell when `x` is the chosen base: its base, influences and catalyst, the derived
+/// item level, no lock and no imprint.
+// Claim: recombine.base_and_item_level
+// Claim: recombine.base_properties
+fn recombine_shell(a: &ItemState, c: &ItemState, x: &ItemState) -> ItemState {
+    let ilvl = {
+        let (p, q) = (a.ilvl as u16, c.ilvl as u16);
+        p.max(q).min((p + q) / 2 + 2) as u8
+    };
+    let mut shell = ItemState::new(x.base, ilvl, crate::item::Rarity::Rare, x.influences);
+    shell.catalyst = x.catalyst;
+    shell
+}
+
+/// The claims a recombine of `a` and `c` reads: the rules every recombine uses, the one-prefix
+/// one-suffix override when the pools are exactly that, and the exclusive-mod weight when a
+/// keepable pooled mod falls back to it.
+pub fn recombine_claims(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<&'static str> {
+    let mut out = vec![
+        "recombine.count_table",
+        "recombine.selection_alpha",
+        "recombine.output_rarity",
+        "recombine.cost",
+        "recombine.non_native",
+        "recombine.pools_and_groups",
+    ];
+    for x in [a, c] {
+        let shell = recombine_shell(a, c, x);
+        let pre = side_pool(b, t, a, c, &shell, Side::Prefix);
+        let suf = side_pool(b, t, a, c, &shell, Side::Suffix);
+        if pre.len() == 1 && suf.len() == 1 {
+            out.push("recombine.one_prefix_one_suffix");
+        }
+        if pre.iter().chain(&suf).any(|e| e.exclusive) {
+            out.push("recombine.exclusive_weight");
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// The Recombinator on two magic or rare items. Either input's base is chosen with 1/2 and the
+/// result carries its influences and catalyst ([`recombine_shell`]). Each side pools both inputs'
+/// mods as that base sees them ([`side_pool`]) and keeps a count from `rules.count_table`
+/// ([`recombine_side`]), except that a lone prefix against a lone suffix gives prefix, suffix or
+/// both at 1/3 each ([`one_and_one`]). The rarity follows the kept mods.
+///
+/// Not modelled until the item state names its mods (Phase 2): at most one exclusive mod on the
+/// result, and exclusive mods counted once per side, need crafted/exclusive mod identity.
+pub fn recombine(
+    b: &Bundle,
+    t: &Target,
+    a: &ItemState,
+    c: &ItemState,
+    rules: &RecombineRules,
+) -> Vec<(ItemState, f64)> {
     if recombine_blocker(b, a, c).is_some() {
         return Vec::new();
     }
-    let ilvl = {
-        let (x, y) = (a.ilvl as u16, c.ilvl as u16);
-        x.max(y).min((x + y) / 2 + 2) as u8
-    };
-    let prefixes = recombine_side(b, t, &side_pool(&a.prefixes, &c.prefixes));
-    let suffixes = recombine_side(b, t, &side_pool(&a.suffixes, &c.suffixes));
-    let influences = if registry::RECOMBINE_KEEPS_INFLUENCE {
-        a.influences & c.influences
-    } else {
-        0
-    };
     let mut outs = Vec::new();
-    for base in [a.base, c.base] {
-        for (ps, pp) in &prefixes {
-            for (ss, sp) in &suffixes {
-                let mut st = ItemState::new(base, ilvl, crate::item::Rarity::Rare, influences);
-                st.prefixes = ps.clone();
-                st.suffixes = ss.clone();
-                outs.push((st, 0.5 * pp * sp));
+    for x in [a, c] {
+        let shell = recombine_shell(a, c, x);
+        let pre = side_pool(b, t, a, c, &shell, Side::Prefix);
+        let suf = side_pool(b, t, a, c, &shell, Side::Suffix);
+        let sides = if pre.len() == 1 && suf.len() == 1 {
+            one_and_one(b, t, &pre[0], &suf[0])
+        } else {
+            let (cap_p, cap_s) = shell.caps(b);
+            let ps = recombine_side(b, t, &pre, cap_p, rules);
+            let ss = recombine_side(b, t, &suf, cap_s, rules);
+            let mut both = Vec::with_capacity(ps.len() * ss.len());
+            for (p_state, pp) in &ps {
+                for (s_state, sp) in &ss {
+                    both.push((p_state.clone(), s_state.clone(), pp * sp));
+                }
             }
+            both
+        };
+        for (ps, ss, p) in sides {
+            let mut st = shell.clone();
+            st.rarity = recombined_rarity(ps.slots_used(), ss.slots_used());
+            st.prefixes = ps;
+            st.suffixes = ss;
+            outs.push((st, 0.5 * p));
         }
     }
     finish(false, outs)
@@ -993,7 +1239,7 @@ fn combine(
                     let kept_count = state.mod_count();
                     let (cap_p, cap_s) = state.caps(b);
                     let capacity = (cap_p + cap_s).saturating_sub(kept_count);
-                    for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
+                    for (k, weight) in crate::claims::chaos_count_weights() {
                         let n_new = k.saturating_sub(kept_count).min(capacity);
                         for (filled, p_fill) in fill(b, t, &state, n_new, false) {
                             outs.push((filled, choice_prob * p * weight * p_fill));
@@ -1280,18 +1526,15 @@ pub fn predecessors(
             }
         }
         Rarity::Magic => {
-            // Alteration from a magic item holding the same number of other mods.
+            // Alteration: the outcome does not depend on the old mods, so one canonical magic
+            // item stands for every predecessor.
             let mut st = ItemState::new(s.base, s.ilvl, Rarity::Magic, s.influences);
-            let n = s.mod_count().clamp(1, 2);
-            st.prefixes.untracked = n.min(1);
-            if n == 2 {
-                st.suffixes.untracked = 1;
-            }
+            st.prefixes.untracked = 1;
             if st != *s {
                 out.push((Action::Alteration, st));
             }
             // Transmute from the normal base.
-            if s.mod_count() == 1 {
+            if (1..=2).contains(&s.mod_count()) {
                 out.push((
                     Action::Transmute,
                     ItemState::new(s.base, s.ilvl, Rarity::Normal, s.influences),

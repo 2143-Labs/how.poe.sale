@@ -69,6 +69,8 @@ function solutionWith(key: string): SolutionV3 {
     },
     focus: null,
     proposals: {},
+    approximate: [],
+    range: null,
   }
 }
 

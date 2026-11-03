@@ -236,6 +236,8 @@ fn splits(out: &Good) -> Vec<(Vec<usize>, Vec<usize>)> {
     out_splits
 }
 
+/// One input of a recombine split. Both halves keep the output's influences and catalyst, so
+/// whichever base the recombine chooses carries them onto the result.
 fn half(out: &Good, reqs: &[usize], id: String, name: String) -> Good {
     let mut spec = out.spec.clone();
     spec.requirements = reqs
@@ -243,8 +245,6 @@ fn half(out: &Good, reqs: &[usize], id: String, name: String) -> Good {
         .map(|i| out.spec.requirements[*i].clone())
         .collect();
     spec.min_hits = spec.requirements.len() as u16;
-    spec.influences = 0;
-    spec.catalyst = None;
     Good {
         id,
         name,

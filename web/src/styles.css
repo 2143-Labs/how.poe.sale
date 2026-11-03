@@ -201,6 +201,7 @@ td {
 }
 
 .warnings,
+.approximate,
 .unmatched {
   margin: 6px 0;
   padding-left: 18px;
