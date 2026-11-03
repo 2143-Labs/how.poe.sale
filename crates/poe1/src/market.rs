@@ -23,8 +23,21 @@ pub const MAX_PROCESSES: usize = 256;
 pub const MARKET_ROUNDS: u32 = 50;
 /// Largest relative change that still counts as settled.
 pub const SETTLE_TOL: f64 = 1e-9;
-/// Price key of one Recombinator use (typed by the user).
-pub const RECOMBINER_KEY: &str = "recombiner";
+/// Price key of 1,000 Thaumaturgic Dust, in chaos.
+pub const DUST_KEY: &str = "thaumaturgic-dust-1k";
+/// Price key of 1,000 Gold, in chaos.
+pub const GOLD_KEY: &str = "gold-1k";
+
+/// (price key, quantity) of one Recombinator use: its Dust and Gold, times the influenced factor
+/// when an input carries an influence (claim recombine.cost).
+pub fn recombine_cost(influenced: bool) -> Vec<(String, f64)> {
+    let c = crate::claims::recombine_cost();
+    let f = if influenced { c.influenced_factor } else { 1.0 };
+    vec![
+        (DUST_KEY.to_string(), c.dust / 1000.0 * f),
+        (GOLD_KEY.to_string(), c.gold / 1000.0 * f),
+    ]
+}
 /// Extra chaos on every trade, as in the single-item graph.
 pub const TRADE_PENALTY: f64 = 0.01;
 
@@ -1059,10 +1072,11 @@ fn eval_recombine(
     );
     r.exits = r.core.clone();
     let contract = registry::recombine_contract();
+    let cost = recombine_cost(x.influences != 0 || y.influences != 0);
     r.steps = vec![Step {
         action: None,
         label: contract.name.to_string(),
-        cost: vec![(RECOMBINER_KEY.to_string(), 1.0)],
+        cost: cost.clone(),
         before: x.clone(),
         after: m.ideal(b, output),
     }];
@@ -1084,11 +1098,15 @@ fn eval_recombine(
         r.error = Some(format!("needs a price for {}", m.goods[missing].name));
         return (r, None);
     };
-    let Some(unit) = prices.get(RECOMBINER_KEY).copied() else {
-        r.status = ProcessStatus::NeedsInput;
-        r.error = Some(SolveError::MissingPrice(RECOMBINER_KEY.to_string()).to_string());
-        return (r, None);
-    };
+    let mut unit = 0.0;
+    for (key, qty) in &cost {
+        let Some(price) = prices.get(key).copied() else {
+            r.status = ProcessStatus::NeedsInput;
+            r.error = Some(SolveError::MissingPrice(key.clone()).to_string());
+            return (r, None);
+        };
+        unit += qty * price;
+    }
     let mut credit = 0.0;
     let mut credit_sq = 0.0;
     for e in &r.core {
@@ -1110,7 +1128,10 @@ fn eval_recombine(
     r.cost = Some(net / p_ok);
     r.sd = Some((ek * var_x1 + var_k * net * net).max(0.0).sqrt());
     r.seconds = Some((va.seconds + vb.seconds + contract.seconds) / p_ok);
-    r.spend = BTreeMap::from([(RECOMBINER_KEY.to_string(), ek)]);
+    r.spend = cost
+        .iter()
+        .map(|(key, qty)| (key.clone(), qty * ek))
+        .collect();
     (r, None)
 }
 

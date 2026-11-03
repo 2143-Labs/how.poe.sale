@@ -183,10 +183,7 @@ fn foil(ids: &[&str], min_hits: u16) -> Target {
     t
 }
 
-fn va2_market(
-    brick: Option<f64>,
-    recombiner: f64,
-) -> (Market, std::collections::BTreeMap<String, f64>) {
+fn va2_market(brick: Option<f64>) -> (Market, std::collections::BTreeMap<String, f64>) {
     let mut goods = vec![
         good("main", foil(&[PHYS, HYBRID, FLAT], 3), None, None),
         good("a2", foil(&[PHYS, HYBRID], 2), None, None),
@@ -207,15 +204,15 @@ fn va2_market(
         recombine("rb", "b2", "flat", "fourth"),
         recombine("rm", "main", "a2", "b2"),
     ];
-    let mut prices = prices();
-    prices.insert("recombiner".into(), recombiner);
-    (Market::new(goods, processes, "main").unwrap(), prices)
+    (Market::new(goods, processes, "main").unwrap(), prices())
 }
 
 #[test]
 fn va2_three_t1_recombine() {
     let b = b();
-    let (m, prices) = va2_market(None, 15.0);
+    let (m, prices) = va2_market(None);
+    // One combine: 100k Thaumaturgic Dust and 12k Gold, priced per 1k.
+    let r = 100.0 * prices["thaumaturgic-dust-1k"] + 12.0 * prices["gold-1k"];
     let start = Instant::now();
     let sol = market::solve(b, &m, &prices, &[]).unwrap();
     let ms = start.elapsed().as_secs_f64() * 1e3;
@@ -257,18 +254,19 @@ fn va2_three_t1_recombine() {
         assert_eq!(g(id).via.as_deref(), Some("buy"));
     }
     let a2 = g("a2").value.unwrap();
-    assert!(close(a2, 35.0 / both, 1e-9));
+    assert!(close(a2, (20.0 + r) / both, 1e-9));
     let main = g("main").value.unwrap();
     println!("V(a2) {a2}, V(b2) {:?}, V(main) {main}", g("b2").value);
-    assert!(close(main, (2.0 * a2 + 15.0) / p_main, 1e-9));
+    assert!(close(main, (2.0 * a2 + r) / p_main, 1e-9));
 
-    // A dearer recombinator raises V(main).
-    let (m, dear) = va2_market(None, 30.0);
+    // Dearer Gold raises V(main).
+    let (m, mut dear) = va2_market(None);
+    dear.insert("gold-1k".into(), 1.0);
     let up = market::solve(b, &m, &dear, &[]).unwrap();
     assert!(up.goods[0].value.unwrap() > main);
 
     // A magic "1 of 2 kept" priced 30 lowers V(a2) by exactly 30 * P(1 kept) / p_success.
-    let (m, prices) = va2_market(Some(30.0), 15.0);
+    let (m, prices) = va2_market(Some(30.0));
     let sol = market::solve(b, &m, &prices, &[]).unwrap();
     let a2b = sol
         .goods

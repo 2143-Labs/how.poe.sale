@@ -1684,7 +1684,7 @@ pub fn contracts_json(b: &Bundle) -> Vec<ContractJson> {
             requires: describe_pre(c),
             effect: describe_effect(c),
             cost: match c.id {
-                "recombine" => vec![(market::RECOMBINER_KEY.to_string(), 1.0)],
+                "recombine" => market::recombine_cost(false),
                 "apply-catalyst" => vec![(
                     "<catalyst>".to_string(),
                     registry::CATALYSTS_FOR_FULL_QUALITY,

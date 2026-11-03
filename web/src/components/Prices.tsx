@@ -3,7 +3,7 @@ import { DEFAULT_PRICES, DEFAULT_PRICES_DATE } from '../defaultPrices'
 import { useAppStore } from '../store'
 
 /** Prices with no poe.ninja exchange listing: typed by the user, empty by default. */
-export const TYPED_PRICE_KEYS = ['craicic-croaker', 'recombiner'] as const
+export const TYPED_PRICE_KEYS = ['craicic-croaker'] as const
 
 function label(key: string): string {
   return key.replace(/-/g, ' ')
@@ -25,7 +25,11 @@ export function Prices() {
   const needed = useMemo(() => {
     const set = new Set<string>()
     for (const process of processes) {
-      if ('recombine' in process.kind) set.add('recombiner')
+      if ('recombine' in process.kind) {
+        // One Recombinator use is paid in Thaumaturgic Dust and Gold.
+        set.add('thaumaturgic-dust-1k')
+        set.add('gold-1k')
+      }
     }
     for (const process of solution?.market.processes ?? []) {
       for (const step of process.steps) for (const [key] of step.cost) set.add(key)

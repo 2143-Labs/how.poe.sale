@@ -265,7 +265,7 @@ fn restore_returns_the_imprinted_item() {
 fn every_cost_key_is_priced_or_typed() {
     let b = b();
     let prices = prices();
-    let typed = ["craicic-croaker", "recombiner"];
+    let typed = ["craicic-croaker"];
     let mut actions = single_actions();
     actions.push(Action::Essence { essence: 0 });
     for a in actions {

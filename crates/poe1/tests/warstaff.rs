@@ -26,7 +26,7 @@ fn staff(rarity: Rarity, ids: &[&str]) -> Target {
 }
 
 /// The chain as the post describes it, plus `crit`: the same top recombine wanting both crits too.
-fn chain(recombiner: f64) -> (Market, std::collections::BTreeMap<String, f64>) {
+fn chain() -> (Market, std::collections::BTreeMap<String, f64>) {
     use Rarity::*;
     let mut goods = vec![
         good("main", staff(Rare, &[PHYS, HYBRID, FLAT]), None, None),
@@ -67,15 +67,13 @@ fn chain(recombiner: f64) -> (Market, std::collections::BTreeMap<String, f64>) {
             &["transmute", "alteration"],
         ));
     }
-    let mut prices = prices();
-    prices.insert("recombiner".into(), recombiner);
-    (Market::new(goods, processes, "main").unwrap(), prices)
+    (Market::new(goods, processes, "main").unwrap(), prices())
 }
 
 #[test]
 fn va7_triple_t1_phys_warstaff() {
     let b = b();
-    let (m, prices) = chain(1.0);
+    let (m, prices) = chain();
     let sol = market::solve(b, &m, &prices, &[]).unwrap();
     let p = |id: &str| sol.processes.iter().find(|x| x.id == id).unwrap();
     let v = |id: &str| {
@@ -163,8 +161,8 @@ fn va7_triple_t1_phys_warstaff() {
         1e-9
     ));
 
-    // Costs compose as (inputs + recombiner) / p with no brick credit.
-    let r = prices["recombiner"];
+    // Costs compose as (inputs + one combine's Dust and Gold) / p with no brick credit.
+    let r = 100.0 * prices["thaumaturgic-dust-1k"] + 12.0 * prices["gold-1k"];
     for (out, a, c, q) in [
         ("pc", "phys", "crit1", one_one),
         ("hc", "hybrid", "crit1", one_one),
@@ -183,8 +181,9 @@ fn va7_triple_t1_phys_warstaff() {
         (2.0 / three) * (2.0 / two_two) * (2.0 / one_one)
     );
 
-    // A dearer recombination raises every recombined good.
-    let (m, dear) = chain(10.0);
+    // Dearer Gold raises every recombined good.
+    let (m, mut dear) = chain();
+    dear.insert("gold-1k".into(), 1.0);
     let up = market::solve(b, &m, &dear, &[]).unwrap();
     assert!(up.goods[0].value.unwrap() > v("main"));
 }

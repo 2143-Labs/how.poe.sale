@@ -118,6 +118,26 @@ pub fn exclusive_weight() -> f64 {
     number(&c.id, &c.value)
 }
 
+/// What one Recombinator use costs, in units of each resource.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RecombineCost {
+    pub dust: f64,
+    pub gold: f64,
+    /// Factor on both when an input carries an influence.
+    pub influenced_factor: f64,
+}
+
+/// The recombine's Dust and Gold per use.
+pub fn recombine_cost() -> RecombineCost {
+    let c = claim("recombine.cost");
+    let get = |k: &str| number(&c.id, &c.value[k]);
+    RecombineCost {
+        dust: get("dust"),
+        gold: get("gold"),
+        influenced_factor: get("influenced_factor"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -249,6 +269,8 @@ mod tests {
             "{low} {plan} {high}"
         );
         assert!(exclusive_weight() > 0.0);
+        let cost = recombine_cost();
+        assert!(cost.dust > 0.0 && cost.gold > 0.0 && cost.influenced_factor >= 1.0);
         let tables: Vec<&Claim> = all()
             .iter()
             .filter(|c| c.value.as_array().is_some_and(|r| r.len() == 6))

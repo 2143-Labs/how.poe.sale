@@ -122,6 +122,19 @@
       "via": "not opened by us"
     },
     {
+      "id": "recombine.cost",
+      "statement": "Each recombine costs about 100,000 Thaumaturgic Dust and 12,000 Gold, and half as much again when an input is influenced.",
+      "source_kind": "experiment",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
+      "quote": "",
+      "patch": "3.26",
+      "checked": false,
+      "via": "not opened by us",
+      "approximate": true,
+      "reason": "player reports: Dust 25,000–250,000 and Gold 8,000–20,000 per combine; ×1.5 with an influenced input is one unverified line",
+      "value": { "dust": 100000, "gold": 12000, "influenced_factor": 1.5 }
+    },
+    {
       "id": "recombine.base_and_item_level",
       "statement": "A recombine's result takes the base of either input with chance 1/2, and its item level is the lower of the higher input's item level and the inputs' average plus 2.",
       "source_kind": "wiki",
