@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use common::*;
 use poe1::item::{Rarity, Side};
-use poe1::kernels::{self, Action};
+use poe1::kernels::{self, Action, RecombineRules};
 use poe1::market::{self, Market, ProcessStatus};
 use poe1::registry;
 use poe1::target::{self, Target};
@@ -197,7 +197,10 @@ fn va2_market(
         good("fourth", foil(&[FOURTH], 1), Some(10.0), None),
     ];
     if let Some(sell) = brick {
-        goods.push(good("a1", foil(&[PHYS, HYBRID], 1), None, Some(sell)));
+        // One of the two kept is a magic item.
+        let mut one = foil(&[PHYS, HYBRID], 1);
+        one.rarity = Rarity::Magic;
+        goods.push(good("a1", one, None, Some(sell)));
     }
     let processes = vec![
         recombine("ra", "a2", "phys", "hybrid"),
@@ -221,10 +224,25 @@ fn va2_three_t1_recombine() {
 
     let p = |id: &str| sol.processes.iter().find(|x| x.id == id).unwrap();
     let g = |id: &str| sol.goods.iter().find(|x| x.id == id).unwrap();
+    // Both of two pooled prefixes kept: the count table's 33/100.
+    let both = 33.0 / 100.0;
     for id in ["ra", "rb"] {
-        assert!(close(p(id).p_success.unwrap(), 1.0 / 3.0, 1e-9), "{id}");
+        assert!(close(p(id).p_success.unwrap(), both, 1e-9), "{id}");
     }
-    assert!(close(p("rm").p_success.unwrap(), 0.075, 1e-9));
+    // Three of four kept (31/101), and the draw takes exactly {phys, hybrid, flat}: the weight-700
+    // fire mod must never be drawn, so rare T1 mods are kept far less often than at equal chance.
+    let w: Vec<f64> = [PHYS, HYBRID, FLAT, FOURTH]
+        .iter()
+        .map(|id| weight_on("Jewelled Foil", id))
+        .collect();
+    assert_eq!(w, [25.0, 25.0, 200.0, 700.0]);
+    let alpha = RecombineRules::plan().alpha;
+    let p_main = 31.0 / 101.0 * keep_set_prob(&w, &[0, 1, 2], 3, alpha);
+    println!(
+        "rm p {:.6e} (closed form {p_main:.6e})",
+        p("rm").p_success.unwrap()
+    );
+    assert!(close(p("rm").p_success.unwrap(), p_main, 1e-9));
     for id in ["main", "a2", "b2"] {
         assert_eq!(
             g(id).via.as_deref(),
@@ -239,17 +257,17 @@ fn va2_three_t1_recombine() {
         assert_eq!(g(id).via.as_deref(), Some("buy"));
     }
     let a2 = g("a2").value.unwrap();
-    assert!(close(a2, 35.0 * 3.0, 1e-9));
+    assert!(close(a2, 35.0 / both, 1e-9));
     let main = g("main").value.unwrap();
     println!("V(a2) {a2}, V(b2) {:?}, V(main) {main}", g("b2").value);
-    assert!(close(main, (2.0 * a2 + 15.0) / 0.075, 1e-9));
+    assert!(close(main, (2.0 * a2 + 15.0) / p_main, 1e-9));
 
     // A dearer recombinator raises V(main).
     let (m, dear) = va2_market(None, 30.0);
     let up = market::solve(b, &m, &dear, &[]).unwrap();
     assert!(up.goods[0].value.unwrap() > main);
 
-    // "1 of 2 kept" priced 30 lowers V(a2) by exactly 30 * P(1 kept) / p_success.
+    // A magic "1 of 2 kept" priced 30 lowers V(a2) by exactly 30 * P(1 kept) / p_success.
     let (m, prices) = va2_market(Some(30.0), 15.0);
     let sol = market::solve(b, &m, &prices, &[]).unwrap();
     let a2b = sol
@@ -259,14 +277,14 @@ fn va2_three_t1_recombine() {
         .unwrap()
         .value
         .unwrap();
-    let drop = 30.0 * (2.0 / 3.0) / (1.0 / 3.0);
+    let drop = 30.0 * (67.0 / 100.0) / both;
     println!("V(a2) with brick {a2b} (drop {})", a2 - a2b);
     assert!(close(a2 - a2b, drop, 1e-9));
 
     // Result base and item level of the top recombine.
     let x = m.ideal(b, m.good("a2").unwrap());
     let y = m.ideal(b, m.good("b2").unwrap());
-    for (o, _) in kernels::recombine(b, &m.universe, &x, &y) {
+    for (o, _) in kernels::recombine(b, &m.universe, &x, &y, &m.recombine_rules) {
         assert_eq!(o.base, base("Jewelled Foil"));
         assert_eq!(o.ilvl, 84);
     }

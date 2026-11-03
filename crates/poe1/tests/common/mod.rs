@@ -136,3 +136,79 @@ pub fn distinct_prefixes(base_name: &str, n: usize) -> Vec<Requirement> {
 pub fn close(a: f64, b: f64, tol: f64) -> bool {
     (a - b).abs() <= tol * b.abs().max(1.0)
 }
+
+/// Every ordered draw of up to `k` entries without replacement, each pick ∝ `weights[i]^alpha`
+/// among the entries whose group is not drawn yet: (picked indices in order, probability). A draw
+/// stops early when no entry is left. An independent enumeration, not the kernel.
+pub fn ordered_draws(
+    weights: &[f64],
+    groups: &[usize],
+    k: usize,
+    alpha: f64,
+) -> Vec<(Vec<usize>, f64)> {
+    fn go(
+        w: &[f64],
+        g: &[usize],
+        k: usize,
+        alpha: f64,
+        picked: &mut Vec<usize>,
+        p: f64,
+        out: &mut Vec<(Vec<usize>, f64)>,
+    ) {
+        let eligible: Vec<usize> = (0..w.len())
+            .filter(|i| picked.iter().all(|j| g[*j] != g[*i]))
+            .collect();
+        if picked.len() == k || eligible.is_empty() {
+            out.push((picked.clone(), p));
+            return;
+        }
+        let total: f64 = eligible.iter().map(|&i| w[i].powf(alpha)).sum();
+        for &i in &eligible {
+            picked.push(i);
+            go(w, g, k, alpha, picked, p * w[i].powf(alpha) / total, out);
+            picked.pop();
+        }
+    }
+    let mut out = Vec::new();
+    go(weights, groups, k, alpha, &mut Vec::new(), 1.0, &mut out);
+    out
+}
+
+/// P(the `k` entries drawn are exactly the set `wanted`), every entry its own group.
+pub fn keep_set_prob(weights: &[f64], wanted: &[usize], k: usize, alpha: f64) -> f64 {
+    let groups: Vec<usize> = (0..weights.len()).collect();
+    let mut want = wanted.to_vec();
+    want.sort_unstable();
+    ordered_draws(weights, &groups, k, alpha)
+        .into_iter()
+        .filter(|(seq, _)| {
+            let mut s = seq.clone();
+            s.sort_unstable();
+            s == want
+        })
+        .map(|(_, p)| p)
+        .sum()
+}
+
+/// The weight of `id` in the ilvl-84 magic pool of a plain `base_name` (`weights::pool`), as the
+/// alt-spam tests read it.
+pub fn weight_on(base_name: &str, id: &str) -> f64 {
+    let b = b();
+    let tags = b.item_tags(base(base_name), 0);
+    let m = mod_index(id);
+    poe1::weights::pool(
+        b,
+        &poe1::weights::PoolFilter {
+            side: b.mod_at(m).generation,
+            tags: &tags,
+            ilvl: 84,
+            excluded_groups: &[],
+            influence_only: false,
+            catalyst: None,
+        },
+    )
+    .iter()
+    .find(|e| e.mod_index == m)
+    .unwrap_or_else(|| panic!("{id} does not roll on {base_name}"))
+    .weight
+}

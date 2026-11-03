@@ -68,8 +68,10 @@ fn pair(brick_sell: Option<f64>, va: f64, vb: f64) -> Market {
     let both = target("Lapis Amulet", 84, Rarity::Rare, reqs.clone());
     let a = target("Lapis Amulet", 84, Rarity::Rare, vec![reqs[0].clone()]);
     let c = target("Lapis Amulet", 84, Rarity::Rare, vec![reqs[1].clone()]);
+    // One of the two kept is a magic item.
     let mut one = both.clone();
     one.min_hits = 1;
+    one.rarity = Rarity::Magic;
     let mut goods = vec![
         good("main", both, None, None),
         good("a", a, Some(va), None),
@@ -88,16 +90,23 @@ fn recombine_closed_form() {
     prices.insert("recombiner".into(), 5.0);
     let sol = market::solve(b, &pair(None, 10.0, 20.0), &prices, &[]).unwrap();
     let r = &sol.processes[0];
-    assert!(close(r.p_success.unwrap(), 1.0 / 3.0, 1e-12));
-    assert!(close(r.cost.unwrap(), 105.0, 1e-12), "cost {:?}", r.cost);
+    // Both of two pooled prefixes kept: the count table's 33/100; one kept: 67/100.
+    let (both, one) = (33.0 / 100.0, 67.0 / 100.0);
+    assert!(close(r.p_success.unwrap(), both, 1e-12));
+    assert!(
+        close(r.cost.unwrap(), 35.0 / both, 1e-12),
+        "cost {:?}",
+        r.cost
+    );
     assert_eq!(sol.goods[0].via.as_deref(), Some("r"));
-    // "1 of 2 kept" priced 30 at probability 2/3: (35 - 20) * 3.
+    // A magic "1 of 2 kept" priced 30 is credited on every one-kept outcome.
     let sol = market::solve(b, &pair(Some(30.0), 10.0, 20.0), &prices, &[]).unwrap();
-    assert!(close(sol.processes[0].cost.unwrap(), 45.0, 1e-12));
+    let with_brick = (35.0 - 30.0 * one) / both;
+    assert!(close(sol.processes[0].cost.unwrap(), with_brick, 1e-12));
     // Recombiner repriced upward raises V(main).
     prices.insert("recombiner".into(), 50.0);
     let up = market::solve(b, &pair(Some(30.0), 10.0, 20.0), &prices, &[]).unwrap();
-    assert!(up.goods[0].value.unwrap() > 45.0);
+    assert!(up.goods[0].value.unwrap() > with_brick);
 }
 
 #[test]

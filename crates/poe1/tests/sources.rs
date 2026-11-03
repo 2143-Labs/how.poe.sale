@@ -9,11 +9,11 @@ use poe1::recipe;
 use poe1::weights::{ModSource, sources};
 
 /// Mods bucketed by their first (scarcest-last) source on a plain amulet; crafted mods excluded.
-fn buckets(base_name: &str) -> [usize; 6] {
+fn buckets(base_name: &str) -> [usize; 5] {
     let b = b();
     let base = base(base_name);
     let ctx = poe1::weights::SourceCtx::new(b, base, 0);
-    let mut out = [0; 6];
+    let mut out = [0; 5];
     for (i, m) in b.mods.iter().enumerate() {
         if m.crafted {
             continue;
@@ -26,7 +26,6 @@ fn buckets(base_name: &str) -> [usize; 6] {
             ModSource::Essence(_) => 2,
             ModSource::Fossil(_) => 3,
             ModSource::Bench => 4,
-            ModSource::Foreign(_) => 5,
         };
         out[k] += 1;
     }
@@ -36,13 +35,34 @@ fn buckets(base_name: &str) -> [usize; 6] {
 #[test]
 fn amulet_source_counts() {
     let got = buckets("Lapis Amulet");
-    println!("Lapis Amulet native/influence/essence/fossil/bench/foreign = {got:?}");
+    println!("Lapis Amulet native/influence/essence/fossil/bench = {got:?}");
     // 263 native; the one fossil-only mod is Tangled Fossil's DelveAmuletVaalSkillDuration1.
-    assert_eq!(got, [263, 135, 45, 1, 0, 0]);
+    assert_eq!(got, [263, 135, 45, 1, 0]);
     let wand = buckets("Omen Wand");
     println!("Omen Wand = {wand:?}");
     assert!(wand[3] > 0, "a caster weapon has fossil-only mods");
-    assert!(wand[5] > 0, "a caster weapon has foreign (same-class) mods");
+    // A recombine never brings a mod the base cannot roll: a minion mod has no source on a wand
+    // without minion tags, and a Shaper-only mod reaches a plain amulet only by gaining Shaper
+    // influence, not from another amulet base.
+    let b = b();
+    assert_eq!(
+        sources(
+            b,
+            base("Omen Wand"),
+            0,
+            mod_index("MinionAttackAndCastSpeed7")
+        ),
+        vec![]
+    );
+    assert_eq!(
+        sources(
+            b,
+            base("Lapis Amulet"),
+            0,
+            mod_index("PercentageAllAttributesUberShaper1")
+        ),
+        vec![ModSource::Influence(0)]
+    );
 }
 
 #[test]

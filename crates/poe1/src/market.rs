@@ -81,6 +81,8 @@ pub struct Market {
     /// Union of every good's requirements; every state in the market is described against it.
     pub universe: Target,
     pub root: usize,
+    /// The approximate recombine rules this market is solved under.
+    pub recombine_rules: kernels::RecombineRules,
     index: HashMap<String, usize>,
 }
 
@@ -163,6 +165,7 @@ impl Market {
             processes,
             universe,
             root,
+            recombine_rules: kernels::RecombineRules::plan(),
             index,
         })
     }
@@ -1046,7 +1049,7 @@ fn eval_recombine(
         r.error = Some(why.to_string());
         return (r, None);
     }
-    let outs = kernels::recombine(b, &m.universe, &x, &y);
+    let outs = kernels::recombine(b, &m.universe, &x, &y, &m.recombine_rules);
     r.core = group_exits(
         b,
         m,

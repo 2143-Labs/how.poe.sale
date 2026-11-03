@@ -105,6 +105,19 @@ pub fn recombine_count_table(id: &str) -> [[f64; 4]; 6] {
     table
 }
 
+/// The recombine selection exponent: (plan, low, high).
+pub fn recombine_alpha() -> (f64, f64, f64) {
+    let c = claim("recombine.selection_alpha");
+    let get = |k: &str| number(&c.id, &c.value[k]);
+    (get("plan"), get("low"), get("high"))
+}
+
+/// The selection weight of a keepable pooled mod that has no spawn weight on the chosen base.
+pub fn exclusive_weight() -> f64 {
+    let c = claim("recombine.exclusive_weight");
+    number(&c.id, &c.value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -230,6 +243,12 @@ mod tests {
         assert!((total - 1.0).abs() < 1e-12);
         let total: f64 = magic_mod_count_weights().iter().map(|(_, w)| w).sum();
         assert!((total - 1.0).abs() < 1e-12);
+        let (plan, low, high) = recombine_alpha();
+        assert!(
+            0.0 <= low && low <= plan && plan <= high,
+            "{low} {plan} {high}"
+        );
+        assert!(exclusive_weight() > 0.0);
         let tables: Vec<&Claim> = all()
             .iter()
             .filter(|c| c.value.as_array().is_some_and(|r| r.len() == 6))

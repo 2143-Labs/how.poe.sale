@@ -237,8 +237,6 @@ pub enum ModSource {
     Fossil(u16),
     /// A crafting-bench option for the item's class.
     Bench,
-    /// Rolls on this other base of the same item class; reaches this item only by recombining.
-    Foreign(u16),
 }
 
 impl ModSource {
@@ -248,7 +246,6 @@ impl ModSource {
             ModSource::Essence(_) => 0,
             ModSource::Influence(_) => 1,
             ModSource::Fossil(_) => 2,
-            ModSource::Foreign(_) => 3,
             ModSource::Bench => 4,
             ModSource::Native => 5,
         }
@@ -280,15 +277,14 @@ impl ModSource {
                     .unwrap_or("fossil")
             ),
             ModSource::Bench => "Bench".to_string(),
-            ModSource::Foreign(base) => {
-                format!("Recombine with {}", b.base_at(base).name)
-            }
         }
     }
 }
 
 /// Every mechanic that can place `mod_index` on `base` carrying `influences`, in [`ModSource`]
 /// order. Empty means no modelled mechanic can; only then is a requirement "not understood".
+/// Another base of the class is no source: a recombine never keeps a mod its chosen base cannot
+/// roll (claim recombine.non_native).
 pub fn sources(b: &Bundle, base: u16, influences: u8, mod_index: u32) -> Vec<ModSource> {
     SourceCtx::new(b, base, influences).sources(mod_index)
 }
@@ -302,8 +298,6 @@ pub struct SourceCtx<'a> {
     /// (influence bit index, tags with that influence added) for influences the item lacks and
     /// its class supports.
     with_influence: Vec<(u8, TagSet)>,
-    /// Other bases of the same class, with their plain tags.
-    siblings: Vec<(u16, TagSet)>,
 }
 
 impl<'a> SourceCtx<'a> {
@@ -315,17 +309,12 @@ impl<'a> SourceCtx<'a> {
             .map(|bit| (bit, b.item_tags(base, influences | (1 << bit))))
             .filter(|(_, with)| *with != tags)
             .collect();
-        let siblings = (0..b.bases.len() as u16)
-            .filter(|i| *i != base && b.base_at(*i).class == class)
-            .map(|i| (i, b.item_tags(i, 0)))
-            .collect();
         SourceCtx {
             b,
             base,
             class,
             tags,
             with_influence,
-            siblings,
         }
     }
 
@@ -363,15 +352,6 @@ impl<'a> SourceCtx<'a> {
             .is_some_and(|e| b.bench[*e as usize].classes.contains(&self.class))
         {
             out.push(ModSource::Bench);
-        }
-        if natural
-            && !native
-            && let Some((other, _)) = self
-                .siblings
-                .iter()
-                .find(|(_, tags)| spawn_weight(m, tags) > 0)
-        {
-            out.push(ModSource::Foreign(*other));
         }
         out
     }

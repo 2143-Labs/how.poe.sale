@@ -317,8 +317,6 @@ pub fn action_claims(a: &Action) -> &'static [&'static str] {
 
 /// Fossil sets the engine offers per state, best single-draw share first.
 pub const FOSSIL_TOP_K: usize = 3;
-/// Recombine drops influence, catalyst quality and fractured state (user-stated).
-pub const RECOMBINE_KEEPS_INFLUENCE: bool = false;
 
 /// A declared purchase used as an Awakener's Orb donor.
 #[derive(Clone, Debug, PartialEq)]
