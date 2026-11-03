@@ -4,6 +4,7 @@ use crate::data::{Bundle, ModData};
 use crate::item::{INFLUENCE_NAMES, Side};
 
 /// Whether catalyst quality steers spawn weights (user-stated 3.29 behaviour).
+/// Claim: catalyst.affects_weights
 pub const CATALYST_AFFECTS_WEIGHTS: bool = true;
 
 /// A sorted, deduplicated set of tag indices: the tags that decide a mod's spawn weight.

@@ -11,6 +11,7 @@ use crate::target::{self, Target};
 use crate::weights::{PoolFilter, PoolMod, pool_with};
 
 /// Whether any currency use consumes a catalyst's quality (user-stated 3.29 behaviour).
+/// Claim: catalyst.consumed_by_currency
 pub const CATALYST_CONSUMED_BY_CURRENCY: bool = true;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -476,7 +477,7 @@ fn reforge_with(
     let capacity = (cap_p + cap_s).saturating_sub(kept);
     let mut outs = Vec::new();
     for (start, p_start, excluded) in &starts {
-        for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
+        for (k, weight) in crate::claims::chaos_count_weights() {
             let n_new = k.saturating_sub(kept).min(capacity);
             for (state, p) in fill_with(b, t, start, n_new, first_influence_only, pm, excluded) {
                 outs.push((state, p * weight * p_start));
@@ -606,7 +607,7 @@ fn entry_group(t: &Target, e: &PoolMod2) -> u16 {
 
 /// Distribution of one side of a recombined item: (side state, probability).
 ///
-/// `N` comes from `RECOMBINE_MOD_COUNT` over the pooled count; the kept mods are then drawn one at
+/// `N` comes from the count-table claim over the pooled count; the kept mods are then drawn one at
 /// a time, uniformly among the eligible entries, and a drawn mod makes every entry of its group
 /// ineligible. A mod on both inputs is two entries: it raises the pooled count and its chance to
 /// be drawn, but it is kept at most once. When the eligible entries run out first, fewer are kept.
@@ -615,7 +616,7 @@ fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, 
     if n == 0 {
         return vec![(SideState::default(), 1.0)];
     }
-    let row = registry::RECOMBINE_MOD_COUNT[n.min(6) - 1];
+    let row = crate::claims::recombine_count_table("recombine.count_table")[n.min(6) - 1];
     let mut out: Vec<(SideState, f64)> = Vec::new();
     let mut used = vec![false; n];
     for (k, pk) in row.iter().enumerate() {
@@ -636,6 +637,7 @@ fn recombine_side(b: &Bundle, t: &Target, pool: &[PoolMod2]) -> Vec<(SideState, 
 }
 
 /// Draw `left` more mods from the eligible entries of `pool` onto `ss` (see [`recombine_side`]).
+// Claim: recombine.pools_and_groups
 #[allow(clippy::too_many_arguments)]
 fn draw_kept(
     b: &Bundle,
@@ -699,6 +701,7 @@ fn side_pool(a: &SideState, c: &SideState) -> Vec<PoolMod2> {
 }
 
 /// Why two items cannot be recombined, or `None` when they can.
+// Claim: recombine.inputs
 pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'static str> {
     use crate::item::Rarity;
     if [a, c].iter().any(|s| s.rarity == Rarity::Normal) {
@@ -720,6 +723,7 @@ pub fn recombine_blocker(b: &Bundle, a: &ItemState, c: &ItemState) -> Option<&'s
 /// influence/catalyst/lock lost, and per side `N` of the pooled mods kept ([`recombine_side`]).
 /// From two magic items the result is magic when its mods fit a magic item of that base (normal
 /// with none); otherwise, and whenever an input is rare, it is rare.
+// Claim: recombine.base_and_item_level
 pub fn recombine(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<(ItemState, f64)> {
     use crate::item::Rarity;
     if recombine_blocker(b, a, c).is_some() {
@@ -1011,7 +1015,7 @@ fn combine(
                     let kept_count = state.mod_count();
                     let (cap_p, cap_s) = state.caps(b);
                     let capacity = (cap_p + cap_s).saturating_sub(kept_count);
-                    for (k, weight) in [(4u8, 8.0 / 12.0), (5u8, 3.0 / 12.0), (6u8, 1.0 / 12.0)] {
+                    for (k, weight) in crate::claims::chaos_count_weights() {
                         let n_new = k.saturating_sub(kept_count).min(capacity);
                         for (filled, p_fill) in fill(b, t, &state, n_new, false) {
                             outs.push((filled, choice_prob * p * weight * p_fill));

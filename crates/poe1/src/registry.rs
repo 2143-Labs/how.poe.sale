@@ -6,10 +6,13 @@ use crate::kernels::Action;
 use crate::target::Target;
 
 /// Milestone 1: the harvest influenced reforge respects "Cannot Be Changed" metamods.
+/// Claim: harvest.influenced_respects_locks
 pub const HARVEST_INFLUENCED_RESPECTS_LOCKS: bool = true;
 /// Milestone 1: the harvest influenced reforge's first new mod comes from the influenced pool.
+/// Claim: harvest.first_draw_influenced
 pub const HARVEST_FIRST_DRAW_INFLUENCED: bool = true;
 /// Catalysts to take an item from 0% to 20% quality (conservative constant).
+/// Claim: catalyst.full_quality_count
 pub const CATALYSTS_FOR_FULL_QUALITY: f64 = 20.0;
 
 /// Price key of each influence's exalted orb, by influence bit.
@@ -291,16 +294,6 @@ pub fn contract_by_id(id: &str) -> Option<&'static Contract> {
     CONTRACTS.iter().find(|c| c.id == id)
 }
 
-/// Recombinator output mod count per side, by pool size 1..=6 (clamped): `[P(0), P(1), P(2), P(3)]`.
-/// The user's 66.7%/33.3% row is read as exactly 2/3 and 1/3.
-pub const RECOMBINE_MOD_COUNT: [[f64; 4]; 6] = [
-    [0.41, 0.59, 0.0, 0.0],
-    [0.0, 2.0 / 3.0, 1.0 / 3.0, 0.0],
-    [0.0, 0.40, 0.50, 0.10],
-    [0.0, 0.10, 0.60, 0.30],
-    [0.0, 0.0, 0.43, 0.57],
-    [0.0, 0.0, 0.30, 0.70],
-];
 /// Fossil sets the engine offers per state, best single-draw share first.
 pub const FOSSIL_TOP_K: usize = 3;
 /// Recombine drops influence, catalyst quality and fractured state (user-stated).

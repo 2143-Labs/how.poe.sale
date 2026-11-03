@@ -1,0 +1,125 @@
+{
+  "claims": [
+    {
+      "id": "affix.chaos_count_ratio",
+      "statement": "A Chaos Orb, and every full rare reforge modelled like it, leaves 4, 5 or 6 explicit mods in the ratio 8:3:1.",
+      "source_kind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Chaos_Orb",
+      "quote": "For regular items, Chaos Orbs result in a rare item with an affix count of 4, 5, or 6 at a ratio of 8:3:1.",
+      "patch": "3.29",
+      "checked": true,
+      "via": "",
+      "value": { "4": 8, "5": 3, "6": 1 }
+    },
+    {
+      "id": "recombine.count_table",
+      "statement": "How many mods a recombine keeps on one side depends on how many that side pooled from both inputs: each row (1 to 6 or more pooled) gives the chances of keeping 0, 1, 2 or 3. Row 2 reads 66.7/33.3 in the source and is stored as 2:1.",
+      "source_kind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator#Determining_the_number_of_modifier_affixes",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "not opened by us",
+      "approximate": true,
+      "reason": "rounded from player-collected samples; the 3.25 guide's unrounded table differs by up to 2 points per row",
+      "value": [
+        [41, 59, 0, 0],
+        [0, 2, 1, 0],
+        [0, 40, 50, 10],
+        [0, 10, 60, 30],
+        [0, 0, 43, 57],
+        [0, 0, 30, 70]
+      ]
+    },
+    {
+      "id": "recombine.base_and_item_level",
+      "statement": "A recombine's result takes the base of either input with chance 1/2, and its item level is the lower of the higher input's item level and the inputs' average plus 2.",
+      "source_kind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "not opened by us"
+    },
+    {
+      "id": "recombine.inputs",
+      "statement": "The Recombinator takes two magic or rare items of the same item class.",
+      "source_kind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "not opened by us"
+    },
+    {
+      "id": "recombine.pools_and_groups",
+      "statement": "Each side pools the explicit mods of both inputs, so a mod on both counts twice; the kept mods are drawn one at a time, and a drawn mod makes every pooled mod of its group ineligible.",
+      "source_kind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "not opened by us"
+    },
+    {
+      "id": "harvest.influenced_respects_locks",
+      "statement": "Harvest's influenced reforge leaves a side alone when a 'Cannot Be Changed' bench metamod locks it.",
+      "source_kind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "",
+      "approximate": true,
+      "reason": "owner-stated for 3.29; no published source"
+    },
+    {
+      "id": "harvest.first_draw_influenced",
+      "statement": "Harvest's influenced reforge draws its first new mod from the influenced mods only.",
+      "source_kind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "",
+      "approximate": true,
+      "reason": "owner-stated for 3.29; no published source"
+    },
+    {
+      "id": "catalyst.full_quality_count",
+      "statement": "Twenty catalysts take an item from 0% to 20% catalyst quality.",
+      "source_kind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "",
+      "approximate": true,
+      "reason": "owner-stated for 3.29; no published source"
+    },
+    {
+      "id": "catalyst.affects_weights",
+      "statement": "Catalyst quality raises the spawn weight of mods carrying the catalyst's tags by the quality percentage.",
+      "source_kind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "",
+      "approximate": true,
+      "reason": "owner-stated for 3.29; no published source"
+    },
+    {
+      "id": "catalyst.consumed_by_currency",
+      "statement": "Using any currency on an item removes its catalyst quality.",
+      "source_kind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "via": "",
+      "approximate": true,
+      "reason": "owner-stated for 3.29; no published source"
+    }
+  ]
+}
