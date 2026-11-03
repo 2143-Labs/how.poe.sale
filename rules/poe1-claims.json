@@ -120,6 +120,30 @@
       "via": "",
       "approximate": true,
       "reason": "owner-stated for 3.29; no published source"
+    },
+    {
+      "id": "pool.royale_excluded",
+      "statement": "The four item-domain mods whose id contains Royale are Battle Royale copies of real tiers that a league item cannot roll. Without them the Lapis Amulet suffix pool at item level 84 totals 123,450; with them it is 800 more, and the tier counts of other published pool figures agree only without them.",
+      "source_kind": "experiment",
+      "url": "data/raw/mods.json",
+      "quote": "",
+      "patch": "3.29.3.3",
+      "checked": true,
+      "via": "read against data/raw",
+      "approximate": true,
+      "reason": "the export marks these copies only by id; the inference rests on matching published pool totals and tier counts"
+    },
+    {
+      "id": "pool.generation_weights",
+      "statement": "All 364 bundled item-domain mods that carry generation weights hold the same list (attack_dagger 100, dagger 50, warstaff 100, staff 50, sceptre 50, wand_can_roll_caster_modifiers 50, default 100); the first listed tag the base has scales the mod's spawn weight by weight/100, so staves, sceptres, rune daggers and caster wands roll these attack mods half as often.",
+      "source_kind": "datamined",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "",
+      "patch": "3.29.3.3",
+      "checked": true,
+      "via": "read against data/raw",
+      "approximate": true,
+      "reason": "the first-match ×weight/100 reading is the export's convention, not a GGG statement; GGG's 3.26 patch notes give only the direction: 'Sceptres, Staves, Rune Daggers and Wands now roll Attack Modifiers less often (Warstaves and Attack Daggers are unaffected by this change)', reproduced at https://maxroll.gg/poe/news/3-26-secrets-of-the-atlas-patch-notes"
     }
   ]
 }

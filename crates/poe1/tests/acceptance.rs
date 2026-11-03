@@ -31,7 +31,7 @@ fn va1_alt_spam_amulet() {
     let prices = prices();
     let lapis = base("Lapis Amulet");
 
-    // The magic pool: 110 prefixes, 150 suffixes, total weight 211,550.
+    // The magic pool: 110 prefixes, 149 suffixes, total weight 210,750.
     let tags = b.item_tags(lapis, 0);
     let side_pool = |side| {
         pool(
@@ -53,8 +53,8 @@ fn va1_alt_spam_amulet() {
         pre.len(),
         suf.len()
     );
-    assert_eq!((pre.len(), suf.len()), (110, 150));
-    assert_eq!(total, 211_550.0);
+    assert_eq!((pre.len(), suf.len()), (110, 149));
+    assert_eq!(total, 210_750.0);
     let weight = |id: &str| {
         pre.iter()
             .find(|e| e.mod_index == mod_index(id))
@@ -83,9 +83,9 @@ fn va1_alt_spam_amulet() {
         "per-alteration share of {LIGHTNING}: {share:.6e} ({:.4}%)",
         share * 100.0
     );
-    assert!(close(share, 200.0 / 211_550.0, 1e-12));
-    assert!((share * 100.0 - 0.0945).abs() < 0.0001);
-    assert!(((weight(ALL) / total) * 100.0 - 0.0236).abs() < 0.0001);
+    assert!(close(share, 200.0 / 210_750.0, 1e-12));
+    assert!((share * 100.0 - 0.0949).abs() < 0.0001);
+    assert!(((weight(ALL) / total) * 100.0 - 0.0237).abs() < 0.0001);
 
     // The market: normal base bought at 1, alt-spam into the magic amulet.
     let goods = vec![

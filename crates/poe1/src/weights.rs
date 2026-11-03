@@ -47,6 +47,21 @@ pub fn spawn_weight(m: &ModData, tags: &TagSet) -> u32 {
     0
 }
 
+/// The mod's generation-weight multiplier on an item with `tags`: the first listed tag the item
+/// has scales its spawn weight by `weight / 100`; no list or no match leaves it at 1.
+// Claim: pool.generation_weights
+pub fn generation_multiplier(m: &ModData, tags: &TagSet) -> f64 {
+    m.gen_weights
+        .iter()
+        .find(|(tag, _)| tags.contains(*tag))
+        .map_or(1.0, |(_, w)| *w as f64 / 100.0)
+}
+
+/// The weight a mod rolls with on an item with `tags`: spawn weight times generation multiplier.
+pub fn effective_weight(m: &ModData, tags: &TagSet) -> f64 {
+    spawn_weight(m, tags) as f64 * generation_multiplier(m, tags)
+}
+
 impl Bundle {
     /// The influence bits whose class influence tag the mod spawns from (weight > 0).
     pub fn mod_influences(&self, base: u16, mod_index: u32) -> u8 {
@@ -187,7 +202,7 @@ pub fn pool_with(b: &Bundle, f: &PoolFilter, pm: &PoolMod) -> Vec<PoolEntry> {
         if base == 0 {
             continue;
         }
-        let mut weight = base as f64 * pm.multiplier(m);
+        let mut weight = effective_weight(m, f.tags) * pm.multiplier(m);
         if weight <= 0.0 {
             continue;
         }
@@ -464,7 +479,8 @@ mod tests {
                 influence_bits(&["Shaper", "Warlord"]),
                 None
             ),
-            143_700.0
+            // 143,700 less the Battle Royale cast-speed copy's amulet weight of 800.
+            143_700.0 - 800.0
         );
     }
 
@@ -480,7 +496,9 @@ mod tests {
                 influence_bits(&["Shaper", "Warlord"]),
                 Some((&tags, 20))
             ),
-            150_740.0
+            // 150,740 less the same 800: the copy has no `attribute` tag, so the catalyst
+            // never scaled it.
+            150_740.0 - 800.0
         );
     }
 
@@ -498,5 +516,34 @@ mod tests {
             ),
             99_000.0
         );
+    }
+
+    fn base_pool(name: &str, side: Side) -> f64 {
+        let b = crate::test_bundle();
+        let tags = b.item_tags(b.base_by_name(name).expect("base"), 0);
+        pool(
+            b,
+            &PoolFilter {
+                side,
+                tags: &tags,
+                ilvl: 84,
+                excluded_groups: &[],
+                influence_only: false,
+                catalyst: None,
+            },
+        )
+        .iter()
+        .map(|e| e.weight)
+        .sum()
+    }
+
+    #[test]
+    fn generation_weights_halve_staff_attack_mods() {
+        // A staff rolls the generation-weighted attack mods at half weight...
+        assert_eq!(base_pool("Eclipse Staff", Side::Prefix), 77_870.0);
+        assert_eq!(base_pool("Eclipse Staff", Side::Suffix), 78_075.0);
+        // ...a warstaff at full weight, so its pools are the plain spawn-weight sums.
+        assert_eq!(base_pool("Ezomyte Staff", Side::Prefix), 52_982.0);
+        assert_eq!(base_pool("Ezomyte Staff", Side::Suffix), 87_400.0);
     }
 }

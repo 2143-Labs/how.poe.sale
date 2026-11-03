@@ -37,8 +37,8 @@ fn buckets(base_name: &str) -> [usize; 6] {
 fn amulet_source_counts() {
     let got = buckets("Lapis Amulet");
     println!("Lapis Amulet native/influence/essence/fossil/bench/foreign = {got:?}");
-    // 264 native; the one fossil-only mod is Tangled Fossil's DelveAmuletVaalSkillDuration1.
-    assert_eq!(got, [264, 135, 45, 1, 0, 0]);
+    // 263 native; the one fossil-only mod is Tangled Fossil's DelveAmuletVaalSkillDuration1.
+    assert_eq!(got, [263, 135, 45, 1, 0, 0]);
     let wand = buckets("Omen Wand");
     println!("Omen Wand = {wand:?}");
     assert!(wand[3] > 0, "a caster weapon has fossil-only mods");
