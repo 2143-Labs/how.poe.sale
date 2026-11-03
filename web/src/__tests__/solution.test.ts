@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import rawSolution from '../__fixtures__/simplexSolution.json'
-import { formatChaos, formatPercent, normalizeSolution, normalizeSolutionV3, recoveryEdgeIds, toFlow } from '../solution'
+import {
+  formatChaos,
+  formatPercent,
+  normalizeProposalList,
+  normalizeSolution,
+  normalizeSolutionV3,
+  recoveryEdgeIds,
+  toFlow,
+} from '../solution'
 
 const solution = normalizeSolution(rawSolution)
 
@@ -124,5 +132,31 @@ describe('normalizeSolutionV3', () => {
     const malformed = normalizeSolutionV3({ version: 3, approximate: 'nope', range: { low: 'x', high: 2 } })
     expect(malformed.approximate).toEqual([])
     expect(malformed.range).toBeNull()
+  })
+})
+
+describe('custom processes', () => {
+  it('keep their kind in a solution', () => {
+    const solution = normalizeSolutionV3({
+      market: { goods: [], processes: [{ id: 'c', kind: 'custom', name: 'Veiled chaos and unveil', status: 'Ready' }] },
+    })
+    expect(solution.market.processes[0].kind).toBe('custom')
+    expect(solution.market.processes[0].name).toBe('Veiled chaos and unveil')
+  })
+
+  it('are rejected in a proposal with a zero chance', () => {
+    const proposal = (chance: number) => ({
+      process: {
+        id: 'c',
+        output: 'main',
+        recipe: null,
+        kind: { custom: { from: null, name: 'x', chance, cost: 1, keepsInput: false } },
+      },
+      newGoods: [],
+      name: 'x',
+      status: 'Ready',
+    })
+    expect(normalizeProposalList([proposal(0)])).toHaveLength(0)
+    expect(normalizeProposalList([proposal(0.5)])).toHaveLength(1)
   })
 })

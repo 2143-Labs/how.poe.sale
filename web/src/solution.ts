@@ -403,7 +403,7 @@ function normalizeProcessValue(raw: unknown): ProcessValueJson | null {
     id: p.id,
     output: asString(p.output),
     recipe: typeof p.recipe === 'string' ? p.recipe : null,
-    kind: p.kind === 'recombine' ? 'recombine' : 'craft',
+    kind: p.kind === 'recombine' ? 'recombine' : p.kind === 'custom' ? 'custom' : 'craft',
     inputs: asStringArray(p.inputs),
     name: asString(p.name, p.kind === 'recombine' ? 'Recombine' : 'Craft'),
     cost: asNumber(p.cost),
@@ -465,6 +465,22 @@ function normalizeProcessJson(raw: unknown): ProcessJson | null {
     const r = asRecord(kindRaw.recombine)
     if (typeof r.a !== 'string' || typeof r.b !== 'string') return null
     kind = { recombine: { a: r.a, b: r.b } }
+  } else if (kindRaw.custom) {
+    const c = asRecord(kindRaw.custom)
+    const from = c.from === null || typeof c.from === 'string' ? c.from : undefined
+    if (
+      from === undefined ||
+      typeof c.name !== 'string' ||
+      c.name === '' ||
+      typeof c.chance !== 'number' ||
+      !(c.chance > 0 && c.chance <= 1) ||
+      typeof c.cost !== 'number' ||
+      !(c.cost >= 0) ||
+      typeof c.keepsInput !== 'boolean'
+    ) {
+      return null
+    }
+    kind = { custom: { from, name: c.name, chance: c.chance, cost: c.cost, keepsInput: c.keepsInput } }
   } else {
     const c = asRecord(kindRaw.craft ?? kindRaw)
     kind = {

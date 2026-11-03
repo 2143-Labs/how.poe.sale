@@ -145,3 +145,45 @@ describe('market edits', () => {
     expect(useAppStore.getState().goods[0].target.minHits).toBe(1)
   })
 })
+
+describe('addCustomCraft', () => {
+  beforeEach(() => useAppStore.setState({ ...emptyProblemState(), notice: null }))
+
+  it('adds the input good once and a process per craft', () => {
+    useAppStore.getState().applyDraft(draft)
+    const spec = {
+      output: 'main',
+      name: 'Veiled chaos and unveil',
+      input: { kind: 'without' as const, remove: [0] },
+      chance: 0.25,
+      cost: 10,
+      keepsInput: false,
+    }
+    expect(useAppStore.getState().addCustomCraft(spec)).toBe('custom-1')
+    let state = useAppStore.getState()
+    const input = state.goods.find((good) => good.id === 'custom-input-1')
+    expect(input?.target.requirements).toHaveLength(2)
+    expect(input?.target.minHits).toBe(2)
+    const process = state.processes.find((p) => p.id === 'custom-1')
+    expect(process?.kind).toEqual({
+      custom: { from: 'custom-input-1', name: 'Veiled chaos and unveil', chance: 0.25, cost: 10, keepsInput: false },
+    })
+    expect(state.selectedGood).toBe('main')
+    expect(state.view).toBe('market')
+
+    expect(useAppStore.getState().addCustomCraft(spec)).toBe('custom-2')
+    state = useAppStore.getState()
+    expect(state.goods.filter((good) => good.id.startsWith('custom-input-'))).toHaveLength(1)
+    expect(state.processes.find((p) => p.id === 'custom-2')?.kind).toMatchObject({ custom: { from: 'custom-input-1' } })
+  })
+
+  it('rejects a free craft from nothing and a zero chance', () => {
+    useAppStore.getState().applyDraft(draft)
+    const base = { output: 'main', name: 'x', chance: 0.5, cost: 0, keepsInput: false }
+    expect(useAppStore.getState().addCustomCraft({ ...base, input: { kind: 'none' } })).toBeNull()
+    expect(
+      useAppStore.getState().addCustomCraft({ ...base, cost: 1, chance: 0, input: { kind: 'none' } }),
+    ).toBeNull()
+    expect(useAppStore.getState().processes).toHaveLength(0)
+  })
+})
