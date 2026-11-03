@@ -85,6 +85,39 @@ export function Stats() {
           solve again.
         </p>
       )}
+      {solution?.range && (
+        <>
+          <p className="hint">
+            Expected cost moves between {formatChaos(solution.range.low)} and {formatChaos(solution.range.high)} chaos
+            under the approximate rules below.
+          </p>
+          <table className="readings">
+            <tbody>
+              {solution.range.readings.map((reading) => (
+                <tr key={reading.label}>
+                  <td>{reading.label}</td>
+                  <td>{reading.value == null ? '—' : formatChaos(reading.value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      {solution && solution.approximate.length > 0 && (
+        <>
+          <h3>Rests on approximate rules</h3>
+          <ul className="approximate">
+            {solution.approximate.map((claim) => (
+              <li key={claim.id}>
+                <a href={claim.url} target="_blank" rel="noreferrer">
+                  {claim.statement}
+                </a>{' '}
+                — {claim.reason}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {warnings.length > 0 && (
         <ul className="warnings">
           {warnings.map((warning) => (

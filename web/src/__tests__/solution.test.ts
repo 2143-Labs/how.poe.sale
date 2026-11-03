@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import rawSolution from '../__fixtures__/simplexSolution.json'
-import { formatChaos, formatPercent, normalizeSolution, recoveryEdgeIds, toFlow } from '../solution'
+import { formatChaos, formatPercent, normalizeSolution, normalizeSolutionV3, recoveryEdgeIds, toFlow } from '../solution'
 
 const solution = normalizeSolution(rawSolution)
 
@@ -87,5 +87,42 @@ describe('formatting', () => {
     expect(formatChaos(273.4625)).toBe('273.46')
     expect(formatChaos(-399.99)).toBe('-399.99')
     expect(formatChaos(null)).toBe('—')
+  })
+})
+
+describe('normalizeSolutionV3', () => {
+  const claim = {
+    id: 'recombine.count_table',
+    statement: 'How many mods a recombine keeps on one side',
+    reason: 'player-collected samples',
+    url: 'https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/',
+  }
+
+  it('keeps the approximate rules and the value range', () => {
+    const s = normalizeSolutionV3({
+      version: 3,
+      market: { goods: [], processes: [{ id: 'rm', claims: ['recombine.cost', 7] }] },
+      approximate: [claim, { id: 'half', statement: 'no reason or url' }],
+      range: { low: 10, high: 30, readings: [{ label: 'α 0.4', value: 10 }, { label: 'α 1.6', value: null }, { value: 3 }] },
+    })
+    expect(s.approximate).toEqual([claim])
+    expect(s.range).toEqual({
+      low: 10,
+      high: 30,
+      readings: [
+        { label: 'α 0.4', value: 10 },
+        { label: 'α 1.6', value: null },
+      ],
+    })
+    expect(s.market.processes[0].claims).toEqual(['recombine.cost'])
+  })
+
+  it('defaults both when absent or malformed', () => {
+    const absent = normalizeSolutionV3({ version: 3 })
+    expect(absent.approximate).toEqual([])
+    expect(absent.range).toBeNull()
+    const malformed = normalizeSolutionV3({ version: 3, approximate: 'nope', range: { low: 'x', high: 2 } })
+    expect(malformed.approximate).toEqual([])
+    expect(malformed.range).toBeNull()
   })
 })

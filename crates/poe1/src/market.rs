@@ -440,6 +440,8 @@ pub struct ProcessValue {
     pub exits: Vec<Exit>,
     pub status: ProcessStatus,
     pub error: Option<String>,
+    /// The claims (`rules/poe1-claims.json`) this process's evaluation read, sorted.
+    pub claims: Vec<&'static str>,
     /// Craft only: the solved graph, kept so the API can show it as the focus tree.
     pub graph: Option<Rc<(Graph<ItemState, Action>, Solved)>>,
 }
@@ -459,6 +461,7 @@ impl ProcessValue {
             exits: Vec::new(),
             status,
             error,
+            claims: Vec::new(),
             graph: None,
         }
     }
@@ -764,7 +767,16 @@ impl Solver<'_> {
                     self.cache_hits += 1;
                     return Ok(hit.clone());
                 }
-                let r = eval_craft(self.b, self.m, p, from_value, self.prices, self.donors)?;
+                let mut r = eval_craft(self.b, self.m, p, from_value, self.prices, self.donors)?;
+                let mut claims: Vec<&'static str> = r
+                    .steps
+                    .iter()
+                    .filter_map(|st| st.action.as_ref())
+                    .flat_map(|a| registry::action_claims(a).iter().copied())
+                    .collect();
+                claims.sort_unstable();
+                claims.dedup();
+                r.claims = claims;
                 self.cache.insert(key, r.clone());
                 Ok(r)
             }
@@ -1063,6 +1075,7 @@ fn eval_recombine(
         return (r, None);
     }
     let outs = kernels::recombine(b, &m.universe, &x, &y, &m.recombine_rules);
+    r.claims = kernels::recombine_claims(b, &m.universe, &x, &y);
     r.core = group_exits(
         b,
         m,

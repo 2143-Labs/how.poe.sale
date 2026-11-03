@@ -646,6 +646,8 @@ struct Pooled {
     weight: f64,
     /// Whether the chosen base can carry the mod; a non-native one counts but is never kept.
     native: bool,
+    /// Whether the weight is the exclusive-mod fallback of a keepable mod.
+    exclusive: bool,
 }
 
 /// The pooled mods of one side, `a`'s hits and blocked tiers then `c`'s, weighed on the output
@@ -680,6 +682,7 @@ fn side_pool(
                 group: r.group,
                 weight: if w > 0.0 { w } else { fallback },
                 native,
+                exclusive: native && w <= 0.0,
             });
         }
         for blocked in &ss.blocked {
@@ -709,6 +712,7 @@ fn side_pool(
                 group: blocked.group,
                 weight: if sum > 0.0 { sq / sum } else { fallback },
                 native: sum > 0.0,
+                exclusive: false,
             });
         }
     }
@@ -906,6 +910,34 @@ fn recombine_shell(a: &ItemState, c: &ItemState, x: &ItemState) -> ItemState {
     let mut shell = ItemState::new(x.base, ilvl, crate::item::Rarity::Rare, x.influences);
     shell.catalyst = x.catalyst;
     shell
+}
+
+/// The claims a recombine of `a` and `c` reads: the rules every recombine uses, the one-prefix
+/// one-suffix override when the pools are exactly that, and the exclusive-mod weight when a
+/// keepable pooled mod falls back to it.
+pub fn recombine_claims(b: &Bundle, t: &Target, a: &ItemState, c: &ItemState) -> Vec<&'static str> {
+    let mut out = vec![
+        "recombine.count_table",
+        "recombine.selection_alpha",
+        "recombine.output_rarity",
+        "recombine.cost",
+        "recombine.non_native",
+        "recombine.pools_and_groups",
+    ];
+    for x in [a, c] {
+        let shell = recombine_shell(a, c, x);
+        let pre = side_pool(b, t, a, c, &shell, Side::Prefix);
+        let suf = side_pool(b, t, a, c, &shell, Side::Suffix);
+        if pre.len() == 1 && suf.len() == 1 {
+            out.push("recombine.one_prefix_one_suffix");
+        }
+        if pre.iter().chain(&suf).any(|e| e.exclusive) {
+            out.push("recombine.exclusive_weight");
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
 }
 
 /// The Recombinator on two magic or rare items. Either input's base is chosen with 1/2 and the
