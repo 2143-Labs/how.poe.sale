@@ -1,0 +1,11 @@
+Item Class: Bows
+Rarity: Rare
+Doom Song
+Thicket Bow
+--------
+Item Level: 84
+--------
+175% increased Physical Damage
+79% increased Physical Damage
++200 to Accuracy Rating
+Adds 47 to 84 Physical Damage

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import draftJson from '../__fixtures__/simplexDraft.json'
 import { DEFAULT_PRICES } from '../defaultPrices'
-import { buildProblem, draftToTarget, normalizeDraft } from '../problem'
+import { buildProblem, draftToTarget, normalizeDraft, stateFromProblem } from '../problem'
 import { buildShareUrl, decodeProblem, encodeProblem, parseShareHash, SHARE_PREFIX } from '../share'
 import { createSolverClient, type WorkerLike } from '../solverClient'
 import type { Problem, ProblemV3 } from '../types'
@@ -124,5 +124,33 @@ describe('share link', () => {
     expect(decodeProblem(noGoods)).toBeNull()
     const noTarget = encodeProblem({ ...v1, target: null } as unknown as Problem)
     expect(decodeProblem(noTarget)).toBeNull()
+  })
+})
+
+describe('custom crafts in links', () => {
+  it('keep every field through encode, decode and load', () => {
+    const custom = {
+      ...v3,
+      processes: [
+        {
+          id: 'custom-1',
+          output: 'main',
+          recipe: null,
+          kind: { custom: { from: 'base', name: 'Veiled chaos and unveil', chance: 0.25, cost: 10, keepsInput: true } },
+          expanded: null,
+          added: [],
+          disabled: [],
+          buy: [],
+          sell: [],
+        },
+      ],
+      focus: null,
+    } satisfies ProblemV3
+    const decoded = decodeProblem(encodeProblem(custom))
+    expect(decoded).not.toBeNull()
+    const state = stateFromProblem(decoded!)
+    expect(state.processes[0].kind).toEqual({
+      custom: { from: 'base', name: 'Veiled chaos and unveil', chance: 0.25, cost: 10, keepsInput: true },
+    })
   })
 })

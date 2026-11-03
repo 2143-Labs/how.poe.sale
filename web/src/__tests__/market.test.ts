@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import draftJson from '../__fixtures__/simplexDraft.json'
 import rawSolution from '../__fixtures__/marketSolution.json'
 import { DEFAULT_PRICES } from '../defaultPrices'
-import { authoredProposal, marketToFlow } from '../market'
+import { authoredProposal, marketToFlow, processInputs } from '../market'
 import { buildProblem, draftToTarget, minValueFor, normalizeDraft } from '../problem'
 import { normalizeSolutionV3 } from '../solution'
 import { emptyProblemState, useAppStore } from '../store'
@@ -165,5 +165,23 @@ describe('market store', () => {
     useAppStore.getState().applyDraft({ ...normalizeDraft(draftJson), base: null })
     expect(useAppStore.getState().goods[0]?.target.base).toBe('Simplex Amulet')
     expect(useAppStore.getState().notice).toMatch(/No base item/)
+  })
+})
+
+describe('processInputs', () => {
+  it('reads a custom craft input', () => {
+    const custom = (from: string | null): ProcessJson => ({
+      id: 'c',
+      output: 'main',
+      recipe: null,
+      kind: { custom: { from, name: 'x', chance: 0.5, cost: 1, keepsInput: false } },
+      expanded: null,
+      added: [],
+      disabled: [],
+      buy: [],
+      sell: [],
+    })
+    expect(processInputs(custom(null))).toEqual([])
+    expect(processInputs(custom('x'))).toEqual(['x'])
   })
 })

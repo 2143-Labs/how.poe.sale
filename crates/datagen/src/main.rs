@@ -242,6 +242,19 @@ struct ModOut {
     gen_weights: Vec<(u16, u32)>,
     #[serde(skip_serializing_if = "is_false")]
     fossil_only: bool,
+    /// Placed by a Veiled Chaos or Veiled Exalted Orb and unveiled at Jun; never rolls naturally.
+    #[serde(skip_serializing_if = "is_false")]
+    veiled: bool,
+    /// A veiled mod's spawn weights (its `weights` stay empty so no natural pool holds it).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    veiled_weights: Vec<(u16, u32)>,
+}
+
+/// A Jun-unveiled affix: RePoE domain `unveiled`, a prefix or suffix with stats.
+fn is_veiled(m: &RawMod) -> bool {
+    m.domain == "unveiled"
+        && matches!(m.generation_type.as_str(), "prefix" | "suffix")
+        && !m.stats.is_empty()
 }
 
 #[derive(Serialize)]
@@ -308,11 +321,69 @@ struct FossilOut {
 }
 
 /// One way a line can read: `key` with each value replaced by `#`, and per `#` in text order the
-/// stat it shows and whether the shown number is the stat negated.
+/// stat shown and the factor from stored value to shown value.
 #[derive(Serialize)]
 struct TranslationOut {
     key: String,
-    slots: Vec<(u16, bool)>,
+    slots: Vec<(u16, f64)>,
+}
+
+/// The factor a RePoE `index_handlers` entry applies to a stored value before display.
+/// `Some(None)`: the handler shows something other than a number. `None`: an unknown handler.
+fn handler_factor(name: &str) -> Option<Option<f64>> {
+    let f = match name {
+        "negate" => -1.0,
+        "canonical_stat" => 1.0,
+        "divide_by_one_hundred"
+        | "divide_by_one_hundred_2dp_if_required"
+        | "divide_by_one_hundred_2dp" => 0.01,
+        "divide_by_one_hundred_and_negate" => -0.01,
+        "milliseconds_to_seconds"
+        | "milliseconds_to_seconds_2dp_if_required"
+        | "milliseconds_to_seconds_2dp"
+        | "milliseconds_to_seconds_0dp"
+        | "milliseconds_to_seconds_1dp"
+        | "divide_by_one_thousand" => 0.001,
+        "per_minute_to_per_second"
+        | "per_minute_to_per_second_2dp_if_required"
+        | "per_minute_to_per_second_2dp"
+        | "per_minute_to_per_second_1dp"
+        | "per_minute_to_per_second_0dp" => 1.0 / 60.0,
+        "permyriad_per_minute_to_%_per_second" => 1.0 / 6000.0,
+        "divide_by_ten_1dp_if_required"
+        | "divide_by_ten_0dp"
+        | "divide_by_ten_1dp"
+        | "locations_to_metres"
+        | "deciseconds_to_seconds"
+        | "divide_by_twenty_then_double_0dp" => 0.1,
+        "double" => 2.0,
+        "negate_and_double" => -2.0,
+        "times_twenty" => 20.0,
+        "times_one_point_five" => 1.5,
+        "old_leech_percent" | "divide_by_five" => 0.2,
+        "old_leech_permyriad" => 0.002,
+        "divide_by_four" => 0.25,
+        "divide_by_three" => 1.0 / 3.0,
+        "divide_by_six" => 1.0 / 6.0,
+        "divide_by_twelve" => 1.0 / 12.0,
+        "divide_by_fifteen_0dp" => 1.0 / 15.0,
+        "divide_by_twenty" => 0.05,
+        "divide_by_two_0dp" => 0.5,
+        "30%_of_value" => 0.3,
+        "60%_of_value" => 0.6,
+        "passive_hash"
+        | "affliction_reward_type"
+        | "display_indexable_non_active_support"
+        | "display_indexable_support"
+        | "display_indexable_skill"
+        | "mod_value_to_item_class"
+        | "multiplicative_damage_modifier"
+        | "plus_two_hundred"
+        | "tree_expansion_jewel_passive"
+        | "weapon_tree_unique_base_type_name" => return Some(None),
+        _ => return None,
+    };
+    Some(Some(f))
 }
 
 fn is_false(b: &bool) -> bool {
@@ -542,7 +613,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             // bundle must still be able to resolve them by id.
             let referenced = referenced_mods.contains(id.as_str())
                 && matches!(m.generation_type.as_str(), "prefix" | "suffix");
-            modelled || referenced
+            modelled || referenced || is_veiled(m)
         })
         .collect();
 
@@ -594,7 +665,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     // Translations first, so their stat ids join the table the mods index into.
     let mut trade_stats: BTreeMap<String, String> = BTreeMap::new();
     let mut stat_set: BTreeSet<&str> = BTreeSet::new();
-    let mut rows: Vec<(String, Vec<(&str, bool)>)> = Vec::new();
+    let mut rows: Vec<(String, Vec<(&str, f64)>)> = Vec::new();
     for t in &translations {
         for ts in t.trade_stats() {
             if ts.id.starts_with("explicit.")
@@ -606,7 +677,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             }
         }
         let ids = t.ids();
-        for e in t.english.iter().flatten() {
+        'rows: for e in t.english.iter().flatten() {
             let Some(order) = placeholders(&e.string, ids.len()) else {
                 continue;
             };
@@ -618,13 +689,26 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             let mut slots = Vec::with_capacity(order.len());
             for &k in &order {
                 key = key.replace(&format!("{{{k}}}"), "#");
-                let negate = e
+                let mut factor = 1.0;
+                for name in e
                     .index_handlers
                     .as_ref()
                     .and_then(|h| h.get(k))
-                    .is_some_and(|h| h.iter().any(|x| x == "negate"));
-                stat_set.insert(ids[k].as_str());
-                slots.push((ids[k].as_str(), negate));
+                    .into_iter()
+                    .flatten()
+                {
+                    match handler_factor(name) {
+                        Some(Some(f)) => factor *= f,
+                        Some(None) => continue 'rows,
+                        None => bail!(
+                            "stat translation handler {name} has no known display factor; add it to handler_factor"
+                        ),
+                    }
+                }
+                slots.push((ids[k].as_str(), factor));
+            }
+            for (stat, _) in &slots {
+                stat_set.insert(stat);
             }
             rows.push((key, slots));
         }
@@ -646,7 +730,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             key,
             slots: slots
                 .into_iter()
-                .map(|(stat, negate)| (stat_idx[stat], negate))
+                .map(|(stat, factor)| (stat_idx[stat], factor))
                 .collect(),
         })
         .collect();
@@ -667,7 +751,13 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
                 })
                 .collect::<anyhow::Result<Vec<_>>>()
         };
-        let weights = tag_weights(&m.spawn_weights, "spawn")?;
+        let veiled = is_veiled(m);
+        let spawn = tag_weights(&m.spawn_weights, "spawn")?;
+        let (weights, veiled_weights) = if veiled {
+            (Vec::new(), spawn)
+        } else {
+            (spawn, Vec::new())
+        };
         let gen_weights = tag_weights(&m.generation_weights, "generation")?;
         mods_out.push(ModOut {
             id: (*id).clone(),
@@ -695,6 +785,8 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             weights,
             gen_weights,
             fossil_only: fossil_only.contains(id.as_str()),
+            veiled,
+            veiled_weights,
         });
     }
 
@@ -771,7 +863,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
     }
 
     Ok(Bundle {
-        format: 4,
+        format: 5,
         patch: PATCH.to_string(),
         source: Source {
             repo: "repoe-fork",

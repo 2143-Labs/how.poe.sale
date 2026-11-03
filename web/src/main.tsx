@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@xyflow/react/dist/style.css'
 import './styles.css'
 import { CraftList } from './components/CraftList'
+import { DemoMenu } from './components/DemoMenu'
 import { Donors } from './components/Donors'
 import { GoodPanel } from './components/GoodPanel'
 import { Market } from './components/Market'
@@ -108,6 +109,7 @@ function App() {
         <span className="version">{version ? `v${version}` : 'starting…'}</span>
         {busy && <span className="busy">solving…</span>}
         <span className="spacer" />
+        <DemoMenu />
         <button type="button" onClick={share} disabled={!problem}>
           {copied ? 'Link copied' : 'Share link'}
         </button>

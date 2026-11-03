@@ -10,6 +10,7 @@ import {
   emptyMarketState,
   goodName,
   stateFromProblem,
+  targetSignature,
   type MarketState,
 } from './problem'
 import { parseShareHash } from './share'
@@ -32,6 +33,19 @@ export type Vec2 = { x: number; y: number }
 
 export type View = 'market' | 'process'
 
+/** A user-defined craft: what it makes, from what, at what chance and cost per attempt. */
+export interface CustomCraftSpec {
+  output: string
+  name: string
+  /** `without`: the output good minus the listed requirement indices; `good`: an existing good; `none`: no input */
+  input: { kind: 'without'; remove: number[] } | { kind: 'good'; id: string } | { kind: 'none' }
+  /** success chance per attempt, in (0, 1] */
+  chance: number
+  /** chaos per attempt */
+  cost: number
+  keepsInput: boolean
+}
+
 export interface PersistedState extends MarketState {
   selectedGood: string | null
   view: View
@@ -48,6 +62,9 @@ export interface AppState extends PersistedState {
   error: string | null
   /** per-good proposal lists fetched from `propose_processes` */
   proposals: Record<string, ProcessProposalJson[]>
+  /** text an example asked the target editor to paste and parse; never saved or shared */
+  pasteRequest: { text: string; nonce: number } | null
+  requestPaste: (text: string) => void
 
   applyDraft: (draft: TargetDraft) => void
   /** Add the draft as another, unpriced good next to the current target. */
@@ -65,6 +82,8 @@ export interface AppState extends PersistedState {
   setView: (view: View) => void
   selectGood: (id: string | null) => void
   addAuthoredRecipe: (recipe: RecipeDef) => void
+  /** Add a custom craft (and its input good when needed); returns the process id, or `null` when the spec is invalid. */
+  addCustomCraft: (spec: CustomCraftSpec) => string | null
   setProposals: (goodId: string, proposals: ProcessProposalJson[]) => void
   // --- focus-process node actions ---
   addSeed: (key: string) => void
@@ -226,6 +245,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
   busy: false,
   error: null,
   proposals: {},
+  pasteRequest: null,
+
+  requestPaste: (text) =>
+    set((state) => ({ pasteRequest: { text, nonce: (state.pasteRequest?.nonce ?? 0) + 1 } })),
 
   applyDraft: (draft) => {
     const target = draftToTarget(draft)
@@ -342,6 +365,62 @@ export const useAppStore = create<AppState>()((set, get) => ({
       sell: null,
     }
     set((state) => ({ goods: [...state.goods, good], selectedGood: id }))
+    return id
+  },
+
+  addCustomCraft: (spec) => {
+    const { goods, processes } = get()
+    const output = goods.find((good) => good.id === spec.output)
+    const name = spec.name.trim()
+    if (!output || name === '') return null
+    if (!(spec.chance > 0 && spec.chance <= 1) || !Number.isFinite(spec.cost) || spec.cost < 0) return null
+    if (spec.input.kind === 'none' && spec.cost === 0) return null
+    const firstFree = (prefix: string, used: Set<string>) => {
+      let n = 1
+      while (used.has(`${prefix}${n}`)) n += 1
+      return `${prefix}${n}`
+    }
+    let from: string | null = null
+    const newGoods: GoodJson[] = []
+    if (spec.input.kind === 'good') {
+      const id = spec.input.id
+      if (id === output.id || !goods.some((good) => good.id === id)) return null
+      from = id
+    } else if (spec.input.kind === 'without') {
+      const remove = new Set(spec.input.remove)
+      if (remove.size === 0) return null
+      const target = cloneTarget(output.target)
+      target.requirements = output.target.requirements.filter((_, i) => !remove.has(i))
+      target.minHits = Math.min(output.target.minHits, target.requirements.length)
+      const signature = targetSignature(target)
+      const existing = goods.find((good) => targetSignature(good.target) === signature)
+      if (existing?.id === output.id) return null
+      if (existing) {
+        from = existing.id
+      } else {
+        from = firstFree('custom-input-', new Set(goods.map((good) => good.id)))
+        const removed = output.target.requirements.filter((_, i) => remove.has(i)).map((r) => r.label)
+        newGoods.push({ id: from, name: `${output.name} without ${removed.join(', ')}`, target, buy: null, sell: null })
+      }
+    }
+    const id = firstFree('custom-', new Set(processes.map((process) => process.id)))
+    const process: ProcessJson = {
+      id,
+      output: output.id,
+      recipe: null,
+      kind: { custom: { from, name, chance: spec.chance, cost: spec.cost, keepsInput: spec.keepsInput } },
+      expanded: null,
+      added: [],
+      disabled: [],
+      buy: [],
+      sell: [],
+    }
+    set((state) => ({
+      goods: [...state.goods, ...newGoods],
+      processes: [...state.processes, process],
+      selectedGood: output.id,
+      view: 'market',
+    }))
     return id
   },
 

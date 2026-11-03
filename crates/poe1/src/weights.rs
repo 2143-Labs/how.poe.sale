@@ -39,7 +39,12 @@ impl TagSet {
 /// The game scans `spawn_weights` in order and the first tag present in the item's tag set wins;
 /// `default` is the catch-all and a weight of 0 blocks the mod.
 pub fn spawn_weight(m: &ModData, tags: &TagSet) -> u32 {
-    for (tag, weight) in &m.weights {
+    first_weight(&m.weights, tags)
+}
+
+/// The weight of the first tag in `list` present in `tags`; 0 when none is.
+fn first_weight(list: &[(u16, u32)], tags: &TagSet) -> u32 {
+    for (tag, weight) in list {
         if tags.contains(*tag) {
             return *weight;
         }
@@ -235,6 +240,9 @@ pub enum ModSource {
     Essence(u16),
     /// Added to the pool by this fossil (`Bundle::fossils` index).
     Fossil(u16),
+    /// Placed by a Veiled Chaos or Veiled Exalted Orb and unveiled at Jun; no built-in craft
+    /// models it.
+    Veiled,
     /// A crafting-bench option for the item's class.
     Bench,
 }
@@ -246,6 +254,7 @@ impl ModSource {
             ModSource::Essence(_) => 0,
             ModSource::Influence(_) => 1,
             ModSource::Fossil(_) => 2,
+            ModSource::Veiled => 3,
             ModSource::Bench => 4,
             ModSource::Native => 5,
         }
@@ -276,6 +285,7 @@ impl ModSource {
                     .map(|x| x.name.as_str())
                     .unwrap_or("fossil")
             ),
+            ModSource::Veiled => "Veiled (Jun unveil)".to_string(),
             ModSource::Bench => "Bench".to_string(),
         }
     }
@@ -283,6 +293,7 @@ impl ModSource {
 
 /// Every mechanic that can place `mod_index` on `base` carrying `influences`, in [`ModSource`]
 /// order. Empty means no modelled mechanic can; only then is a requirement "not understood".
+/// A veiled mod's only source is [`ModSource::Veiled`], when its veiled weights allow this item.
 /// Another base of the class is no source: a recombine never keeps a mod its chosen base cannot
 /// roll (claim recombine.non_native).
 pub fn sources(b: &Bundle, base: u16, influences: u8, mod_index: u32) -> Vec<ModSource> {
@@ -326,7 +337,7 @@ impl<'a> SourceCtx<'a> {
         let b = self.b;
         let m = b.mod_at(mod_index);
         let mut out = Vec::new();
-        let natural = !m.crafted && !m.fossil_only;
+        let natural = !m.crafted && !m.fossil_only && !m.veiled;
         let native = natural && spawn_weight(m, &self.tags) > 0;
         if native {
             out.push(ModSource::Native);
@@ -346,6 +357,9 @@ impl<'a> SourceCtx<'a> {
             for f in b.fossils_adding(mod_index) {
                 out.push(ModSource::Fossil(f));
             }
+        }
+        if m.veiled && first_weight(&m.veiled_weights, &self.tags) > 0 {
+            out.push(ModSource::Veiled);
         }
         if b.bench_by_mod
             .get(&m.id)

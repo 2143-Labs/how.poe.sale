@@ -76,7 +76,19 @@ pub enum ProcessKind {
     },
     /// Two items, one Recombinator, one attempt per pair of inputs.
     Recombine { a: String, b: String },
+    /// A craft the app does not model: each attempt costs `cost` chaos and makes the output
+    /// with `chance`; on failure the input is lost, or kept when `keeps_input`.
+    Custom {
+        from: Option<String>,
+        name: String,
+        chance: f64,
+        cost: f64,
+        keeps_input: bool,
+    },
 }
+
+/// Seconds one attempt of a custom craft takes.
+pub const CUSTOM_SECONDS: f64 = 2.0;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Process {
@@ -127,6 +139,32 @@ impl Market {
             match &p.kind {
                 ProcessKind::Craft { from, .. } => refs.extend(from.iter()),
                 ProcessKind::Recombine { a, b } => refs.extend([a, b]),
+                ProcessKind::Custom {
+                    from, chance, cost, ..
+                } => {
+                    let id = &p.id;
+                    if !chance.is_finite() || *chance <= 0.0 || *chance > 1.0 {
+                        return Err(format!(
+                            "process \"{id}\": a custom craft's success chance must be above 0 and at most 1"
+                        ));
+                    }
+                    if !cost.is_finite() || *cost < 0.0 {
+                        return Err(format!(
+                            "process \"{id}\": a custom craft's cost must be 0 chaos or more"
+                        ));
+                    }
+                    if from.is_none() && *cost == 0.0 {
+                        return Err(format!(
+                            "process \"{id}\": a custom craft without an input must cost more than 0 chaos"
+                        ));
+                    }
+                    if from.as_ref() == Some(&p.output) {
+                        return Err(format!(
+                            "process \"{id}\": a custom craft cannot use its own output as its input"
+                        ));
+                    }
+                    refs.extend(from.iter());
+                }
             }
             for r in refs {
                 if !index.contains_key(r) {
@@ -227,7 +265,9 @@ impl Market {
     /// Input goods of process `p`.
     pub fn inputs(&self, p: usize) -> Vec<usize> {
         match &self.processes[p].kind {
-            ProcessKind::Craft { from, .. } => from.iter().filter_map(|f| self.good(f)).collect(),
+            ProcessKind::Craft { from, .. } | ProcessKind::Custom { from, .. } => {
+                from.iter().filter_map(|f| self.good(f)).collect()
+            }
             ProcessKind::Recombine { a, b } => {
                 vec![self.good(a).unwrap_or(0), self.good(b).unwrap_or(0)]
             }
@@ -797,6 +837,24 @@ impl Solver<'_> {
                 }
                 Ok(r.0)
             }
+            ProcessKind::Custom { from, chance, .. } => {
+                let from_good = from.as_ref().and_then(|f| self.m.good(f));
+                if let Some(f) = from_good
+                    && self.vals[f].is_none()
+                {
+                    // The chance is stated, so the edge can show it before the input is priced.
+                    let mut r = ProcessValue::empty(
+                        &self.m.processes[p].id,
+                        ProcessStatus::NeedsInput,
+                        Some(format!("needs a price for {}", self.m.goods[f].name)),
+                    );
+                    r.p_success = Some(*chance);
+                    r.attempts = Some(1.0 / *chance);
+                    return Ok(r);
+                }
+                let from_val = from_good.and_then(|f| self.vals[f]);
+                Ok(eval_custom(self.b, self.m, p, from_good, from_val))
+            }
         }
     }
 }
@@ -1146,6 +1204,72 @@ fn eval_recombine(
         .map(|(key, qty)| (key.clone(), qty * ek))
         .collect();
     (r, None)
+}
+
+/// A custom craft's closed form: attempts are geometric with the stated chance. A lost input is
+/// bought again for every attempt; a kept one once.
+fn eval_custom(
+    b: &Bundle,
+    m: &Market,
+    p: usize,
+    from_good: Option<usize>,
+    from_val: Option<Val>,
+) -> ProcessValue {
+    let process = &m.processes[p];
+    let ProcessKind::Custom {
+        name,
+        chance,
+        cost,
+        keeps_input,
+        ..
+    } = &process.kind
+    else {
+        unreachable!("eval_custom on a non-custom process");
+    };
+    let (chance, cost) = (*chance, *cost);
+    let output = m.output(p);
+    let after = m.ideal(b, output);
+    let before = from_good.map_or_else(|| after.clone(), |g| m.ideal(b, g));
+    let (vi, vari, si) = from_val.map_or((0.0, 0.0, 0.0), |v| (v.value, v.var, v.seconds));
+    let ek = 1.0 / chance;
+    let var_k = (1.0 - chance) / (chance * chance);
+    let mut r = ProcessValue::empty(&process.id, ProcessStatus::Ready, None);
+    if *keeps_input {
+        r.cost = Some(vi + cost * ek);
+        r.sd = Some((vari + var_k * cost * cost).max(0.0).sqrt());
+        r.seconds = Some(si + CUSTOM_SECONDS * ek);
+    } else {
+        let net = vi + cost;
+        r.cost = Some(net * ek);
+        r.sd = Some((ek * vari + var_k * net * net).max(0.0).sqrt());
+        r.seconds = Some((si + CUSTOM_SECONDS) * ek);
+    }
+    r.p_success = Some(chance);
+    r.attempts = Some(ek);
+    r.spend = BTreeMap::from([("chaos".to_string(), cost * ek)]);
+    r.steps = vec![Step {
+        action: None,
+        label: name.clone(),
+        cost: vec![("chaos".to_string(), cost)],
+        before: before.clone(),
+        after: after.clone(),
+    }];
+    r.core = vec![Exit {
+        good: Some(output),
+        unpriced: None,
+        p: chance,
+        state: after,
+    }];
+    if chance < 1.0 {
+        r.core.push(Exit {
+            good: None,
+            unpriced: None,
+            p: 1.0 - chance,
+            state: before,
+        });
+    }
+    r.exits = r.core.clone();
+    r
 }
 
 /// A side's requirement indices, for splitting a good in two.

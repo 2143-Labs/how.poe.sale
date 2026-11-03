@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { authoredProposal } from '../market'
+import { authoredProposal, processInputs } from '../market'
 import { buildProblem, draftToTarget, targetToDraft } from '../problem'
 import { formatChaos } from '../solution'
 import { useAppStore } from '../store'
@@ -41,6 +41,7 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
   const removeProcess = useAppStore((state) => state.removeProcess)
   const addBrickGood = useAppStore((state) => state.addBrickGood)
   const addAuthoredRecipe = useAppStore((state) => state.addAuthoredRecipe)
+  const addCustomCraft = useAppStore((state) => state.addCustomCraft)
 
   const good: GoodJson | null = goods.find((candidate) => candidate.id === selectedGood) ?? null
   const value = solution?.market.goods.find((candidate) => candidate.id === selectedGood) ?? null
@@ -48,10 +49,27 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
   const [recipeName, setRecipeName] = useState('')
   const [recipeAllowed, setRecipeAllowed] = useState<string[]>([])
   const [recipeInput, setRecipeInput] = useState<NonNullable<RecipeDef['input']> | ''>('')
+  const [customName, setCustomName] = useState('')
+  const [customAdds, setCustomAdds] = useState<number[]>([])
+  /** '': this good without the ticked mods; 'none': no input; 'good:<id>': another good */
+  const [customInput, setCustomInput] = useState('')
+  const [customChance, setCustomChance] = useState('')
+  const [customCost, setCustomCost] = useState('')
+  const [customKeeps, setCustomKeeps] = useState(false)
+
+  function resetCustom() {
+    setCustomName('')
+    setCustomAdds([])
+    setCustomInput('')
+    setCustomChance('')
+    setCustomCost('')
+    setCustomKeeps(false)
+  }
 
   // A different good is a different target; drop the previous good's edits.
   useEffect(() => {
     setDraft(good ? targetToDraft(good.target) : null)
+    resetCustom()
   }, [good?.id, good?.target])
 
   const problem = useMemo(
@@ -110,12 +128,37 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
   }
 
   const usedProcesses = processes.filter(
-    (process) =>
-      ('craft' in process.kind
-        ? process.kind.craft.from === good.id
-        : process.kind.recombine.a === good.id || process.kind.recombine.b === good.id) ||
-      process.output === good.id,
+    (process) => processInputs(process).includes(good.id) || process.output === good.id,
   )
+
+  const chance = customChance === '' ? NaN : Number(customChance)
+  const cost = customCost === '' ? NaN : Number(customCost)
+  const customValid =
+    customName.trim() !== '' &&
+    chance > 0 &&
+    chance <= 100 &&
+    cost >= 0 &&
+    (customInput !== '' || customAdds.length > 0) &&
+    (customInput !== 'none' || cost > 0)
+
+  function saveCustom() {
+    if (!good || !customValid) return
+    const input =
+      customInput === ''
+        ? { kind: 'without' as const, remove: [...customAdds] }
+        : customInput === 'none'
+          ? { kind: 'none' as const }
+          : { kind: 'good' as const, id: customInput.slice('good:'.length) }
+    const id = addCustomCraft({
+      output: good.id,
+      name: customName,
+      input,
+      chance: chance / 100,
+      cost,
+      keepsInput: customKeeps,
+    })
+    if (id) resetCustom()
+  }
 
   function saveAuthored() {
     if (!good || recipeName.trim() === '' || recipeAllowed.length === 0) return
@@ -203,7 +246,7 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
           {usedProcesses.map((process) => (
             <li key={process.id}>
               <span>
-                {process.recipe ?? process.id} → {process.output}
+                {'custom' in process.kind ? process.kind.custom.name : (process.recipe ?? process.id)} → {process.output}
               </span>
               <button type="button" onClick={() => removeProcess(process.id)}>
                 remove
@@ -272,6 +315,85 @@ export function GoodPanel({ proposeProcesses, contracts, modTiers }: GoodPanelPr
             onClick={saveAuthored}
           >
             Save recipe
+          </button>
+        </div>
+      </div>
+
+      <h3>Custom craft</h3>
+      <p className="hint">A craft the app does not model: give its success chance and its cost per attempt.</p>
+      <div className="authored">
+        <label className="inline-field">
+          name
+          <input value={customName} onChange={(event) => setCustomName(event.target.value)} />
+        </label>
+        <div className="craft-picker">
+          <span className="hint">adds</span>
+          {good.target.requirements.map((requirement, index) => (
+            <label key={index} className="inline-field">
+              <input
+                type="checkbox"
+                checked={customAdds.includes(index)}
+                onChange={(event) =>
+                  setCustomAdds((current) =>
+                    event.target.checked ? [...current, index] : current.filter((i) => i !== index),
+                  )
+                }
+              />
+              {requirement.label}
+            </label>
+          ))}
+        </div>
+        <label className="inline-field">
+          input
+          <select value={customInput} onChange={(event) => setCustomInput(event.target.value)}>
+            <option value="" disabled={customAdds.length === 0}>
+              this good without the ticked mods
+            </option>
+            <option value="none">nothing (no input item)</option>
+            {goods
+              .filter((other) => other.id !== good.id)
+              .map((other) => (
+                <option key={other.id} value={`good:${other.id}`}>
+                  {other.name}
+                </option>
+              ))}
+          </select>
+        </label>
+        <label className="inline-field">
+          chance %
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="any"
+            value={customChance}
+            onChange={(event) => setCustomChance(event.target.value)}
+          />
+        </label>
+        <label className="inline-field">
+          cost
+          <input
+            type="number"
+            min="0"
+            step="any"
+            value={customCost}
+            placeholder="chaos per attempt"
+            onChange={(event) => setCustomCost(event.target.value)}
+          />
+        </label>
+        <label className="inline-field">
+          on failure
+          <select
+            value={customKeeps ? 'kept' : 'lost'}
+            onChange={(event) => setCustomKeeps(event.target.value === 'kept')}
+          >
+            <option value="lost">the input is lost</option>
+            <option value="kept">the input is kept</option>
+          </select>
+        </label>
+        <div className="row-actions">
+          <button type="button" disabled={!customValid} onClick={saveCustom}>
+            Add custom craft
           </button>
         </div>
       </div>

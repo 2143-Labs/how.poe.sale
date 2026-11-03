@@ -9,11 +9,11 @@ use poe1::recipe;
 use poe1::weights::{ModSource, sources};
 
 /// Mods bucketed by their first (scarcest-last) source on a plain amulet; crafted mods excluded.
-fn buckets(base_name: &str) -> [usize; 5] {
+fn buckets(base_name: &str) -> [usize; 6] {
     let b = b();
     let base = base(base_name);
     let ctx = poe1::weights::SourceCtx::new(b, base, 0);
-    let mut out = [0; 5];
+    let mut out = [0; 6];
     for (i, m) in b.mods.iter().enumerate() {
         if m.crafted {
             continue;
@@ -26,6 +26,7 @@ fn buckets(base_name: &str) -> [usize; 5] {
             ModSource::Essence(_) => 2,
             ModSource::Fossil(_) => 3,
             ModSource::Bench => 4,
+            ModSource::Veiled => 5,
         };
         out[k] += 1;
     }
@@ -35,9 +36,9 @@ fn buckets(base_name: &str) -> [usize; 5] {
 #[test]
 fn amulet_source_counts() {
     let got = buckets("Lapis Amulet");
-    println!("Lapis Amulet native/influence/essence/fossil/bench = {got:?}");
+    println!("Lapis Amulet native/influence/essence/fossil/bench/veiled = {got:?}");
     // 263 native; the one fossil-only mod is Tangled Fossil's DelveAmuletVaalSkillDuration1.
-    assert_eq!(got, [263, 135, 45, 1, 0]);
+    assert_eq!(got, [263, 135, 45, 1, 0, 24]);
     let wand = buckets("Omen Wand");
     println!("Omen Wand = {wand:?}");
     assert!(wand[3] > 0, "a caster weapon has fossil-only mods");
@@ -63,6 +64,20 @@ fn amulet_source_counts() {
         ),
         vec![ModSource::Influence(0)]
     );
+}
+
+#[test]
+fn veiled_mods_have_their_own_source() {
+    let b = b();
+    let aoe = mod_index("JunMasterVeiledSkillAreaOfEffectPercentAndAreaOfEffectGemLevel");
+    // Bit 0 is Shaper.
+    assert_eq!(
+        sources(b, base("Archdemon Crown"), 1, aoe),
+        vec![ModSource::Veiled]
+    );
+    assert_eq!(sources(b, base("Lapis Amulet"), 0, aoe), vec![]);
+    assert!(b.mod_at(aoe).weights.is_empty());
+    assert!(b.mod_at(aoe).veiled);
 }
 
 #[test]

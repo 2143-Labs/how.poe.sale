@@ -97,6 +97,28 @@ pub fn craft(id: &str, output: &str, from: &str, allowed: &[&str]) -> Process {
     }
 }
 
+pub fn custom(
+    id: &str,
+    output: &str,
+    from: Option<&str>,
+    chance: f64,
+    cost: f64,
+    keeps_input: bool,
+) -> Process {
+    Process {
+        id: id.into(),
+        output: output.into(),
+        kind: ProcessKind::Custom {
+            from: from.map(Into::into),
+            name: "Custom".into(),
+            chance,
+            cost,
+            keeps_input,
+        },
+        recipe: None,
+    }
+}
+
 pub fn recombine(id: &str, output: &str, a: &str, b: &str) -> Process {
     Process {
         id: id.into(),

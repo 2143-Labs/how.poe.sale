@@ -1,0 +1,7 @@
+Item Class: Amulets
+Rarity: Magic
+Exalter's Lapis Amulet
+--------
+Item Level: 84
+--------
++1 to Level of all Skill Gems

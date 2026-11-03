@@ -242,19 +242,27 @@ export function TargetEditor({ parse, modTiers }: TargetEditorProps) {
   const [draft, setDraft] = useState<TargetDraft | null>(() => (target ? targetToDraft(target) : null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const pasteRequest = useAppStore((state) => state.pasteRequest)
 
-  async function onParse() {
-    if (text.trim() === '') return
+  async function parseText(value: string) {
+    if (value.trim() === '') return
     setBusy(true)
     setError(null)
     try {
-      setDraft(await parse(text))
+      setDraft(await parse(value))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       setBusy(false)
     }
   }
+
+  // An example picked from the header: fill the paste box and parse it; applying stays with the user.
+  useEffect(() => {
+    if (!pasteRequest) return
+    setText(pasteRequest.text)
+    void parseText(pasteRequest.text)
+  }, [pasteRequest?.nonce])
 
   const unchanged =
     draft != null && draft.buyNote == null && targetSignature(draftToTarget(draft)) === targetSignature(target)
@@ -293,7 +301,7 @@ export function TargetEditor({ parse, modTiers }: TargetEditorProps) {
         rows={8}
       />
       <div className="row-actions">
-        <button type="button" onClick={onParse} disabled={busy || text.trim() === ''}>
+        <button type="button" onClick={() => void parseText(text)} disabled={busy || text.trim() === ''}>
           {busy ? 'Parsing…' : 'Parse item'}
         </button>
         {draft && <span className="hint">{describeDraft(draft)}</span>}

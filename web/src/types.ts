@@ -196,6 +196,8 @@ export interface GoodJson {
 export type ProcessKindJson =
   | { craft: { from: string | null; allowed: string[] } }
   | { recombine: { a: string; b: string } }
+  /** a craft the app does not model: success chance per attempt, chaos per attempt */
+  | { custom: { from: string | null; name: string; chance: number; cost: number; keepsInput: boolean } }
 
 export interface ProcessJson {
   id: string
@@ -262,7 +264,7 @@ export interface ProcessValueJson {
   id: string
   output: string
   recipe: string | null
-  kind: 'craft' | 'recombine'
+  kind: 'craft' | 'recombine' | 'custom'
   inputs: string[]
   name: string
   cost: number | null

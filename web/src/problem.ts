@@ -50,10 +50,16 @@ export function cloneTarget(target: ProblemTarget): ProblemTarget {
   }
 }
 
+function cloneKind(kind: ProcessJson['kind']): ProcessJson['kind'] {
+  if ('craft' in kind) return { craft: { ...kind.craft, allowed: [...kind.craft.allowed] } }
+  if ('custom' in kind) return { custom: { ...kind.custom } }
+  return { recombine: { ...kind.recombine } }
+}
+
 export function cloneProcess(process: ProcessJson): ProcessJson {
   return {
     ...process,
-    kind: 'craft' in process.kind ? { craft: { ...process.kind.craft, allowed: [...process.kind.craft.allowed] } } : { recombine: { ...process.kind.recombine } },
+    kind: cloneKind(process.kind),
     expanded: process.expanded ? [...process.expanded] : null,
     added: [...process.added],
     disabled: process.disabled.map(([key, action]) => [key, action] as [string, string]),

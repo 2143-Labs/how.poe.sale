@@ -572,20 +572,56 @@ fn fmt_value(v: f64) -> String {
     }
 }
 
+/// Per roll of tier `m`'s first stat on this item: (displayed value in stored units, the number
+/// the tooltip shows).
+fn shown_rolls(b: &Bundle, m: u32, s: &ItemState) -> Vec<(f64, f64)> {
+    let Some(stat) = b.mod_at(m).stats.first() else {
+        return Vec::new();
+    };
+    let eff = target::effect(b, s.base, s.catalyst, m);
+    let f = b.display_factor(stat.stat);
+    let (lo, hi) = (stat.min.floor() as i64, stat.max.floor() as i64);
+    (lo..=hi.max(lo))
+        .map(|roll| {
+            let v = target::display(roll as f64, eff);
+            let shown = if f == 1.0 {
+                v
+            } else {
+                (v * f * 100.0).round() / 100.0
+            };
+            (v, shown)
+        })
+        .collect()
+}
+
 /// The requirement label with its number replaced by the displayed values a roll of this tier
-/// takes on this item (its own base and catalyst) that match the hit's `value_ok`.
+/// takes on this item (its own base and catalyst) that match the hit's `value_ok`. The label is
+/// kept as is when its number is not the tier's first stat (a hybrid whose first line shows
+/// another stat).
 fn hit_text(b: &Bundle, r: &Requirement, hit: &crate::item::Hit, s: &ItemState) -> String {
     let Some(m) = r.accepted.get(hit.idx as usize).copied() else {
         return r.label.clone();
     };
-    let Some(stat) = b.mod_at(m).stats.first() else {
+    let Some((a, z)) = first_number_span(&r.label) else {
         return r.label.clone();
     };
-    let eff = target::effect(b, s.base, s.catalyst, m);
-    let (lo, hi) = (stat.min.floor() as i64, stat.max.floor() as i64);
-    let shown: Vec<f64> = (lo..=hi.max(lo))
-        .map(|roll| target::display(roll as f64, eff))
-        .filter(|v| (*v >= r.min_value) == hit.value_ok)
+    if let Ok(n) = r.label[a..z].parse::<f64>() {
+        let all: Vec<f64> = r
+            .accepted
+            .iter()
+            .flat_map(|&t| shown_rolls(b, t, s))
+            .map(|(_, v)| v.abs())
+            .collect();
+        let lo = all.iter().copied().fold(f64::INFINITY, f64::min);
+        let hi = all.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        if n < lo || n > hi {
+            return r.label.clone();
+        }
+    }
+    let shown: Vec<f64> = shown_rolls(b, m, s)
+        .into_iter()
+        .filter(|(v, _)| (*v >= r.min_value) == hit.value_ok)
+        .map(|(_, shown)| shown)
         .collect();
     let (Some(min), Some(max)) = (
         shown.iter().copied().reduce(f64::min),
@@ -598,10 +634,7 @@ fn hit_text(b: &Bundle, r: &Requirement, hit: &crate::item::Hit, s: &ItemState) 
     } else {
         format!("{}–{}", fmt_value(min), fmt_value(max))
     };
-    match first_number_span(&r.label) {
-        Some((a, z)) => format!("{}{range}{}", &r.label[..a], &r.label[z..]),
-        None => r.label.clone(),
-    }
+    format!("{}{range}{}", &r.label[..a], &r.label[z..])
 }
 
 /// `not wanted: <tier texts>`: the tiers of the group that can roll here and are not accepted.
@@ -1033,6 +1066,16 @@ pub enum ProcessKindJson {
         a: String,
         b: String,
     },
+    /// A craft the app does not model: chance per attempt and chaos per attempt.
+    Custom {
+        from: Option<String>,
+        name: String,
+        chance: f64,
+        cost: f64,
+        /// `rename_all` above renames variants only, so the field needs its own.
+        #[serde(rename = "keepsInput")]
+        keeps_input: bool,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1335,6 +1378,21 @@ fn process_json(p: &Process) -> ProcessJson {
                 b: b.clone(),
             }
         }
+        ProcessKind::Custom {
+            from,
+            name,
+            chance,
+            cost,
+            keeps_input,
+        } => {
+            out.kind = ProcessKindJson::Custom {
+                from: from.clone(),
+                name: name.clone(),
+                chance: *chance,
+                cost: *cost,
+                keeps_input: *keeps_input,
+            }
+        }
     }
     out
 }
@@ -1382,6 +1440,19 @@ fn build_market(b: &Bundle, p: &ProblemV3) -> Result<(Market, Vec<DonorSpec>), A
             ProcessKindJson::Recombine { a, b } => ProcessKind::Recombine {
                 a: a.clone(),
                 b: b.clone(),
+            },
+            ProcessKindJson::Custom {
+                from,
+                name,
+                chance,
+                cost,
+                keeps_input,
+            } => ProcessKind::Custom {
+                from: from.clone(),
+                name: name.clone(),
+                chance: *chance,
+                cost: *cost,
+                keeps_input: *keeps_input,
             },
         };
         processes.push(Process {
@@ -1466,6 +1537,7 @@ fn process_value_json(
     let (kind, default_name) = match &p.kind {
         ProcessKind::Craft { .. } => ("craft", "Craft"),
         ProcessKind::Recombine { .. } => ("recombine", "Recombine"),
+        ProcessKind::Custom { name, .. } => ("custom", name.as_str()),
     };
     ProcessValueJson {
         id: p.id.clone(),
@@ -1709,6 +1781,12 @@ fn requirement_warnings(b: &Bundle, t: &Target) -> Vec<String> {
                 "{} is only obtainable by {}, which this milestone does not model",
                 r.label,
                 ModSource::Bench.describe(b)
+            ));
+        } else if !sources.is_empty() && sources.iter().all(|s| *s == ModSource::Veiled) {
+            out.push(format!(
+                "{} is only obtainable by {}, which no built-in craft models; add a custom craft for it",
+                r.label,
+                ModSource::Veiled.describe(b)
             ));
         }
     }

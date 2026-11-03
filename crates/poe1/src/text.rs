@@ -337,7 +337,8 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
         .map(|line| {
             // Pass 0: tiers that roll on the item as it is (or bench crafts). Pass 1, only when
             // pass 0 found nothing: any tier some modelled mechanic can place (influence,
-            // essence, fossil, recombine), per `weights::sources`.
+            // essence, fossil, recombine, veiled), per `weights::sources`. Last, when no tier
+            // shows the line alone: partial readings, for a line two hybrids add up to.
             let native = line_candidates(b, base, draft.catalyst, line, |_, m| {
                 b.bench_by_mod
                     .get(&m.id)
@@ -347,9 +348,12 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
             if !native.is_empty() {
                 return native;
             }
-            line_candidates(b, base, draft.catalyst, line, |i, _| {
-                !ctx.sources(i).is_empty()
-            })
+            let reachable = |i: u32, _: &crate::data::ModData| !ctx.sources(i).is_empty();
+            let any = line_candidates(b, base, draft.catalyst, line, reachable);
+            if !any.is_empty() {
+                return any;
+            }
+            partial_candidates(b, base, draft.catalyst, line, reachable)
         })
         .collect();
     let shown = shown_stats(b);
@@ -363,13 +367,25 @@ pub fn parse_target(b: &Bundle, text: &str) -> TargetDraft {
         }
         // The requirement's value is the roll of the mod's first stat, as `p_value_ok` reads it.
         let first = b.mod_at(c.tiers[0]).stats.first().map(|s| s.stat);
-        let min_value = c
-            .lines
-            .iter()
-            .flat_map(|&l| candidates[l].iter())
-            .find(|x| x.m == c.tiers[0] && first.is_some_and(|f| x.stats.contains(&f)))
-            .and_then(|x| first.and_then(|f| x.value_of(f)))
-            .unwrap_or_else(|| first_number(mod_lines[c.lines[0]]).map_or(0.0, |n| n.2));
+        let on_lines = || c.lines.iter().flat_map(|&l| candidates[l].iter());
+        let covers_first =
+            |x: &Cand| x.m == c.tiers[0] && first.is_some_and(|f| x.stats.contains(&f));
+        let min_value = match on_lines().find(|x| !x.partial && covers_first(x)) {
+            Some(x) => first.and_then(|f| x.value_of(f)).unwrap_or(0.0),
+            // The first stat only shares a summed line: any roll of it will do.
+            None if on_lines().any(|x| x.partial && covers_first(x)) => c
+                .tiers
+                .iter()
+                .filter_map(|&t| {
+                    let s = b.mod_at(t).stats.first()?;
+                    Some(crate::target::display(
+                        s.min.floor(),
+                        effect(b, base, draft.catalyst, t),
+                    ))
+                })
+                .fold(f64::INFINITY, f64::min),
+            None => first_number(mod_lines[c.lines[0]]).map_or(0.0, |n| n.2),
+        };
         let m = b.mod_at(c.tiers[0]);
         requirements.push(Requirement {
             group: m.group,
@@ -402,6 +418,11 @@ struct Cand {
     m: u32,
     stats: Vec<u16>,
     values: Vec<f64>,
+    /// The line is the sum of this mod's stat and another mod's; `lo`..`hi` is what this mod
+    /// shows of it on this base.
+    partial: bool,
+    lo: f64,
+    hi: f64,
 }
 
 impl Cand {
@@ -422,7 +443,59 @@ fn shows_as(lo: f64, hi: f64, value: f64, scale: f64) -> bool {
     }
 }
 
-/// Every mod tier (passing `reachable`) that can show `line`, with the stats the line covers.
+/// Readings of a one-number line as one share of a sum: every reachable tier with a stat the
+/// line shows (factor 1) whose smallest roll here is below the shown value.
+fn partial_candidates(
+    b: &Bundle,
+    base: u16,
+    catalyst: Option<(u8, u8)>,
+    line: &str,
+    reachable: impl Fn(u32, &crate::data::ModData) -> bool,
+) -> Vec<Cand> {
+    let text = line.strip_prefix('+').unwrap_or(line);
+    let numbers = all_numbers(text);
+    let [(_, _, v)] = numbers[..] else {
+        return Vec::new();
+    };
+    let Some(rows) = b.translations_by_key.get(&hash_all_numbers(text)) else {
+        return Vec::new();
+    };
+    let mut out: Vec<Cand> = Vec::new();
+    for &row in rows {
+        let [(stat, factor)] = b.translations[row as usize].slots[..] else {
+            continue;
+        };
+        if factor != 1.0 {
+            continue;
+        }
+        for (i, m) in b.mods.iter().enumerate() {
+            let i = i as u32;
+            if out.iter().any(|c| c.m == i) || !reachable(i, m) {
+                continue;
+            }
+            let Some(s) = m.stats.iter().find(|s| s.stat == stat) else {
+                continue;
+            };
+            let eff = effect(b, base, catalyst, i);
+            let lo = crate::target::display(s.min.floor(), eff);
+            let hi = crate::target::display(s.max.floor(), eff);
+            if lo < v {
+                out.push(Cand {
+                    m: i,
+                    stats: vec![stat],
+                    values: vec![v],
+                    partial: true,
+                    lo,
+                    hi,
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Every mod tier (passing `reachable`) that can show `line`, with the stats the line covers and
+/// their values in stored units.
 fn line_candidates(
     b: &Bundle,
     base: u16,
@@ -431,8 +504,16 @@ fn line_candidates(
     reachable: impl Fn(u32, &crate::data::ModData) -> bool,
 ) -> Vec<Cand> {
     let text = line.strip_prefix('+').unwrap_or(line);
-    let numbers: Vec<f64> = all_numbers(text).into_iter().map(|n| n.2).collect();
-    let mut readings: Vec<(String, Vec<f64>)> = vec![(hash_all_numbers(text), numbers.clone())];
+    // (value, precision): "3" reads to the unit, "50.3" to a tenth.
+    let numbers: Vec<(f64, f64)> = all_numbers(text)
+        .into_iter()
+        .map(|(start, end, v)| {
+            let decimals = text[start..end].split_once('.').map_or(0, |(_, d)| d.len());
+            (v, 10f64.powi(-(decimals as i32)))
+        })
+        .collect();
+    let mut readings: Vec<(String, Vec<(f64, f64)>)> =
+        vec![(hash_all_numbers(text), numbers.clone())];
     if numbers.len() > 1 {
         if let Some(k) = hash_first_number(text) {
             readings.push((k, vec![numbers[0]]));
@@ -452,10 +533,11 @@ fn line_candidates(
                 continue;
             }
             let stats: Vec<u16> = slots.iter().map(|s| s.0).collect();
-            let signed: Vec<f64> = slots
+            // Rounded to 6 decimals so 0.7 / 0.01 reads as 70, not 69.99999999999999.
+            let stored: Vec<f64> = slots
                 .iter()
                 .zip(&values)
-                .map(|(s, v)| if s.1 { -v } else { *v })
+                .map(|(s, (v, _))| ((v / s.1) * 1e6).round() / 1e6)
                 .collect();
             for (i, m) in b.mods.iter().enumerate() {
                 let i = i as u32;
@@ -463,17 +545,34 @@ fn line_candidates(
                     continue;
                 }
                 let scale = 1.0 + effect(b, base, catalyst, i) / 100.0;
-                let fits = stats.iter().zip(&signed).all(|(stat, v)| {
-                    m.stats
-                        .iter()
-                        .find(|s| s.stat == *stat)
-                        .is_some_and(|s| shows_as(s.min, s.max, *v, scale))
-                });
+                let fits = slots
+                    .iter()
+                    .zip(&values)
+                    .zip(&stored)
+                    .all(|((slot, &(v, q)), &sv)| {
+                        m.stats.iter().find(|s| s.stat == slot.0).is_some_and(|s| {
+                            let f = slot.1;
+                            if f.abs() == 1.0 {
+                                return shows_as(s.min, s.max, sv, scale);
+                            }
+                            // Rounded or truncated to the shown precision: either way the stored
+                            // value lies in (v - q/2, v + q) once scaled back.
+                            let (mut a, mut z) =
+                                ((v - q / 2.0) / (f * scale), (v + q) / (f * scale));
+                            if f < 0.0 {
+                                std::mem::swap(&mut a, &mut z);
+                            }
+                            s.min < z && s.max > a
+                        })
+                    });
                 if fits {
                     out.push(Cand {
                         m: i,
                         stats: stats.clone(),
-                        values: signed.clone(),
+                        values: stored.clone(),
+                        partial: false,
+                        lo: 0.0,
+                        hi: 0.0,
                     });
                 }
             }
@@ -501,14 +600,19 @@ struct Choice {
 const ASSIGN_BUDGET: usize = 200_000;
 
 /// Read the lines as mods: each line belongs to at most one mod, each group appears once, and a
-/// mod with several shown stats (a hybrid) claims one line per stat. Fewest unexplained lines
-/// wins, then fewest mods; ties go to the first found in line order.
+/// mod with several shown stats (a hybrid) claims one line per stat. A line only partial readings
+/// show is shared by exactly two hybrids whose ranges add up to its value. Fewest unexplained
+/// lines wins, then fewest mods; ties go to the first found in line order.
 fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>]) -> Vec<Choice> {
     struct Search<'a> {
         b: &'a Bundle,
         shown: &'a std::collections::HashSet<u16>,
         cands: &'a [Vec<Cand>],
         used: Vec<bool>,
+        /// Choices sharing each line (only for `only_partial` lines).
+        claims: Vec<u8>,
+        /// The line has candidates and all of them are partial.
+        only_partial: Vec<bool>,
         groups: Vec<(u16, crate::item::Side)>,
         cur: Vec<Choice>,
         skipped: usize,
@@ -516,10 +620,30 @@ fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>
         steps: usize,
     }
     impl Search<'_> {
+        /// Whether the choices sharing each summed line add up to its value; every summed line
+        /// needs exactly two.
+        fn sums_fit(&self) -> bool {
+            (0..self.cands.len())
+                .filter(|&l| self.claims[l] > 0)
+                .all(|l| {
+                    if self.claims[l] != 2 {
+                        return false;
+                    }
+                    let v = self.cands[l][0].values[0];
+                    let (mut lo, mut hi) = (0.0, 0.0);
+                    for c in self.cur.iter().filter(|c| c.lines.contains(&l)) {
+                        let mine = self.cands[l].iter().filter(|x| c.tiers.contains(&x.m));
+                        lo += mine.clone().map(|x| x.lo).fold(f64::INFINITY, f64::min);
+                        hi += mine.map(|x| x.hi).fold(f64::NEG_INFINITY, f64::max);
+                    }
+                    lo <= v && v <= hi
+                })
+        }
+
         /// The options for line `i`: (lines claimed, tiers), in first-seen order.
         fn options(&self, i: usize) -> Vec<(Vec<usize>, Vec<u32>)> {
             let mut opts: Vec<(u16, Vec<usize>, Vec<u32>)> = Vec::new();
-            for c in &self.cands[i] {
+            for c in self.cands[i].iter().filter(|c| !c.partial) {
                 let m = self.b.mod_at(c.m);
                 if self.groups.contains(&(m.group, m.generation)) {
                     continue;
@@ -545,7 +669,9 @@ fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>
                             continue;
                         }
                         for j in 0..self.cands.len() {
-                            if self.used[j] || set.contains(&j) {
+                            // A summed line takes a second claimer; any other line only one.
+                            let shareable = self.only_partial[j] && self.claims[j] == 1;
+                            if (self.used[j] && !shareable) || set.contains(&j) {
                                 continue;
                             }
                             if covers(j) {
@@ -585,19 +711,30 @@ fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>
             {
                 return;
             }
-            let Some(i) = (0..self.cands.len()).find(|&i| !self.used[i]) else {
+            let Some(i) = (0..self.cands.len()).find(|&i| !self.used[i] && !self.only_partial[i])
+            else {
+                if !self.sums_fit() {
+                    return;
+                }
+                let skipped = self.skipped
+                    + (0..self.cands.len())
+                        .filter(|&l| self.only_partial[l] && self.claims[l] == 0)
+                        .count();
                 let better = match &self.best {
                     None => true,
-                    Some((s, n, _)) => (self.skipped, self.cur.len()) < (*s, *n),
+                    Some((s, n, _)) => (skipped, self.cur.len()) < (*s, *n),
                 };
                 if better {
-                    self.best = Some((self.skipped, self.cur.len(), self.cur.clone()));
+                    self.best = Some((skipped, self.cur.len(), self.cur.clone()));
                 }
                 return;
             };
             for (lines, tiers) in self.options(i) {
                 let m = self.b.mod_at(tiers[0]);
                 for &l in &lines {
+                    if self.only_partial[l] {
+                        self.claims[l] += 1;
+                    }
                     self.used[l] = true;
                 }
                 self.groups.push((m.group, m.generation));
@@ -606,7 +743,12 @@ fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>
                 let c = self.cur.pop().expect("pushed above");
                 self.groups.pop();
                 for &l in &c.lines {
-                    self.used[l] = false;
+                    if self.only_partial[l] {
+                        self.claims[l] -= 1;
+                        self.used[l] = self.claims[l] > 0;
+                    } else {
+                        self.used[l] = false;
+                    }
                 }
             }
             self.used[i] = true;
@@ -621,6 +763,11 @@ fn assign(b: &Bundle, shown: &std::collections::HashSet<u16>, cands: &[Vec<Cand>
         shown,
         cands,
         used: vec![false; cands.len()],
+        claims: vec![0; cands.len()],
+        only_partial: cands
+            .iter()
+            .map(|c| !c.is_empty() && c.iter().all(|x| x.partial))
+            .collect(),
         groups: Vec::new(),
         cur: Vec::new(),
         skipped: 0,
@@ -785,6 +932,45 @@ mod tests {
         );
     }
 
+    const CROWN: &str = "Item Class: Helmets\nRarity: Rare\nEmpyrean Star\nArchdemon Crown\n--------\nQuality: +20% (augmented)\nArmour: 440 (augmented)\nEnergy Shield: 90 (augmented)\n[Intangibility|Intangibility]: 97%\n--------\nRequirements:\nLevel: 75\nStr: 79\nInt: 79\n--------\nSockets: B-B-B-B\n--------\nItem Level: 87\n--------\n-2 to Level of Socketed Support Gems\n+2 to Level of Socketed Skill Gems\n--------\n+2 to Level of Socketed AoE Gems\nSocketed Gems are Supported by Level 16 Increased Area of Effect\nSocketed Gems are Supported by Level 18 Hypothermia\nSocketed Gems deal 30% more Elemental Damage\nSocketed Spells have +3% to Critical Strike Chance\n88% increased Armour and Energy Shield\n17% increased Area of Effect\n15% increased Effect of Cold Ailments\n--------\nShaper Item\n";
+
+    #[test]
+    fn splits_a_line_two_hybrids_share() {
+        let b = crate::test_bundle();
+        let d = parse_target(b, CROWN);
+        assert!(d.unmatched.is_empty(), "{:?}", d.unmatched);
+        let f = found(b, &d);
+        for r in &f {
+            println!("{r:?}");
+        }
+        assert_eq!(f.len(), 6, "{f:?}");
+        let with = |id: &str| {
+            f.iter()
+                .find(|r| r.1 == vec![id.to_string()])
+                .unwrap_or_else(|| panic!("{id} in {f:?}"))
+                .2
+        };
+        assert_eq!(with("AreaOfEffectSupportedUber1_"), 7.0);
+        assert_eq!(
+            with("JunMasterVeiledSkillAreaOfEffectPercentAndAreaOfEffectGemLevel"),
+            8.0
+        );
+    }
+
+    #[test]
+    fn a_summed_line_needs_two_claimers() {
+        let b = crate::test_bundle();
+        let line = "+150 to maximum Life";
+        let d = parse_target(
+            b,
+            &format!(
+                "Item Class: Amulets\nRarity: Rare\nX\nLapis Amulet\nItem Level: 84\n{line}\n"
+            ),
+        );
+        assert_eq!(d.unmatched, vec![line.to_string()]);
+        assert!(d.requirements.is_empty(), "{:?}", found(b, &d));
+    }
+
     #[test]
     fn strips_a_leading_plus() {
         let b = crate::test_bundle();
@@ -797,5 +983,37 @@ mod tests {
             d.requirements[0].label,
             "+2% increased Damage per 15 Strength"
         );
+    }
+
+    #[test]
+    fn parses_values_shown_in_other_units() {
+        let b = crate::test_bundle();
+        let one = |text: &str| {
+            let d = parse_target(b, text);
+            assert!(d.unmatched.is_empty(), "{text}: {:?}", d.unmatched);
+            let f = found(b, &d);
+            assert_eq!(f.len(), 1, "{text}: {f:?}");
+            f.into_iter().next().expect("one requirement")
+        };
+        let crit = one(
+            "Item Class: Helmets\nRarity: Rare\nX\nArchdemon Crown\nItem Level: 87\nShaper Item\nSocketed Spells have +3% to Critical Strike Chance\n",
+        );
+        assert_eq!(
+            crit.1,
+            vec!["SocketedSpellCriticalStrikeChanceUber3".to_string()]
+        );
+        assert_eq!(crit.2, 300.0);
+
+        let amulet = "Item Class: Amulets\nRarity: Rare\nX\nLapis Amulet\nItem Level: 84\n";
+        let regen = one(&format!("{amulet}Regenerate 50.3 Life per second\n"));
+        assert_eq!(regen.1, vec!["LifeRegeneration7".to_string()]);
+        assert!((regen.2 - 3018.0).abs() < 1e-9, "{}", regen.2);
+        let regen = one(&format!("{amulet}Regenerate 64.1 Life per second\n"));
+        assert_eq!(regen.1, vec!["LifeRegeneration8_".to_string()]);
+        let leech = one(&format!(
+            "{amulet}0.7% of Physical Attack Damage Leeched as Life\n"
+        ));
+        assert_eq!(leech.1, vec!["LifeLeechPermyriadSuffix2".to_string()]);
+        assert_eq!(leech.2, 70.0);
     }
 }

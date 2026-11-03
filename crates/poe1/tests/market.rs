@@ -225,3 +225,85 @@ fn remap_round_trips_and_untracks() {
     assert_eq!(small.prefixes.wanted.len(), 1);
     assert_eq!(small.side(Side::Prefix).untracked, 1);
 }
+
+/// `main` made from `in` (bought at `buy`) by a custom craft.
+fn custom_market(process: poe1::market::Process, buy: Option<f64>) -> Result<Market, String> {
+    Market::new(
+        vec![
+            good("main", lightning(Rarity::Magic), None, None),
+            good(
+                "in",
+                target("Lapis Amulet", 84, Rarity::Normal, Vec::new()),
+                buy,
+                None,
+            ),
+        ],
+        vec![process],
+        "main",
+    )
+}
+
+#[test]
+fn custom_craft_closed_forms() {
+    let b = b();
+    let prices = prices();
+    let value = |process, buy| {
+        let m = custom_market(process, buy).unwrap();
+        market::solve(b, &m, &prices, &[]).unwrap()
+    };
+    // Input lost: (100 + 10) per attempt, 1 / 0.25 = 4 attempts.
+    let sol = value(
+        custom("c", "main", Some("in"), 0.25, 10.0, false),
+        Some(100.0),
+    );
+    let v = sol.goods[0].value.expect("main has a value");
+    assert!(close(v, 440.0, 1e-9), "lost: V(main) {v}");
+    let c = &sol.processes[0];
+    assert_eq!(c.status, market::ProcessStatus::Ready);
+    assert!(close(c.p_success.unwrap(), 0.25, 1e-12));
+    assert!(close(c.attempts.unwrap(), 4.0, 1e-12));
+    assert!(close(c.spend["chaos"], 40.0, 1e-12));
+    // Input kept: bought once, 10 per attempt.
+    let sol = value(
+        custom("c", "main", Some("in"), 0.25, 10.0, true),
+        Some(100.0),
+    );
+    let v = sol.goods[0].value.unwrap();
+    assert!(close(v, 140.0, 1e-9), "kept: V(main) {v}");
+    // No input: 5 per attempt, 2 attempts.
+    let sol = value(custom("c", "main", None, 0.5, 5.0, false), Some(100.0));
+    let v = sol.goods[0].value.unwrap();
+    assert!(close(v, 10.0, 1e-9), "no input: V(main) {v}");
+    // An unpriced input.
+    let sol = value(custom("c", "main", Some("in"), 0.25, 10.0, false), None);
+    assert_eq!(sol.processes[0].status, market::ProcessStatus::NeedsInput);
+    let error = sol.processes[0].error.clone().unwrap_or_default();
+    assert!(error.contains("needs a price for"), "{error}");
+    // The stated chance shows before the input is priced.
+    assert_eq!(sol.processes[0].p_success, Some(0.25));
+}
+
+#[test]
+fn custom_craft_validation() {
+    let err = |process| custom_market(process, Some(1.0)).expect_err("invalid");
+    let chance = "a custom craft's success chance must be above 0 and at most 1";
+    for bad in [0.0, 1.5, f64::NAN] {
+        let e = err(custom("c", "main", Some("in"), bad, 1.0, false));
+        assert!(e.contains(chance), "{e}");
+    }
+    let e = err(custom("c", "main", Some("in"), 0.5, -1.0, false));
+    assert!(
+        e.contains("a custom craft's cost must be 0 chaos or more"),
+        "{e}"
+    );
+    let e = err(custom("c", "main", None, 0.5, 0.0, false));
+    assert!(
+        e.contains("a custom craft without an input must cost more than 0 chaos"),
+        "{e}"
+    );
+    let e = err(custom("c", "main", Some("main"), 0.5, 1.0, false));
+    assert!(
+        e.contains("a custom craft cannot use its own output as its input"),
+        "{e}"
+    );
+}

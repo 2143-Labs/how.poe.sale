@@ -22,7 +22,7 @@ export type MarketFlowNode = Node<MarketNodeData, 'goodNode'>
 
 export type MarketEdgeData = {
   processId: string
-  kind: 'craft' | 'recombine'
+  kind: 'craft' | 'recombine' | 'custom'
   /** the output good's chosen `via` process */
   chosen: boolean
   cost: number | null
@@ -31,10 +31,11 @@ export type MarketEdgeData = {
 
 export type MarketFlowEdge = Edge<MarketEdgeData>
 
-/** Goods this process consumes (craft: its start good, recombine: both halves). */
+/** Goods this process consumes (craft/custom: its start good, recombine: both halves). */
 export function processInputs(process: ProcessJson): string[] {
   if ('recombine' in process.kind) return [process.kind.recombine.a, process.kind.recombine.b]
-  return process.kind.craft.from == null ? [] : [process.kind.craft.from]
+  const from = 'craft' in process.kind ? process.kind.craft.from : process.kind.custom.from
+  return from == null ? [] : [from]
 }
 
 function fallbackGood(good: GoodJson): GoodValueJson {
@@ -84,9 +85,11 @@ export function marketToFlow(solution: SolutionV3, problem: ProblemV3): { nodes:
   const edges: MarketFlowEdge[] = []
   for (const process of problem.processes) {
     const value = processes.get(process.id)
-    const kind = 'recombine' in process.kind ? 'recombine' : 'craft'
+    const kind = 'recombine' in process.kind ? 'recombine' : 'custom' in process.kind ? 'custom' : 'craft'
     const chosen = values.get(process.output)?.via === process.id
-    const name = value?.name ?? process.recipe ?? (kind === 'recombine' ? 'Recombine' : 'Craft')
+    const fallbackName =
+      'custom' in process.kind ? process.kind.custom.name : kind === 'recombine' ? 'Recombine' : 'Craft'
+    const name = value?.name ?? process.recipe ?? fallbackName
     const label = [
       name,
       value?.pSuccess == null ? null : formatProbability(value.pSuccess),
