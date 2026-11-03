@@ -280,3 +280,76 @@ fn market_answer_names_approximate_rules_and_range() {
     assert!(v["range"]["readings"][0]["label"].is_string());
     assert!(v["market"]["processes"][0]["claims"].is_array());
 }
+
+#[test]
+fn custom_process_round_trips() {
+    let b = poe1::test_bundle();
+    let main = common::target(
+        "Lapis Amulet",
+        84,
+        Rarity::Magic,
+        vec![common::req(&["GlobalLightningGemLevel1"])],
+    );
+    let input = common::target("Lapis Amulet", 84, Rarity::Normal, Vec::new());
+    let problem = ProblemV3 {
+        version: 3,
+        bundle_patch: b.patch.clone(),
+        goods: vec![
+            GoodJson {
+                id: "main".into(),
+                name: "main".into(),
+                target: api::target_json(b, &main),
+                buy: None,
+                sell: None,
+            },
+            GoodJson {
+                id: "in".into(),
+                name: "in".into(),
+                target: api::target_json(b, &input),
+                buy: Some(100.0),
+                sell: None,
+            },
+        ],
+        processes: vec![ProcessJson {
+            id: "c".into(),
+            output: "main".into(),
+            recipe: None,
+            kind: ProcessKindJson::Custom {
+                from: Some("in".into()),
+                name: "Veiled chaos and unveil".into(),
+                chance: 0.25,
+                cost: 10.0,
+                keeps_input: false,
+            },
+            expanded: None,
+            added: Vec::new(),
+            disabled: Vec::new(),
+            buy: Vec::new(),
+            sell: Vec::new(),
+        }],
+        root: "main".into(),
+        focus: None,
+        prices: common::prices(),
+        donors: Vec::new(),
+        runs: 1000,
+        seed: 7,
+    };
+    let v = serde_json::to_value(&problem).expect("serialise problem");
+    assert_eq!(
+        v["processes"][0]["kind"]["custom"]["keepsInput"],
+        serde_json::json!(false),
+        "{v}"
+    );
+    let sol = api::solve_json(b, &v.to_string()).expect("solves");
+    assert!(sol.error.is_none(), "{:?}", sol.error);
+    let c = sol
+        .market
+        .processes
+        .iter()
+        .find(|p| p.id == "c")
+        .expect("the custom process");
+    assert_eq!(c.kind, "custom");
+    assert_eq!(c.name, "Veiled chaos and unveil");
+    let cost = c.cost.expect("cost");
+    assert!((cost - 440.0).abs() < 1e-9, "cost {cost}");
+}

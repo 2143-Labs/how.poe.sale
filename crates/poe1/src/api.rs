@@ -1066,6 +1066,16 @@ pub enum ProcessKindJson {
         a: String,
         b: String,
     },
+    /// A craft the app does not model: chance per attempt and chaos per attempt.
+    Custom {
+        from: Option<String>,
+        name: String,
+        chance: f64,
+        cost: f64,
+        /// `rename_all` above renames variants only, so the field needs its own.
+        #[serde(rename = "keepsInput")]
+        keeps_input: bool,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1368,6 +1378,21 @@ fn process_json(p: &Process) -> ProcessJson {
                 b: b.clone(),
             }
         }
+        ProcessKind::Custom {
+            from,
+            name,
+            chance,
+            cost,
+            keeps_input,
+        } => {
+            out.kind = ProcessKindJson::Custom {
+                from: from.clone(),
+                name: name.clone(),
+                chance: *chance,
+                cost: *cost,
+                keeps_input: *keeps_input,
+            }
+        }
     }
     out
 }
@@ -1415,6 +1440,19 @@ fn build_market(b: &Bundle, p: &ProblemV3) -> Result<(Market, Vec<DonorSpec>), A
             ProcessKindJson::Recombine { a, b } => ProcessKind::Recombine {
                 a: a.clone(),
                 b: b.clone(),
+            },
+            ProcessKindJson::Custom {
+                from,
+                name,
+                chance,
+                cost,
+                keeps_input,
+            } => ProcessKind::Custom {
+                from: from.clone(),
+                name: name.clone(),
+                chance: *chance,
+                cost: *cost,
+                keeps_input: *keeps_input,
             },
         };
         processes.push(Process {
@@ -1499,6 +1537,7 @@ fn process_value_json(
     let (kind, default_name) = match &p.kind {
         ProcessKind::Craft { .. } => ("craft", "Craft"),
         ProcessKind::Recombine { .. } => ("recombine", "Recombine"),
+        ProcessKind::Custom { name, .. } => ("custom", name.as_str()),
     };
     ProcessValueJson {
         id: p.id.clone(),
