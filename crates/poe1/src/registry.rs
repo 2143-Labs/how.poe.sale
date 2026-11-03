@@ -294,6 +294,27 @@ pub fn contract_by_id(id: &str) -> Option<&'static Contract> {
     CONTRACTS.iter().find(|c| c.id == id)
 }
 
+/// The claims (`rules/poe1-claims.json`) the kernel of `a` reads.
+pub fn action_claims(a: &Action) -> &'static [&'static str] {
+    match a {
+        Action::Chaos
+        | Action::Essence { .. }
+        | Action::Fossil { .. }
+        | Action::HarvestRandomiseInfluence
+        | Action::Combine { .. } => &["affix.chaos_count_ratio"],
+        Action::HarvestInfluenced => &[
+            "affix.chaos_count_ratio",
+            "harvest.influenced_respects_locks",
+            "harvest.first_draw_influenced",
+        ],
+        Action::Transmute | Action::Alteration => &["magic.mod_count"],
+        Action::ApplyCatalyst { .. } => {
+            &["catalyst.full_quality_count", "catalyst.affects_weights"]
+        }
+        _ => &[],
+    }
+}
+
 /// Fossil sets the engine offers per state, best single-draw share first.
 pub const FOSSIL_TOP_K: usize = 3;
 /// Recombine drops influence, catalyst quality and fractured state (user-stated).

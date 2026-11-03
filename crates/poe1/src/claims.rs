@@ -70,6 +70,14 @@ pub fn chaos_count_weights() -> [(u8, f64); 3] {
     raw.map(|(k, w)| (k, w / total))
 }
 
+/// `[(mod count, chance)]` of a Transmutation or Alteration, normalised.
+pub fn magic_mod_count_weights() -> [(u8, f64); 2] {
+    let c = claim("magic.mod_count");
+    let raw = [1u8, 2].map(|k| (k, number(&c.id, &c.value[k.to_string()])));
+    let total: f64 = raw.iter().map(|(_, w)| w).sum();
+    raw.map(|(k, w)| (k, w / total))
+}
+
 /// A recombine count table: row = pooled count 1..=6 (clamped), column = mods kept 0..=3, each
 /// row normalised to sum 1.
 pub fn recombine_count_table(id: &str) -> [[f64; 4]; 6] {
@@ -219,6 +227,8 @@ mod tests {
     #[test]
     fn accessors_parse_their_values() {
         let total: f64 = chaos_count_weights().iter().map(|(_, w)| w).sum();
+        assert!((total - 1.0).abs() < 1e-12);
+        let total: f64 = magic_mod_count_weights().iter().map(|(_, w)| w).sum();
         assert!((total - 1.0).abs() < 1e-12);
         let tables: Vec<&Claim> = all()
             .iter()

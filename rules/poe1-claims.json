@@ -144,6 +144,19 @@
       "via": "read against data/raw",
       "approximate": true,
       "reason": "the first-match ×weight/100 reading is the export's convention, not a GGG statement; GGG's 3.26 patch notes give only the direction: 'Sceptres, Staves, Rune Daggers and Wands now roll Attack Modifiers less often (Warstaves and Attack Daggers are unaffected by this change)', reproduced at https://maxroll.gg/poe/news/3-26-secrets-of-the-atlas-patch-notes"
+    },
+    {
+      "id": "magic.mod_count",
+      "statement": "An Orb of Transmutation makes a magic item with 1 or 2 explicit mods, and an Orb of Alteration rerolls a magic item to 1 or 2 mods, each count with chance 1/2 whatever the item held before.",
+      "source_kind": "coe",
+      "url": "https://www.craftofexile.com/basics",
+      "quote": "Will turn a normal item into a magic item (with one or two random explicit mods).",
+      "patch": "3.29",
+      "checked": true,
+      "via": "",
+      "approximate": true,
+      "reason": "the page says one or two mods (and 'up to 2' for Alteration); the even split is Craft of Exile's simulator rule, with no measured distribution published",
+      "value": { "1": 1, "2": 1 }
     }
   ]
 }

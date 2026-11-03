@@ -95,7 +95,7 @@ fn va7_triple_t1_phys_warstaff() {
         );
     }
 
-    // Alt-spam: one draw from the whole magic pool per alteration.
+    // Alt-spam: every transmute and alteration rolls 1 or 2 mods from the whole magic pool.
     let tags = b.item_tags(base(STAFF), 0);
     let side = |side| {
         pool(
@@ -119,7 +119,9 @@ fn va7_triple_t1_phys_warstaff() {
             .unwrap()
             .weight
     };
-    println!("magic pool total weight {total}");
+    let p_total: f64 = pre.iter().map(|e| e.weight).sum();
+    let s_total: f64 = suf.iter().map(|e| e.weight).sum();
+    println!("magic pool total weight {total} ({p_total} prefix, {s_total} suffix)");
     for (good, id, w) in [
         ("phys", PHYS, 25.0),
         ("hybrid", HYBRID, 25.0),
@@ -128,7 +130,12 @@ fn va7_triple_t1_phys_warstaff() {
         ("multi", MULTI, 1000.0),
     ] {
         assert_eq!(weight(id), w, "{id}");
-        let q = w / total;
+        // 1 or 2 mods, 1/2 each: a hit on the first draw, or on the second once the other side's
+        // only slot is full.
+        let prefix = pre.iter().any(|e| e.mod_index == mod_index(id));
+        let other = if prefix { s_total } else { p_total };
+        let own = if prefix { p_total } else { s_total };
+        let q = 0.5 * w / total + 0.5 * (w / total + (other / total) * (w / own));
         let closed =
             1.0 + market::TRADE_PENALTY + prices["transmute"] + (1.0 - q) * prices["alt"] / q;
         println!("{good}: 1 in {:.0} alterations, V {:.2}", 1.0 / q, v(good));

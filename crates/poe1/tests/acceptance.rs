@@ -70,7 +70,8 @@ fn va1_alt_spam_amulet() {
         assert_eq!(weight(id), w, "{id}");
     }
 
-    // Per alteration from a magic item with one other mod: the engine's single-draw share.
+    // Per alteration: 1 or 2 mods, 1/2 each, from one shared pool. One mod hits with w/T; two
+    // hit on the first draw, or on the second once a suffix has filled the only suffix slot.
     let main = amulet(Rarity::Magic, &[LIGHTNING]);
     let mut other = state(&main, Rarity::Magic, &[]);
     other.suffixes.untracked = 1;
@@ -83,8 +84,12 @@ fn va1_alt_spam_amulet() {
         "per-alteration share of {LIGHTNING}: {share:.6e} ({:.4}%)",
         share * 100.0
     );
-    assert!(close(share, 200.0 / 210_750.0, 1e-12));
-    assert!((share * 100.0 - 0.0949).abs() < 0.0001);
+    let p_total: f64 = pre.iter().map(|e| e.weight).sum();
+    let s_total: f64 = suf.iter().map(|e| e.weight).sum();
+    let w = weight(LIGHTNING);
+    let q = 0.5 * w / total + 0.5 * (w / total + (s_total / total) * (w / p_total));
+    assert!(close(share, q, 1e-12), "{share} vs {q}");
+    assert!((share * 100.0 - 0.1620).abs() < 0.0001);
     assert!(((weight(ALL) / total) * 100.0 - 0.0237).abs() < 0.0001);
 
     // The market: normal base bought at 1, alt-spam into the magic amulet.

@@ -37,9 +37,9 @@ pub enum Action {
     Combine {
         donor: u8,
     },
-    /// Normal -> magic with one mod.
+    /// Normal -> magic with 1 or 2 mods, 1/2 each (claim magic.mod_count).
     Transmute,
-    /// Magic -> magic, its mods re-rolled; the mod count is kept.
+    /// Magic -> magic, rerolled to 1 or 2 mods, 1/2 each.
     Alteration,
     /// Magic with a free slot -> one more mod.
     Augmentation,
@@ -538,16 +538,26 @@ fn cleared(s: &ItemState) -> ItemState {
     st
 }
 
+/// A fresh magic roll on `st`: 1 or 2 mods by the magic mod-count claim, all from one shared pool.
+fn magic_roll(b: &Bundle, t: &Target, st: &ItemState) -> Vec<(ItemState, f64)> {
+    let mut outs = Vec::new();
+    for (n, w) in crate::claims::magic_mod_count_weights() {
+        for (o, p) in fill(b, t, st, n, false) {
+            outs.push((o, p * w));
+        }
+    }
+    finish(false, outs)
+}
+
 fn transmute(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
     let mut st = cleared(s);
     st.rarity = crate::item::Rarity::Magic;
-    fill(b, t, &st, 1, false)
+    magic_roll(b, t, &st)
 }
 
-/// The mod count is kept: a one-mod item re-rolls to one mod, a two-mod item to two.
+/// Every mod is rerolled to a fresh 1 or 2, whatever the item held before.
 fn alteration(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
-    let n = s.mod_count().clamp(1, 2);
-    fill(b, t, &cleared(s), n, false)
+    magic_roll(b, t, &cleared(s))
 }
 
 fn regal(b: &Bundle, t: &Target, s: &ItemState) -> Vec<(ItemState, f64)> {
@@ -1302,18 +1312,15 @@ pub fn predecessors(
             }
         }
         Rarity::Magic => {
-            // Alteration from a magic item holding the same number of other mods.
+            // Alteration: the outcome does not depend on the old mods, so one canonical magic
+            // item stands for every predecessor.
             let mut st = ItemState::new(s.base, s.ilvl, Rarity::Magic, s.influences);
-            let n = s.mod_count().clamp(1, 2);
-            st.prefixes.untracked = n.min(1);
-            if n == 2 {
-                st.suffixes.untracked = 1;
-            }
+            st.prefixes.untracked = 1;
             if st != *s {
                 out.push((Action::Alteration, st));
             }
             // Transmute from the normal base.
-            if s.mod_count() == 1 {
+            if (1..=2).contains(&s.mod_count()) {
                 out.push((
                     Action::Transmute,
                     ItemState::new(s.base, s.ilvl, Rarity::Normal, s.influences),

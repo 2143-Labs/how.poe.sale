@@ -175,18 +175,38 @@ fn scour_keeps_a_locked_side_and_clears_the_rest() {
 }
 
 #[test]
-fn alteration_keeps_the_mod_count() {
+fn magic_rolls_hold_one_or_two_mods_half_each() {
     let b = b();
     let t = amulet(Rarity::Magic);
+    let by_count = |outs: &[(ItemState, f64)]| {
+        let mut p = [0.0; 3];
+        for (o, q) in outs {
+            assert_eq!(o.rarity, Rarity::Magic);
+            p[o.mod_count() as usize] += q;
+        }
+        p
+    };
+    let normal = state(&t, Rarity::Normal, &[]);
     let one = state(&t, Rarity::Magic, &[0]);
-    for (o, _) in kernels::outcomes(b, &t, &[], &one, &Action::Alteration) {
-        assert_eq!(o.mod_count(), 1);
-        assert_eq!(o.rarity, Rarity::Magic);
-    }
     let mut two = one.clone();
     two.suffixes.untracked = 1;
-    for (o, _) in kernels::outcomes(b, &t, &[], &two, &Action::Alteration) {
-        assert_eq!(o.mod_count(), 2);
+    let from_one = kernels::outcomes(b, &t, &[], &one, &Action::Alteration);
+    let from_two = kernels::outcomes(b, &t, &[], &two, &Action::Alteration);
+    for outs in [
+        kernels::outcomes(b, &t, &[], &normal, &Action::Transmute),
+        from_one.clone(),
+        from_two.clone(),
+    ] {
+        let p = by_count(&outs);
+        assert_eq!(p[0], 0.0);
+        assert!(close(p[1], 0.5, 1e-12), "{p:?}");
+        assert!(close(p[2], 0.5, 1e-12), "{p:?}");
+    }
+    // An Alteration rerolls everything: the old mod count does not matter.
+    assert_eq!(from_one.len(), from_two.len());
+    for ((o1, p1), (o2, p2)) in from_one.iter().zip(&from_two) {
+        assert_eq!(o1, o2);
+        assert!(close(*p1, *p2, 1e-12));
     }
 }
 
@@ -204,13 +224,9 @@ fn regal_adds_exactly_one_mod() {
 }
 
 #[test]
-fn transmute_and_augmentation_add_one_mod() {
+fn augmentation_adds_one_mod() {
     let b = b();
     let t = amulet(Rarity::Magic);
-    let normal = state(&t, Rarity::Normal, &[]);
-    for (o, _) in kernels::outcomes(b, &t, &[], &normal, &Action::Transmute) {
-        assert_eq!((o.rarity, o.mod_count()), (Rarity::Magic, 1));
-    }
     let magic = state(&t, Rarity::Magic, &[0]);
     assert!(registry::applicable(
         b,
