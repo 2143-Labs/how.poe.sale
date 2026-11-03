@@ -111,11 +111,11 @@ pub struct FossilData {
 }
 
 /// One way a tooltip line can read: `key` is the line with each value replaced by `#`; `slots`
-/// gives, per `#` in text order, the stat shown and whether the shown number is the stat negated.
+/// gives, per `#` in text order, the stat shown and the factor from stored value to shown value.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Translation {
     pub key: String,
-    pub slots: Vec<(u16, bool)>,
+    pub slots: Vec<(u16, f64)>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -159,6 +159,10 @@ pub struct Bundle {
     /// mod index -> supported fossil indices whose `added_mods` contain it, ascending.
     #[serde(skip)]
     pub fossils_by_mod: HashMap<u32, Vec<u16>>,
+    /// stat index -> magnitude of the factor from stored value to shown value, from the first
+    /// translation slot showing the stat. The sign stays with the stored value.
+    #[serde(skip)]
+    pub display_factors: HashMap<u16, f64>,
 }
 
 impl Bundle {
@@ -187,6 +191,9 @@ impl Bundle {
                 .entry(t.key.clone())
                 .or_default()
                 .push(i as u32);
+            for &(stat, factor) in &t.slots {
+                self.display_factors.entry(stat).or_insert(factor.abs());
+            }
         }
         for (i, b) in self.bench.iter().enumerate() {
             self.bench_by_mod.insert(b.mod_id.clone(), i as u16);
@@ -220,6 +227,12 @@ impl Bundle {
                 }
             }
         }
+    }
+
+    /// The magnitude of the factor from a stat's stored value to the number its tooltip line
+    /// shows (1.0 when no translation shows it).
+    pub fn display_factor(&self, stat: u16) -> f64 {
+        self.display_factors.get(&stat).copied().unwrap_or(1.0)
     }
 
     pub fn tag(&self, index: u16) -> &str {
@@ -314,7 +327,7 @@ mod tests {
     #[test]
     fn bundle_v2_carries_essences_and_fossils() {
         let b = crate::test_bundle();
-        assert_eq!(b.format, 4, "bundle format");
+        assert_eq!(b.format, 5, "bundle format");
 
         let rage = b
             .essences

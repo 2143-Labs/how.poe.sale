@@ -572,20 +572,56 @@ fn fmt_value(v: f64) -> String {
     }
 }
 
+/// Per roll of tier `m`'s first stat on this item: (displayed value in stored units, the number
+/// the tooltip shows).
+fn shown_rolls(b: &Bundle, m: u32, s: &ItemState) -> Vec<(f64, f64)> {
+    let Some(stat) = b.mod_at(m).stats.first() else {
+        return Vec::new();
+    };
+    let eff = target::effect(b, s.base, s.catalyst, m);
+    let f = b.display_factor(stat.stat);
+    let (lo, hi) = (stat.min.floor() as i64, stat.max.floor() as i64);
+    (lo..=hi.max(lo))
+        .map(|roll| {
+            let v = target::display(roll as f64, eff);
+            let shown = if f == 1.0 {
+                v
+            } else {
+                (v * f * 100.0).round() / 100.0
+            };
+            (v, shown)
+        })
+        .collect()
+}
+
 /// The requirement label with its number replaced by the displayed values a roll of this tier
-/// takes on this item (its own base and catalyst) that match the hit's `value_ok`.
+/// takes on this item (its own base and catalyst) that match the hit's `value_ok`. The label is
+/// kept as is when its number is not the tier's first stat (a hybrid whose first line shows
+/// another stat).
 fn hit_text(b: &Bundle, r: &Requirement, hit: &crate::item::Hit, s: &ItemState) -> String {
     let Some(m) = r.accepted.get(hit.idx as usize).copied() else {
         return r.label.clone();
     };
-    let Some(stat) = b.mod_at(m).stats.first() else {
+    let Some((a, z)) = first_number_span(&r.label) else {
         return r.label.clone();
     };
-    let eff = target::effect(b, s.base, s.catalyst, m);
-    let (lo, hi) = (stat.min.floor() as i64, stat.max.floor() as i64);
-    let shown: Vec<f64> = (lo..=hi.max(lo))
-        .map(|roll| target::display(roll as f64, eff))
-        .filter(|v| (*v >= r.min_value) == hit.value_ok)
+    if let Ok(n) = r.label[a..z].parse::<f64>() {
+        let all: Vec<f64> = r
+            .accepted
+            .iter()
+            .flat_map(|&t| shown_rolls(b, t, s))
+            .map(|(_, v)| v.abs())
+            .collect();
+        let lo = all.iter().copied().fold(f64::INFINITY, f64::min);
+        let hi = all.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        if n < lo || n > hi {
+            return r.label.clone();
+        }
+    }
+    let shown: Vec<f64> = shown_rolls(b, m, s)
+        .into_iter()
+        .filter(|(v, _)| (*v >= r.min_value) == hit.value_ok)
+        .map(|(_, shown)| shown)
         .collect();
     let (Some(min), Some(max)) = (
         shown.iter().copied().reduce(f64::min),
@@ -598,10 +634,7 @@ fn hit_text(b: &Bundle, r: &Requirement, hit: &crate::item::Hit, s: &ItemState) 
     } else {
         format!("{}–{}", fmt_value(min), fmt_value(max))
     };
-    match first_number_span(&r.label) {
-        Some((a, z)) => format!("{}{range}{}", &r.label[..a], &r.label[z..]),
-        None => r.label.clone(),
-    }
+    format!("{}{range}{}", &r.label[..a], &r.label[z..])
 }
 
 /// `not wanted: <tier texts>`: the tiers of the group that can roll here and are not accepted.

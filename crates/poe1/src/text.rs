@@ -422,7 +422,8 @@ fn shows_as(lo: f64, hi: f64, value: f64, scale: f64) -> bool {
     }
 }
 
-/// Every mod tier (passing `reachable`) that can show `line`, with the stats the line covers.
+/// Every mod tier (passing `reachable`) that can show `line`, with the stats the line covers and
+/// their values in stored units.
 fn line_candidates(
     b: &Bundle,
     base: u16,
@@ -431,8 +432,16 @@ fn line_candidates(
     reachable: impl Fn(u32, &crate::data::ModData) -> bool,
 ) -> Vec<Cand> {
     let text = line.strip_prefix('+').unwrap_or(line);
-    let numbers: Vec<f64> = all_numbers(text).into_iter().map(|n| n.2).collect();
-    let mut readings: Vec<(String, Vec<f64>)> = vec![(hash_all_numbers(text), numbers.clone())];
+    // (value, precision): "3" reads to the unit, "50.3" to a tenth.
+    let numbers: Vec<(f64, f64)> = all_numbers(text)
+        .into_iter()
+        .map(|(start, end, v)| {
+            let decimals = text[start..end].split_once('.').map_or(0, |(_, d)| d.len());
+            (v, 10f64.powi(-(decimals as i32)))
+        })
+        .collect();
+    let mut readings: Vec<(String, Vec<(f64, f64)>)> =
+        vec![(hash_all_numbers(text), numbers.clone())];
     if numbers.len() > 1 {
         if let Some(k) = hash_first_number(text) {
             readings.push((k, vec![numbers[0]]));
@@ -452,10 +461,11 @@ fn line_candidates(
                 continue;
             }
             let stats: Vec<u16> = slots.iter().map(|s| s.0).collect();
-            let signed: Vec<f64> = slots
+            // Rounded to 6 decimals so 0.7 / 0.01 reads as 70, not 69.99999999999999.
+            let stored: Vec<f64> = slots
                 .iter()
                 .zip(&values)
-                .map(|(s, v)| if s.1 { -v } else { *v })
+                .map(|(s, (v, _))| ((v / s.1) * 1e6).round() / 1e6)
                 .collect();
             for (i, m) in b.mods.iter().enumerate() {
                 let i = i as u32;
@@ -463,17 +473,31 @@ fn line_candidates(
                     continue;
                 }
                 let scale = 1.0 + effect(b, base, catalyst, i) / 100.0;
-                let fits = stats.iter().zip(&signed).all(|(stat, v)| {
-                    m.stats
-                        .iter()
-                        .find(|s| s.stat == *stat)
-                        .is_some_and(|s| shows_as(s.min, s.max, *v, scale))
-                });
+                let fits = slots
+                    .iter()
+                    .zip(&values)
+                    .zip(&stored)
+                    .all(|((slot, &(v, q)), &sv)| {
+                        m.stats.iter().find(|s| s.stat == slot.0).is_some_and(|s| {
+                            let f = slot.1;
+                            if f.abs() == 1.0 {
+                                return shows_as(s.min, s.max, sv, scale);
+                            }
+                            // Rounded or truncated to the shown precision: either way the stored
+                            // value lies in (v - q/2, v + q) once scaled back.
+                            let (mut a, mut z) =
+                                ((v - q / 2.0) / (f * scale), (v + q) / (f * scale));
+                            if f < 0.0 {
+                                std::mem::swap(&mut a, &mut z);
+                            }
+                            s.min < z && s.max > a
+                        })
+                    });
                 if fits {
                     out.push(Cand {
                         m: i,
                         stats: stats.clone(),
-                        values: signed.clone(),
+                        values: stored.clone(),
                     });
                 }
             }
@@ -797,5 +821,37 @@ mod tests {
             d.requirements[0].label,
             "+2% increased Damage per 15 Strength"
         );
+    }
+
+    #[test]
+    fn parses_values_shown_in_other_units() {
+        let b = crate::test_bundle();
+        let one = |text: &str| {
+            let d = parse_target(b, text);
+            assert!(d.unmatched.is_empty(), "{text}: {:?}", d.unmatched);
+            let f = found(b, &d);
+            assert_eq!(f.len(), 1, "{text}: {f:?}");
+            f.into_iter().next().expect("one requirement")
+        };
+        let crit = one(
+            "Item Class: Helmets\nRarity: Rare\nX\nArchdemon Crown\nItem Level: 87\nShaper Item\nSocketed Spells have +3% to Critical Strike Chance\n",
+        );
+        assert_eq!(
+            crit.1,
+            vec!["SocketedSpellCriticalStrikeChanceUber3".to_string()]
+        );
+        assert_eq!(crit.2, 300.0);
+
+        let amulet = "Item Class: Amulets\nRarity: Rare\nX\nLapis Amulet\nItem Level: 84\n";
+        let regen = one(&format!("{amulet}Regenerate 50.3 Life per second\n"));
+        assert_eq!(regen.1, vec!["LifeRegeneration7".to_string()]);
+        assert!((regen.2 - 3018.0).abs() < 1e-9, "{}", regen.2);
+        let regen = one(&format!("{amulet}Regenerate 64.1 Life per second\n"));
+        assert_eq!(regen.1, vec!["LifeRegeneration8_".to_string()]);
+        let leech = one(&format!(
+            "{amulet}0.7% of Physical Attack Damage Leeched as Life\n"
+        ));
+        assert_eq!(leech.1, vec!["LifeLeechPermyriadSuffix2".to_string()]);
+        assert_eq!(leech.2, 70.0);
     }
 }
