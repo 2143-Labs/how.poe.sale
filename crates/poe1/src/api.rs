@@ -1743,6 +1743,12 @@ fn requirement_warnings(b: &Bundle, t: &Target) -> Vec<String> {
                 r.label,
                 ModSource::Bench.describe(b)
             ));
+        } else if !sources.is_empty() && sources.iter().all(|s| *s == ModSource::Veiled) {
+            out.push(format!(
+                "{} is only obtainable by {}, which no built-in craft models; add a custom craft for it",
+                r.label,
+                ModSource::Veiled.describe(b)
+            ));
         }
     }
     out

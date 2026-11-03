@@ -48,6 +48,13 @@ pub struct ModData {
     /// True iff a supported fossil adds this mod directly (fossil-only reachability).
     #[serde(default)]
     pub fossil_only: bool,
+    /// Placed by a Veiled Chaos or Veiled Exalted Orb and unveiled at Jun; never rolls naturally
+    /// (`weights` is empty).
+    #[serde(default)]
+    pub veiled: bool,
+    /// A veiled mod's spawn weights, scanned like `weights`.
+    #[serde(default)]
+    pub veiled_weights: Vec<(u16, u32)>,
     /// `implicit_tags`, sorted, for binary-search matching against a catalyst's tags.
     #[serde(skip)]
     pub implicit_tags_sorted: Vec<String>,

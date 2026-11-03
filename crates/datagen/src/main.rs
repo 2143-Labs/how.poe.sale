@@ -242,6 +242,19 @@ struct ModOut {
     gen_weights: Vec<(u16, u32)>,
     #[serde(skip_serializing_if = "is_false")]
     fossil_only: bool,
+    /// Placed by a Veiled Chaos or Veiled Exalted Orb and unveiled at Jun; never rolls naturally.
+    #[serde(skip_serializing_if = "is_false")]
+    veiled: bool,
+    /// A veiled mod's spawn weights (its `weights` stay empty so no natural pool holds it).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    veiled_weights: Vec<(u16, u32)>,
+}
+
+/// A Jun-unveiled affix: RePoE domain `unveiled`, a prefix or suffix with stats.
+fn is_veiled(m: &RawMod) -> bool {
+    m.domain == "unveiled"
+        && matches!(m.generation_type.as_str(), "prefix" | "suffix")
+        && !m.stats.is_empty()
 }
 
 #[derive(Serialize)]
@@ -600,7 +613,7 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             // bundle must still be able to resolve them by id.
             let referenced = referenced_mods.contains(id.as_str())
                 && matches!(m.generation_type.as_str(), "prefix" | "suffix");
-            modelled || referenced
+            modelled || referenced || is_veiled(m)
         })
         .collect();
 
@@ -738,7 +751,13 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
                 })
                 .collect::<anyhow::Result<Vec<_>>>()
         };
-        let weights = tag_weights(&m.spawn_weights, "spawn")?;
+        let veiled = is_veiled(m);
+        let spawn = tag_weights(&m.spawn_weights, "spawn")?;
+        let (weights, veiled_weights) = if veiled {
+            (Vec::new(), spawn)
+        } else {
+            (spawn, Vec::new())
+        };
         let gen_weights = tag_weights(&m.generation_weights, "generation")?;
         mods_out.push(ModOut {
             id: (*id).clone(),
@@ -766,6 +785,8 @@ fn build(raw: &Path) -> anyhow::Result<Bundle> {
             weights,
             gen_weights,
             fossil_only: fossil_only.contains(id.as_str()),
+            veiled,
+            veiled_weights,
         });
     }
 
