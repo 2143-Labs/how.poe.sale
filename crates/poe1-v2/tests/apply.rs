@@ -205,6 +205,7 @@ fn lifted_mass(l: &Lifted, class: u16) -> f64 {
             }
         }
         Lifted::Chance(c) => c.iter().map(|(p, l)| p * lifted_mass(l, class)).sum(),
+        Lifted::Many(items) => items.iter().map(|l| lifted_mass(l, class)).sum(),
         other => panic!("unexpected {other:?}"),
     }
 }
@@ -348,7 +349,7 @@ fn pending_and_vaal() {
     let mut open: Vec<[u8; 2]> = lifted
         .iter()
         .map(|(_, l)| match l {
-            Lifted::Pending { known, .. } => known.open,
+            Lifted::Pending { known, .. } => known.first().expect("known states").1.open,
             other => panic!("{other:?}"),
         })
         .collect();

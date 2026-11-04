@@ -64,8 +64,10 @@ pub enum Grade {
 }
 
 /// What a class accepts. `{"mod": id, "min": [..]}` takes one modifier id, with an optional
-/// minimum shown value per stat; `{"crafted": true}` any crafted modifier; `{"any": true}`
-/// everything.
+/// minimum value per stat: one entry per stat in RePoE stat order, in the units the game shows
+/// (the display magnitude, and the stat's translation slot factor multiplied in); `None` leaves
+/// that stat unconstrained. `{"crafted": true}` any crafted modifier; `{"any": true}` everything.
+/// A class takes the union of its matchers.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum MatcherSpec {
@@ -103,14 +105,18 @@ pub struct PatternState {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Lifted {
     State(PatternState),
-    Many(Vec<PatternState>),
+    /// One entry per item result, each with its own distribution (the items are alternatives of
+    /// a multi-item outcome such as Mirror, not further states of one item).
+    Many(Vec<Lifted>),
     Destroyed,
     Chance(Vec<(f64, Lifted)>),
+    /// Options in canonical order, so equal choices compare equal whatever order the method
+    /// produced them in.
     Choice(Vec<Lifted>),
     Pending {
         reason: crate::method::PendingReason,
-        /// What the partial item already holds.
-        known: PatternState,
+        /// Every state the partial item can be in, with its probability.
+        known: Vec<(f64, PatternState)>,
     },
 }
 
@@ -118,6 +124,19 @@ pub enum Lifted {
 pub enum PatternError {
     #[error("pattern \"{name}\": unknown modifier \"{id}\"")]
     UnknownMod { name: String, id: String },
+    #[error("pattern \"{name}\": unknown base \"{base}\"")]
+    UnknownBase { name: String, base: String },
+    #[error(
+        "pattern \"{name}\": modifier \"{id}\" is a {side} modifier but sits in a {other} class"
+    )]
+    ModWrongSide {
+        name: String,
+        id: String,
+        side: &'static str,
+        other: &'static str,
+    },
+    #[error("pattern \"{name}\": duplicate class \"{id}\"")]
+    DuplicateClass { name: String, id: String },
     #[error("pattern \"{name}\": slot names unknown class \"{id}\"")]
     UnknownClass { name: String, id: String },
     #[error("pattern \"{name}\": class \"{id}\" is a {side} class but sits in a {other} slot")]
@@ -126,6 +145,19 @@ pub enum PatternError {
         id: String,
         side: &'static str,
         other: &'static str,
+    },
+    #[error("pattern \"{name}\": {side} slot {slot} names no class")]
+    EmptySlot {
+        name: String,
+        side: &'static str,
+        slot: usize,
+    },
+    #[error("pattern \"{name}\": {side} slots exceed what {base} allows ({limit})")]
+    TooManySlots {
+        name: String,
+        side: &'static str,
+        base: String,
+        limit: u8,
     },
     #[error("pattern \"{name}\": the {side} classes need a catch-all class ({{\"any\": true}})")]
     NoCatchAll { name: String, side: &'static str },
@@ -165,6 +197,14 @@ pub struct Pattern {
 impl Pattern {
     pub fn compile(data: &Data, spec: &PatternSpec) -> Result<Pattern, PatternError> {
         let name = &spec.name;
+        for base in &spec.item.bases {
+            if data.bases_named(base).is_empty() {
+                return Err(PatternError::UnknownBase {
+                    name: name.clone(),
+                    base: base.clone(),
+                });
+            }
+        }
         let matcher = |m: &MatcherSpec| -> Result<Matcher, PatternError> {
             Ok(match m {
                 MatcherSpec::Mod { r#mod, min } => Matcher::Mod {
@@ -187,12 +227,38 @@ impl Pattern {
             .collect::<Result<Vec<_>, _>>()?;
         let mut classes = Vec::with_capacity(spec.classes.len());
         for c in &spec.classes {
+            if classes.iter().any(|x: &Class| x.id == c.id) {
+                return Err(PatternError::DuplicateClass {
+                    name: name.clone(),
+                    id: c.id.clone(),
+                });
+            }
+            let matchers = c
+                .matchers
+                .iter()
+                .map(matcher)
+                .collect::<Result<Vec<_>, _>>()?;
+            for m in &matchers {
+                let Matcher::Mod { m: index, .. } = m else {
+                    continue;
+                };
+                let m = data.mod_at(*index);
+                let Some(side) = m.side else { continue };
+                if side != c.side {
+                    return Err(PatternError::ModWrongSide {
+                        name: name.clone(),
+                        id: m.id.clone(),
+                        side: side.name(),
+                        other: c.side.name(),
+                    });
+                }
+            }
             classes.push(Class {
                 id: c.id.clone(),
                 label: c.label.clone(),
                 side: c.side,
                 grade: c.grade,
-                matchers: c.matchers.iter().map(matcher).collect::<Result<_, _>>()?,
+                matchers,
             });
         }
         let mut slots: [Vec<Vec<u16>>; 2] = [Vec::new(), Vec::new()];
@@ -200,7 +266,14 @@ impl Pattern {
             (Side::Prefix, &spec.prefixes),
             (Side::Suffix, &spec.suffixes),
         ] {
-            for slot in list {
+            for (n, slot) in list.iter().enumerate() {
+                if slot.is_empty() {
+                    return Err(PatternError::EmptySlot {
+                        name: name.clone(),
+                        side: side.name(),
+                        slot: n + 1,
+                    });
+                }
                 let mut accepted = Vec::with_capacity(slot.len());
                 for id in slot {
                     let i = classes.iter().position(|c| &c.id == id).ok_or_else(|| {
@@ -220,6 +293,34 @@ impl Pattern {
                     accepted.push(i as u16);
                 }
                 slots[side.index()].push(accepted);
+            }
+        }
+        // A side cannot ask for more slots than any listed base can hold, counting a rare item's
+        // limits and the base's own prefix/suffix delta.
+        for side in Side::BOTH {
+            let count = slots[side.index()].len() as u16;
+            let mut worst: Option<(u8, &str)> = None;
+            for base in &spec.item.bases {
+                for &b in data.bases_named(base) {
+                    let class = data.class_of(b);
+                    let delta = match side {
+                        Side::Prefix => data.base_at(b).prefix_delta,
+                        Side::Suffix => data.base_at(b).suffix_delta,
+                    };
+                    let limit = (i16::from(class.limits.rare[side.index()]) + i16::from(delta))
+                        .max(0) as u8;
+                    if u16::from(limit) < count && worst.is_none_or(|(l, _)| limit < l) {
+                        worst = Some((limit, base));
+                    }
+                }
+            }
+            if let Some((limit, base)) = worst {
+                return Err(PatternError::TooManySlots {
+                    name: name.clone(),
+                    side: side.name(),
+                    base: base.to_string(),
+                    limit,
+                });
             }
         }
         for side in Side::BOTH {
@@ -252,7 +353,45 @@ impl Pattern {
     }
 }
 
-/// The chance a matcher accepts an affix: `None` when it does not apply at all.
+/// The factor a stat is shown with: the translation slot factor of the slot that carries it.
+/// A stat with no translation entry, or whose slots disagree, is shown unchanged (factor 1).
+fn shown_factor(data: &Data, stat: u16) -> f64 {
+    let Some(e) = data.translation_of_stat(stat) else {
+        return 1.0;
+    };
+    let entry = &data.translations[e as usize];
+    let mut factor: Option<f64> = None;
+    for variant in &entry.variants {
+        for slot in &variant.slots {
+            if entry.stats.get(slot.k as usize) != Some(&stat) {
+                continue;
+            }
+            match factor {
+                None => factor = Some(slot.factor),
+                Some(f) if f == slot.factor => {}
+                Some(_) => return 1.0,
+            }
+        }
+    }
+    factor.unwrap_or(1.0)
+}
+
+/// The value the game shows for a roll of `v`.
+fn shown(data: &Data, stat: u16, v: i32, effect: i16) -> f64 {
+    f64::from(Item::display(v, effect)) * shown_factor(data, stat)
+}
+
+/// The share of a stat's roll grid whose shown value meets `threshold`.
+fn grid_share(data: &Data, stat: u16, lo: i32, hi: i32, threshold: i32, effect: i16) -> f64 {
+    let (lo, hi) = (lo.min(hi), hi.max(lo));
+    let ok = (lo..=hi)
+        .filter(|&v| shown(data, stat, v, effect) >= f64::from(threshold))
+        .count();
+    ok as f64 / f64::from(hi - lo + 1)
+}
+
+/// The chance a single matcher accepts an affix: `None` when it does not apply at all. A value
+/// threshold splits the roll grid; several stats are taken as independent.
 fn matcher_chance(
     data: &Data,
     item: &Item,
@@ -262,8 +401,12 @@ fn matcher_chance(
 ) -> Option<f64> {
     let m = data.mod_at(affix.roll.m);
     match matcher {
-        Matcher::Any(any) => any.then_some(1.0),
-        Matcher::Crafted(crafted) => (*crafted == (m.kind == ModKind::Crafted)).then_some(1.0),
+        Matcher::Any(any) => Some(if *any { 1.0 } else { 0.0 }),
+        Matcher::Crafted(crafted) => Some(if *crafted == (m.kind == ModKind::Crafted) {
+            1.0
+        } else {
+            0.0
+        }),
         Matcher::Mod { m: want, min } => {
             if *want != affix.roll.m {
                 return None;
@@ -277,16 +420,13 @@ fn matcher_chance(
                 };
                 match &affix.roll.values {
                     Some(values) => {
-                        if Item::display(values[k], effect) < *t {
+                        let Some(v) = values.get(k) else { continue };
+                        if shown(data, stat.stat, *v, effect) < f64::from(*t) {
                             return Some(0.0);
                         }
                     }
                     None => {
-                        let (lo, hi) = (stat.min.min(stat.max), stat.max.max(stat.min));
-                        let ok = (lo..=hi)
-                            .filter(|&v| Item::display(v, effect) >= *t)
-                            .count();
-                        p *= ok as f64 / f64::from(hi - lo + 1);
+                        p *= grid_share(data, stat.stat, stat.min, stat.max, *t, effect);
                     }
                 }
             }
@@ -295,9 +435,151 @@ fn matcher_chance(
     }
 }
 
+/// Whether a value vector meets every threshold of a `min` list.
+fn box_met(
+    data: &Data,
+    m: &crate::data::ModData,
+    thresholds: &[Option<i32>],
+    values: &[i32],
+    effect: i16,
+) -> bool {
+    thresholds.iter().enumerate().all(|(k, t)| {
+        let (Some(t), Some(stat), Some(v)) = (t, m.stats.get(k), values.get(k)) else {
+            return true;
+        };
+        shown(data, stat.stat, *v, effect) >= f64::from(*t)
+    })
+}
+
+/// The probability a roll grid meets `thresholds`: a product over the stats the list constrains.
+fn box_share(
+    data: &Data,
+    m: &crate::data::ModData,
+    thresholds: &[Option<i32>],
+    effect: i16,
+) -> f64 {
+    let mut p = 1.0;
+    for (k, t) in thresholds.iter().enumerate() {
+        let (Some(t), Some(stat)) = (t, m.stats.get(k)) else {
+            continue;
+        };
+        p *= grid_share(data, stat.stat, stat.min, stat.max, *t, effect);
+    }
+    p
+}
+
+/// The chance a class accepts an affix: the union of its matchers. A matcher that accepts
+/// everything (a matching `{"any": true}` or `{"crafted": true}`) makes it certain; otherwise
+/// the value grids of its same-mod thresholds are unioned, so overlapping thresholds do not
+/// double-count and no matcher is ignored. `None` when no matcher applies at all.
+fn class_chance(
+    data: &Data,
+    item: &Item,
+    class: &Class,
+    affix: &Affix,
+    implicit: bool,
+) -> Option<f64> {
+    let m = data.mod_at(affix.roll.m);
+    let mut applies = false;
+    let mut certain = false;
+    let mut boxes: Vec<&[Option<i32>]> = Vec::new();
+    for matcher in &class.matchers {
+        match matcher {
+            Matcher::Any(any) => {
+                applies = true;
+                certain |= *any;
+            }
+            Matcher::Crafted(crafted) => {
+                applies = true;
+                certain |= *crafted == (m.kind == ModKind::Crafted);
+            }
+            Matcher::Mod { m: want, min } => {
+                if *want != affix.roll.m {
+                    continue;
+                }
+                applies = true;
+                match min {
+                    None => certain = true,
+                    Some(min) => boxes.push(min),
+                }
+            }
+        }
+    }
+    if !applies {
+        return None;
+    }
+    if certain {
+        return Some(1.0);
+    }
+    let effect = item.effect(data, &affix.roll, implicit);
+    Some(match &affix.roll.values {
+        Some(values) => f64::from(u8::from(
+            boxes.iter().any(|b| box_met(data, m, b, values, effect)),
+        )),
+        None => {
+            if boxes.is_empty() {
+                0.0
+            } else {
+                union_share(data, m, &boxes, effect)
+            }
+        }
+    })
+}
+
+/// The probability of the union of threshold boxes (inclusion-exclusion), exact for overlapping
+/// thresholds.
+fn union_share(
+    data: &Data,
+    m: &crate::data::ModData,
+    boxes: &[&[Option<i32>]],
+    effect: i16,
+) -> f64 {
+    struct Union<'a> {
+        data: &'a Data,
+        m: &'a crate::data::ModData,
+        boxes: &'a [&'a [Option<i32>]],
+        effect: i16,
+        thresholds: Vec<Option<i32>>,
+        total: f64,
+    }
+    impl Union<'_> {
+        /// Inclusion-exclusion over the boxes: every non-empty subset contributes its
+        /// intersection, with alternating sign.
+        fn walk(&mut self, j: usize, size: usize) {
+            if j == self.boxes.len() {
+                if size > 0 {
+                    let p = box_share(self.data, self.m, &self.thresholds, self.effect);
+                    self.total += if size % 2 == 1 { p } else { -p };
+                }
+                return;
+            }
+            self.walk(j + 1, size);
+            let saved = self.thresholds.clone();
+            for (k, t) in self.boxes[j].iter().enumerate() {
+                if let (Some(t), Some(slot)) = (t, self.thresholds.get_mut(k)) {
+                    *slot = Some(slot.map_or(*t, |s| s.max(*t)));
+                }
+            }
+            self.walk(j + 1, size + 1);
+            self.thresholds = saved;
+        }
+    }
+    let mut union = Union {
+        data,
+        m,
+        boxes,
+        effect,
+        thresholds: vec![None; m.stats.len()],
+        total: 0.0,
+    };
+    union.walk(0, 0);
+    union.total.clamp(0.0, 1.0)
+}
+
 /// Which classes of `side` an affix falls into, with the chance of each: classes are tried in
-/// list order and each takes its share of the remaining mass (value thresholds on unrolled
-/// values split it). The first matcher of a class that applies decides that class's share.
+/// list order and each takes its share of the remaining mass. A class's share is the union of its
+/// matchers (see `class_chance`), so a class with several thresholds never loses mass it should
+/// have taken.
 pub fn classify(
     data: &Data,
     pattern: &Pattern,
@@ -311,11 +593,7 @@ pub fn classify(
         if class.side != side || remaining <= 0.0 {
             continue;
         }
-        let Some(p) = class
-            .matchers
-            .iter()
-            .find_map(|m| matcher_chance(data, item, m, affix, false))
-        else {
+        let Some(p) = class_chance(data, item, class, affix, false) else {
             continue;
         };
         if p > 0.0 {
@@ -326,44 +604,64 @@ pub fn classify(
     out
 }
 
-fn item_ok(data: &Data, pattern: &Pattern, item: &Item) -> bool {
+/// The chance the item passes every deterministic filter check and every implicit matcher.
+fn item_ok_probability(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
     let f = &pattern.filter;
     let influences = f.influences.iter().fold(0u8, |acc, i| acc | i.bit());
-    f.bases.iter().any(|b| *b == data.base_at(item.base).name)
+    let deterministic = f.bases.iter().any(|b| *b == data.base_at(item.base).name)
         && item.item_level >= f.item_level_min
         && item.rarity == f.rarity
         && item.influences == influences
-        && f.corrupted.is_none_or(|c| c == item.corrupted)
-        && pattern.implicits.iter().all(|m| {
-            item.implicits.iter().any(|r| {
-                let affix = Affix {
-                    roll: r.clone(),
-                    fractured: false,
-                };
-                matcher_chance(data, item, m, &affix, true).is_some_and(|p| p > 0.0)
-            })
-        })
+        && f.corrupted.is_none_or(|c| c == item.corrupted);
+    if !deterministic {
+        return 0.0;
+    }
+    let mut ok = 1.0;
+    for matcher in &pattern.implicits {
+        let mut miss = 1.0;
+        for roll in &item.implicits {
+            let affix = Affix {
+                roll: roll.clone(),
+                fractured: false,
+            };
+            if let Some(p) = matcher_chance(data, item, matcher, &affix, true) {
+                miss *= 1.0 - p.clamp(0.0, 1.0);
+            }
+        }
+        ok *= 1.0 - miss;
+    }
+    ok
 }
 
+/// An assignment's score (slots filled, flexibility left unfilled) and its slot → affix map.
+type Assignment = ((usize, usize), Vec<Option<usize>>);
+
 /// The slot assignment for one side: injective slot → affix maps (or nothing), tried in
-/// lexicographic order of the slot → affix-index vector with "nothing" last; the first that
-/// fills the most slots wins. Returns (missing slots, unused affix count).
-fn assign(slots: &[Vec<u16>], classes: &[u16]) -> (Vec<u8>, u8) {
+/// lexicographic order of the slot → affix-index vector with "nothing" last. Among maps that
+/// fill the most slots, the first one that leaves the slots accepting the most classes unfilled
+/// wins (they are the easiest to fill later). Returns (missing slots, unused affix count).
+fn assign(slots: &[Vec<u16>], classes: &[u16], affixes: usize) -> (Vec<u8>, u8) {
     let n = classes.len();
-    let mut best: Option<(usize, Vec<Option<usize>>)> = None;
-    let mut current = Vec::with_capacity(slots.len());
+    let mut best: Option<Assignment> = None;
     fn walk(
         slots: &[Vec<u16>],
         classes: &[u16],
         n: usize,
         current: &mut Vec<Option<usize>>,
-        best: &mut Option<(usize, Vec<Option<usize>>)>,
+        best: &mut Option<Assignment>,
     ) {
         let s = current.len();
         if s == slots.len() {
             let filled = current.iter().flatten().count();
-            if best.as_ref().is_none_or(|(f, _)| filled > *f) {
-                *best = Some((filled, current.clone()));
+            let flexible: usize = current
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| a.is_none())
+                .map(|(s, _)| slots[s].len())
+                .sum();
+            let key = (filled, flexible);
+            if best.as_ref().is_none_or(|(k, _)| key > *k) {
+                *best = Some((key, current.clone()));
             }
             return;
         }
@@ -378,8 +676,8 @@ fn assign(slots: &[Vec<u16>], classes: &[u16]) -> (Vec<u8>, u8) {
         walk(slots, classes, n, current, best);
         current.pop();
     }
-    walk(slots, classes, n, &mut current, &mut best);
-    let (_, map) = best.unwrap_or_default();
+    walk(slots, classes, n, &mut Vec::new(), &mut best);
+    let map = best.map(|(_, m)| m).unwrap_or_default();
     let missing = map
         .iter()
         .enumerate()
@@ -387,20 +685,24 @@ fn assign(slots: &[Vec<u16>], classes: &[u16]) -> (Vec<u8>, u8) {
         .map(|(s, _)| s as u8)
         .collect();
     let used = map.iter().flatten().count();
-    (missing, (n - used) as u8)
+    (missing, affixes.saturating_sub(used) as u8)
 }
 
-/// Every pattern state the item can be in (several when values are unrolled and a class has a
-/// threshold), merged and sorted by probability descending, then state.
+/// Every pattern state the item can be in (several when values are unrolled and a class or an
+/// implicit has a threshold), merged and sorted by probability descending, then state.
 pub fn evaluate(data: &Data, pattern: &Pattern, item: &Item) -> Vec<(f64, PatternState)> {
-    let ok = item_ok(data, pattern, item);
-    // Per affix (prefixes then suffixes) its class distribution.
+    let ok = item_ok_probability(data, pattern, item);
+    let counts = [item.prefixes.len(), item.suffixes.len()];
+    // Per affix (prefixes then suffixes) its class distribution; an affix no class takes (only
+    // possible without a catch-all) contributes no state and counts as unused.
     let per_affix: Vec<(Side, Vec<(u16, f64)>)> = Side::BOTH
         .into_iter()
         .flat_map(|side| {
             item.affixes(side)
                 .iter()
-                .map(move |a| (side, classify(data, pattern, item, side, a)))
+                .map(|a| (side, classify(data, pattern, item, side, a)))
+                .filter(|(_, d)| !d.is_empty())
+                .collect::<Vec<_>>()
         })
         .collect();
     let mut merged: BTreeMap<PatternState, f64> = BTreeMap::new();
@@ -413,20 +715,28 @@ pub fn evaluate(data: &Data, pattern: &Pattern, item: &Item) -> Vec<(f64, Patter
             p *= q;
             sides[side.index()].push(class);
         }
-        let (missing_p, unused_p) = assign(&pattern.slots[0], &sides[0]);
-        let (missing_s, unused_s) = assign(&pattern.slots[1], &sides[1]);
-        let mut state = PatternState {
-            item_ok: ok,
-            prefixes: sides[0].clone(),
-            suffixes: sides[1].clone(),
-            open: [item.open(data, Side::Prefix), item.open(data, Side::Suffix)],
-            matches: ok && missing_p.is_empty() && missing_s.is_empty(),
-            missing: [missing_p, missing_s],
-            unused: [unused_p, unused_s],
+        let (missing_p, unused_p) = assign(&pattern.slots[0], &sides[0], counts[0]);
+        let (missing_s, unused_s) = assign(&pattern.slots[1], &sides[1], counts[1]);
+        let state = |item_ok: bool| {
+            let mut s = PatternState {
+                item_ok,
+                prefixes: sides[0].clone(),
+                suffixes: sides[1].clone(),
+                open: [item.open(data, Side::Prefix), item.open(data, Side::Suffix)],
+                matches: item_ok && missing_p.is_empty() && missing_s.is_empty(),
+                missing: [missing_p.clone(), missing_s.clone()],
+                unused: [unused_p, unused_s],
+            };
+            s.prefixes.sort_unstable();
+            s.suffixes.sort_unstable();
+            s
         };
-        state.prefixes.sort_unstable();
-        state.suffixes.sort_unstable();
-        *merged.entry(state).or_default() += p;
+        if ok > 0.0 {
+            *merged.entry(state(true)).or_default() += p * ok;
+        }
+        if ok < 1.0 {
+            *merged.entry(state(false)).or_default() += p * (1.0 - ok);
+        }
         // Next combination.
         let mut i = 0;
         loop {
@@ -455,48 +765,58 @@ pub fn matches_probability(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
         .sum()
 }
 
-/// The most likely state of an item (ties broken by state order).
-fn most_likely(data: &Data, pattern: &Pattern, item: &Item) -> PatternState {
-    evaluate(data, pattern, item)
-        .into_iter()
-        .next()
-        .map(|(_, s)| s)
-        .unwrap_or_else(|| unreachable!("evaluate always yields a state"))
+/// The full distribution of an item, with a bare state when it is certain.
+fn lift_item(data: &Data, pattern: &Pattern, item: &Item) -> Lifted {
+    let mut states = evaluate(data, pattern, item);
+    if states.len() == 1 && states[0].0 == 1.0 {
+        Lifted::State(states.remove(0).1)
+    } else {
+        Lifted::Chance(
+            states
+                .into_iter()
+                .map(|(p, s)| (p, Lifted::State(s)))
+                .collect(),
+        )
+    }
 }
 
-/// Reads a method outcome as pattern states: an item becomes its state (or a Chance over its
-/// states when unrolled values split a class), several items their most likely states, and a
-/// Pending outcome the most likely state of what the partial item already holds. Equal Chance
-/// children merge.
-pub fn lift(data: &Data, pattern: &Pattern, outcome: &crate::apply::Outcome) -> Lifted {
-    use crate::apply::Outcome;
-    match outcome {
-        Outcome::Item(item) => {
-            let mut states = evaluate(data, pattern, item);
-            if states.len() == 1 && states[0].0 == 1.0 {
-                Lifted::State(states.remove(0).1)
-            } else {
-                Lifted::Chance(
-                    states
-                        .into_iter()
-                        .map(|(p, s)| (p, Lifted::State(s)))
-                        .collect(),
-                )
-            }
+/// Sorts every Choice's options canonically, so two choices with the same options in different
+/// orders compare equal.
+fn canonicalise(lifted: Lifted) -> Lifted {
+    match lifted {
+        Lifted::Choice(options) => {
+            let mut options: Vec<Lifted> = options.into_iter().map(canonicalise).collect();
+            options.sort_by_key(|l| format!("{l:?}"));
+            Lifted::Choice(options)
         }
-        Outcome::Items(items) => Lifted::Many(
-            items
-                .iter()
-                .map(|i| most_likely(data, pattern, i))
+        Lifted::Chance(children) => Lifted::Chance(
+            children
+                .into_iter()
+                .map(|(p, l)| (p, canonicalise(l)))
                 .collect(),
         ),
+        Lifted::Many(items) => Lifted::Many(items.into_iter().map(canonicalise).collect()),
+        other => other,
+    }
+}
+
+/// Reads a method outcome as pattern states: an item becomes its full distribution (or a bare
+/// state when certain), several items one distribution per item, and a Pending outcome the full
+/// distribution of what the partial item already holds. Equal Chance children merge.
+pub fn lift(data: &Data, pattern: &Pattern, outcome: &crate::apply::Outcome) -> Lifted {
+    use crate::apply::Outcome;
+    canonicalise(match outcome {
+        Outcome::Item(item) => lift_item(data, pattern, item),
+        Outcome::Items(items) => {
+            Lifted::Many(items.iter().map(|i| lift_item(data, pattern, i)).collect())
+        }
         Outcome::Destroyed => Lifted::Destroyed,
         Outcome::Choice(options) => {
             Lifted::Choice(options.iter().map(|o| lift(data, pattern, o)).collect())
         }
         Outcome::Pending { item, reason, .. } => Lifted::Pending {
             reason: reason.clone(),
-            known: most_likely(data, pattern, item),
+            known: evaluate(data, pattern, item),
         },
         Outcome::Chance(children) => {
             let mut merged: Vec<(f64, Lifted)> = Vec::with_capacity(children.len());
@@ -509,5 +829,5 @@ pub fn lift(data: &Data, pattern: &Pattern, outcome: &crate::apply::Outcome) -> 
             }
             Lifted::Chance(merged)
         }
-    }
+    })
 }
