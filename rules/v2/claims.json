@@ -1,13 +1,126 @@
 {
   "claims": [
     {
-      "id": "classes.max-sockets",
-      "statement": "Body armours and two-handed weapons (bows, staves and warstaves included) hold up to 6 sockets; helmets, gloves and boots up to 4; one-handed weapons and shields up to 3.",
-      "sourceKind": "wiki",
-      "url": "https://pathofexile.fandom.com/wiki/Guide:Frequently_asked_questions",
-      "quote": "The maximum number of sockets an item can have is determined by its type and item level. Helmets, Gloves, Boots can have up to 4 sockets; Chest armor and two-handed weapons up to 6; One-handed weapons and Shields up to 3.",
+      "id": "annul.locks",
+      "statement": "Orb of Annulment respects meta-crafting mods: it cannot remove a protected suffix, but it can remove the Suffixes Cannot Be Changed mod itself.",
+      "sourceKind": "guide",
+      "url": "https://www.vhpg.com/suffixes-cannot-be-changed/",
+      "quote": "When Suffixes Cannot Be Changed is active, the Orb of Annulment cannot remove existing protected suffixes. However, it can remove an eligible prefix, including the crafted metamod itself.",
       "patch": "3.29",
       "checked": true
+    },
+    {
+      "id": "annul.uniform",
+      "statement": "Each removable modifier is equally likely.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "There is a 50% (66% with 2 mods) chance it removes an existing prefix and a 50% (33% with 2 mods) it removes the \"suffixes cannot be changed\".",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.aspect-level",
+      "statement": "Aspect beastcrafts add the Level 20 aspect mods (Grants*AspectCrafted, not …Crafted30)",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "beast.bristle-matron",
+      "statement": "The Wild Bristle Matron adds Suffixes Cannot Be Changed only to armour with full suffixes.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "you could craft suffixes cant be change using a beastcraft IFF the item has full suffixes only and the item is an armor.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.farric",
+      "statement": "The Farric beastcrafts respect metamods (a locked side loses no mod, but the opposite side still gains one).",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
+      "quote": "Respects Metamods (e.g. if Prefixes Cannot be Changed is benchcrafted, no prefix is removed but a Suffix is still added).",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.list",
+      "statement": "The beastcrafts listed in Maxroll's Beastcrafting guide (updated for 3.26) are the beast methods' contracts.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
+      "quote": "The most important types of Beasts for crafting are:",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bench.magic-or-rare",
+      "statement": "Bench crafts need a magic or rare item",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "bench.reroll-unknown",
+      "statement": "The bench actions reroll_rarity and reroll_rare_mods exist in game data; what they do is not known",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "catalyst.amounts",
+      "statement": "Twenty catalysts take an item from 0% to 20% catalyst quality.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "catalyst.consumed",
+      "statement": "Using any currency on an item removes its catalyst quality.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "catalyst.switch-resets",
+      "statement": "A catalyst of a different type replaces the quality type and sets quality to its own first step (1%)",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "chaos.count",
+      "statement": "A Chaos Orb, and every full rare reforge modelled like it, leaves 4, 5 or 6 explicit mods in the ratio 8:3:1.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Chaos_Orb",
+      "quote": "For regular items, Chaos Orbs result in a rare item with an affix count of 4, 5, or 6 at a ratio of 8:3:1.",
+      "patch": "3.29",
+      "checked": true,
+      "value": {
+        "4": 8,
+        "5": 3,
+        "6": 1
+      }
+    },
+    {
+      "id": "chaos.ignores-locks",
+      "statement": "A Chaos Orb rerolls every non-fractured explicit, metamods included",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
     },
     {
       "id": "classes.affix-limits",
@@ -19,6 +132,15 @@
       "checked": true
     },
     {
+      "id": "classes.max-sockets",
+      "statement": "Body armours and two-handed weapons (bows, staves and warstaves included) hold up to 6 sockets; helmets, gloves and boots up to 4; one-handed weapons and shields up to 3.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Guide:Frequently_asked_questions",
+      "quote": "The maximum number of sockets an item can have is determined by its type and item level. Helmets, Gloves, Boots can have up to 4 sockets; Chest armor and two-handed weapons up to 6; One-handed weapons and Shields up to 3.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "classes.tincture-limits",
       "statement": "Tinctures follow flasks: at most 1 prefix and 1 suffix, and never rare.",
       "sourceKind": "owner",
@@ -26,6 +148,538 @@
       "quote": "",
       "patch": "3.29",
       "checked": false
+    },
+    {
+      "id": "dominance.pairs",
+      "statement": "Orb of Dominance picks the removed and the upgraded influenced modifier uniformly among ordered pairs",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "ducat.odds",
+      "statement": "Tzamoto's Ducat removes intangibility or destroys the item with equal chance",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "eldritch.dominance-ties",
+      "statement": "With equal tiers neither eldritch implicit is dominant, and eldritch orbs cannot be used",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "eldritch.ember-tier",
+      "statement": "An ember or ichor of tier N (Lesser 1 … Exceptional 4) rolls only eldritch implicits of tier N",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "eldritch.not-influenced",
+      "statement": "Eldritch implicits cannot be added to influenced items",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "essence.ilvl",
+      "statement": "An essence with item level restriction N works only on items of item level N or lower",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "exalt.both-sides",
+      "statement": "An Exalted Orb draws from the eligible prefixes and suffixes together, by weight.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Exalted_Orb",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "fracture.eligible",
+      "statement": "Crafted and veiled modifiers cannot be fractured",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "fractured.kept",
+      "statement": "Fractured modifiers are never removed or rerolled.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Fractured_item",
+      "quote": "Fractured items can have one permanent \"Fractured\" mod (up to three fractured mods for legacy items). These mods cannot be removed",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "game-text",
+      "statement": "Every currency's own description, copied from game data, states what it does",
+      "sourceKind": "game-text",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "see each method's game text",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "harvest.add-remove",
+      "statement": "The add craft adds a modifier with the desired tag, then removes a second modifier at random, which cannot be the one it just added.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/harvest-crafting-guide",
+      "quote": "This specific Harvest craft adds a modifier with the desired tag such as Chaos or Life then removes a second modifier at random (cannot be the one that was added by the craft).",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "harvest.first-draw-influenced",
+      "statement": "Harvest's influenced reforge draws its first new mod from the influenced mods only.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "harvest.list",
+      "statement": "The horticrafting options and lifeforce costs listed in Maxroll's Harvest Crafting Guide (3.24) are the Harvest methods' contracts and costs.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/harvest-crafting-guide",
+      "quote": "Listed below are the Harvest Crafts used in many crafting scenarios:",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "harvest.locks",
+      "statement": "Prefixes Cannot Be Changed is crafted to stop either of the 2 prefixes being deleted by the Remove part of the add-remove craft.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/harvest-crafting-guide",
+      "quote": "Prefixes Cannot be Changed is crafted to prevent either of the 2 Prefixes from being deleted by the \"Remove\" part of the craft while Cannot Roll Attack Modifiers is benchcrafted to prevent any Attack-tagged modifiers from being Augmented.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "harvest.reforge-locks",
+      "statement": "Harvest reforges keep the side a metamod locks.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/harvest-crafting-guide",
+      "quote": "In this case Suffixes Cannot be Changed is benchcrafted on a Lion Pelt before using a Reforge Chaos to guarantee Chaos Resistance of any tier.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "implicits.locked",
+      "statement": "A base implicit reading \"Implicit Modifiers Cannot Be Changed\" stops every method that only changes implicits.",
+      "sourceKind": "game-text",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "Implicit Modifiers Cannot Be Changed",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "magic.mod-count",
+      "statement": "An Orb of Transmutation makes a magic item with 1 or 2 explicit mods, and an Orb of Alteration rerolls a magic item to 1 or 2 mods, each count with chance 1/2 whatever the item held before.",
+      "sourceKind": "coe",
+      "url": "https://www.craftofexile.com/basics",
+      "quote": "Will turn a normal item into a magic item (with one or two random explicit mods).",
+      "patch": "3.29",
+      "checked": true,
+      "value": {
+        "1": 1,
+        "2": 1
+      }
+    },
+    {
+      "id": "metamod.cannot-roll",
+      "statement": "Cannot Roll Attack/Caster Modifiers keep mods with the `attack` / `caster` tag from being added or removed.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/metacrafting",
+      "quote": "Crafting Cannot Roll Attack Modifiers or Cannot Roll Caster Modifiers prevents mods of that specific tag from being added or removed from that item (e.g. an Attack modifier cannot be Annuled from an item if Cannot Roll Attack Modifiers is present).",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "metamod.slot",
+      "statement": "Metamods are crafted mods that sit on the side opposite the one they lock (Suffixes Cannot Be Changed is a prefix)",
+      "sourceKind": "datamined",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "In the pinned RePoE mods.json, DexMasterItemGenerationCannotChangeSuffixes has generation_type prefix and StrMasterItemGenerationCannotChangePrefixes has generation_type suffix.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "quality.amounts",
+      "statement": "Armourer's Scrap, Blacksmith's Whetstone and Glassblower's Bauble add 5% quality to a normal item, 2% to a magic item and 1% to a rare or unique item, up to 20%.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap",
+      "quote": "As with other quality-increasing currency, consuming an Armourer's Scrap improves the quality of normal items by 5%, magic items by 2%, and rare and unique items by 1%.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "recombine.base_and_item_level",
+      "statement": "A recombine's result takes the base of either input with chance 1/2, and its item level is the lower of the higher input's item level and the inputs' average plus 2.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.base_properties",
+      "statement": "The result takes the chosen base's influences and catalyst quality along with its base type; the other input's are lost.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator#Base_creation",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.cost",
+      "statement": "Each recombine costs about 100,000 Thaumaturgic Dust and 12,000 Gold, and half as much again when an input is influenced.",
+      "sourceKind": "experiment",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
+      "quote": "",
+      "patch": "3.26",
+      "checked": false,
+      "value": {
+        "dust": 100000,
+        "gold": 12000,
+        "influenced_factor": 1.5
+      }
+    },
+    {
+      "id": "recombine.count_table",
+      "statement": "How many mods a recombine keeps on one side depends on how many that side pooled from both inputs: each row (1 to 6 or more pooled) gives the chances of keeping 0, 1, 2 or 3, from the guide's Table 1 of 217 to 424 recombines per row. Rows 3 and 4 sum to 101 as published and are normalised.",
+      "sourceKind": "guide",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
+      "quote": "",
+      "patch": "3.25",
+      "checked": false,
+      "value": [
+        [
+          41,
+          59,
+          0,
+          0
+        ],
+        [
+          0,
+          67,
+          33,
+          0
+        ],
+        [
+          0,
+          39,
+          52,
+          10
+        ],
+        [
+          0,
+          11,
+          59,
+          31
+        ],
+        [
+          0,
+          0,
+          43,
+          57
+        ],
+        [
+          0,
+          0,
+          28,
+          72
+        ]
+      ]
+    },
+    {
+      "id": "recombine.count_table_alt",
+      "statement": "The wiki's rounded version of the kept-count table, kept as the alternative reading the answer's range re-solves with. Row 2 reads 66.7/33.3 in the source and is stored as 2:1.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator#Determining_the_number_of_modifier_affixes",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "value": [
+        [
+          41,
+          59,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          40,
+          50,
+          10
+        ],
+        [
+          0,
+          10,
+          60,
+          30
+        ],
+        [
+          0,
+          0,
+          43,
+          57
+        ],
+        [
+          0,
+          0,
+          30,
+          70
+        ]
+      ]
+    },
+    {
+      "id": "recombine.exclusive_weight",
+      "statement": "A pooled mod the chosen base can carry but that has no spawn weight there (an essence or bench mod) is drawn as if its weight were 1000.",
+      "sourceKind": "guide",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
+      "quote": "",
+      "patch": "3.26",
+      "checked": false,
+      "value": 1000
+    },
+    {
+      "id": "recombine.inputs",
+      "statement": "The Recombinator takes two magic or rare items of the same item class.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.non_native",
+      "statement": "A pooled mod the chosen base cannot roll, and that no essence or bench craft can place on it, still counts toward the pooled count but is never kept.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.one_prefix_one_suffix",
+      "statement": "When the two inputs pool exactly one prefix and one suffix between them, the result keeps the prefix alone, the suffix alone, or both, one third each; it is never empty. Every other pooling uses the count table.",
+      "sourceKind": "guide",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
+      "quote": "",
+      "patch": "3.25",
+      "checked": false
+    },
+    {
+      "id": "recombine.output_rarity",
+      "statement": "The result is normal with no mods, magic with at most one prefix and one suffix, and rare otherwise, whatever the inputs' rarities.",
+      "sourceKind": "coe",
+      "url": "https://www.craftofexile.com/",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.pools_and_groups",
+      "statement": "Each side pools the explicit mods of both inputs, so a mod on both counts twice; the kept mods are drawn one at a time, and a drawn mod makes every pooled mod of its group ineligible.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "recombine.selection_alpha",
+      "statement": "The kept mods are drawn one at a time among the eligible pooled mods, each with chance proportional to its spawn weight on the chosen base raised to a power alpha, so rare high tiers are kept less often than common ones.",
+      "sourceKind": "wiki",
+      "url": "https://www.poewiki.net/wiki/Recombinator#Modifier_Selection",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false,
+      "value": {
+        "plan": 1.0,
+        "low": 0.4,
+        "high": 1.6
+      }
+    },
+    {
+      "id": "reforge.guarantee-first",
+      "statement": "A reforge with a guarantee clears the sides that can change, then draws its guaranteed mod first, by normal weight, from the eligible mods carrying the guarantee on sides with room; the rest of the reforge follows",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "remove.cannot-roll-scope",
+      "statement": "Only Orb of Annulment's removal respects Cannot Roll Attack/Caster Modifiers; Orb of Scouring, Veiled Exalted Orb, Eldritch Orb of Annulment, Harvest add-remove and the Farric beastcrafts remove attack/caster mods regardless",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "scour.locks",
+      "statement": "Scouring with Suffixes Cannot Be Changed removes the prefixes (the metamod with them) and keeps the suffixes.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "From Helmet B2B: 1. Remote Crafted mods 2. Craft Suffixes cannot be changed (either benchcraft or beast) 3. Scour … Helmet A (100%): Back to original state, ready to try again.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "spawn.first-match",
+      "statement": "A mod's spawn weight is the weight of the first spawn entry whose tag the item has; generation weights are percentage multipliers found the same way",
+      "sourceKind": "datamined",
+      "url": "https://github.com/repoe-fork/RePoE/blob/master/RePoE/docs/mods.md",
+      "quote": "Defines on which items of the domain this mod can be spawned/crafted on. Only contains elements for mods that appear \"normally\", e.g. not for master crafted mods or essences. The array elements are evaluated in order, the first element with a tag (value of the `tag` property) the item in question has is taken. If the object with that tag `weight` greater than zero, the mod can spawn on the item and the weight defines the relative weight of it spawning. If it has `weight` zero, the mod can not spawn.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "tainted.odds",
+      "statement": "Tainted currencies' two outcomes are equally likely",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "unveil.blocked-by-group",
+      "statement": "It is possible to block an undesired modifier from being unveiled by crafting a modifier of the same mod group on the item before unveiling.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/crafting-resources",
+      "quote": "It is possible to block an undesired modifier from being unveiled by crafting a modifier of the same mod group on the item before unveiling.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "unveil.free",
+      "statement": "Unveiling costs nothing",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "unveil.no-jun",
+      "statement": "You are no longer required to speak with Jun to Unveil your items.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-26-secrets-of-the-atlas-patch-notes",
+      "quote": "You are no longer required to speak with Jun to Unveil your items.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "unveil.three-options",
+      "statement": "Unveiling presents three random mods and the player picks one.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Veiled_modifier",
+      "quote": "Unveiling the mod presents three random mods, and allows the player to choose which one the veiled mod becomes.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "unveil.weights",
+      "statement": "Each option's chance to appear among the three unveiled choices is its veiled spawn weight drawn three times without replacement (owner's Craft of Exile table for an Archdemon Crown: weight 1500 of 12000 gives 37.165%, 1000 gives 26.166%, 2000 gives 46.668%).",
+      "sourceKind": "owner",
+      "url": "https://www.craftofexile.com/?game=poe1&b=56&bi=8270&ob=both&v=d&a=x&l=a&lg=23&bp=y&as=1&hb=0&bld={}&im={}&ggt=%7C&ccp={}&gvc={%22limit%22:88}&gns={}",
+      "quote": "Notice the sum is more than 100 because you choose 3 per option. Also! you blocking helps your chances.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "vaal.locked-implicits",
+      "statement": "A Vaal Orb still corrupts an item whose implicits cannot be changed; its corrupted-implicit outcome then leaves the implicits as they are",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "vaal.outcomes",
+      "statement": "A Vaal Orb used on an item has four outcomes, weighted equally: nothing happens; a random corrupted implicit modifier is added; one or more sockets turn white; the item is bricked into a random rare item.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "Corrupting an Item has several different outcomes weighted equally.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "veiled-chaos.side",
+      "statement": "A Veiled Chaos Orb's veiled modifier is a prefix or a suffix with equal chance",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "veiled.exalt",
+      "statement": "The Orb removes a single modifier at random before adding a Veiled mod.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/veiled-crafting",
+      "quote": "The Orb removes a single modifier at random before adding a Veiled mod.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "veiled.one-per-item",
+      "statement": "A Veiled Exalted Orb cannot be used on an item that already has a veiled modifier",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "veiled.placeholder-removable",
+      "statement": "An unrevealed veiled modifier can be removed by annulment-type effects",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "veiled.side",
+      "statement": "When one side already holds three modifiers the veiled modifier goes to the other side; with two suffixes on a side that has room, it is a 50% chance for either.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/veiled-crafting",
+      "quote": "If there were only 2 Suffixes, it would be a 50% chance for either.",
+      "patch": "3.29",
+      "checked": true
     }
   ]
 }

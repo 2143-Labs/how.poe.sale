@@ -1,0 +1,920 @@
+{
+  "rules": [
+    {
+      "names": [
+        "Orb of Transmutation"
+      ],
+      "methods": [
+        "currency/transmutation"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Alteration"
+      ],
+      "methods": [
+        "currency/alteration"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Augmentation"
+      ],
+      "methods": [
+        "currency/augmentation"
+      ]
+    },
+    {
+      "names": [
+        "Regal Orb"
+      ],
+      "methods": [
+        "currency/regal"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Alchemy"
+      ],
+      "methods": [
+        "currency/alchemy"
+      ]
+    },
+    {
+      "names": [
+        "Chaos Orb"
+      ],
+      "methods": [
+        "currency/chaos"
+      ]
+    },
+    {
+      "names": [
+        "Exalted Orb"
+      ],
+      "methods": [
+        "currency/exalted"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Annulment"
+      ],
+      "methods": [
+        "currency/annulment"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Scouring"
+      ],
+      "methods": [
+        "currency/scouring"
+      ]
+    },
+    {
+      "names": [
+        "Divine Orb"
+      ],
+      "methods": [
+        "currency/divine"
+      ]
+    },
+    {
+      "names": [
+        "Blessed Orb"
+      ],
+      "methods": [
+        "currency/blessed"
+      ]
+    },
+    {
+      "names": [
+        "Sacred Orb"
+      ],
+      "methods": [
+        "currency/sacred"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Chance"
+      ],
+      "methods": [
+        "currency/chance"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Binding"
+      ],
+      "methods": [
+        "currency/binding"
+      ]
+    },
+    {
+      "names": [
+        "Mirror of Kalandra"
+      ],
+      "methods": [
+        "currency/mirror"
+      ]
+    },
+    {
+      "names": [
+        "Vaal Orb"
+      ],
+      "methods": [
+        "currency/vaal"
+      ]
+    },
+    {
+      "names": [
+        "Fracturing Orb"
+      ],
+      "methods": [
+        "currency/fracturing"
+      ]
+    },
+    {
+      "names": [
+        "Hinekora's Lock"
+      ],
+      "methods": [
+        "currency/hinekoras-lock"
+      ]
+    },
+    {
+      "names": [
+        "Veiled Chaos Orb"
+      ],
+      "methods": [
+        "currency/veiled-chaos"
+      ]
+    },
+    {
+      "names": [
+        "Veiled Exalted Orb"
+      ],
+      "methods": [
+        "currency/veiled-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Shaper's Exalted Orb"
+      ],
+      "methods": [
+        "currency/shapers-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Elder's Exalted Orb"
+      ],
+      "methods": [
+        "currency/elders-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Crusader's Exalted Orb"
+      ],
+      "methods": [
+        "currency/crusaders-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Redeemer's Exalted Orb"
+      ],
+      "methods": [
+        "currency/redeemers-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Hunter's Exalted Orb"
+      ],
+      "methods": [
+        "currency/hunters-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Warlord's Exalted Orb"
+      ],
+      "methods": [
+        "currency/warlords-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Awakener's Orb"
+      ],
+      "methods": [
+        "currency/awakeners-orb"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Dominance"
+      ],
+      "methods": [
+        "currency/orb-of-dominance"
+      ]
+    },
+    {
+      "names": [
+        "Lesser Eldritch Ember"
+      ],
+      "methods": [
+        "currency/lesser-eldritch-ember"
+      ]
+    },
+    {
+      "names": [
+        "Greater Eldritch Ember"
+      ],
+      "methods": [
+        "currency/greater-eldritch-ember"
+      ]
+    },
+    {
+      "names": [
+        "Grand Eldritch Ember"
+      ],
+      "methods": [
+        "currency/grand-eldritch-ember"
+      ]
+    },
+    {
+      "names": [
+        "Exceptional Eldritch Ember"
+      ],
+      "methods": [
+        "currency/exceptional-eldritch-ember"
+      ]
+    },
+    {
+      "names": [
+        "Lesser Eldritch Ichor"
+      ],
+      "methods": [
+        "currency/lesser-eldritch-ichor"
+      ]
+    },
+    {
+      "names": [
+        "Greater Eldritch Ichor"
+      ],
+      "methods": [
+        "currency/greater-eldritch-ichor"
+      ]
+    },
+    {
+      "names": [
+        "Grand Eldritch Ichor"
+      ],
+      "methods": [
+        "currency/grand-eldritch-ichor"
+      ]
+    },
+    {
+      "names": [
+        "Exceptional Eldritch Ichor"
+      ],
+      "methods": [
+        "currency/exceptional-eldritch-ichor"
+      ]
+    },
+    {
+      "names": [
+        "Eldritch Chaos Orb"
+      ],
+      "methods": [
+        "currency/eldritch-chaos"
+      ]
+    },
+    {
+      "names": [
+        "Eldritch Exalted Orb"
+      ],
+      "methods": [
+        "currency/eldritch-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Eldritch Orb of Annulment"
+      ],
+      "methods": [
+        "currency/eldritch-annulment"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Conflict"
+      ],
+      "methods": [
+        "currency/orb-of-conflict"
+      ]
+    },
+    {
+      "names": [
+        "Ukatoa's Ducat"
+      ],
+      "methods": [
+        "currency/ukatoas-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Armourer's Scrap"
+      ],
+      "methods": [
+        "currency/armourers-scrap"
+      ]
+    },
+    {
+      "names": [
+        "Blacksmith's Whetstone"
+      ],
+      "methods": [
+        "currency/blacksmiths-whetstone"
+      ]
+    },
+    {
+      "names": [
+        "Glassblower's Bauble"
+      ],
+      "methods": [
+        "currency/glassblowers-bauble"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Armourer's Scrap"
+      ],
+      "methods": [
+        "currency/tainted-armourers-scrap"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Blacksmith's Whetstone"
+      ],
+      "methods": [
+        "currency/tainted-blacksmiths-whetstone"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Catalyst"
+      ],
+      "methods": [
+        "currency/tainted-catalyst"
+      ]
+    },
+    {
+      "names": [
+        "Jeweller's Orb"
+      ],
+      "methods": [
+        "currency/jewellers-orb"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Fusing"
+      ],
+      "methods": [
+        "currency/orb-of-fusing"
+      ]
+    },
+    {
+      "names": [
+        "Chromatic Orb"
+      ],
+      "methods": [
+        "currency/chromatic-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Jeweller's Orb"
+      ],
+      "methods": [
+        "currency/tainted-jewellers-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Orb of Fusing"
+      ],
+      "methods": [
+        "currency/tainted-orb-of-fusing"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Chromatic Orb"
+      ],
+      "methods": [
+        "currency/tainted-chromatic-orb"
+      ]
+    },
+    {
+      "names": [
+        "Enchant"
+      ],
+      "methods": [
+        "currency/enchant"
+      ]
+    },
+    {
+      "names": [
+        "Tempering Orb"
+      ],
+      "methods": [
+        "currency/tempering-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tailoring Orb"
+      ],
+      "methods": [
+        "currency/tailoring-orb"
+      ]
+    },
+    {
+      "names": [
+        "Enkindling Orb"
+      ],
+      "methods": [
+        "currency/enkindling-orb"
+      ]
+    },
+    {
+      "names": [
+        "Instilling Orb"
+      ],
+      "methods": [
+        "currency/instilling-orb"
+      ]
+    },
+    {
+      "names": [
+        "Ancient Orb"
+      ],
+      "methods": [
+        "currency/ancient-orb"
+      ]
+    },
+    {
+      "names": [
+        "Coin of Desecration"
+      ],
+      "methods": [
+        "currency/coin-of-desecration"
+      ]
+    },
+    {
+      "names": [
+        "Coin of Restoration"
+      ],
+      "methods": [
+        "currency/coin-of-restoration"
+      ]
+    },
+    {
+      "names": [
+        "Djinn-Touched Vaal Orb"
+      ],
+      "methods": [
+        "currency/djinn-touched-vaal-orb"
+      ]
+    },
+    {
+      "names": [
+        "Volatile Vaal Orb"
+      ],
+      "methods": [
+        "currency/volatile-vaal-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Mythic Orb"
+      ],
+      "methods": [
+        "currency/tainted-mythic-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Chaos Orb"
+      ],
+      "methods": [
+        "currency/tainted-chaos-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Exalted Orb"
+      ],
+      "methods": [
+        "currency/tainted-exalted-orb"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Divine Teardrop"
+      ],
+      "methods": [
+        "currency/tainted-divine-teardrop"
+      ]
+    },
+    {
+      "names": [
+        "Cyaxan's Ducat"
+      ],
+      "methods": [
+        "currency/cyaxans-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Rotmother's Ducat"
+      ],
+      "methods": [
+        "currency/rotmothers-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Brinehook's Ducat"
+      ],
+      "methods": [
+        "currency/brinehooks-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Merrick's Ducat"
+      ],
+      "methods": [
+        "currency/merricks-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Tzamoto's Ducat"
+      ],
+      "methods": [
+        "currency/tzamotos-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Kishara's Ducat"
+      ],
+      "methods": [
+        "currency/kisharas-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Katakohi's Ducat"
+      ],
+      "methods": [
+        "currency/katakohis-ducat"
+      ]
+    },
+    {
+      "names": [
+        "The Genteel's Ducat"
+      ],
+      "methods": [
+        "currency/genteels-ducat"
+      ]
+    },
+    {
+      "names": [
+        "Reflecting Mist"
+      ],
+      "methods": [
+        "currency/reflecting-mist"
+      ]
+    },
+    {
+      "names": [
+        "Fading Reflecting Mist"
+      ],
+      "methods": [
+        "currency/fading-reflecting-mist"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Remembrance"
+      ],
+      "methods": [
+        "currency/orb-of-remembrance"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Unravelling"
+      ],
+      "methods": [
+        "currency/orb-of-unravelling"
+      ]
+    },
+    {
+      "names": [
+        "Magmatic Ore"
+      ],
+      "methods": [
+        "currency/magmatic-ore"
+      ]
+    },
+    {
+      "names": [
+        "Foulborn Exalted Orb"
+      ],
+      "methods": [
+        "currency/foulborn-exalted"
+      ]
+    },
+    {
+      "names": [
+        "Foulborn Orb of Augmentation"
+      ],
+      "methods": [
+        "currency/foulborn-augmentation"
+      ]
+    },
+    {
+      "names": [
+        "Foulborn Regal Orb"
+      ],
+      "methods": [
+        "currency/foulborn-regal"
+      ]
+    },
+    {
+      "names": [
+        "Armour Recombinator"
+      ],
+      "methods": [
+        "currency/armour-recombinator"
+      ]
+    },
+    {
+      "names": [
+        "Weapon Recombinator"
+      ],
+      "methods": [
+        "currency/weapon-recombinator"
+      ]
+    },
+    {
+      "names": [
+        "Jewellery Recombinator"
+      ],
+      "methods": [
+        "currency/jewellery-recombinator"
+      ]
+    },
+    {
+      "pattern": " Oil$",
+      "methods": [
+        "currency/anoint"
+      ],
+      "note": "Every oil is the same anointment method on an amulet."
+    },
+    {
+      "pattern": " Rune$",
+      "methods": [
+        "currency/runesmith"
+      ],
+      "note": "All ten are Kalguuran runes (metadata ids KalguuranRune1-10)."
+    },
+    {
+      "pattern": "Essence of ",
+      "family": "essence",
+      "note": "Every currency whose name contains 'Essence of' has an essences.json entry."
+    },
+    {
+      "names": [
+        "Abrasive Catalyst",
+        "Accelerating Catalyst",
+        "Dextral Catalyst",
+        "Fertile Catalyst",
+        "Imbued Catalyst",
+        "Intrinsic Catalyst",
+        "Noxious Catalyst",
+        "Prismatic Catalyst",
+        "Sinistral Catalyst",
+        "Tempering Catalyst",
+        "Turbulent Catalyst",
+        "Unstable Catalyst"
+      ],
+      "family": "catalyst",
+      "note": "The twelve currencies whose description starts 'Adds quality that enhances'; Tainted Catalyst has its own method."
+    },
+    {
+      "pattern": "^$|^\\[DNT|UNUSED",
+      "excluded": "placeholder",
+      "note": "Empty names are the RandomFossilOutcome placeholders."
+    },
+    {
+      "pattern": "(Shard|Splinter|Fragment)$|^Splinter of ",
+      "excluded": "shard"
+    },
+    {
+      "pattern": "(Fossil|Resonator|Crystallised Lifeforce)$",
+      "excluded": "cost-only",
+      "note": "Fossils, resonators and lifeforce are the costs of the fossil and Harvest methods."
+    },
+    {
+      "pattern": "Delirium Orb$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Sextant$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Astrolabe$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Scouting Report$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Chisel",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Cartographer's Seal$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Compass$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "^Memory of ",
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "Scarab$",
+      "excluded": "maps-atlas"
+    },
+    {
+      "names": [
+        "Orb of Horizons",
+        "Harbinger's Orb",
+        "Unshaping Orb",
+        "Scrying Orb",
+        "Orb of Unmaking",
+        "Orb of Intention",
+        "Valdo's Puzzle Box"
+      ],
+      "excluded": "maps-atlas"
+    },
+    {
+      "pattern": "^Runegraft of ",
+      "excluded": "other-item-class",
+      "note": "Runegrafts modify Grafts, an item class out of scope."
+    },
+    {
+      "pattern": "Gem",
+      "excluded": "gems",
+      "note": "Gemcutter's Prism, Gemcutters Lens and the Uncarved Gemstone token."
+    },
+    {
+      "names": [
+        "Facetor's Lens",
+        "Prime Regrading Lens",
+        "Secondary Regrading Lens",
+        "Coin of Knowledge",
+        "Coin of Power",
+        "Coin of Skill"
+      ],
+      "excluded": "gems"
+    },
+    {
+      "pattern": "Tattoo",
+      "excluded": "other-item-class"
+    },
+    {
+      "pattern": " Net$|Bestiary Orb|Coffin$|^Remnant of Corruption$",
+      "excluded": "other-item-class",
+      "note": "Beast nets, Bestiary Orbs, coffins and Remnant of Corruption."
+    },
+    {
+      "pattern": "Implant$",
+      "excluded": "other-item-class",
+      "note": "Graft implants."
+    },
+    {
+      "pattern": "Power Core$",
+      "excluded": "other-item-class",
+      "note": "Sentinel power cores."
+    },
+    {
+      "pattern": "Engineer's Orb$",
+      "excluded": "other-item-class",
+      "note": "Strongbox quality currencies."
+    },
+    {
+      "pattern": "Enshrouding Crystal$",
+      "excluded": "other-item-class",
+      "note": "Specific-unique upgrades."
+    },
+    {
+      "pattern": "^Blessing of ",
+      "excluded": "other-item-class",
+      "note": "Breachstone upgrades."
+    },
+    {
+      "names": [
+        "Rogue's Marker"
+      ],
+      "excluded": "other-item-class",
+      "note": "Heist currency; creates a portal to the Rogue Harbour."
+    },
+    {
+      "pattern": "^Lycia's Invocation of ",
+      "excluded": "other-item-class",
+      "note": "Sanctified Relic upgrades."
+    },
+    {
+      "names": [
+        "Deregulation Scroll",
+        "Electroshock Scroll",
+        "Fragmentation Scroll",
+        "Haemocombustion Scroll",
+        "Specularity Scroll",
+        "Time-light Scroll",
+        "Flesh of Xesht",
+        "Refracting Fog",
+        "Telesia's Ducat"
+      ],
+      "excluded": "other-item-class",
+      "note": "Specific-unique upgrades, a cluster jewel enchant reroll and a Chart reroll."
+    },
+    {
+      "pattern": "^Vial of ",
+      "excluded": "not-used-on-items"
+    },
+    {
+      "pattern": "^Omen of ",
+      "excluded": "not-used-on-items"
+    },
+    {
+      "pattern": " Wisps$",
+      "excluded": "not-used-on-items"
+    },
+    {
+      "pattern": "Artifact$",
+      "excluded": "not-used-on-items",
+      "note": "Expedition vendor artifacts."
+    },
+    {
+      "names": [
+        "Portal Scroll",
+        "Scroll of Wisdom",
+        "Perandus Coin",
+        "Silver Coin",
+        "Exotic Coinage",
+        "Astragali",
+        "Scrap Metal",
+        "Burial Medallion",
+        "Dead Man's Sulphur",
+        "Message in a Bottle",
+        "Prophecy",
+        "Ritual Vessel",
+        "Stacked Deck",
+        "Red Packet",
+        "Albino Crab Claw",
+        "Albino Rhoa Feather",
+        "Broken Mirror of Kalandra",
+        "Oil Extractor",
+        "The Changeling's Ducat",
+        "Orb of Regret",
+        "Crystalline Geode",
+        "Igneous Geode",
+        "Tainted Blessing",
+        "Crystallised Rancour"
+      ],
+      "excluded": "not-used-on-items",
+      "note": "Tainted Blessing needs the Divine Font service, which is an NPC service and not a method in this pass."
+    }
+  ]
+}

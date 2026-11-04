@@ -2,6 +2,7 @@
 //! `rules/v2/`.
 
 mod bundle;
+mod methods;
 mod raw;
 
 use std::collections::BTreeMap;
@@ -53,7 +54,8 @@ fn main() -> anyhow::Result<()> {
             if !raw.is_dir() {
                 bail!("--raw {} is not a directory", raw.display());
             }
-            let bundle = bundle::build(&raw, &rules)?;
+            let mut bundle = bundle::build(&raw, &rules)?;
+            methods::attach(&mut bundle, &rules)?;
             let text = serde_json::to_string(&bundle).context("serialising bundle")?;
             // The written bundle must load through the same code the library uses.
             poe1_v2::data::Data::from_json(&text).context("the built bundle does not load")?;
