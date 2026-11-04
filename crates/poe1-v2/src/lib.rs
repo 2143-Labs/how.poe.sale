@@ -8,6 +8,7 @@ pub mod data;
 pub mod item;
 pub mod method;
 pub mod pattern;
+pub mod text;
 
 static DATA: LazyLock<data::Data> = LazyLock::new(load_data);
 

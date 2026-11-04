@@ -1,0 +1,26 @@
+Item Class: Amulets
+Rarity: Rare
+Miracle Noose
+Simplex Amulet
+--------
+Quality (Attribute Modifiers): +20% (augmented)
+[Intangibility|Intangibility]: 6%
+--------
+Requirements:
+Level: 64
+--------
+Item Level: 84
+--------
+Allocates Force of Darkness (enchant)
+--------
+-2 Prefix Modifiers allowed
+-1 Suffix Modifier allowed
+Implicit Modifiers Cannot Be Changed
+100% increased Explicit Modifier magnitudes
+--------
+19% increased Attributes
+26% increased Strength
+2% increased Damage per 15 Strength
+--------
+Shaper Item
+Warlord Item
