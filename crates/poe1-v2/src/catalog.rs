@@ -475,48 +475,120 @@ fn methods_md(data: &Data, fx: &Fixtures) -> String {
             family_title(family),
             methods.len()
         ));
-        for m in methods {
+        let (table, full): (Vec<&Method>, Vec<&Method>) = methods
+            .into_iter()
+            .partition(|m| standard_bench_add(m).is_some());
+        if !table.is_empty() {
             out.push(String::new());
-            out.push(format!("### {} — `{}`", m.name, m.id));
+            out.push(bench_table(data, &table));
+        }
+        for m in full {
             out.push(String::new());
-            let mut lines = vec![format!("- Cost: {}", cost_text(m))];
-            if let Some(t) = &m.game_text {
-                lines.push(format!("- Game text: {}", t.replace('\n', " / ")));
-            }
-            if m.inputs > 1 {
-                lines.push(format!("- Takes {} items.", m.inputs));
-            }
-            let mut needs: Vec<String> =
-                m.requires.iter().map(|r| require_phrase(data, r)).collect();
-            needs.extend(m.pair.iter().map(|p| match p {
-                PairRequire::SameClass => "both items of the same class".to_string(),
-                PairRequire::DifferentSingleInfluence => {
-                    "one influence on each item, and different ones".to_string()
-                }
-            }));
-            lines.push(format!(
-                "- Needs: {}",
-                if needs.is_empty() {
-                    "nothing".to_string()
-                } else {
-                    needs.join("; ")
-                }
-            ));
-            let does: Vec<String> = m.ops.iter().map(|o| op_sentence(data, o)).collect();
-            lines.push(format!("- Does: {}.", does.join("; then ")));
-            if let Some(ex) = &m.example {
-                let line = match fx.items.get(ex) {
-                    Some((_, item)) => summary(data, m, item),
-                    None => format!("unknown fixture {ex}"),
-                };
-                lines.push(format!("- On `{ex}`: {line}"));
-            }
-            lines.push(format!("- Sources: {}", sources(data, m)));
-            out.extend(lines);
+            out.extend(method_entry(data, fx, m));
         }
     }
     out.push(String::new());
     out.join("\n")
+}
+
+const BENCH_ADD_CLAIMS: [&str; 2] = ["bench.magic-or-rare", "metamod.slot"];
+
+/// A generated bench craft that adds one modifier with the standard requirements: its mod id,
+/// side and classes. Those print as one table row instead of a full entry.
+fn standard_bench_add(m: &Method) -> Option<(&str, SideReq, &[String])> {
+    let [Op::AddMod { r#mod }] = m.ops.as_slice() else {
+        return None;
+    };
+    let [
+        Require::Rarity { any_of },
+        Require::NotCorrupted,
+        Require::NotMirrored,
+        Require::Class { any_of: classes },
+        Require::OpenAffix { side },
+        Require::CraftedRoom,
+        Require::GroupFree { r#mod: group_mod },
+    ] = m.requires.as_slice()
+    else {
+        return None;
+    };
+    let standard = m.family == Family::Bench
+        && any_of == &[crate::data::Rarity::Magic, crate::data::Rarity::Rare]
+        && group_mod == r#mod
+        && m.claims == BENCH_ADD_CLAIMS
+        && m.inputs == 1
+        && m.pair.is_empty()
+        && m.example.is_none()
+        && m.game_text.is_none();
+    standard.then_some((r#mod.as_str(), *side, classes.as_slice()))
+}
+
+fn bench_table(data: &Data, methods: &[&Method]) -> String {
+    let first = methods[0];
+    let mut out = vec![
+        format!(
+            "Each bench craft in this table needs: {}; not corrupted; not mirrored; one of the classes listed; an open affix on the modifier's side; {}; no modifier of the added one's group yet. It adds that modifier. Sources: {}.",
+            require_phrase(data, &first.requires[0]),
+            require_phrase(data, &Require::CraftedRoom),
+            sources(data, first)
+        ),
+        String::new(),
+        "|Method|Adds|Side|Cost|Classes|".to_string(),
+        "|---|---|---|---|---|".to_string(),
+    ];
+    for m in methods {
+        let Some((id, side, classes)) = standard_bench_add(m) else {
+            continue;
+        };
+        out.push(format!(
+            "|`{}`|{}|{}|{}|{}|",
+            m.id,
+            mod_line(data, id).replace('|', "\\|"),
+            side_phrase(side),
+            cost_text(m),
+            class_list(data, classes)
+        ));
+    }
+    out.join("\n")
+}
+
+fn method_entry(data: &Data, fx: &Fixtures, m: &Method) -> Vec<String> {
+    let mut lines = vec![
+        format!("### {} — `{}`", m.name, m.id),
+        String::new(),
+        format!("- Cost: {}", cost_text(m)),
+    ];
+    if let Some(t) = &m.game_text {
+        lines.push(format!("- Game text: {}", t.replace('\n', " / ")));
+    }
+    if m.inputs > 1 {
+        lines.push(format!("- Takes {} items.", m.inputs));
+    }
+    let mut needs: Vec<String> = m.requires.iter().map(|r| require_phrase(data, r)).collect();
+    needs.extend(m.pair.iter().map(|p| match p {
+        PairRequire::SameClass => "both items of the same class".to_string(),
+        PairRequire::DifferentSingleInfluence => {
+            "one influence on each item, and different ones".to_string()
+        }
+    }));
+    lines.push(format!(
+        "- Needs: {}",
+        if needs.is_empty() {
+            "nothing".to_string()
+        } else {
+            needs.join("; ")
+        }
+    ));
+    let does: Vec<String> = m.ops.iter().map(|o| op_sentence(data, o)).collect();
+    lines.push(format!("- Does: {}.", does.join("; then ")));
+    if let Some(ex) = &m.example {
+        let line = match fx.items.get(ex) {
+            Some((_, item)) => summary(data, m, item),
+            None => format!("unknown fixture {ex}"),
+        };
+        lines.push(format!("- On `{ex}`: {line}"));
+    }
+    lines.push(format!("- Sources: {}", sources(data, m)));
+    lines
 }
 
 /// The worked example for a claim: the first method (by id) citing it that names an example
