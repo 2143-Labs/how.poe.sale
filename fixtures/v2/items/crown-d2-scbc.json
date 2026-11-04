@@ -1,0 +1,60 @@
+{
+  "base": "Archdemon Crown",
+  "itemLevel": 87,
+  "rarity": "rare",
+  "influences": [
+    "shaper"
+  ],
+  "quality": 20,
+  "implicits": [
+    {
+      "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+      "values": [
+        2,
+        -2
+      ]
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "IncreasedLife9",
+      "values": [
+        137
+      ]
+    },
+    {
+      "id": "JunMasterVeiledPhysicalDamageReductionDuringFocus_",
+      "values": [
+        14,
+        1
+      ]
+    },
+    {
+      "id": "DexMasterItemGenerationCannotChangeSuffixes",
+      "values": [
+        1
+      ]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "IncreasedChillEffectSupportedUber2",
+      "values": [
+        15,
+        18
+      ]
+    },
+    {
+      "id": "SocketedGemsDealMoreElementalDamageEssence1",
+      "values": [
+        30
+      ]
+    },
+    {
+      "id": "SocketedSpellCriticalStrikeChanceUber3",
+      "values": [
+        300
+      ]
+    }
+  ]
+}

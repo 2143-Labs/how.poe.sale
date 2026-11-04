@@ -1,0 +1,10 @@
+{
+  "base": "Simplex Amulet",
+  "itemLevel": 84,
+  "rarity": "normal",
+  "implicits": [
+    {
+      "id": "MaxPrefixMaxSuffixModEffectImplicitE2"
+    }
+  ]
+}

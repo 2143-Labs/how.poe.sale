@@ -1,0 +1,13 @@
+{
+  "base": "Slink Boots",
+  "itemLevel": 84,
+  "rarity": "rare",
+  "implicits": [
+    {
+      "id": "MovementVelocityEldritchImplicit2"
+    },
+    {
+      "id": "LifeRegenerationRateEldritchImplicit1"
+    }
+  ]
+}

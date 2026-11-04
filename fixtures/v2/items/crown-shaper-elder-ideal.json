@@ -1,0 +1,62 @@
+{
+  "base": "Archdemon Crown",
+  "itemLevel": 87,
+  "rarity": "rare",
+  "influences": [
+    "shaper",
+    "elder"
+  ],
+  "quality": 20,
+  "implicits": [
+    {
+      "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+      "values": [
+        2,
+        -2
+      ]
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "JunMasterVeiledSkillAreaOfEffectPercentAndAreaOfEffectGemLevel",
+      "values": [
+        9,
+        2
+      ]
+    },
+    {
+      "id": "AreaDamageSupportedUber2_",
+      "values": [
+        20,
+        18
+      ]
+    },
+    {
+      "id": "EinharMasterIncreasedLife4",
+      "values": [
+        65
+      ]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "IncreasedChillEffectSupportedUber2",
+      "values": [
+        15,
+        18
+      ]
+    },
+    {
+      "id": "SocketedGemsDealMoreElementalDamageEssence1",
+      "values": [
+        30
+      ]
+    },
+    {
+      "id": "SocketedSpellCriticalStrikeChanceUber3",
+      "values": [
+        300
+      ]
+    }
+  ]
+}
