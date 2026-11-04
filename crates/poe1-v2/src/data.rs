@@ -261,8 +261,19 @@ pub struct BaseData {
     pub suffix_delta: i8,
     /// `local_explicit_mod_effect_+%` of the base implicits (Simplex Amulet: 100).
     pub explicit_effect: i16,
+    /// `local_prefix_mod_effect_+%` of the base implicits: prefix magnitudes only (Cogwork Ring
+    /// stores 0 here and 25 in `suffix_effect`).
+    #[serde(default)]
+    pub prefix_effect: i16,
+    /// `local_suffix_mod_effect_+%` of the base implicits.
+    #[serde(default)]
+    pub suffix_effect: i16,
     /// A base implicit carries `local_implicit_mod_cannot_be_changed`.
     pub implicits_locked: bool,
+    /// `local_item_can_roll_all_influences`: the base can carry every influence at once
+    /// (Astrolabe Amulet).
+    #[serde(default)]
+    pub all_influences: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -1,0 +1,19 @@
+Item Class: Utility Flasks
+Rarity: Magic
+Chemist's Quicksilver Flask of the Salamander
+--------
+Lasts 6.00 Seconds
+Consumes 30 of 60 Charges on use
+Currently has 60 Charges
+--------
+Requirements:
+Level: 40
+--------
+Item Level: 84
+--------
+25% increased Charge Recovery
+Immunity to Ignite during Effect
+Removes Burning on use
+47% less Duration
+--------
+Right click to drink. Can only hold charges while in belt. Refills as you kill monsters.

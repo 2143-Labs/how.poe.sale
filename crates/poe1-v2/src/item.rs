@@ -2,7 +2,11 @@
 //! enchantments, prefixes and suffixes (with rolled values or unrolled), sockets and every flag
 //! crafting reads (corrupted, mirrored, split, synthesised, foreseen, Memory Strands,
 //! intangibility, imprint). `ItemSpec` is the serde form with string ids used by fixtures and
-//! the wire; `Item` is the index form the engine uses. `Item::from_spec` validates.
+//! the wire; `Item` is the index form the engine uses. `Item::from_spec` looks the spec up and
+//! `Item::validate` checks the whole item: what its class allows (affix counts, sockets,
+//! influence, catalyst quality) and what its modifiers keep (one group each, their base's domain,
+//! the crafted limit). `Item::canonical` puts any item in one form, rolls filled in where the mod
+//! has a single one.
 
 use std::collections::BTreeSet;
 
@@ -225,8 +229,12 @@ pub enum ItemError {
     UnknownCatalyst(String),
     #[error("cannot read sockets \"{0}\"")]
     BadSockets(String),
-    #[error("an item holds at most one veiled modifier")]
-    TwoVeiled,
+    #[error("modifier \"{id}\" cannot be on a {class}")]
+    WrongDomain { id: String, class: String },
+    #[error("this item class cannot be influenced")]
+    NotInfluenceable,
+    #[error("a {class} holds at most {n} sockets")]
+    TooManySockets { class: String, n: u8 },
 }
 
 /// Parses socket notation; `None` when it is not `^([RGBWA](-[RGBWA])*)?( [RGBWA](-[RGBWA])*)*$`.
@@ -301,9 +309,21 @@ pub fn display(v: i32, effect: i16) -> i32 {
     (i64::from(v) * (100 + i64::from(effect)) / 100) as i32
 }
 
+/// A mod whose every stat is fixed has a single roll: store it, so `None` and the value compare
+/// equal.
+fn fill_fixed(data: &Data, roll: &mut Roll) {
+    if roll.values.is_some() {
+        return;
+    }
+    let md = data.mod_at(roll.m);
+    if !md.stats.is_empty() && md.stats.iter().all(|s| s.min == s.max) {
+        roll.values = Some(md.stats.iter().map(|s| s.min).collect());
+    }
+}
+
 impl Item {
     pub fn from_spec(data: &Data, spec: &ItemSpec) -> Result<Item, ItemError> {
-        // 1. base
+        // The base, by metadata id or by a name only one base has.
         let base = match data.base_by_id(&spec.base) {
             Some(b) => b,
             None => match data.bases_named(&spec.base) {
@@ -317,13 +337,13 @@ impl Item {
                 }
             },
         };
-        // 2. class: every bundle class is in scope; a base whose class the bundle lacks is not.
+        // Every bundle class is in scope; a base whose class the bundle lacks is not.
         let class_index = data.base_at(base).class;
-        let Some(class) = data.classes.get(class_index as usize) else {
+        if data.classes.get(class_index as usize).is_none() {
             return Err(ItemError::ClassNotCovered(class_index.to_string()));
-        };
+        }
 
-        // 3. ids and places
+        // Every mod id, in the place it can sit.
         let resolve = |id: &str, place: Place| -> Result<u32, ItemError> {
             let m = data
                 .mod_by_id(id)
@@ -373,7 +393,7 @@ impl Item {
                 fractured,
             });
         }
-        // 4. values
+        // Rolled values sit inside the mod's own ranges.
         for e in &entries {
             if let Some(v) = e.values {
                 let stats = &data.mod_at(e.m).stats;
@@ -426,65 +446,99 @@ impl Item {
             }
         }
 
-        // 5. normal items
-        if item.rarity == Rarity::Normal && !(item.prefixes.is_empty() && item.suffixes.is_empty())
+        // Catalyst quality names a catalyst the bundle knows.
+        if let Some(name) = &spec.catalyst {
+            item.catalyst = Some(
+                data.catalyst_by_name(name)
+                    .ok_or_else(|| ItemError::UnknownCatalyst(name.clone()))?,
+            );
+        }
+        // Sockets, read from the item's notation.
+        item.sockets = parse_sockets(&spec.sockets)
+            .ok_or_else(|| ItemError::BadSockets(spec.sockets.clone()))?;
+        if let Some(imprint) = &spec.imprint {
+            item.imprint = Some(Box::new(Item::from_spec(data, imprint)?));
+        }
+        item.validate(data)?;
+        item.canonical(data);
+        Ok(item)
+    }
+
+    /// The post-lookup checks on a whole item: the shape a class allows and the shape a mod
+    /// keeps. `from_spec` runs it, and so can any item the engine produced.
+    pub fn validate(&self, data: &Data) -> Result<(), ItemError> {
+        let class = self.class(data);
+        let base = data.base_at(self.base);
+        // Normal items hold no explicit modifiers.
+        if self.rarity == Rarity::Normal && !(self.prefixes.is_empty() && self.suffixes.is_empty())
         {
             return Err(ItemError::NormalExplicits);
         }
-        // 6. counts
-        let limits = item.limits(data);
+        // Affix counts.
+        let limits = self.limits(data);
         for side in Side::BOTH {
-            if item.affixes(side).len() > limits[side.index()] as usize {
+            if self.affixes(side).len() > limits[side.index()] as usize {
                 return Err(ItemError::TooMany {
                     sides: match side {
                         Side::Prefix => "prefixes",
                         Side::Suffix => "suffixes",
                     },
-                    rarity: item.rarity.name(),
+                    rarity: self.rarity.name(),
                     class: class.id.clone(),
                 });
             }
         }
-        // 7. groups
+        // Groups: two explicits never share one.
         let mut seen = BTreeSet::new();
-        for a in item.explicits() {
+        for a in self.explicits() {
             for &g in &data.mod_at(a.roll.m).groups {
                 if !seen.insert(g) {
                     return Err(ItemError::SharedGroup(data.group(g).to_string()));
                 }
             }
         }
-        // 8. crafted
-        if item.crafted_count(data) > item.crafted_limit(data) {
+        // Crafted count.
+        if self.crafted_count(data) > self.crafted_limit(data) {
             return Err(ItemError::TooManyCrafted);
         }
-        // 9. catalyst
-        if let Some(name) = &spec.catalyst {
-            if class.category != Category::Jewellery {
-                return Err(ItemError::CatalystNotJewellery);
+        // Catalyst quality is jewellery-only.
+        if self.catalyst.is_some() && class.category != Category::Jewellery {
+            return Err(ItemError::CatalystNotJewellery);
+        }
+        // A class holds as many sockets as its base gives it.
+        let sockets: usize = self.sockets.iter().map(Vec::len).sum();
+        if sockets > usize::from(class.max_sockets) {
+            return Err(ItemError::TooManySockets {
+                class: class.id.clone(),
+                n: class.max_sockets,
+            });
+        }
+        // Influence only exists on classes that list influence tags.
+        if self.influences != 0 && class.influence_tags.is_none() {
+            return Err(ItemError::NotInfluenceable);
+        }
+        // A mod sits on the domain its base belongs to; bench, delve, veiled and the other
+        // source-specific domains carry no item domain of their own.
+        let domain = base.domain.repoe();
+        let rolls = self
+            .implicits
+            .iter()
+            .chain(&self.enchants)
+            .chain(self.explicits().map(|a| &a.roll));
+        for roll in rolls {
+            let md = data.mod_at(roll.m);
+            let own = match md.domain.as_str() {
+                "item" | "misc" | "abyss_jewel" | "flask" | "tincture" => md.domain.as_str(),
+                _ => continue,
+            };
+            if own != domain {
+                return Err(ItemError::WrongDomain {
+                    id: md.id.clone(),
+                    class: class.id.clone(),
+                });
             }
-            item.catalyst = Some(
-                data.catalyst_by_name(name)
-                    .ok_or_else(|| ItemError::UnknownCatalyst(name.clone()))?,
-            );
         }
-        // 10. sockets
-        item.sockets = parse_sockets(&spec.sockets)
-            .ok_or_else(|| ItemError::BadSockets(spec.sockets.clone()))?;
-        // 11. veiled
-        if item
-            .explicits()
-            .filter(|a| data.mod_at(a.roll.m).kind == ModKind::Veiled)
-            .count()
-            > 1
-        {
-            return Err(ItemError::TwoVeiled);
-        }
-        if let Some(imprint) = &spec.imprint {
-            item.imprint = Some(Box::new(Item::from_spec(data, imprint)?));
-        }
-        item.canonical();
-        Ok(item)
+        Ok(())
     }
 
     pub fn to_spec(&self, data: &Data) -> ItemSpec {
@@ -583,37 +637,49 @@ impl Item {
         ]
     }
 
-    /// The magnitude bonus (percent) a mod's values show with: 0 for implicits; for explicits
-    /// the base's explicit effect plus the catalyst quality when the catalyst enhances the mod.
+    /// The magnitude bonus (percent) a mod's values show with. A catalyst enhances every mod it
+    /// tags, implicits included, and a side catalyst enhances its own side. An explicit also
+    /// carries the base's own magnitudes: its explicit effect and the one for its side.
     pub fn effect(&self, data: &Data, roll: &Roll, implicit: bool) -> i16 {
-        if implicit {
-            return 0;
-        }
-        let base = data.base_at(self.base).explicit_effect;
+        let md = data.mod_at(roll.m);
         let quality = match self.catalyst {
             Some(c) => {
                 let cat = &data.catalysts[c as usize];
-                let m = data.mod_at(roll.m);
-                let applies = cat.side.is_some_and(|s| m.side == Some(s))
-                    || m.tags.iter().any(|t| cat.tags.contains(t));
+                let applies = md.tags.iter().any(|t| cat.tags.contains(t))
+                    || (!implicit && cat.side.is_some_and(|s| md.side == Some(s)));
                 if applies { i16::from(self.quality) } else { 0 }
             }
             None => 0,
         };
-        base + quality
+        if implicit {
+            return quality;
+        }
+        let base = data.base_at(self.base);
+        let side = match md.side {
+            Some(Side::Prefix) => base.prefix_effect,
+            Some(Side::Suffix) => base.suffix_effect,
+            None => 0,
+        };
+        base.explicit_effect + side + quality
     }
 
     pub fn open(&self, data: &Data, side: Side) -> u8 {
         self.limits(data)[side.index()].saturating_sub(self.affixes(side).len() as u8)
     }
 
-    /// Sorted, deduped: base tags, influence tags, and every mod's `adds_tags`.
+    /// Sorted, deduped: base tags, influence tags, and every mod's `adds_tags`. A base that can
+    /// roll every influence carries all six influence tags whatever it currently holds.
     pub fn tags(&self, data: &Data) -> Vec<u16> {
-        let mut out = data.base_at(self.base).tags.clone();
+        let base = data.base_at(self.base);
+        let mut out = base.tags.clone();
         if let Some(inf) = self.class(data).influence_tags {
-            for i in Influence::ALL {
-                if self.has_influence(i) {
-                    out.push(inf[i as usize]);
+            if base.all_influences {
+                out.extend(inf);
+            } else {
+                for i in Influence::ALL {
+                    if self.has_influence(i) {
+                        out.push(inf[i as usize]);
+                    }
                 }
             }
         }
@@ -708,14 +774,22 @@ impl Item {
             .count()
     }
 
-    /// Sorts every mod list by (mod index, values, fractured).
-    pub fn canonical(&mut self) {
+    /// The one form of an item: every list sorted by (mod index, values, fractured), and every
+    /// mod whose stats are all fixed carrying that roll, so a crafted mod and a pasted one are
+    /// equal.
+    pub fn canonical(&mut self, data: &Data) {
+        for roll in self.implicits.iter_mut().chain(self.enchants.iter_mut()) {
+            fill_fixed(data, roll);
+        }
+        for affix in self.prefixes.iter_mut().chain(self.suffixes.iter_mut()) {
+            fill_fixed(data, &mut affix.roll);
+        }
         self.prefixes.sort();
         self.suffixes.sort();
         self.implicits.sort();
         self.enchants.sort();
         if let Some(imprint) = &mut self.imprint {
-            imprint.canonical();
+            imprint.canonical(data);
         }
     }
 }

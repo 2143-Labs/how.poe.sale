@@ -1,0 +1,21 @@
+Item Class: Rings
+Rarity: Rare
+Brood Whorl
+Synthesised Paua Ring
+--------
+Quality (Attribute Modifiers): +20% (augmented)
+--------
+Requirements:
+Level: 65
+--------
+Item Level: 83
+--------
+7% increased Dexterity (implicit)
+--------
++68 to Dexterity
+Adds 12 to 19 Fire Damage to Attacks
++35% to Chaos Resistance
++18% to Cold and Chaos Resistances
+Non-Channelling Skills have -7 to Total Mana Cost (crafted)
+--------
+Synthesised Item

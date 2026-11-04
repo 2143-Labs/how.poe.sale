@@ -1,0 +1,12 @@
+Item Class: Jewel
+Rarity: Rare
+Luminous Shine
+Cobalt Jewel
+--------
+Item Level: 83
+--------
++1% Chance to Block Attack Damage while Dual Wielding
+8% increased Totem Life
+5% chance to Knock Enemies Back on hit
+--------
+Place into an allocated Jewel Socket on the Passive Skill Tree. Right click to remove from the Socket.

@@ -3,6 +3,12 @@
 //! entries in file order, which is the order the game prints them, and a paste's lines are matched
 //! back to modifiers with a candidate-and-assign search: each line is read as (part of) one
 //! modifier tier, and the assignment that explains the most lines with the fewest modifiers wins.
+//!
+//! A paste is cut into its `--------` sections: everything before `Item Level:` describes the base
+//! (properties, requirements, sockets), and only later sections hold modifiers, with the trailing
+//! description the game prints after them dropped again. A modifier the game prints on two lines
+//! reads as one, and every modifier a line can be is filtered by the base's own domain, so a
+//! helmet never reads a jewel or flask modifier.
 
 use std::collections::HashSet;
 
@@ -95,11 +101,14 @@ pub fn stat_lines(data: &Data, stats: &[(u16, i64)]) -> Vec<String> {
             .iter()
             .map(|s| stats.iter().find(|(t, _)| t == s).map_or(0, |(_, v)| *v))
             .collect();
+        // A line the game hides at zero: an entry whose every value is 0 prints nothing, so the
+        // Zombies blocker shows two lines rather than three.
         let Some(variant) = entry.variants.iter().find(|v| {
             v.conditions
                 .iter()
                 .enumerate()
                 .all(|(i, c)| c.holds(values.get(i).copied().unwrap_or(0)))
+                && (v.slots.is_empty() || values.iter().any(|v| *v != 0))
         }) else {
             continue;
         };
@@ -143,7 +152,12 @@ fn own_lines(data: &Data, item: &Item, roll: &Roll, implicit: bool) -> Vec<Strin
                 .zip(values)
                 .map(|(s, &v)| (s.stat, i64::from(display(v, effect))))
                 .collect();
-            stat_lines(data, &stats)
+            let lines = stat_lines(data, &stats);
+            if lines.is_empty() {
+                text_lines(md)
+            } else {
+                lines
+            }
         }
         None => text_lines(md),
     }
@@ -163,10 +177,16 @@ fn text_lines(md: &ModData) -> Vec<String> {
 pub fn render(data: &Data, item: &Item) -> String {
     let mut sections: Vec<Vec<String>> = Vec::new();
 
+    let base_name = &data.base_at(item.base).name;
+    let type_line = if item.synthesised {
+        format!("Synthesised {base_name}")
+    } else {
+        base_name.clone()
+    };
     sections.push(vec![
         format!("Item Class: {}", item.class(data).name),
         format!("Rarity: {}", rarity_text(item.rarity)),
-        data.base_at(item.base).name.clone(),
+        type_line,
     ]);
 
     let mut properties = Vec::new();
@@ -255,15 +275,15 @@ pub fn render(data: &Data, item: &Item) -> String {
         let tagged = |lines: Vec<String>, tag: &str| -> Vec<String> {
             lines.into_iter().map(|l| format!("{l} ({tag})")).collect()
         };
-        if md.kind == ModKind::Crafted {
-            crafted.extend(tagged(own_lines(data, item, &affix.roll, false), "crafted"));
-            continue;
-        }
         if affix.fractured {
             fractured.extend(tagged(
                 own_lines(data, item, &affix.roll, false),
                 "fractured",
             ));
+            continue;
+        }
+        if md.kind == ModKind::Crafted {
+            crafted.extend(tagged(own_lines(data, item, &affix.roll, false), "crafted"));
             continue;
         }
         match &affix.roll.values {
@@ -272,6 +292,9 @@ pub fn render(data: &Data, item: &Item) -> String {
                 let effect = item.effect(data, &affix.roll, false);
                 for (s, &v) in md.stats.iter().zip(values) {
                     let shown = i64::from(display(v, effect));
+                    if shown == 0 {
+                        continue;
+                    }
                     match merged.iter_mut().find(|(t, _)| *t == s.stat) {
                         Some((_, sum)) => *sum += shown,
                         None => merged.push((s.stat, shown)),
@@ -309,6 +332,9 @@ pub fn render(data: &Data, item: &Item) -> String {
     }
     if item.synthesised {
         flags.push("Synthesised Item".to_string());
+    }
+    if item.explicits().any(|a| a.fractured) {
+        flags.push("Fractured Item".to_string());
     }
     if !flags.is_empty() {
         sections.push(flags);
@@ -561,11 +587,20 @@ fn line_candidates(
                             .find(|s| s.stat == entry.stats[slot.k as usize])
                             .is_some_and(|s| {
                                 let factor = slot.factor;
-                                if factor.abs() == 1.0 {
+                                if factor == 1.0 {
                                     return shows_as(
                                         f64::from(s.min),
                                         f64::from(s.max),
                                         shown,
+                                        scale,
+                                    );
+                                }
+                                if factor == -1.0 {
+                                    // "reduced" and "less" print the negated roll.
+                                    return shows_as(
+                                        f64::from(s.min),
+                                        f64::from(s.max),
+                                        -shown,
                                         scale,
                                     );
                                 }
@@ -726,13 +761,19 @@ struct Pools<'a> {
 }
 
 impl Pools<'_> {
-    /// Every mod tier passing `reach` that can show `line`.
+    /// Every mod tier passing `reach` that can show `line`: a numbered line reads through its
+    /// placeholders, and a line a variant prints verbatim (a fixed number inside its text, or a
+    /// line with no number at all) reads through its text.
     fn candidates_with(&self, line: &str, reach: &dyn Fn(u32) -> bool) -> Vec<Cand> {
-        if numbers_in(line).is_empty() {
-            text_candidates(self.data, line, reach)
-        } else {
-            line_candidates(self.data, self.effect, line, reach)
+        let mut out = text_candidates(self.data, line, reach);
+        if !numbers_in(line).is_empty() {
+            for cand in line_candidates(self.data, self.effect, line, reach) {
+                if !out.iter().any(|c| c.m == cand.m) {
+                    out.push(cand);
+                }
+            }
         }
+        out
     }
 
     /// The wider pass alone: every modelled source, with a summed-line reading as a last resort.
@@ -874,6 +915,7 @@ fn assign(data: &Data, shown: &HashSet<u16>, cands: &[Vec<Cand>]) -> Vec<Choice>
                 let needed: Vec<u16> = md
                     .stats
                     .iter()
+                    .filter(|s| s.min != 0 || s.max != 0)
                     .map(|s| s.stat)
                     .filter(|s| self.shown.contains(s) && !cand.stats.contains(s))
                     .collect();
@@ -1154,6 +1196,13 @@ fn classify(line: &str) -> Line {
     {
         return Line::MemoryStrands(value as u8);
     }
+    if line.starts_with("Recovers ")
+        || line.starts_with("Consumes ")
+        || line.starts_with("Currently has ")
+        || line.starts_with("Lasts ")
+    {
+        return Line::Ignored;
+    }
     match line {
         "Corrupted" => return Line::Corrupted,
         "Mirrored" => return Line::Mirrored,
@@ -1205,22 +1254,28 @@ fn parse_rarity(text: &str) -> Result<Rarity, ParseError> {
     }
 }
 
-/// The base a paste names: an exact base name in the header, else the longest base name inside
-/// the magic item's name line.
-fn find_base(data: &Data, header: &[String], warnings: &mut Vec<String>) -> Option<u16> {
+/// A header line as a base name: synthesised and superior items prefix their base type.
+fn base_line(line: &str) -> &str {
+    for prefix in ["Synthesised ", "Superior "] {
+        if let Some(rest) = line.strip_prefix(prefix) {
+            return rest;
+        }
+    }
+    line
+}
+
+/// The bases a paste names: the base names in the header (several when bases share a name), else
+/// the longest base name inside the magic item's name line.
+fn find_base(data: &Data, header: &[String]) -> Option<Vec<u16>> {
     for line in header.iter().rev() {
-        let ids = data.bases_named(line);
-        if let Some(&base) = ids
+        let ids: Vec<u16> = data
+            .bases_named(base_line(line))
             .iter()
-            .find(|&&b| data.classes.get(data.base_at(b).class as usize).is_some())
-        {
-            if ids.len() > 1 {
-                warnings.push(format!(
-                    "base name \"{line}\" matches several bases; using {}",
-                    data.base_at(base).id
-                ));
-            }
-            return Some(base);
+            .copied()
+            .filter(|&b| data.classes.get(data.base_at(b).class as usize).is_some())
+            .collect();
+        if !ids.is_empty() {
+            return Some(ids);
         }
     }
     let position = header.iter().position(|l| l.starts_with("Rarity:"))?;
@@ -1232,7 +1287,73 @@ fn find_base(data: &Data, header: &[String], warnings: &mut Vec<String>) -> Opti
             data.classes.get(b.class as usize).is_some() && contains_words(line, &b.name)
         })
         .max_by_key(|(_, b)| b.name.len())
-        .map(|(i, _)| i as u16)
+        .map(|(i, _)| vec![i as u16])
+}
+
+/// Whether any modifier at all could print this line; a line nothing explains is the game's
+/// description text, not a modifier.
+fn explainable(data: &Data, item: &Item, line: &str) -> bool {
+    let all = |_: u32| true;
+    if !text_candidates(data, line, &all).is_empty() {
+        return true;
+    }
+    [false, true].into_iter().any(|implicit| {
+        let effect = |m: u32| item.effect(data, &Roll { m, values: None }, implicit);
+        !line_candidates(data, &effect, line, &all).is_empty()
+    })
+}
+
+/// Whether `s` reads as a translation variant's text.
+fn reads_as_variant(data: &Data, s: &str) -> bool {
+    !data.translations_keyed(s).is_empty()
+}
+
+/// Join the lines one modifier prints split, longest window first: the game wraps some lines and
+/// prints some entries on two or three lines.
+fn merge_lines(data: &Data, lines: Vec<String>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < lines.len() {
+        let mut taken = 1;
+        for width in (2..=3).rev() {
+            if i + width > lines.len() {
+                continue;
+            }
+            let joined = lines[i..i + width].join("\n");
+            if reads_as_variant(data, &joined)
+                || reads_as_variant(data, &hash_numbers(&joined, true))
+                || reads_as_variant(data, &hash_numbers(&joined, false))
+            {
+                out.push(joined);
+                taken = width;
+                break;
+            }
+        }
+        if taken == 1 {
+            out.push(lines[i].clone());
+        }
+        i += taken;
+    }
+    out
+}
+
+/// How many of `lines` the base's own implicits, corrupted implicits and synthesised implicits
+/// explain; bases that share a name are told apart by it.
+fn implicit_score(data: &Data, item: &Item, lines: &[String]) -> usize {
+    let (first, second) = implicit_pool(data, item);
+    let effect = |m: u32| item.effect(data, &Roll { m, values: None }, true);
+    let shown = shown_stats(data);
+    let pools = Pools {
+        data,
+        effect: &effect,
+        first: &first,
+        second: &second,
+        shown: &shown,
+    };
+    lines
+        .iter()
+        .filter(|line| pools.candidates(line).iter().any(|c| !c.partial))
+        .count()
 }
 
 /// Read a pasted item into an `ItemSpec`, warning about every line it could not explain.
@@ -1265,12 +1386,9 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
             rarity = parse_rarity(rest.trim())?;
         }
     }
-    let Some(base) = find_base(data, header, &mut warnings) else {
-        return Err(ParseError::NoBase);
-    };
 
     let mut item = Item {
-        base,
+        base: 0,
         item_level: 1,
         rarity,
         influences: 0,
@@ -1296,16 +1414,18 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
     let mut untagged_blocks: Vec<Vec<String>> = Vec::new();
     let mut crafted_lines: Vec<String> = Vec::new();
     let mut fractured_lines: Vec<String> = Vec::new();
-    let mut implicit_lines: Vec<String> = Vec::new();
     let mut enchant_lines: Vec<String> = Vec::new();
+    // Tagged lines go straight to their pool.
+    let mut implicit_lines: Vec<String> = Vec::new();
+    // Everything before the item level line describes the base, not its modifiers.
+    let mut level_section: Option<usize> = None;
 
     for (index, section) in sections.iter().enumerate() {
         let mut untagged: Vec<String> = Vec::new();
         for line in section {
             match classify(line) {
                 Line::Mod(text) => {
-                    if index == 0 {
-                        // The header's item name and base name are not modifiers.
+                    if index == 0 || level_section.is_none_or(|level| index < level) {
                         continue;
                     }
                     match split_tag(&text) {
@@ -1319,7 +1439,10 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
                     }
                 }
                 Line::Unidentified => return Err(ParseError::Unidentified),
-                Line::ItemLevel(level) => item.item_level = level,
+                Line::ItemLevel(level) => {
+                    item.item_level = level;
+                    level_section = Some(index);
+                }
                 Line::Quality(label, quality) => {
                     item.quality = quality;
                     if let Some(label) = label {
@@ -1348,10 +1471,58 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
         }
     }
 
-    // Untagged sections, latest first: explicits, then implicits, then enchantments.
-    let block_count = untagged_blocks.len();
+    // One modifier can print on two lines; read those lines as one.
+    let mut blocks: Vec<Vec<String>> = untagged_blocks
+        .into_iter()
+        .map(|block| merge_lines(data, block))
+        .collect();
+
+    // Bases that share a name are told apart by the implicits they print.
+    let candidates = find_base(data, header).ok_or(ParseError::NoBase)?;
+    let base = match candidates[..] {
+        [one] => one,
+        _ => {
+            let named = data.base_at(candidates[0]).name.clone();
+            let lines: Vec<String> = blocks.iter().flatten().cloned().collect();
+            let best = candidates
+                .iter()
+                .copied()
+                .max_by_key(|&b| {
+                    let mut probe = item.clone();
+                    probe.base = b;
+                    implicit_score(data, &probe, &lines)
+                })
+                .expect("more than one candidate");
+            warnings.push(format!(
+                "base name \"{named}\" matches several bases; using {}",
+                data.base_at(best).id
+            ));
+            best
+        }
+    };
+    item.base = base;
+
+    // The game prints a description after the modifiers: trailing blocks no modifier explains.
+    while blocks
+        .last()
+        .is_some_and(|block| !block.iter().any(|line| explainable(data, &item, line)))
+    {
+        blocks.pop();
+    }
+
+    // One modifier can print on two lines within its pool as well.
+    for list in [
+        &mut crafted_lines,
+        &mut fractured_lines,
+        &mut implicit_lines,
+        &mut enchant_lines,
+    ] {
+        *list = merge_lines(data, std::mem::take(list));
+    }
+    // Untagged blocks, latest first: explicits, then implicits, then enchantments.
     let mut explicit_lines: Vec<String> = Vec::new();
-    for (i, block) in untagged_blocks.into_iter().enumerate() {
+    let block_count = blocks.len();
+    for (i, block) in blocks.into_iter().enumerate() {
         match block_count - i {
             1 => explicit_lines = block,
             2 => implicit_lines.extend(block),
@@ -1361,11 +1532,13 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
 
     let shown = shown_stats(data);
     let class_index = data.base_at(base).class;
+    let domain = data.base_at(base).domain.repoe();
     let tags = item.tags(data);
+    // A mod only spawns on the domain of its item: a helmet never rolls a jewel or flask mod.
     let reach0 = |m: u32| {
         let md = data.mod_at(m);
         match md.kind {
-            ModKind::Natural => spawn_weight(md, &tags) > 0,
+            ModKind::Natural => md.domain == domain && spawn_weight(md, &tags) > 0,
             ModKind::Crafted => bench_has(data, class_index, m),
             _ => false,
         }
@@ -1375,31 +1548,53 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
         reach0(m)
             || matches!(
                 md.kind,
-                ModKind::EssenceOnly | ModKind::Unveiled | ModKind::Delve | ModKind::Crafted
+                ModKind::EssenceOnly
+                    | ModKind::Unveiled
+                    | ModKind::Delve
+                    | ModKind::Crafted
+                    | ModKind::Ducat
+                    | ModKind::Mercenary
             )
             || (md.kind == ModKind::Natural && md.elevated)
     };
     let (implicit0, implicit1) = implicit_pool(data, &item);
     let explicit_effect = |m: u32| item.effect(data, &Roll { m, values: None }, false);
+    let implicit_effect = |m: u32| item.effect(data, &Roll { m, values: None }, true);
     let no_effect = |_: u32| 0i16;
     let enchant_reach = |m: u32| data.mod_at(m).kind.is_enchant();
     let crafted_reach = |m: u32| data.mod_at(m).kind == ModKind::Crafted;
 
     let implicit_pool_lines = Pools {
         data,
-        effect: &no_effect,
+        effect: &implicit_effect,
         first: &implicit0,
         second: &implicit1,
         shown: &shown,
     };
 
-    // An item with a single untagged block holds implicits when every line reads as one.
-    if block_count == 1
-        && explicit_lines
-            .iter()
-            .all(|line| !implicit_pool_lines.candidates(line).is_empty())
-    {
-        implicit_lines = std::mem::take(&mut explicit_lines);
+    // An item with a single untagged block holds whatever reading explains more of its lines: a
+    // magic item whose only line reads as a partial implicit keeps its line as an explicit.
+    if block_count == 1 && !explicit_lines.is_empty() {
+        let explained = |pools: &Pools| {
+            explicit_lines
+                .iter()
+                .filter(|line| pools.candidates(line).iter().any(|c| !c.partial))
+                .count()
+        };
+        let explicits = Pools {
+            data,
+            effect: &explicit_effect,
+            first: &reach0,
+            second: &reach1,
+            shown: &shown,
+        };
+        let as_implicit = explained(&implicit_pool_lines);
+        let as_explicit = explained(&explicits);
+        let implicits = as_implicit > as_explicit
+            || (as_implicit == as_explicit && as_implicit > 0 && item.rarity == Rarity::Normal);
+        if implicits {
+            implicit_lines.extend(std::mem::take(&mut explicit_lines));
+        }
     }
 
     let mut veiled: Vec<Side> = Vec::new();
@@ -1572,7 +1767,10 @@ fn bench_has(data: &Data, class: u16, m: u32) -> bool {
 /// The two reachability passes of the implicit pool: the base's own implicits, then the corrupted,
 /// eldritch and synthesised ones that can spawn on it.
 fn implicit_pool(data: &Data, item: &Item) -> (impl Fn(u32) -> bool, impl Fn(u32) -> bool) {
-    let own = data.base_at(item.base).implicits.clone();
+    let base = data.base_at(item.base);
+    let own = base.implicits.clone();
+    let domain = base.domain.repoe();
+    let synthesised = item.synthesised;
     let tags = item.tags(data);
     let first_own = own.clone();
     let first = move |m: u32| first_own.contains(&m);
@@ -1581,10 +1779,14 @@ fn implicit_pool(data: &Data, item: &Item) -> (impl Fn(u32) -> bool, impl Fn(u32
             return true;
         }
         let md = data.mod_at(m);
-        matches!(
-            md.kind,
-            ModKind::CorruptedImplicit | ModKind::Exarch | ModKind::Eater | ModKind::Synthesis
-        ) && spawn_weight(md, &tags) > 0
+        match md.kind {
+            // A corrupted implicit belongs to the domain of the base it corrupts.
+            ModKind::CorruptedImplicit => md.domain == domain && spawn_weight(md, &tags) > 0,
+            ModKind::Exarch | ModKind::Eater => spawn_weight(md, &tags) > 0,
+            // A synthesised item holds synthesis implicits that carry no spawn weight.
+            ModKind::Synthesis => synthesised || spawn_weight(md, &tags) > 0,
+            _ => false,
+        }
     };
     (first, second)
 }

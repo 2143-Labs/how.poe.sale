@@ -575,7 +575,9 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     let mut bases = Vec::with_capacity(kept_bases.len());
     for (id, b, domain) in &kept_bases {
         let (mut prefix_delta, mut suffix_delta, mut explicit_effect) = (0i8, 0i8, 0i16);
+        let (mut prefix_effect, mut suffix_effect) = (0i16, 0i16);
         let mut implicits_locked = false;
+        let mut all_influences = false;
         let mut implicits = Vec::with_capacity(b.implicits.len());
         for imp in &b.implicits {
             implicits.push(mod_ref(imp, &format!("base {id}"))?);
@@ -584,7 +586,10 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
                     "local_maximum_prefixes_allowed_+" => prefix_delta = s.min as i8,
                     "local_maximum_suffixes_allowed_+" => suffix_delta = s.min as i8,
                     "local_explicit_mod_effect_+%" => explicit_effect = s.min as i16,
+                    "local_prefix_mod_effect_+%" => prefix_effect = s.min as i16,
+                    "local_suffix_mod_effect_+%" => suffix_effect = s.min as i16,
                     "local_implicit_mod_cannot_be_changed" => implicits_locked = true,
+                    "local_item_can_roll_all_influences" => all_influences = true,
                     _ => {}
                 }
             }
@@ -616,7 +621,10 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             prefix_delta,
             suffix_delta,
             explicit_effect,
+            prefix_effect,
+            suffix_effect,
             implicits_locked,
+            all_influences,
         });
     }
 

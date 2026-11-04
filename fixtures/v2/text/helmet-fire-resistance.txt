@@ -1,0 +1,18 @@
+Item Class: Helmets
+Rarity: Rare
+Corpse Casque
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+Armour: 440 (augmented)
+Energy Shield: 90 (augmented)
+--------
+Requirements:
+Level: 75
+Str: 79
+Int: 79
+--------
+Item Level: 87
+--------
++30 to maximum Life
++13% to Fire Resistance

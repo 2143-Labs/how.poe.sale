@@ -1,0 +1,21 @@
+Item Class: Life Flasks
+Rarity: Magic
+Sapping Divine Life Flask of Perenniality
+--------
+Quality: +35% (augmented)
+Recovers 5184 (augmented) Life over 3.50 Seconds
+Consumes 15 of 45 Charges on use
+Currently has 45 Charges
+--------
+Requirements:
+Level: 64
+--------
+Item Level: 84
+--------
+60% increased Life Recovered
+Removes 10% of Life Recovered from Mana when used
+Recover an additional 39% of Flask's Life Recovery Amount over 10 seconds if used while not on Full Life
+--------
+Right click to drink. Can only hold charges while in belt. Refills as you kill monsters.
+--------
+Corrupted

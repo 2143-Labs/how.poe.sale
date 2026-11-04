@@ -1353,7 +1353,7 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         {
             it.defences = None;
         }
-        it.canonical();
+        it.canonical(data);
     });
     out.normalise();
     Ok(out)

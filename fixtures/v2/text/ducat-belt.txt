@@ -1,0 +1,10 @@
+Item Class: Belts
+Rarity: Magic
+Leather Belt of the Pit
+--------
+Requirements:
+Level: 30
+--------
+Item Level: 84
+--------
+4% increased Damage for each Trap and Mine you have

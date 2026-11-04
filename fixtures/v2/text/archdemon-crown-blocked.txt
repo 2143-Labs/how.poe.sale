@@ -1,0 +1,31 @@
+Item Class: Helmets
+Rarity: Rare
+Empyrean Star
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+Armour: 440 (augmented)
+Energy Shield: 90 (augmented)
+[Intangibility|Intangibility]: 97%
+--------
+Requirements:
+Level: 75
+Str: 79
+Int: 79
+--------
+Sockets: B-B-B-B
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
++1 to maximum number of Raised Zombies (crafted)
++1 to maximum number of Skeletons (crafted)
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
+15% increased Effect of Cold Ailments
+Veiled Prefix
+--------
+Shaper Item
