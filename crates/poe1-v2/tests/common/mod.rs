@@ -31,3 +31,14 @@ pub fn spec(name: &str) -> ItemSpec {
 pub fn item(name: &str) -> Item {
     Item::from_spec(test_data(), &spec(name)).unwrap_or_else(|e| panic!("{name}: {e}"))
 }
+
+pub fn pattern_spec(name: &str) -> poe1_v2::pattern::PatternSpec {
+    let path = root().join(format!("fixtures/v2/patterns/{name}.json"));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
+pub fn pattern(name: &str) -> poe1_v2::pattern::Pattern {
+    poe1_v2::pattern::Pattern::compile(test_data(), &pattern_spec(name))
+        .unwrap_or_else(|e| panic!("{name}: {e}"))
+}

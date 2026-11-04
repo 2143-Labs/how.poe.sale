@@ -1,0 +1,156 @@
+{
+  "name": "crown-shaper-elder",
+  "item": {
+    "bases": [
+      "Archdemon Crown"
+    ],
+    "itemLevelMin": 86,
+    "rarity": "rare",
+    "influences": [
+      "shaper",
+      "elder"
+    ],
+    "corrupted": false
+  },
+  "implicits": [
+    {
+      "mod": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2"
+    }
+  ],
+  "classes": [
+    {
+      "id": "desired-veiled",
+      "label": "Desired Veiled Prefix",
+      "side": "prefix",
+      "grade": "desired",
+      "matchers": [
+        {
+          "mod": "JunMasterVeiledSkillAreaOfEffectPercentAndAreaOfEffectGemLevel"
+        },
+        {
+          "mod": "JunMasterVeiledProjectilePierceAndProjectileGemLevel"
+        }
+      ]
+    },
+    {
+      "id": "very-good-prefix",
+      "label": "Very Good Prefix (Supported by Level 18 Concentrated Effect or better)",
+      "side": "prefix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "AreaDamageSupportedUber2_"
+        },
+        {
+          "mod": "AreaDamageSupportedUber3"
+        },
+        {
+          "mod": "AreaDamageSupportedUberMaven"
+        }
+      ]
+    },
+    {
+      "id": "any-crafted-prefix",
+      "label": "Any Crafted Prefix",
+      "side": "prefix",
+      "grade": "neutral",
+      "matchers": [
+        {
+          "crafted": true
+        }
+      ]
+    },
+    {
+      "id": "any-other-prefix",
+      "label": "Any Other Prefix",
+      "side": "prefix",
+      "grade": "bad",
+      "matchers": [
+        {
+          "any": true
+        }
+      ]
+    },
+    {
+      "id": "hypothermia",
+      "label": "Supported by Hypothermia",
+      "side": "suffix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "IncreasedChillEffectSupportedUber1"
+        },
+        {
+          "mod": "IncreasedChillEffectSupportedUber2"
+        },
+        {
+          "mod": "IncreasedChillEffectSupportedUber3"
+        },
+        {
+          "mod": "IncreasedChillEffectSupportedUberMaven"
+        }
+      ]
+    },
+    {
+      "id": "essence-elemental",
+      "label": "Socketed Gems deal 30% more Elemental Damage (essence)",
+      "side": "suffix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "SocketedGemsDealMoreElementalDamageEssence1"
+        }
+      ]
+    },
+    {
+      "id": "good-spell-crit",
+      "label": "Socketed Spells have +2% or more Critical Strike Chance",
+      "side": "suffix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "SocketedSpellCriticalStrikeChanceUber2"
+        },
+        {
+          "mod": "SocketedSpellCriticalStrikeChanceUber3"
+        },
+        {
+          "mod": "SocketedSpellCriticalStrikeChanceUberMaven"
+        }
+      ]
+    },
+    {
+      "id": "any-other-suffix",
+      "label": "Any Other Suffix",
+      "side": "suffix",
+      "grade": "bad",
+      "matchers": [
+        {
+          "any": true
+        }
+      ]
+    }
+  ],
+  "prefixes": [
+    [
+      "desired-veiled"
+    ],
+    [
+      "very-good-prefix"
+    ],
+    [
+      "any-crafted-prefix"
+    ]
+  ],
+  "suffixes": [
+    [
+      "hypothermia"
+    ],
+    [
+      "essence-elemental"
+    ],
+    [
+      "good-spell-crit"
+    ]
+  ]
+}

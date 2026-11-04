@@ -7,6 +7,7 @@ use std::sync::LazyLock;
 pub mod data;
 pub mod item;
 pub mod method;
+pub mod pattern;
 
 static DATA: LazyLock<data::Data> = LazyLock::new(load_data);
 
