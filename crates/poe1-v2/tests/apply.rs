@@ -618,3 +618,49 @@ fn every_method_runs() {
     }
     assert!(applied > 1000, "{applied}");
 }
+
+#[test]
+fn dominance_elevates_top_tier() {
+    let d = test_data();
+    // crown-actual's influenced explicits: AoE support T1, Hypothermia T2, spell crit T3 (the top
+    // tier below elevated).
+    let out = run("currency/orb-of-dominance", &item("crown-actual"));
+    let elevated = d
+        .mod_by_id("SocketedSpellCriticalStrikeChanceUberMaven")
+        .unwrap();
+    let hits = leaves(&out)
+        .iter()
+        .filter(|(_, o)| leaf_item(o).suffixes.iter().any(|a| a.roll.m == elevated))
+        .count();
+    // Two of the six (removed, upgraded) pairs upgrade the spell crit suffix.
+    assert_eq!(hits, 2);
+}
+
+#[test]
+fn empty_tag_pool_is_unmet() {
+    // Slink Boots roll no attack modifier.
+    assert_eq!(
+        reason(
+            "harvest/add-attack-remove-random",
+            &item("slink-boots-eldritch")
+        ),
+        "no attack modifier can roll on this item"
+    );
+}
+
+#[test]
+fn mirror_keeps_catalyst() {
+    let d = test_data();
+    let mut s = spec("lapis-amulet-normal");
+    s.quality = 20;
+    s.catalyst = Some("Fertile Catalyst".into());
+    let it = Item::from_spec(d, &s).unwrap();
+    let Outcome::Items(items) = run("currency/mirror", &it) else {
+        panic!("not Items")
+    };
+    assert!(
+        items
+            .iter()
+            .all(|i| i.catalyst == it.catalyst && i.quality == 20)
+    );
+}

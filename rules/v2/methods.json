@@ -357,6 +357,8 @@
         {"kind": "category", "anyOf": ["armour"]},
         {"kind": "fullSuffixes"},
         {"kind": "openAffix", "side": "prefix"},
+        {"kind": "craftedRoom"},
+        {"kind": "groupFree", "mod": "DexMasterItemGenerationCannotChangeSuffixes"},
         {"kind": "notUnique"},
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}

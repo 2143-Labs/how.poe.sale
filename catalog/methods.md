@@ -2685,7 +2685,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 - Cost: 17500 × Wild Crystallised Lifeforce, 1 × Sacred Crystallised Lifeforce
 - Needs: no influence; a magic or rare item; an open affix; not corrupted; not mirrored
 - Does: adds one random modifier (attack tag, either side); then removes one random modifier that can change, never the one just added.
-- On `slink-boots-eldritch`: 1 exact outcome
+- On `slink-boots-eldritch`: does not apply: no attack modifier can roll on this item
 - Sources: `harvest.list` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.add-remove` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `remove.cannot-roll-scope` (needs the owner, owner)
 
 ### Harvest: add a Caster modifier, remove another — `harvest/add-caster-remove-random`
@@ -2693,7 +2693,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 - Cost: 17500 × Primal Crystallised Lifeforce, 1 × Sacred Crystallised Lifeforce
 - Needs: no influence; a magic or rare item; an open affix; not corrupted; not mirrored
 - Does: adds one random modifier (caster tag, either side); then removes one random modifier that can change, never the one just added.
-- On `slink-boots-eldritch`: 1 exact outcome
+- On `slink-boots-eldritch`: does not apply: no caster modifier can roll on this item
 - Sources: `harvest.list` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.add-remove` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `remove.cannot-roll-scope` (needs the owner, owner)
 
 ### Harvest: add a Chaos modifier, remove another — `harvest/add-chaos-remove-random`
@@ -2717,7 +2717,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 - Cost: 17500 × Primal Crystallised Lifeforce, 1 × Sacred Crystallised Lifeforce
 - Needs: no influence; a magic or rare item; an open affix; not corrupted; not mirrored
 - Does: adds one random modifier (critical tag, either side); then removes one random modifier that can change, never the one just added.
-- On `slink-boots-eldritch`: 1 exact outcome
+- On `slink-boots-eldritch`: does not apply: no critical modifier can roll on this item
 - Sources: `harvest.list` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.add-remove` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `remove.cannot-roll-scope` (needs the owner, owner)
 
 ### Harvest: add a Defence modifier, remove another — `harvest/add-defences-remove-random`
@@ -2757,7 +2757,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 - Cost: 15000 × Vivid Crystallised Lifeforce, 1 × Sacred Crystallised Lifeforce
 - Needs: no influence; a magic or rare item; an open affix; not corrupted; not mirrored
 - Does: adds one random modifier (physical tag, either side); then removes one random modifier that can change, never the one just added.
-- On `slink-boots-eldritch`: 1 exact outcome
+- On `slink-boots-eldritch`: does not apply: no physical modifier can roll on this item
 - Sources: `harvest.list` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.add-remove` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `remove.cannot-roll-scope` (needs the owner, owner)
 
 ### Harvest: add a Speed modifier, remove another — `harvest/add-speed-remove-random`
@@ -2924,7 +2924,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 - Cost: 150 × Vivid Crystallised Lifeforce
 - Needs: a rare item; not corrupted; not mirrored
 - Does: reforges the item as rare, guaranteeing a speed modifier, keeping a side a metamod locks.
-- On `crown-a`: not computed: multi-draw reforge
+- On `crown-a`: does not apply: no speed modifier can roll on this item
 - Sources: `harvest.list` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner)
 
 ### Harvest: synthesise — `harvest/synthesise`
@@ -3071,7 +3071,7 @@ Each bench craft in this table needs: a magic or rare item; not corrupted; not m
 ### Beastcraft: add Suffixes Cannot Be Changed — `beast/suffixes-cannot-be-changed`
 
 - Cost: 1 × Wild Bristle Matron (beast)
-- Needs: one of: armour; full suffixes; an open prefix; not unique; not corrupted; not mirrored
+- Needs: one of: armour; full suffixes; an open prefix; room for another crafted modifier; no ItemGenerationCannotChangeSuffixes modifier yet; not unique; not corrupted; not mirrored
 - Does: adds Suffixes Cannot Be Changed (`DexMasterItemGenerationCannotChangeSuffixes`).
 - On `crown-a`: 1 exact outcome
 - Sources: `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.bristle-matron` (checked, owner)

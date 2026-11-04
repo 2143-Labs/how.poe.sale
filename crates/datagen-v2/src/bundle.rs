@@ -457,23 +457,51 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             text: m.text.clone().unwrap_or_default(),
         });
     }
-    // Elevated mods have no spawn weights: they take the influence of their chain's highest
-    // non-elevated tier.
+    // Elevated mods have no spawn weights: they take the influence of their base chain. RePoE
+    // gives elevated mods their own `…Maven` mod type, so the chain is found by id first (the
+    // elevated id's stem before `Maven` plus a tier suffix, same groups), then by mod type with
+    // `Maven` removed; only a single influence counts.
+    let natural_chain: Vec<&ModData> = mods
+        .iter()
+        .filter(|m| m.kind == ModKind::Natural && !m.elevated)
+        .collect();
+    let single = |list: Vec<&&ModData>| -> Option<Influence> {
+        let set: BTreeSet<Influence> = list.iter().filter_map(|m| m.influence).collect();
+        let mut it = set.into_iter();
+        match (it.next(), it.next()) {
+            (Some(i), None) => Some(i),
+            _ => None,
+        }
+    };
     let elevated_influence: Vec<(usize, Option<Influence>)> = mods
         .iter()
         .enumerate()
         .filter(|(_, m)| m.elevated)
         .map(|(i, e)| {
-            let source = mods
+            let stem = &e.id[..e.id.find("Maven").unwrap_or(e.id.len())];
+            let by_id = natural_chain
                 .iter()
                 .filter(|m| {
-                    m.kind == ModKind::Natural
-                        && !m.elevated
-                        && m.mod_type == e.mod_type
-                        && m.groups == e.groups
+                    m.groups == e.groups
+                        && m.id.strip_prefix(stem).is_some_and(|rest| {
+                            rest.chars().all(|c| c.is_ascii_digit() || c == '_')
+                        })
                 })
-                .max_by_key(|m| m.level);
-            (i, source.and_then(|m| m.influence))
+                .collect();
+            let elevated_type = &mod_types.names[e.mod_type as usize];
+            let base_type = elevated_type.replace("Maven", "");
+            let inf = single(by_id).or_else(|| {
+                single(
+                    natural_chain
+                        .iter()
+                        .filter(|m| {
+                            let t = &mod_types.names[m.mod_type as usize];
+                            m.groups == e.groups && (t == elevated_type || *t == base_type)
+                        })
+                        .collect(),
+                )
+            });
+            (i, inf)
         })
         .collect();
     for (i, inf) in elevated_influence {

@@ -253,7 +253,13 @@ impl Pattern {
 }
 
 /// The chance a matcher accepts an affix: `None` when it does not apply at all.
-fn matcher_chance(data: &Data, item: &Item, matcher: &Matcher, affix: &Affix) -> Option<f64> {
+fn matcher_chance(
+    data: &Data,
+    item: &Item,
+    matcher: &Matcher,
+    affix: &Affix,
+    implicit: bool,
+) -> Option<f64> {
     let m = data.mod_at(affix.roll.m);
     match matcher {
         Matcher::Any(any) => any.then_some(1.0),
@@ -263,7 +269,7 @@ fn matcher_chance(data: &Data, item: &Item, matcher: &Matcher, affix: &Affix) ->
                 return None;
             }
             let Some(min) = min else { return Some(1.0) };
-            let effect = item.effect(data, &affix.roll, false);
+            let effect = item.effect(data, &affix.roll, implicit);
             let mut p = 1.0;
             for (k, threshold) in min.iter().enumerate() {
                 let (Some(t), Some(stat)) = (threshold, m.stats.get(k)) else {
@@ -308,7 +314,7 @@ pub fn classify(
         let Some(p) = class
             .matchers
             .iter()
-            .find_map(|m| matcher_chance(data, item, m, affix))
+            .find_map(|m| matcher_chance(data, item, m, affix, false))
         else {
             continue;
         };
@@ -334,7 +340,7 @@ fn item_ok(data: &Data, pattern: &Pattern, item: &Item) -> bool {
                     roll: r.clone(),
                     fractured: false,
                 };
-                matcher_chance(data, item, m, &affix).is_some_and(|p| p > 0.0)
+                matcher_chance(data, item, m, &affix, true).is_some_and(|p| p > 0.0)
             })
         })
 }

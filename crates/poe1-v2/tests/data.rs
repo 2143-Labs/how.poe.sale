@@ -31,6 +31,17 @@ fn bundle_loads() {
     );
     assert!(maven.elevated);
     assert_eq!(maven.influence, Some(Influence::Shaper));
+    // Elevated mods with their own `…Maven` mod type take their chain's influence by id.
+    for (id, inf) in [
+        ("AdditionalCritWithAttacksInfluenceMaven", Influence::Hunter),
+        ("AvoidStunInfluenceMaven__", Influence::Warlord),
+    ] {
+        assert_eq!(
+            d.mod_at(d.mod_by_id(id).unwrap()).influence,
+            Some(inf),
+            "{id}"
+        );
+    }
     assert_eq!(
         kind("SocketedActiveGemLevelSupportGemPenaltyImplicitR2").0,
         ModKind::BaseImplicit

@@ -395,8 +395,12 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
         Require::ItemLevelAtMost { n } if item.item_level > *n => {
             return unmet(format!("needs item level {n} or lower"));
         }
-        Require::EssenceFits { essence } if essence_mod(data, item, essence).is_none() => {
-            return unmet(format!("{essence} has no modifier for {}", class.id));
+        Require::EssenceFits { essence } => {
+            // The essence a Reforge places (`Params::essence` overrides the method's own).
+            let essence = params.essence.as_deref().unwrap_or(essence);
+            if essence_mod(data, item, essence).is_none() {
+                return unmet(format!("{essence} has no modifier for {}", class.id));
+            }
         }
         Require::Fossils { min, max } => {
             let n = params.fossils.len();
@@ -450,6 +454,9 @@ struct Ctx<'a> {
     params: &'a Params,
     last_added: Option<(Side, u32)>,
     leaves: usize,
+    /// Set when an op finds the method cannot do its job on this item (an empty tag pool, no
+    /// resistance to change); `apply` then reports it as `Unmet`.
+    unmet: Option<String>,
 }
 
 impl Ctx<'_> {
@@ -618,14 +625,37 @@ fn upgrade(data: &Data, item: &Item, m: u32) -> Option<u32> {
         .collect();
     chain.sort_by_key(|&i| key(i));
     let pos = chain.iter().position(|&i| i == m)?;
-    chain.get(pos + 1).copied().or_else(|| {
-        data.mods_of_kind(ModKind::Natural)
-            .iter()
-            .copied()
-            .find(|&i| {
-                let x = data.mod_at(i);
-                x.elevated && x.mod_type == md.mod_type && x.groups == md.groups
-            })
+    chain.get(pos + 1).copied().or_else(|| elevated_of(data, m))
+}
+
+/// The elevated version of a top-tier mod: same groups and influence, and either the chain's id
+/// stem followed by `Maven` or the same mod type (RePoE gives elevated mods a `…Maven` type).
+fn elevated_of(data: &Data, m: u32) -> Option<u32> {
+    let md = data.mod_at(m);
+    let stem = md
+        .id
+        .trim_end_matches(|c: char| c.is_ascii_digit() || c == '_');
+    let base_type = data.mod_type(md.mod_type);
+    let candidates: Vec<u32> = data
+        .mods_of_kind(ModKind::Natural)
+        .iter()
+        .copied()
+        .filter(|&i| {
+            let x = data.mod_at(i);
+            x.elevated && x.groups == md.groups && x.influence == md.influence
+        })
+        .collect();
+    let by_id = candidates.iter().copied().find(|&i| {
+        data.mod_at(i)
+            .id
+            .strip_prefix(stem)
+            .is_some_and(|r| r.starts_with("Maven"))
+    });
+    by_id.or_else(|| {
+        candidates.iter().copied().find(|&i| {
+            let t = data.mod_type(data.mod_at(i).mod_type);
+            t == base_type || t.strip_suffix("Maven") == Some(base_type)
+        })
     })
 }
 
@@ -682,9 +712,11 @@ fn reforge(ctx: &mut Ctx, mut item: Item, spec: &ReforgeSpec, ops: &[Op]) -> Out
         Some(Guarantee::Essence) => {
             let m =
                 method_essence(ctx.method, ctx.params).and_then(|e| essence_mod(data, &item, e));
+            let groups = item.explicit_groups(data);
             if let Some(m) = m
                 && let Some(s) = data.mod_at(m).side
                 && item.open(data, s) > 0
+                && !data.mod_at(m).groups.iter().any(|g| groups.contains(g))
             {
                 add_affix(data, &mut item, m);
             }
@@ -717,16 +749,16 @@ fn reforge(ctx: &mut Ctx, mut item: Item, spec: &ReforgeSpec, ops: &[Op]) -> Out
                 false,
             );
             if c.is_empty() {
-                vec![(1.0, item)]
-            } else {
-                c.into_iter()
-                    .map(|(m, p)| {
-                        let mut it = item.clone();
-                        add_affix(data, &mut it, m);
-                        (p, it)
-                    })
-                    .collect()
+                ctx.unmet = Some(format!("no {tag} modifier can roll on this item"));
+                return pending(item);
             }
+            c.into_iter()
+                .map(|(m, p)| {
+                    let mut it = item.clone();
+                    add_affix(data, &mut it, m);
+                    (p, it)
+                })
+                .collect()
         }
         _ => {
             // InfluenceMod: a Natural mod of one of the item's influences.
@@ -751,7 +783,8 @@ fn reforge(ctx: &mut Ctx, mut item: Item, spec: &ReforgeSpec, ops: &[Op]) -> Out
             }
             let c = pool::normalise(c);
             if c.is_empty() {
-                vec![(1.0, item)]
+                ctx.unmet = Some("no influenced modifier can roll on this item".into());
+                return pending(item);
             } else {
                 c.into_iter()
                     .map(|(m, p)| {
@@ -809,7 +842,7 @@ fn run(ctx: &mut Ctx, mut item: Item, ops: &[Op]) -> Outcome {
             side,
             ignore_limits,
         } => {
-            let branches = add_candidates(data, &item, pool, *side, *ignore_limits)
+            let branches: Vec<Branch> = add_candidates(data, &item, pool, *side, *ignore_limits)
                 .into_iter()
                 .map(|(m, p)| {
                     let mut it = item.clone();
@@ -817,6 +850,20 @@ fn run(ctx: &mut Ctx, mut item: Item, ops: &[Op]) -> Outcome {
                     (p, it, s.map(|s| (s, m)))
                 })
                 .collect();
+            // A tag or ducat pool is the method's whole point: with nothing to add it cannot
+            // be used on this item.
+            if branches.is_empty() {
+                match pool {
+                    Pool::Tag { tag } => {
+                        ctx.unmet = Some(format!("no {tag} modifier can roll on this item"));
+                    }
+                    Pool::Ducat { .. } => {
+                        ctx.unmet =
+                            Some("no modifier from this ducat can roll on this item".into());
+                    }
+                    _ => {}
+                }
+            }
             random(ctx, item, branches, rest)
         }
         Op::RemoveRandom {
@@ -1040,7 +1087,9 @@ fn run(ctx: &mut Ctx, mut item: Item, ops: &[Op]) -> Outcome {
             random(ctx, item, branches, rest)
         }
         Op::ChangeResistance { from, to } => {
-            change_resistance(data, &mut item, *from, *to);
+            if let Err(reason) = change_resistance(data, &mut item, *from, *to) {
+                ctx.unmet = Some(reason);
+            }
             run(ctx, item, rest)
         }
         Op::AddQuality { by_rarity, max } => {
@@ -1136,38 +1185,55 @@ fn run(ctx: &mut Ctx, mut item: Item, ops: &[Op]) -> Outcome {
     }
 }
 
-fn change_resistance(data: &Data, item: &mut Item, from: Element, to: Element) {
-    let Some(from_type) = data.mod_type_by_name(from.resistance_type()) else {
-        return;
-    };
+/// Turns the first changeable (natural, not fractured) `from` resistance into the `to` mod of
+/// the same rank among the mods that can spawn on the item (the nearest lower rank when `to` has
+/// fewer tiers).
+fn change_resistance(
+    data: &Data,
+    item: &mut Item,
+    from: Element,
+    to: Element,
+) -> Result<(), String> {
     let from_ranks = resistance_ranks(data, item, from.resistance_type());
     let to_ranks = resistance_ranks(data, item, to.resistance_type());
-    if to_ranks.is_empty() {
-        return;
-    }
-    for side in Side::BOTH {
-        let found = item
-            .affixes(side)
+    let found = Side::BOTH.into_iter().find_map(|side| {
+        item.affixes(side)
             .iter()
-            .position(|a| data.mod_at(a.roll.m).mod_type == from_type);
-        if let Some(i) = found {
-            let m = item.affixes(side)[i].roll.m;
-            let rank = from_ranks.iter().position(|&x| x == m).unwrap_or(0);
-            let target = to_ranks[rank.min(to_ranks.len() - 1)];
-            let fractured = item.affixes(side)[i].fractured;
-            item.affixes_mut(side).remove(i);
-            if let Some(s) = data.mod_at(target).side {
-                item.affixes_mut(s).push(Affix {
-                    roll: Roll {
-                        m: target,
-                        values: None,
-                    },
-                    fractured,
-                });
-            }
-            return;
-        }
+            .position(|a| !a.fractured && from_ranks.contains(&a.roll.m))
+            .map(|i| (side, i))
+    });
+    let Some((side, i)) = found else {
+        return Err(format!(
+            "no {} modifier can be changed",
+            from.resistance_type()
+        ));
+    };
+    let Some(&last) = to_ranks.last() else {
+        return Err(format!(
+            "no {} modifier can roll on this item",
+            to.resistance_type()
+        ));
+    };
+    let m = item.affixes(side)[i].roll.m;
+    let rank = from_ranks.iter().position(|&x| x == m).unwrap_or(0);
+    let target = to_ranks.get(rank).copied().unwrap_or(last);
+    let groups = item.explicit_groups(data);
+    if data
+        .mod_at(target)
+        .groups
+        .iter()
+        .any(|g| groups.contains(g))
+    {
+        return Err(format!(
+            "the item already has a {} modifier",
+            to.resistance_type()
+        ));
     }
+    item.affixes_mut(side).remove(i);
+    if let Some(s) = data.mod_at(target).side {
+        item.affixes_mut(s).push(Affix::new(target));
+    }
+    Ok(())
 }
 
 /// Unveiling: three options drawn by weight without replacement; the player picks one.
@@ -1249,8 +1315,12 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         params,
         last_added: None,
         leaves: 0,
+        unmet: None,
     };
     let mut out = run(&mut ctx, input.clone(), &m.ops);
+    if let Some(reason) = ctx.unmet {
+        return Err(Unmet { reason });
+    }
     if ctx.too_large() {
         return Ok(Outcome::Pending {
             item: input.clone(),
@@ -1259,11 +1329,13 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         });
     }
     let foresees = m.ops.contains(&Op::Foresee);
+    // A mirror copies the item exactly, catalyst quality included.
     let consumes = input.catalyst.is_some()
         && matches!(
             m.family,
             Family::Currency | Family::Essence | Family::Fossil
-        );
+        )
+        && !m.ops.contains(&Op::Mirror);
     out.items_mut(&mut |it| {
         if !foresees {
             it.foreseen = false;
