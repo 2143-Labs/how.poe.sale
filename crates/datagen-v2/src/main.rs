@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>";
+const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>\n       datagen-v2 catalog --bundle <file> --fixtures <dir> --out <dir>";
 
 /// Parses `--flag value` pairs and returns the named ones in order; any other flag is an error.
 fn flags(args: impl Iterator<Item = String>, names: &[&str]) -> anyhow::Result<Vec<PathBuf>> {
@@ -60,6 +60,33 @@ fn main() -> anyhow::Result<()> {
             // The written bundle must load through the same code the library uses.
             poe1_v2::data::Data::from_json(&text).context("the built bundle does not load")?;
             write(&out, text.as_bytes())
+        }
+        "catalog" => {
+            let [bundle, fixtures, out] =
+                <[PathBuf; 3]>::try_from(flags(args, &["--bundle", "--fixtures", "--out"])?)
+                    .expect("three flags");
+            let text = std::fs::read_to_string(&bundle)
+                .with_context(|| format!("reading {}", bundle.display()))?;
+            let data = poe1_v2::data::Data::from_json(&text)
+                .with_context(|| format!("loading {}", bundle.display()))?;
+            let files = poe1_v2::catalog::render_all(&data, &fixtures);
+            std::fs::create_dir_all(&out).with_context(|| format!("creating {}", out.display()))?;
+            // A file the catalog no longer produces is stale: remove it.
+            for entry in std::fs::read_dir(&out)? {
+                let path = entry?.path();
+                let name = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or_default();
+                if name.ends_with(".md") && !files.contains_key(name) {
+                    std::fs::remove_file(&path)
+                        .with_context(|| format!("removing {}", path.display()))?;
+                }
+            }
+            for (name, content) in files {
+                write(&out.join(name), content.as_bytes())?;
+            }
+            Ok(())
         }
         other => bail!("unknown command {other}; {USAGE}"),
     }
