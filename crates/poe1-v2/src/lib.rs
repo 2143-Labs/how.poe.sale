@@ -4,10 +4,12 @@
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
+pub mod apply;
 pub mod data;
 pub mod item;
 pub mod method;
 pub mod pattern;
+pub mod pool;
 pub mod text;
 
 static DATA: LazyLock<data::Data> = LazyLock::new(load_data);

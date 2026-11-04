@@ -448,3 +448,60 @@ pub fn matches_probability(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
         .map(|(p, _)| p)
         .sum()
 }
+
+/// The most likely state of an item (ties broken by state order).
+fn most_likely(data: &Data, pattern: &Pattern, item: &Item) -> PatternState {
+    evaluate(data, pattern, item)
+        .into_iter()
+        .next()
+        .map(|(_, s)| s)
+        .unwrap_or_else(|| unreachable!("evaluate always yields a state"))
+}
+
+/// Reads a method outcome as pattern states: an item becomes its state (or a Chance over its
+/// states when unrolled values split a class), several items their most likely states, and a
+/// Pending outcome the most likely state of what the partial item already holds. Equal Chance
+/// children merge.
+pub fn lift(data: &Data, pattern: &Pattern, outcome: &crate::apply::Outcome) -> Lifted {
+    use crate::apply::Outcome;
+    match outcome {
+        Outcome::Item(item) => {
+            let mut states = evaluate(data, pattern, item);
+            if states.len() == 1 && states[0].0 == 1.0 {
+                Lifted::State(states.remove(0).1)
+            } else {
+                Lifted::Chance(
+                    states
+                        .into_iter()
+                        .map(|(p, s)| (p, Lifted::State(s)))
+                        .collect(),
+                )
+            }
+        }
+        Outcome::Items(items) => Lifted::Many(
+            items
+                .iter()
+                .map(|i| most_likely(data, pattern, i))
+                .collect(),
+        ),
+        Outcome::Destroyed => Lifted::Destroyed,
+        Outcome::Choice(options) => {
+            Lifted::Choice(options.iter().map(|o| lift(data, pattern, o)).collect())
+        }
+        Outcome::Pending { item, reason, .. } => Lifted::Pending {
+            reason: reason.clone(),
+            known: most_likely(data, pattern, item),
+        },
+        Outcome::Chance(children) => {
+            let mut merged: Vec<(f64, Lifted)> = Vec::with_capacity(children.len());
+            for (p, o) in children {
+                let l = lift(data, pattern, o);
+                match merged.iter_mut().find(|(_, x)| *x == l) {
+                    Some((q, _)) => *q += p,
+                    None => merged.push((*p, l)),
+                }
+            }
+            Lifted::Chance(merged)
+        }
+    }
+}

@@ -517,6 +517,8 @@ pub struct Data {
     claim_index: HashMap<String, usize>,
     currency_by_name: HashMap<String, usize>,
     currency_by_id: HashMap<String, usize>,
+    /// Mod indices per kind, in bundle order.
+    kind_index: HashMap<ModKind, Vec<u32>>,
 }
 
 impl std::ops::Deref for Data {
@@ -620,6 +622,13 @@ impl Data {
                 .map(|(i, c)| (c.id.clone(), i))
                 .collect(),
             currency_by_name,
+            kind_index: {
+                let mut by_kind: HashMap<ModKind, Vec<u32>> = HashMap::new();
+                for (i, m) in bundle.mods.iter().enumerate() {
+                    by_kind.entry(m.kind).or_default().push(i as u32);
+                }
+                by_kind
+            },
             currency_by_id: bundle
                 .currencies
                 .iter()
@@ -742,5 +751,13 @@ impl Data {
             .iter()
             .position(|c| c.name == name)
             .map(|i| i as u8)
+    }
+
+    /// Every mod of this kind, in bundle order.
+    pub fn mods_of_kind(&self, kind: ModKind) -> &[u32] {
+        self.kind_index
+            .get(&kind)
+            .map(Vec::as_slice)
+            .unwrap_or_default()
     }
 }
