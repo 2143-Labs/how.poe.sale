@@ -1,0 +1,31 @@
+{
+  "claims": [
+    {
+      "id": "classes.max-sockets",
+      "statement": "Body armours and two-handed weapons (bows, staves and warstaves included) hold up to 6 sockets; helmets, gloves and boots up to 4; one-handed weapons and shields up to 3.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Guide:Frequently_asked_questions",
+      "quote": "The maximum number of sockets an item can have is determined by its type and item level. Helmets, Gloves, Boots can have up to 4 sockets; Chest armor and two-handed weapons up to 6; One-handed weapons and Shields up to 3.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "classes.affix-limits",
+      "statement": "A magic item holds 1 prefix and 1 suffix and a rare item 3 and 3; rare jewels and abyss jewels hold 2 and 2; flasks are never rare.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Regal_Orb",
+      "quote": "Converting a magic item to a rare is important for crafting in that a rare item has space for six affixes (three prefixes and three suffixes) while a magic item only has space for two affixes (one prefix and one suffix).",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "classes.tincture-limits",
+      "statement": "Tinctures follow flasks: at most 1 prefix and 1 suffix, and never rare.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    }
+  ]
+}
