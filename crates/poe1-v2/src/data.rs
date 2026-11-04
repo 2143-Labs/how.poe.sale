@@ -59,7 +59,8 @@ pub struct Variant {
     /// One per entry stat.
     pub conditions: Vec<Condition>,
     pub string: String,
-    /// One per `{k}`, in text order.
+    /// One per `{k}` occurrence, in text order. A repeated `{k}` repeats its slot, so a line
+    /// showing one roll twice reads back as two slots with the same `k`.
     pub slots: Vec<Slot>,
 }
 
@@ -435,7 +436,12 @@ pub struct CurrencyData {
     pub id: String,
     pub name: String,
     pub class: String,
+    /// The item's `description` property: what the currency does.
     pub description: String,
+    /// The item's `properties.directions`: the in-game usage line, which states most limits
+    /// ("Cannot be used on Influenced or Fractured items").
+    #[serde(default)]
+    pub directions: String,
 }
 
 /// `key` = a currency metadata id, or `beast:<name>`.

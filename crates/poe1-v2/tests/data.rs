@@ -1,5 +1,7 @@
 //! The generated v2 bundle: mod kinds, bases, catalysts, essences and stat translations.
 
+use std::collections::BTreeSet;
+
 use poe1_v2::data::{Category, Decimals, Influence, ModKind, Side};
 use poe1_v2::test_data;
 
@@ -116,4 +118,271 @@ fn translations() {
             .iter()
             .any(|v| v.slots.is_empty() && v.string == "Implicit Modifiers Cannot Be Changed")
     );
+}
+
+#[test]
+fn repeated_placeholder_reuses_its_slot() {
+    let d = test_data();
+    let entry = |stat: &str| {
+        let s = d
+            .stat_by_name(stat)
+            .unwrap_or_else(|| panic!("{stat} missing"));
+        &d.translations[d.translation_of_stat(s).unwrap() as usize]
+    };
+    // "of Sealing" and "of Thawing" show one roll twice; the repeated `{0}` keeps the variant.
+    for stat in [
+        "local_flask_bleeding_immunity_if_bleeding_and_remove_corrupted_blood_s",
+        "local_flask_chill_or_freeze_immunity_if_chilled_or_frozen_s",
+    ] {
+        let e = entry(stat);
+        let slots = &e.variants[0].slots;
+        assert_eq!(e.variants.len(), 1, "{stat}");
+        assert_eq!(slots.len(), 2, "{stat}");
+        assert_eq!(slots[0].k, slots[1].k, "{stat}");
+        assert_eq!(slots[0].factor, slots[1].factor, "{stat}");
+        assert_eq!(slots[0].plus, slots[1].plus, "{stat}");
+    }
+}
+
+#[test]
+fn essence_columns_cover_rune_daggers_and_warstaves() {
+    let d = test_data();
+    let class = |id: &str| {
+        d.class_by_id(id)
+            .unwrap_or_else(|| panic!("class {id} missing"))
+    };
+    let (dagger, rune, staff, war, rod) = (
+        class("Dagger"),
+        class("Rune Dagger"),
+        class("Staff"),
+        class("Warstaff"),
+        class("FishingRod"),
+    );
+    let (mut daggers, mut staffs) = (0, 0);
+    for e in &d.essences {
+        let mod_for = |c: u16| e.mods.iter().find(|&&(cc, _)| cc == c).map(|&(_, m)| m);
+        if let Some(m) = mod_for(dagger) {
+            daggers += 1;
+            assert_eq!(
+                mod_for(rune),
+                Some(m),
+                "{} needs the Dagger column on Rune Daggers",
+                e.name
+            );
+        }
+        if let Some(m) = mod_for(staff) {
+            staffs += 1;
+            assert_eq!(
+                mod_for(war),
+                Some(m),
+                "{} needs the Staff column on Warstaves",
+                e.name
+            );
+        }
+        assert_eq!(
+            mod_for(rod),
+            None,
+            "{} must have no Fishing Rod mod",
+            e.name
+        );
+    }
+    assert!(
+        daggers > 0 && staffs > 0,
+        "no essence has a Dagger or Staff mod"
+    );
+}
+
+#[test]
+fn currencies_carry_directions() {
+    let d = test_data();
+    // The game's usage line, distinct from the description. Placeholders and itemised things
+    // (wisps, tattoos, nets) have none, so only the count is asserted wholesale.
+    let with_directions = d
+        .currencies
+        .iter()
+        .filter(|c| !c.directions.is_empty())
+        .count();
+    assert!(
+        with_directions > 600,
+        "only {with_directions} currencies carry directions"
+    );
+    let fracturing = d
+        .currency_by_name("Fracturing Orb")
+        .expect("Fracturing Orb missing");
+    assert!(
+        fracturing
+            .directions
+            .contains("Cannot be used on Influenced or Fractured items"),
+        "{}",
+        fracturing.directions
+    );
+    assert_ne!(fracturing.directions, fracturing.description);
+    let chaos = d.currency_by_name("Chaos Orb").expect("Chaos Orb missing");
+    assert_eq!(
+        chaos.directions,
+        "Right click this item then left click a rare item to apply it."
+    );
+}
+
+/// Stats the pinned data cannot translate, with why. Tincture text lives in
+/// `stat_translations/tincture.json`, which `scripts/fetch-data.sh` does not download.
+const UNTRANSLATED: &[(&str, &str)] = &[
+    (
+        "attack_speed_+%_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "base_mana_gained_on_tinctured_weapon_kill",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "critical_strike_multiplier_+_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "damage_over_time_multiplier_+_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "elemental_ailment_duration_+%_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "flask_charges_granted_from_tinctured_weapon_kills_+%",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "hits_ignore_enemy_monster_physical_damage_reduction_%_chance_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "life_gained_on_hitting_enemies_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "life_gained_on_killing_enemies_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "local_tincture_cooldown_recovery_+%",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "local_tincture_mod_effect_+%",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "local_tincture_toxicity_rate_+%",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "mana_gained_on_hitting_enemies_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "penetrate_elemental_resistances_%_with_tinctured_weapons",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "tinctured_weapon_damage_+%_vs_enemies_that_are_on_low_life",
+        "needs stat_translations/tincture.json",
+    ),
+    (
+        "dummy_stat_display_nothing",
+        "a marker the game hides: its translation entry is empty",
+    ),
+    (
+        "grant_focus_skill",
+        "grants the Focus skill; the game shows no line for it",
+    ),
+    (
+        "local_influence_mod_requires_unique_monster_presence",
+        "the pinned data has no translation: presence mods cannot show their condition (D3)",
+    ),
+    (
+        "local_influence_mod_requires_celestial_boss_presence",
+        "the pinned data has no translation: presence mods cannot show their condition (D3)",
+    ),
+];
+
+#[test]
+fn every_spawnable_mod_stat_is_translated() {
+    let d = test_data();
+    // A tag on a kept base, or on the influence variant of its class: a mod with a positive spawn
+    // weight on any of these can appear on an in-scope item.
+    let item_tags: BTreeSet<u16> = d
+        .bases
+        .iter()
+        .flat_map(|b| {
+            b.tags.iter().copied().chain(
+                d.classes[b.class as usize]
+                    .influence_tags
+                    .iter()
+                    .flatten()
+                    .copied(),
+            )
+        })
+        .collect();
+    for (stat, _) in UNTRANSLATED {
+        let s = d
+            .stat_by_name(stat)
+            .unwrap_or_else(|| panic!("the allow-list names unknown stat {stat}"));
+        assert!(
+            d.translation_of_stat(s).is_none(),
+            "the allow-list entry {stat} is stale: the pinned data now translates it"
+        );
+    }
+    let mut missing = BTreeSet::new();
+    for m in &d.mods {
+        if !(m.kind.is_explicit() || m.kind.is_implicit()) {
+            continue;
+        }
+        if !m
+            .spawn
+            .iter()
+            .any(|&(t, weight)| weight > 0 && item_tags.contains(&t))
+        {
+            continue;
+        }
+        for s in &m.stats {
+            let name = d.stat(s.stat);
+            if d.translation_of_stat(s.stat).is_none()
+                && !UNTRANSLATED.iter().any(|&(n, _)| n == name)
+            {
+                missing.insert(format!("{name} (on {})", m.id));
+            }
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "spawnable stats with no translation: {missing:?}"
+    );
+}
+
+#[test]
+fn presence_mods_cannot_show_their_condition() {
+    // D3: every `…Presence` eldritch tier carries a presence-requirement stat the game shows on
+    // its own line, but the pinned RePoE export has no translation for either stat, so the tiers
+    // print exactly like their base versions. Do not invent the line; refresh the data first.
+    let d = test_data();
+    let presence = d
+        .mod_by_id("IncreasedAttackSpeedEldritchImplicitUniquePresence1")
+        .expect("presence mod missing");
+    let stat = |name: &str| {
+        d.stat_by_name(name)
+            .unwrap_or_else(|| panic!("{name} missing"))
+    };
+    let unique = stat("local_influence_mod_requires_unique_monster_presence");
+    let celestial = stat("local_influence_mod_requires_celestial_boss_presence");
+    assert!(
+        d.mod_at(presence).stats.iter().any(|s| s.stat == unique),
+        "the presence mod no longer carries its condition stat"
+    );
+    for s in [unique, celestial] {
+        assert!(
+            d.translation_of_stat(s).is_none(),
+            "the pinned data now translates {}; give presence mods their own line",
+            d.stat(s)
+        );
+    }
 }

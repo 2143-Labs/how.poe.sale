@@ -86,6 +86,8 @@ pub struct RawProperties {
     pub ward: Option<RawRange>,
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default)]
+    pub directions: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -219,14 +221,14 @@ pub struct RawFossil {
 }
 
 /// The `{k}` placeholders of a translation string, in text order. `None` when one is out of
-/// range or repeated.
+/// range. A repeated placeholder reuses its slot: the same stat, shown twice.
 pub fn placeholders(s: &str, n_ids: usize) -> Option<Vec<usize>> {
     let mut out = Vec::new();
     let mut rest = s;
     while let Some(open) = rest.find('{') {
         let close = rest[open..].find('}')? + open;
         let k: usize = rest[open + 1..close].parse().ok()?;
-        if k >= n_ids || out.contains(&k) {
+        if k >= n_ids {
             return None;
         }
         out.push(k);

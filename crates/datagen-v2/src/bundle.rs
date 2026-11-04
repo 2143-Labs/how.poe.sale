@@ -87,6 +87,17 @@ fn category_key(c: Category) -> String {
         .unwrap_or_default()
 }
 
+/// The class whose essence column a class uses. RePoE's `essences.json` has no Rune Dagger or
+/// Warstaff column; poedb lists them with the Dagger and Staff columns (one-hand and two-hand
+/// essences respectively).
+fn essence_column(class: &str) -> &str {
+    match class {
+        "Rune Dagger" => "Dagger",
+        "Warstaff" => "Staff",
+        other => other,
+    }
+}
+
 fn base_domain(d: &str) -> Option<Domain> {
     Some(match d {
         "item" => Domain::Item,
@@ -237,6 +248,12 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             description: b
                 .properties
                 .description
+                .clone()
+                .unwrap_or_default()
+                .replace("\r\n", "\n"),
+            directions: b
+                .properties
+                .directions
                 .clone()
                 .unwrap_or_default()
                 .replace("\r\n", "\n"),
@@ -676,10 +693,16 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             continue;
         };
         let mut class_mods = Vec::new();
-        for (class, m) in &e.mods {
-            if let (Some(&ci), Some(m)) = (class_idx.get(class.as_str()), m) {
-                class_mods.push((ci, mod_ref(m, &format!("essence {}", e.name))?));
-            }
+        for (ci, rule) in class_rules.classes.iter().enumerate() {
+            let m = e.mods.get(&rule.id).and_then(|m| m.as_deref()).or_else(|| {
+                e.mods
+                    .get(essence_column(&rule.id))
+                    .and_then(|m| m.as_deref())
+            });
+            let Some(m) = m else {
+                continue;
+            };
+            class_mods.push((ci as u16, mod_ref(m, &format!("essence {}", e.name))?));
         }
         class_mods.sort();
         essences.push(EssenceData {
@@ -691,6 +714,43 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             item_level_max: e.item_level_restriction,
             mods: class_mods,
         });
+    }
+
+    // A class the bench can add a modifier to needs an essence modifier whenever the other classes
+    // of its category have one. Equipment without a bench craft (Fishing Rods) and the categories
+    // essences do not touch (jewels, flasks, tinctures) are exempt.
+    let bench_classes: BTreeSet<u16> = bench
+        .iter()
+        .filter(|b| matches!(b.action, BenchAction::AddMod { .. }))
+        .flat_map(|b| b.classes.iter().copied())
+        .collect();
+    for ess in &essences {
+        for (ci, rule) in class_rules.classes.iter().enumerate() {
+            let ci = ci as u16;
+            if rule.id == "FishingRod"
+                || !bench_classes.contains(&ci)
+                || ess.mods.iter().any(|&(c, _)| c == ci)
+            {
+                continue;
+            }
+            let siblings: Vec<&str> = class_rules
+                .classes
+                .iter()
+                .enumerate()
+                .filter(|(i, r)| {
+                    r.category == rule.category && ess.mods.iter().any(|&(c, _)| c == *i as u16)
+                })
+                .map(|(_, r)| r.id.as_str())
+                .collect();
+            if !siblings.is_empty() {
+                bail!(
+                    "essence {} has no modifier for {}, although it has one for {}",
+                    ess.name,
+                    rule.id,
+                    siblings.join(", ")
+                );
+            }
+        }
     }
 
     // ---- fossils
