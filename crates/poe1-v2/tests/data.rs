@@ -224,69 +224,8 @@ fn currencies_carry_directions() {
     );
 }
 
-/// Stats the pinned data cannot translate, with why. Tincture text lives in
-/// `stat_translations/tincture.json`, which `scripts/fetch-data.sh` does not download.
+/// Stats the pinned data cannot translate, with why.
 const UNTRANSLATED: &[(&str, &str)] = &[
-    (
-        "attack_speed_+%_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "base_mana_gained_on_tinctured_weapon_kill",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "critical_strike_multiplier_+_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "damage_over_time_multiplier_+_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "elemental_ailment_duration_+%_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "flask_charges_granted_from_tinctured_weapon_kills_+%",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "hits_ignore_enemy_monster_physical_damage_reduction_%_chance_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "life_gained_on_hitting_enemies_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "life_gained_on_killing_enemies_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "local_tincture_cooldown_recovery_+%",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "local_tincture_mod_effect_+%",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "local_tincture_toxicity_rate_+%",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "mana_gained_on_hitting_enemies_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "penetrate_elemental_resistances_%_with_tinctured_weapons",
-        "needs stat_translations/tincture.json",
-    ),
-    (
-        "tinctured_weapon_damage_+%_vs_enemies_that_are_on_low_life",
-        "needs stat_translations/tincture.json",
-    ),
     (
         "dummy_stat_display_nothing",
         "a marker the game hides: its translation entry is empty",
@@ -356,6 +295,29 @@ fn every_spawnable_mod_stat_is_translated() {
     assert!(
         missing.is_empty(),
         "spawnable stats with no translation: {missing:?}"
+    );
+}
+
+/// Tincture lines live in `stat_translations/tincture.json`, which `scripts/fetch-data.sh` pins
+/// beside the main file and datagen merges. A rolled tincture affix therefore prints the game's
+/// wording; without the file the merged line would come out empty.
+#[test]
+fn tincture_mods_render_their_lines() {
+    let d = test_data();
+    let spec: poe1_v2::item::ItemSpec = serde_json::from_str(
+        r#"{
+            "base": "Metadata/Items/Tinctures/TinctureStun",
+            "itemLevel": 84,
+            "rarity": "magic",
+            "prefixes": [{ "id": "TinctureEffect2", "values": [16] }]
+        }"#,
+    )
+    .expect("tincture spec");
+    let item = poe1_v2::item::Item::from_spec(d, &spec).expect("tincture item");
+    let text = poe1_v2::text::render(d, &item);
+    assert!(
+        text.lines().any(|line| line == "16% increased effect"),
+        "{text}"
     );
 }
 

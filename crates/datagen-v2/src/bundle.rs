@@ -1,6 +1,8 @@
 //! Builds the v2 `Bundle` from the pinned RePoE export and the hand-authored rules in
 //! `rules/v2/`: in-scope classes and bases, every modifier kind an in-scope item can carry, bench
 //! options, essences, fossils, catalysts, currencies and the stat translations their lines use.
+//! The pinned export splits tincture lines into `stat_translations/tincture.json`; those entries
+//! are merged after the main file, which wins where both carry a stat.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
@@ -192,12 +194,89 @@ impl Table {
     }
 }
 
+/// One translation entry as the bundle stores it, or `None` when it names no kept mod's stat or
+/// every English variant drops out.
+fn build_translation(
+    t: &RawTranslation,
+    stats: &mut Table,
+    mod_stat_count: usize,
+) -> anyhow::Result<Option<TranslationData>> {
+    if t.hidden == Some(true) {
+        return Ok(None);
+    }
+    let ids = t.ids();
+    if !ids.iter().any(|s| {
+        stats
+            .index
+            .get(s)
+            .is_some_and(|&i| (i as usize) < mod_stat_count)
+    }) {
+        return Ok(None);
+    }
+    let mut variants = Vec::new();
+    'variants: for e in t.english.iter().flatten() {
+        let Some(order) = placeholders(&e.string, ids.len()) else {
+            continue;
+        };
+        let format = |k: usize| e.format.as_ref().and_then(|f| f.get(k)).map(String::as_str);
+        let mut slots = Vec::with_capacity(order.len());
+        for &k in &order {
+            if format(k) == Some("ignore") {
+                continue 'variants;
+            }
+            let handlers: &[String] = e
+                .index_handlers
+                .as_ref()
+                .and_then(|h| h.get(k))
+                .map(Vec::as_slice)
+                .unwrap_or_default();
+            let mut factor = 1.0;
+            for name in handlers {
+                match handler_factor(name) {
+                    Some(Some(f)) => factor *= f,
+                    Some(None) => continue 'variants,
+                    None => bail!(
+                        "stat translation handler {name} has no known display factor; add it to handler_factor"
+                    ),
+                }
+            }
+            slots.push(Slot {
+                k: k as u8,
+                plus: format(k) == Some("+#"),
+                factor,
+                decimals: decimals(handlers),
+            });
+        }
+        let conditions = e
+            .condition
+            .iter()
+            .flatten()
+            .map(|c| Condition {
+                min: c.min,
+                max: c.max,
+                negated: c.negated.unwrap_or(false),
+            })
+            .collect();
+        variants.push(Variant {
+            conditions,
+            string: e.string.clone(),
+            slots,
+        });
+    }
+    if variants.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(TranslationData {
+        stats: ids.iter().map(|s| stats.push(s)).collect(),
+        variants,
+    }))
+}
+
 pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     let raw_mods: BTreeMap<String, RawMod> = load_json(raw, "mods.json")?;
     let raw_bases: BTreeMap<String, RawBase> = load_json(raw, "base_items.json")?;
     let raw_classes: BTreeMap<String, RawClass> = load_json(raw, "item_classes.json")?;
     let raw_bench: Vec<RawBench> = load_json(raw, "crafting_bench_options.json")?;
-    let raw_translations: Vec<RawTranslation> = load_json(raw, "stat_translations.json")?;
     let raw_essences: BTreeMap<String, RawEssence> = load_json(raw, "essences.json")?;
     let raw_fossils: BTreeMap<String, RawFossil> = load_json(raw, "fossils.json")?;
     let class_rules: ItemClassesFile = load_json(rules, "item-classes.json")?;
@@ -327,78 +406,33 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     );
     let mod_stat_count = stats.names.len();
 
-    // ---- translations: entries naming a kept mod's stat, in file order
+    // ---- translations: entries naming a kept mod's stat, in file order. Tincture lines live in
+    // `stat_translations/tincture.json` upstream; the main file wins where both carry a stat.
+    let main_translations: Vec<RawTranslation> = load_json(raw, "stat_translations.json")?;
+    let tincture_translations: Vec<RawTranslation> =
+        load_json(raw, "stat_translations/tincture.json").context(
+            "run scripts/fetch-data.sh to download stat_translations/tincture.json into data/raw",
+        )?;
+    let main_stats: BTreeSet<&str> = main_translations
+        .iter()
+        .flat_map(RawTranslation::ids)
+        .map(String::as_str)
+        .collect();
     let mut translations = Vec::new();
-    for t in &raw_translations {
-        if t.hidden == Some(true) {
+    for t in &main_translations {
+        if let Some(tr) = build_translation(t, &mut stats, mod_stat_count)? {
+            translations.push(tr);
+        }
+    }
+    for t in &tincture_translations {
+        // `tincture.json` repeats the general entries the main file already carries verbatim;
+        // drop those, since two entries for one stat would print the same line twice.
+        if t.ids().iter().any(|s| main_stats.contains(s.as_str())) {
             continue;
         }
-        let ids = t.ids();
-        if !ids.iter().any(|s| {
-            stats
-                .index
-                .get(s)
-                .is_some_and(|&i| (i as usize) < mod_stat_count)
-        }) {
-            continue;
+        if let Some(tr) = build_translation(t, &mut stats, mod_stat_count)? {
+            translations.push(tr);
         }
-        let mut variants = Vec::new();
-        'variants: for e in t.english.iter().flatten() {
-            let Some(order) = placeholders(&e.string, ids.len()) else {
-                continue;
-            };
-            let format = |k: usize| e.format.as_ref().and_then(|f| f.get(k)).map(String::as_str);
-            let mut slots = Vec::with_capacity(order.len());
-            for &k in &order {
-                if format(k) == Some("ignore") {
-                    continue 'variants;
-                }
-                let handlers: &[String] = e
-                    .index_handlers
-                    .as_ref()
-                    .and_then(|h| h.get(k))
-                    .map(Vec::as_slice)
-                    .unwrap_or_default();
-                let mut factor = 1.0;
-                for name in handlers {
-                    match handler_factor(name) {
-                        Some(Some(f)) => factor *= f,
-                        Some(None) => continue 'variants,
-                        None => bail!(
-                            "stat translation handler {name} has no known display factor; add it to handler_factor"
-                        ),
-                    }
-                }
-                slots.push(Slot {
-                    k: k as u8,
-                    plus: format(k) == Some("+#"),
-                    factor,
-                    decimals: decimals(handlers),
-                });
-            }
-            let conditions = e
-                .condition
-                .iter()
-                .flatten()
-                .map(|c| Condition {
-                    min: c.min,
-                    max: c.max,
-                    negated: c.negated.unwrap_or(false),
-                })
-                .collect();
-            variants.push(Variant {
-                conditions,
-                string: e.string.clone(),
-                slots,
-            });
-        }
-        if variants.is_empty() {
-            continue;
-        }
-        translations.push(TranslationData {
-            stats: ids.iter().map(|s| stats.push(s)).collect(),
-            variants,
-        });
     }
 
     // ---- mods out

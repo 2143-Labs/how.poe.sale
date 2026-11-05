@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Downloads the pinned repoe-fork export (3.29.3.3) into data/raw/ and checks each file's SRI hash.
-# Keep the commit and hashes in sync with flake.nix.
+# The eight top-level files are the ones flake.nix pins too; keep the commit and their hashes in
+# sync with it. `stat_translations/tincture.json` is v2-only: tincture mod lines live in their own
+# file upstream, datagen-v2 reads it beside stat_translations.json, and flake.nix does not need it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,6 +16,7 @@ sri() {
 mkdir -p data/raw
 while read -r file hash; do
   dest="data/raw/$file"
+  mkdir -p "$(dirname "$dest")"
   if [ -f "$dest" ] && [ "$(sri "$dest")" = "$hash" ]; then
     continue
   fi
@@ -34,4 +37,5 @@ crafting_bench_options.json sha256-D+UasWV86mnFM7sGEOOT8QQBFWFA3ojt9oYSBIPNKEU=
 essences.json sha256-AcatVYZt9nPdJamwhXfuIoAq07jwZxsBnLTPUjub1wA=
 fossils.json sha256-4XHBGfh0tPK+Kpg2avYcWiCRyib1CLL1uda1Ubud8YE=
 tags.json sha256-Jd+ROr1Fm+3T3BtknjRLNT4nHtCjIWLxFtZgNKMmm1A=
+stat_translations/tincture.json sha256-pjF2ryLKOiZJMJvyKiz78onAcyP0APkX+ylGUTZog1w=
 EOF
