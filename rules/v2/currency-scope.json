@@ -746,18 +746,70 @@
       "note": "Incubators are a separate item class, not currency, and are outside the bundle's currency set."
     },
     {
-      "pattern": " Oil$",
-      "methods": [
-        "currency/anoint"
+      "names": [
+        "Clear Oil",
+        "Sepia Oil",
+        "Amber Oil",
+        "Verdant Oil",
+        "Teal Oil",
+        "Azure Oil",
+        "Indigo Oil",
+        "Violet Oil",
+        "Crimson Oil",
+        "Black Oil",
+        "Opalescent Oil",
+        "Silver Oil",
+        "Golden Oil",
+        "Tainted Oil",
+        "Reflective Oil",
+        "Prismatic Oil"
       ],
-      "note": "Every oil is the same anointment method on an amulet."
+      "methods": [
+        "currency/anoint-clear-oil",
+        "currency/anoint-sepia-oil",
+        "currency/anoint-amber-oil",
+        "currency/anoint-verdant-oil",
+        "currency/anoint-teal-oil",
+        "currency/anoint-azure-oil",
+        "currency/anoint-indigo-oil",
+        "currency/anoint-violet-oil",
+        "currency/anoint-crimson-oil",
+        "currency/anoint-black-oil",
+        "currency/anoint-opalescent-oil",
+        "currency/anoint-silver-oil",
+        "currency/anoint-golden-oil",
+        "currency/anoint-tainted-oil",
+        "currency/anoint-reflective-oil",
+        "currency/anoint-prismatic-oil"
+      ],
+      "note": "One anointment method per oil, so each oils method states that oil as its cost and its own target rule."
     },
     {
-      "pattern": " Rune$",
-      "methods": [
-        "currency/runesmith"
+      "names": [
+        "Sun Rune",
+        "Power Rune",
+        "Bound Rune",
+        "Life Rune",
+        "War Rune",
+        "River Rune",
+        "Bounty Rune",
+        "Journey Rune",
+        "Mountain Rune",
+        "Time Rune"
       ],
-      "note": "All ten are Kalguuran runes (metadata ids KalguuranRune1-10)."
+      "methods": [
+        "currency/rune-sun",
+        "currency/rune-power",
+        "currency/rune-bound",
+        "currency/rune-life",
+        "currency/rune-war",
+        "currency/rune-river",
+        "currency/rune-bounty",
+        "currency/rune-journey",
+        "currency/rune-mountain",
+        "currency/rune-time"
+      ],
+      "note": "One method per Kalguuran rune (metadata ids KalguuranRune1-10), so each states its own rune as the cost."
     },
     {
       "pattern": "Essence of ",
@@ -846,8 +898,8 @@
     },
     {
       "pattern": "^Runegraft of ",
-      "excluded": "other-item-class",
-      "note": "Runegrafts modify Grafts, an item class out of scope."
+      "excluded": "not-used-on-items",
+      "note": "A runegraft replaces one Mastery Passive Skill; it never touches an item."
     },
     {
       "pattern": "Gem",
@@ -928,7 +980,8 @@
     },
     {
       "pattern": "^Vial of ",
-      "excluded": "not-used-on-items"
+      "excluded": "other-item-class",
+      "note": "Each vial transforms one specific unique item on the Altar of Sacrifice."
     },
     {
       "pattern": "^Omen of ",
@@ -953,7 +1006,6 @@
         "Astragali",
         "Scrap Metal",
         "Burial Medallion",
-        "Dead Man's Sulphur",
         "Message in a Bottle",
         "Prophecy",
         "Ritual Vessel",
@@ -965,11 +1017,18 @@
         "The Changeling's Ducat",
         "Orb of Regret",
         "Crystalline Geode",
-        "Igneous Geode",
-        "Crystallised Rancour"
+        "Igneous Geode"
       ],
       "excluded": "not-used-on-items",
       "note": "Tainted Blessing and Oil Extractor have their own methods."
+    },
+    {
+      "names": [
+        "Crystallised Rancour",
+        "Dead Man's Sulphur"
+      ],
+      "excluded": "cost-only",
+      "note": "Both are craft costs: Crystallised Rancour is spent at the Horticrafting bench and Dead Man's Sulphur as part of Allflame Crafting."
     }
   ]
 }

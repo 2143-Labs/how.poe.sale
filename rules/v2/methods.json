@@ -159,7 +159,6 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Farric Goliath", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -176,12 +175,11 @@
     },
     {
       "id": "beast/influence-slam-elder",
-      "name": "Beastcraft: add a Elder modifier",
+      "name": "Beastcraft: add an Elder modifier",
       "family": "beast",
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Saqawine Blood Viper", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -203,7 +201,6 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Craicic Watcher", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -225,7 +222,6 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Queen", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -247,7 +243,6 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Devourer", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -270,7 +265,6 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Scrabbler", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2},
         {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
@@ -479,16 +473,292 @@
       "example": "crown-d2-scbc"
     },
     {
-      "id": "currency/anoint",
-      "name": "Anoint",
+      "id": "currency/anoint-amber-oil",
+      "name": "Anoint with Amber Oil",
       "family": "currency",
+      "cost": [
+        {"name": "Amber Oil", "amount": 1}
+      ],
       "requires": [
-        {"kind": "class", "anyOf": ["Amulet"]}
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-azure-oil",
+      "name": "Anoint with Azure Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Azure Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-black-oil",
+      "name": "Anoint with Black Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Black Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-clear-oil",
+      "name": "Anoint with Clear Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Clear Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-crimson-oil",
+      "name": "Anoint with Crimson Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Crimson Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-golden-oil",
+      "name": "Anoint with Golden Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Golden Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-indigo-oil",
+      "name": "Anoint with Indigo Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Indigo Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-opalescent-oil",
+      "name": "Anoint with Opalescent Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Opalescent Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-prismatic-oil",
+      "name": "Anoint an amulet with Prismatic Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Prismatic Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-reflective-oil",
+      "name": "Anoint a mirrored item with Reflective Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Reflective Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "mirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-sepia-oil",
+      "name": "Anoint with Sepia Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Sepia Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-silver-oil",
+      "name": "Anoint with Silver Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Silver Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-tainted-oil",
+      "name": "Anoint a corrupted item with Tainted Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-teal-oil",
+      "name": "Anoint with Teal Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Teal Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-verdant-oil",
+      "name": "Anoint with Verdant Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Verdant Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-violet-oil",
+      "name": "Anoint with Violet Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Violet Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
     },
     {
       "id": "currency/armour-recombinator",
@@ -521,13 +791,12 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["armour"]},
-        {"kind": "qualityBelow", "max": 20},
-        {"kind": "notUnique"}
+        {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
       ],
-      "claims": ["game-text", "quality.per-level"],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
       "example": "slink-boots-normal",
       "protect": null
     },
@@ -609,13 +878,12 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["weapon"]},
-        {"kind": "qualityBelow", "max": 20},
-        {"kind": "notUnique"}
+        {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
       ],
-      "claims": ["game-text", "quality.per-level"],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
       "protect": null
     },
     {
@@ -779,12 +1047,12 @@
         {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]}
       ],
-      "protect": null,
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
       "claims": ["game-text", "ducat.allflame"],
-      "example": "crown-a"
+      "example": "crown-a",
+      "protect": null
     },
     {
       "id": "currency/divine",
@@ -913,13 +1181,14 @@
         {"name": "Enchant", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Helmet", "Gloves", "Boots"]}
+        {"kind": "class", "anyOf": ["Belt", "Helmet", "Gloves", "Boots"]}
       ],
       "ops": [
         {"op": "setEnchant", "pool": "lab"}
       ],
-      "claims": ["game-text", "enchant.lab-tiers"],
+      "claims": ["game-text", "enchant.lab-tiers", "enchant.font-shape"],
       "example": "crown-a"
     },
     {
@@ -1127,13 +1396,12 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["flask", "tincture"]},
-        {"kind": "qualityBelow", "max": 20},
-        {"kind": "notUnique"}
+        {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
       ],
-      "claims": ["game-text", "quality.per-level"],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
       "example": "quicksilver-normal",
       "protect": null
     },
@@ -1468,7 +1736,7 @@
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Amulet"]},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
         {"kind": "hasEnchant"}
       ],
       "ops": [
@@ -1628,7 +1896,8 @@
         {"name": "Orb of Unravelling", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasMemoryStrands"}
+        {"kind": "hasMemoryStrands"},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1718,16 +1987,154 @@
       "protect": null
     },
     {
-      "id": "currency/runesmith",
-      "name": "Runesmith",
+      "id": "currency/rune-bound",
+      "name": "Bound Rune",
       "family": "currency",
+      "cost": [
+        {"name": "Bound Rune", "amount": 1}
+      ],
       "requires": [
-        {"kind": "category", "anyOf": ["weapon", "armour"]}
+        {"kind": "category", "anyOf": ["weapon"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-bounty",
+      "name": "Bounty Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Bounty Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-journey",
+      "name": "Journey Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Journey Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-life",
+      "name": "Life Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Life Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-mountain",
+      "name": "Mountain Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Mountain Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-power",
+      "name": "Power Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Power Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-river",
+      "name": "River Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "River Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-sun",
+      "name": "Sun Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Sun Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-time",
+      "name": "Time Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Time Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-war",
+      "name": "War Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "War Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
     },
     {
       "id": "currency/sacred",
@@ -2062,7 +2469,8 @@
         {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Amulet"]},
         {"kind": "notUnique"},
-        {"kind": "noEldritch"}
+        {"kind": "noEldritch"},
+        {"kind": "implicitsChangeable"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
@@ -2369,7 +2777,7 @@
       "name": "Harvest: add a Critical modifier, remove another",
       "family": "harvest",
       "cost": [
-        {"name": "Primal Crystallised Lifeforce", "amount": 17500},
+        {"name": "Primal Crystallised Lifeforce", "amount": 20000},
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
@@ -2526,6 +2934,42 @@
       "example": "slink-boots-eldritch"
     },
     {
+      "id": "harvest/cold-damage-to-fire-damage",
+      "name": "Harvest: change Cold Damage to Fire Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/cold-damage-to-lightning-damage",
+      "name": "Harvest: change Cold Damage to Lightning Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
       "id": "harvest/cold-to-fire",
       "name": "Harvest: change Cold Resistance to Fire Resistance",
       "family": "harvest",
@@ -2562,6 +3006,280 @@
       "claims": ["harvest.list"]
     },
     {
+      "id": "harvest/enchant-body-armour-cold-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Cold Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityColdResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-dexterity",
+      "name": "Harvest: enchant a Body Armour with +1 to Dexterity per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityDexterity"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-fire-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Fire Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityFireResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-intelligence",
+      "name": "Harvest: enchant a Body Armour with +1 to Intelligence per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIntelligence_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-life",
+      "name": "Harvest: enchant a Body Armour with +1 to Maximum Life per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIncreasedLife"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-lightning-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Lightning Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityLightningResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-mana",
+      "name": "Harvest: enchant a Body Armour with +1 to Maximum Mana per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIncreasedMana"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-strength",
+      "name": "Harvest: enchant a Body Armour with +1 to Strength per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityStrength"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-melee-weapon-range",
+      "name": "Harvest: enchant a Melee Weapon with +0.1 metres to Weapon Range per 10% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Claw", "Dagger", "Rune Dagger", "One Hand Axe", "One Hand Mace", "One Hand Sword", "Thrusting One Hand Sword", "Sceptre", "Staff", "Warstaff", "Two Hand Axe", "Two Hand Mace", "Two Hand Sword"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalMeleeWeaponRange_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-accuracy",
+      "name": "Harvest: enchant a Weapon with 1% increased Accuracy per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityAccuracyRatingIncrease_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-area-of-effect",
+      "name": "Harvest: enchant a Weapon with 1% increased Area of Effect per 4% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityAreaOfEffect_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-attack-speed",
+      "name": "Harvest: enchant a Weapon with 1% increased Attack Speed per 8% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalIncreasedAttackSpeed"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-critical-strike-chance",
+      "name": "Harvest: enchant a Weapon with 1% increased Critical Strike Chance per 4% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalCriticalStrikeChance__"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-elemental-damage",
+      "name": "Harvest: enchant a Weapon with 1% increased Elemental Damage per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityElementalDamagePercent"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/fire-damage-to-cold-damage",
+      "name": "Harvest: change Fire Damage to Cold Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/fire-damage-to-lightning-damage",
+      "name": "Harvest: change Fire Damage to Lightning Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
       "id": "harvest/fire-to-cold",
       "name": "Harvest: change Fire Resistance to Cold Resistance",
       "family": "harvest",
@@ -2596,6 +3314,42 @@
         {"op": "changeResistance", "from": "fire", "to": "lightning"}
       ],
       "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/lightning-damage-to-cold-damage",
+      "name": "Harvest: change Lightning Damage to Cold Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/lightning-damage-to-fire-damage",
+      "name": "Harvest: change Lightning Damage to Fire Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
     },
     {
       "id": "harvest/lightning-to-cold",
@@ -2669,6 +3423,29 @@
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attack"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-attribute",
+      "name": "Harvest: reforge with a Attribute modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "attribute"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attribute"}}}
       ],
       "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
@@ -2766,7 +3543,7 @@
       "name": "Harvest: reforge with a Defence modifier",
       "family": "harvest",
       "cost": [
-        {"name": "Primal Crystallised Lifeforce", "amount": 50}
+        {"name": "Primal Crystallised Lifeforce", "amount": 75}
       ],
       "requires": [
         {"kind": "notCorrupted"},
@@ -2779,6 +3556,52 @@
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "defences"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-drop",
+      "name": "Harvest: reforge with a Drop modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "drop"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "drop"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-elemental",
+      "name": "Harvest: reforge with a Elemental modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "elemental"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "elemental"}}}
       ],
       "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
@@ -2889,6 +3712,52 @@
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "lightning"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-mana",
+      "name": "Harvest: reforge with a Mana modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "mana"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "mana"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-minion",
+      "name": "Harvest: reforge with a Minion modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "minion"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "minion"}}}
       ],
       "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"

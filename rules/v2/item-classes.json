@@ -1,5 +1,5 @@
 {
-  "claims": ["classes.max-sockets", "classes.affix-limits", "classes.tincture-limits"],
+  "claims": ["classes.max-sockets", "classes.affix-limits", "classes.flask-limits", "classes.tincture-limits"],
   "categories": {
     "weapon": {"magic": [1, 1], "rare": [3, 3]},
     "armour": {"magic": [1, 1], "rare": [3, 3]},

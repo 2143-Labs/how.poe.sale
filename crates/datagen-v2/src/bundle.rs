@@ -90,8 +90,9 @@ fn category_key(c: Category) -> String {
 }
 
 /// The class whose essence column a class uses. RePoE's `essences.json` has no Rune Dagger or
-/// Warstaff column; poedb lists them with the Dagger and Staff columns (one-hand and two-hand
-/// essences respectively).
+/// Warstaff column; Craft of Exile's essence table lists Rune Dagger with the Dagger column and
+/// Warstaff with the Staff column in all 25 essence rows (one-hand and two-hand essences
+/// respectively), and the game applies the same pairing.
 fn essence_column(class: &str) -> &str {
     match class {
         "Rune Dagger" => "Dagger",
@@ -113,6 +114,8 @@ fn base_domain(d: &str) -> Option<Domain> {
 
 /// The kind a raw mod is kept as, per the plan's domain/generation table (first row that holds).
 fn mod_kind(id: &str, m: &RawMod, base_implicits: &BTreeSet<&str>) -> Option<ModKind> {
+    // Claim `pool.royale-excluded`: the four item-domain `…Royale` mods are Battle Royale copies
+    // a league item cannot roll, so keeping them would inflate every pool they touch.
     if id.contains("Royale") {
         return None;
     }
@@ -137,6 +140,11 @@ fn mod_kind(id: &str, m: &RawMod, base_implicits: &BTreeSet<&str>) -> Option<Mod
         (_, "searing_exarch_implicit") => ModKind::Exarch,
         (_, "eater_of_worlds_implicit") => ModKind::Eater,
         ("item", "enchantment") => ModKind::Enchant,
+        // The 14 Horticrafting quality enchants are `unique` generation in the export but are
+        // placed by the bench, not held by a unique item: `Enchant a Body Armour`, `Enchant a
+        // Weapon` and `Enchant a Melee Weapon` (claim `harvest.list`). They carry no spawn weight,
+        // so no random enchant pool can draw them.
+        (_, "unique") if id.starts_with("HarvestAlternate") => ModKind::Enchant,
         (_, "flask_enchantment_enkindling") => ModKind::FlaskEnkindling,
         (_, "flask_enchantment_instilling") => ModKind::FlaskInstilling,
         (_, "unique") if base_implicits.contains(id) => ModKind::BaseImplicit,
@@ -304,8 +312,12 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             let keep = b.release_state == "released"
                 && class_idx.contains_key(b.item_class.as_str())
                 && !(b.item_class == "Jewel" && domain != Domain::Misc)
-                // Battle Royale copies of real bases carry `Royale` in their id and only Royale implicits.
-                && !id.contains("Royale");
+                // Battle Royale copies of real bases carry `Royale` in their id and only Royale implicits
+                // (claim `pool.royale-excluded`).
+                && !id.contains("Royale")
+                // `StormBlade*` are the Energy Blade skill's buff weapons, not item bases a player
+                // crafts on: the skill grants them, and the export lists them beside a real sword.
+                && !id.contains("StormBlade");
             keep.then_some((id, b, domain))
         })
         .collect();
@@ -508,10 +520,22 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             text: m.text.clone().unwrap_or_default(),
         });
     }
-    // Elevated mods have no spawn weights: they take the influence of their base chain. RePoE
-    // gives elevated mods their own `…Maven` mod type, so the chain is found by id first (the
-    // elevated id's stem before `Maven` plus a tier suffix, same groups), then by mod type with
-    // `Maven` removed; only a single influence counts.
+    // An elevated mod's own spawn list names the influence it elevates, at weight 0:
+    // `IncreasedChillEffectSupportedUberMaven` lists `helmet_shaper`, and
+    // `AdditionalChanceToEvadeInfluenceMaven` lists `gloves_eyrie`. That tag is the export's own
+    // statement of the influence, and it is the only one it makes for the 21 elevated mods whose
+    // group carries several influences, so read it first.
+    let own_influence = |m: &ModData| -> Option<Influence> {
+        m.spawn
+            .iter()
+            .find_map(|&(t, _)| influence_of_tag(&tags.names[t as usize]))
+    };
+    // Where a spawn list names no influence, fall back to the base chain: RePoE gives elevated
+    // mods their own `…Maven` mod type, so the chain is found by id first (the elevated id's stem
+    // before `Maven` plus a tier suffix, same groups), then by mod type with `Maven` removed; only
+    // a single influence counts. If neither rule finds one, `influence` stays `None` and
+    // `apply::elevated_of` never picks the mod as a dominance upgrade, which is right when no
+    // non-elevated chain exists.
     let natural_chain: Vec<&ModData> = mods
         .iter()
         .filter(|m| m.kind == ModKind::Natural && !m.elevated)
@@ -529,6 +553,9 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
         .enumerate()
         .filter(|(_, m)| m.elevated)
         .map(|(i, e)| {
+            if let Some(inf) = own_influence(e) {
+                return (i, Some(inf));
+            }
             let stem = &e.id[..e.id.find("Maven").unwrap_or(e.id.len())];
             let by_id = natural_chain
                 .iter()
@@ -731,6 +758,12 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     // ---- essences
     let mut essences = Vec::new();
     for (id, e) in &raw_essences {
+        // Remnant of Corruption is no essence: it corrupts the essences trapping a monster and
+        // carries no item modifier, and it is scoped out of the currency set as an other-item-class
+        // currency. See claim `essence.remnant-excluded`.
+        if id == "Metadata/Items/Currency/CurrencyCorruptMonolith" {
+            continue;
+        }
         let Some(cur) = currencies.iter().find(|c| &c.id == id) else {
             continue;
         };

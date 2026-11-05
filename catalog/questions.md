@@ -63,7 +63,9 @@ p = 1.000000
 
 ## `bench.reroll-unknown`
 
-**Proposed rule:** The bench actions reroll_rarity and reroll_rare_mods exist in game data; what they do is not known
+**Proposed rule:** The bench actions reroll_rarity, and the two reroll_rare_mods options added in 3.29 (Reroll 3 Modifiers on a Rare Item and Reroll a Modifier on a Rare Item), exist in game data; whether they reroll the numeric values of existing modifiers or replace those modifiers with new random ones is not stated by any source, so their results are not computed.
+
+Current source (owner): https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes
 
 **What this shows:** The bench option exists in the game data, but its result is left uncomputed because the rule it follows is not known.
 
@@ -117,7 +119,7 @@ p = 1.000000: not computed in this pass: rule not yet confirmed; the item before
 
 **Diff**: none; this pass does not compute a result item for this step.
 
-**Used by** 1 method: Bench: reroll rarity (`bench/reroll-rarity`)
+**Used by** 3 methods: Bench: reroll 1 rare modifiers (`bench/reroll-rare-mods/1`), Bench: reroll 3 rare modifiers (`bench/reroll-rare-mods/3`), Bench: reroll rarity (`bench/reroll-rarity`)
 
 ## `catalyst.amounts`
 
@@ -128,29 +130,6 @@ Current source (guide): https://vhpg.com/poe-how-do-catalysts-work/
 **Used by:** no current method or data file; it records the pre-3.25 catalyst amounts, superseded by the checked rule `quality.per-level`
 
 **What this shows:** No item fixture exercises this rule, because the catalyst methods now stop at a result that needs item data.
-
-## `classes.tincture-limits`
-
-**Proposed rule:** Tinctures follow flasks: at most 1 prefix and 1 suffix, and never rare.
-
-**Used by:** `rules/v2/item-classes.json`, which gives the Tincture class its affix limits
-
-**What this shows:** A magic tincture holds one prefix and one suffix, while the class allows no rare tincture at all, so a rare tincture has zero prefix slots and zero suffix slots.
-
-**Input** (`tincture-magic`)
-
-```text
-Item Class: Tinctures
-Rarity: Magic
-Prismatic Tincture
---------
-Item Level: 84
---------
-15% increased effect
-40% increased Duration of Elemental Ailments from Melee Weapon Attacks
-```
-
-**Limits**: the Tinctures class allows at most 1 prefix and 1 suffix at magic rarity, and 0 and 0 at rare rarity.
 
 ## `dominance.pairs`
 
@@ -527,6 +506,186 @@ Shaper Item
 
 **Used by** 8 methods: Exceptional Eldritch Ember (`currency/exceptional-eldritch-ember`), Exceptional Eldritch Ichor (`currency/exceptional-eldritch-ichor`), Grand Eldritch Ember (`currency/grand-eldritch-ember`), Grand Eldritch Ichor (`currency/grand-eldritch-ichor`), Greater Eldritch Ember (`currency/greater-eldritch-ember`), Greater Eldritch Ichor (`currency/greater-eldritch-ichor`), Lesser Eldritch Ember (`currency/lesser-eldritch-ember`), Lesser Eldritch Ichor (`currency/lesser-eldritch-ichor`)
 
+## `enchant.font-shape`
+
+**Proposed rule:** It is not known whether the Labyrinth's Divine Font offers a choice among a few enchantments or applies one random enchantment, so the model draws one enchantment uniformly from every enchantment the item's tags allow.
+
+**What this shows:** The Enchant currency is applied to the crown; whether the Divine Font offers a choice among a few enchantments or one random enchantment is not known, so the result stops at the missing rule.
+
+**Input** (`crown-a`)
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
+15% increased Effect of Cold Ailments
+--------
+Shaper Item
+```
+
+**Step**: Enchant (`currency/enchant`; cost: 1 × Enchant)
+
+**Result**
+
+p = 0.000771
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> Armageddon Brand Damage Penetrates 8% of Branded Enemy's Fire Resistance (enchant)
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> ```
+
+p = 0.000771
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> Armageddon Brand Damage Penetrates 12% of Branded Enemy's Fire Resistance (enchant)
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> ```
+
+p = 0.000771
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> Armageddon Brand has 8% increased Activation Frequency (enchant)
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> ```
+
+p = 0.000771
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> Armageddon Brand has 12% increased Activation Frequency (enchant)
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> ```
+
+p = 0.000771
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> 8% increased Absolution Cast Speed (enchant)
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> ```
+
+… 1333 more outcomes (total p = 0.996144)
+
+**Diff** (input vs the most likely result)
+
+```diff
+  Item Class: Helmets
+  Rarity: Rare
+  Archdemon Crown
+  --------
+  Quality: +20% (augmented)
+  --------
+  Item Level: 87
+  --------
++ Armageddon Brand Damage Penetrates 8% of Branded Enemy's Fire Resistance (enchant)
++ --------
+  -2 to Level of Socketed Support Gems
+  +2 to Level of Socketed Skill Gems
+  --------
+  Socketed Gems are Supported by Level 18 Hypothermia
+  Socketed Gems deal 30% more Elemental Damage
+  Socketed Spells have +3% to Critical Strike Chance
+  15% increased Effect of Cold Ailments
+  --------
+  Shaper Item
+```
+
+**Used by** 1 method: Enchant (`currency/enchant`)
+
 ## `exalt.both-sides`
 
 **Proposed rule:** An Exalted Orb draws from the eligible prefixes and suffixes together, by weight.
@@ -750,6 +909,54 @@ p = 0.333333
 
 **Used by** 1 method: Fracturing Orb (`currency/fracturing`)
 
+## `harvest.damage-conversion`
+
+**Proposed rule:** The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as "a modifier that grants Cold, Lightning or Fire Damage": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. No source states which modifier types the craft accepts, so these six pairs are the model's assumption and the conversion itself is not computed.
+
+**What this shows:** The ring holds a modifier of the FireDamage type, so the craft applies, and the conversion itself stops at the unverified rule.
+
+**Input** (`cogwork-ring-fire`)
+
+```text
+Item Class: Rings
+Rarity: Rare
+Cogwork Ring
+--------
+Item Level: 84
+--------
+-1 Prefix Modifier allowed
++1 Suffix Modifier allowed
+Implicit Modifiers Cannot Be Changed
+25% increased Suffix Modifier magnitudes
+--------
+Adds 15 to 29 Fire Damage to Attacks
+```
+
+**Step**: Harvest: change Fire Damage to Cold Damage (`harvest/fire-damage-to-cold-damage`; cost: 500 × Vivid Crystallised Lifeforce, 1 × Crystallised Rancour)
+
+**Result**
+
+p = 1.000000: not computed in this pass: rule not yet confirmed; the item before this step; nothing about the result is known:
+
+> ```text
+> Item Class: Rings
+> Rarity: Rare
+> Cogwork Ring
+> --------
+> Item Level: 84
+> --------
+> -1 Prefix Modifier allowed
+> +1 Suffix Modifier allowed
+> Implicit Modifiers Cannot Be Changed
+> 25% increased Suffix Modifier magnitudes
+> --------
+> Adds 15 to 29 Fire Damage to Attacks
+> ```
+
+**Diff**: none; this pass does not compute a result item for this step.
+
+**Used by** 6 methods: Harvest: change Cold Damage to Fire Damage (`harvest/cold-damage-to-fire-damage`), Harvest: change Cold Damage to Lightning Damage (`harvest/cold-damage-to-lightning-damage`), Harvest: change Fire Damage to Cold Damage (`harvest/fire-damage-to-cold-damage`), Harvest: change Fire Damage to Lightning Damage (`harvest/fire-damage-to-lightning-damage`), Harvest: change Lightning Damage to Cold Damage (`harvest/lightning-damage-to-cold-damage`), Harvest: change Lightning Damage to Fire Damage (`harvest/lightning-damage-to-fire-damage`)
+
 ## `quality.amounts`
 
 **Proposed rule:** Before 3.25, Armourer's Scrap, Blacksmith's Whetstone and Glassblower's Bauble added 5% quality to a normal item, 2% to a magic item and 1% to a rare or unique item, up to 20%; since 3.25 the amount depends on item level (claim quality.per-level).
@@ -759,6 +966,40 @@ Current source (wiki): https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap
 **Used by:** no current method or data file; it records the pre-3.25 quality amounts, superseded by the checked rule `quality.per-level`
 
 **What this shows:** No item fixture exercises this rule, because the quality currencies now stop at a result that needs item data.
+
+## `quality.unique`
+
+**Proposed rule:** It is not known how much quality one Armourer's Scrap, Blacksmith's Whetstone or Glassblower's Bauble adds to a unique item in 3.29, because the 3.25 item-level rule applies only to non-unique items and no source states the unique amount.
+
+**What this shows:** The scrap is applied to a unique armour; how much quality the unique receives is not known, so the result stops at the missing rule.
+
+**Input** (`slink-boots-unique`)
+
+```text
+Item Class: Boots
+Rarity: Unique
+Slink Boots
+--------
+Item Level: 84
+```
+
+**Step**: Armourer's Scrap (`currency/armourers-scrap`; cost: 1 × Armourer's Scrap)
+
+**Result**
+
+p = 1.000000: not computed in this pass: needs data: the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known; the item before this step; nothing about the result is known:
+
+> ```text
+> Item Class: Boots
+> Rarity: Unique
+> Slink Boots
+> --------
+> Item Level: 84
+> ```
+
+**Diff**: none; this pass does not compute a result item for this step.
+
+**Used by** 3 methods: Armourer's Scrap (`currency/armourers-scrap`), Blacksmith's Whetstone (`currency/blacksmiths-whetstone`), Glassblower's Bauble (`currency/glassblowers-bauble`)
 
 ## `recombine.base_and_item_level`
 
@@ -1537,7 +1778,17 @@ p = 1.000000: not computed in this pass: multi-draw reforge; the part that is ce
 + +(46-48)% to Cold Resistance
 ```
 
-**Used by** 118 methods: Veiled Chaos Orb (`currency/veiled-chaos`), Deafening Essence of Anger (`essence/deafening-essence-of-anger`), Deafening Essence of Anguish (`essence/deafening-essence-of-anguish`), Deafening Essence of Contempt (`essence/deafening-essence-of-contempt`), Deafening Essence of Doubt (`essence/deafening-essence-of-doubt`), Deafening Essence of Dread (`essence/deafening-essence-of-dread`), Deafening Essence of Envy (`essence/deafening-essence-of-envy`), Deafening Essence of Fear (`essence/deafening-essence-of-fear`) and 110 more
+**Used by** 123 methods: Veiled Chaos Orb (`currency/veiled-chaos`), Deafening Essence of Anger (`essence/deafening-essence-of-anger`), Deafening Essence of Anguish (`essence/deafening-essence-of-anguish`), Deafening Essence of Contempt (`essence/deafening-essence-of-contempt`), Deafening Essence of Doubt (`essence/deafening-essence-of-doubt`), Deafening Essence of Dread (`essence/deafening-essence-of-dread`), Deafening Essence of Envy (`essence/deafening-essence-of-envy`), Deafening Essence of Fear (`essence/deafening-essence-of-fear`) and 115 more
+
+## `tainted-exalt.locks`
+
+**Proposed rule:** It is not known whether the Tainted Exalted Orb's removal respects Prefixes Cannot Be Changed and Suffixes Cannot Be Changed: Craft of Exile records it as not interacting with either lock, while the model treats the locks as respected.
+
+Current source (coe): https://www.craftofexile.com/metamods
+
+**Used by:** no method or data file in this bundle records a user of this rule
+
+No item fixture exercises this rule yet.
 
 ## `tainted.odds`
 
@@ -2962,7 +3213,7 @@ p = 1.000000: not computed in this pass: multi-draw reforge; the part that is ce
   Shaper Item
 ```
 
-**Used by** 14 methods: Vaal Orb (`currency/vaal`), Vaal Orb (jewellery and quivers) (`currency/vaal-socketless`), Harvest: reforge with a Attack modifier (`harvest/reforge-attack`), Harvest: reforge with a Caster modifier (`harvest/reforge-caster`), Harvest: reforge with a Chaos modifier (`harvest/reforge-chaos`), Harvest: reforge with a Cold modifier (`harvest/reforge-cold`), Harvest: reforge with a Critical modifier (`harvest/reforge-critical`), Harvest: reforge with a Defence modifier (`harvest/reforge-defences`) and 6 more
+**Used by** 19 methods: Vaal Orb (`currency/vaal`), Vaal Orb (jewellery and quivers) (`currency/vaal-socketless`), Harvest: reforge with a Attack modifier (`harvest/reforge-attack`), Harvest: reforge with a Attribute modifier (`harvest/reforge-attribute`), Harvest: reforge with a Caster modifier (`harvest/reforge-caster`), Harvest: reforge with a Chaos modifier (`harvest/reforge-chaos`), Harvest: reforge with a Cold modifier (`harvest/reforge-cold`), Harvest: reforge with a Critical modifier (`harvest/reforge-critical`) and 11 more
 
 ## Pattern notes
 

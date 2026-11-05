@@ -19,6 +19,15 @@
       "checked": true
     },
     {
+      "id": "anoint.talismans",
+      "statement": "Talismans cannot be anointed, so no anointment method accepts a base that carries the talisman tag.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/3985332",
+      "quote": "Talismans cannot be Anointed, and their Enchantment Modifiers cannot be removed using the crafting bench option.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "beast.aspect-level",
       "statement": "Aspect beastcrafts add the Level 20 aspect mods (Grants*AspectCrafted, not …Crafted30)",
       "sourceKind": "owner",
@@ -65,10 +74,10 @@
     },
     {
       "id": "bench.reroll-unknown",
-      "statement": "The bench actions reroll_rarity and reroll_rare_mods exist in game data; what they do is not known",
+      "statement": "The bench actions reroll_rarity, and the two reroll_rare_mods options added in 3.29 (Reroll 3 Modifiers on a Rare Item and Reroll a Modifier on a Rare Item), exist in game data; whether they reroll the numeric values of existing modifiers or replace those modifiers with new random ones is not stated by any source, so their results are not computed.",
       "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "Added 2 new crafting bench options, unlocked by default. Reroll 3 Modifiers on a Rare Item for a cost of 3 Chaos Orbs, and Reroll a Modifier on a Rare Item for a cost of 8 Chaos Orbs.",
       "patch": "3.29",
       "checked": false
     },
@@ -124,21 +133,21 @@
     },
     {
       "id": "classes.max-sockets",
-      "statement": "Body armours and two-handed weapons (bows, staves and warstaves included) hold up to 6 sockets; helmets, gloves and boots up to 4; one-handed weapons and shields up to 3.",
+      "statement": "Body armours and two-handed weapons (bows, staves and warstaves included) hold up to 6 sockets; helmets, gloves and boots up to 4; one-handed weapons and shields up to 3; Fishing Rods, although two-handed, hold up to 4.",
       "sourceKind": "wiki",
-      "url": "https://pathofexile.fandom.com/wiki/Guide:Frequently_asked_questions",
-      "quote": "The maximum number of sockets an item can have is determined by its type and item level. Helmets, Gloves, Boots can have up to 4 sockets; Chest armor and two-handed weapons up to 6; One-handed weapons and Shields up to 3.",
+      "url": "https://pathofexile.fandom.com/wiki/Fishing_Rod",
+      "quote": "While most two-handed weapons can have up to six sockets, Fishing Rods are restricted to a maximum of four.",
       "patch": "3.29",
       "checked": true
     },
     {
       "id": "classes.tincture-limits",
-      "statement": "Tinctures follow flasks: at most 1 prefix and 1 suffix, and never rare.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "Tinctures follow flasks: they can be magic or unique but never rare, so they hold at most one prefix and one suffix and no rare limits apply.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/3531661",
+      "quote": "Like Flasks, Tinctures can be Magic or Unique but not Rare.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "dominance.pairs",
@@ -177,11 +186,29 @@
       "checked": false
     },
     {
+      "id": "enchant.font-shape",
+      "statement": "It is not known whether the Labyrinth's Divine Font offers a choice among a few enchantments or applies one random enchantment, so the model draws one enchantment uniformly from every enchantment the item's tags allow.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
       "id": "essence.ilvl",
       "statement": "An essence with an item level restriction N reforges with modifiers of level N and below; it can be used on an item of any item level.",
       "sourceKind": "datamined",
       "url": "https://poedb.tw/us/Essence",
       "quote": "Wailing Essence of Hatred Stack Size: 1 / 10 Essence Tier: 4 Upgrades a normal item to rare with one guaranteed property Properties restricted to level 75 and below",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "essence.remnant-excluded",
+      "statement": "Remnant of Corruption is not an essence: it corrupts the essences trapping a monster and carries no item modifier, so it is not one of the bundle's essences.",
+      "sourceKind": "game-text",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "Corrupts the Essences trapping a monster, modifying them unpredictably",
       "patch": "3.29",
       "checked": true
     },
@@ -240,11 +267,20 @@
       "checked": true
     },
     {
+      "id": "harvest.damage-conversion",
+      "statement": "The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as \"a modifier that grants Cold, Lightning or Fire Damage\": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. No source states which modifier types the craft accepts, so these six pairs are the model's assumption and the conversion itself is not computed.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
       "id": "harvest.list",
-      "statement": "The horticrafting options and lifeforce costs listed in Maxroll's Harvest Crafting Guide (3.24) are the Harvest methods' contracts and costs.",
-      "sourceKind": "guide",
-      "url": "https://maxroll.gg/poe/crafting/harvest-crafting-guide",
-      "quote": "Listed below are the Harvest Crafts used in many crafting scenarios:",
+      "statement": "The horticrafting options and lifeforce costs listed in poedb's Horticrafting table are the Harvest methods' contracts and costs, including the five tag reforges that also cost Crystallised Rancour, the six damage conversions and the fourteen quality enchantments.",
+      "sourceKind": "wiki",
+      "url": "https://poedb.tw/us/Horticrafting",
+      "quote": "Horticrafting Station /74 … Reforge a Rare item with random modifiers, including a Minion modifier | Primal Crystallised Lifeforce x200 Crystallised Rancour x3 … Reforge a Rare item with random modifiers, including a Elemental modifier | Wild Crystallised Lifeforce x200 Crystallised Rancour x1 … Reforge a Rare item with random modifiers, including a Attribute modifier | Vivid Crystallised Lifeforce x200 Crystallised Rancour x2 … Reforge a Rare item with random modifiers, including a Mana modifier | Primal Crystallised Lifeforce x200 Crystallised Rancour x2 … Reforge a Rare item with random modifiers, including a Drop modifier | Vivid Crystallised Lifeforce x200 Crystallised Rancour x1 … Reforge a Rare item with random modifiers, including a Defence modifier | Primal Crystallised Lifeforce x75 … Add a new Critical modifier and remove another random modifier from a non-Influenced item | Primal Crystallised Lifeforce x20000 Sacred Crystallised Lifeforce x1 … Change a modifier that grants Cold Damage into a similar-tier modifier that grants Fire Damage | Wild Crystallised Lifeforce x500 Crystallised Rancour x1 … Enchant a Body Armour . Quality does not increase its Defences, grants +1 Maximum Life per 2% quality | Wild Crystallised Lifeforce x3250 … Enchant a Melee Weapon . Quality does not increase its Physical Damage, has +0.1 metres to Weapon Range per 10% Quality | Wild Crystallised Lifeforce x5000",
       "patch": "3.29",
       "checked": true
     },
@@ -307,11 +343,47 @@
       "checked": true
     },
     {
+      "id": "oil.cassia",
+      "statement": "Oils are applied through Cassia to rings (two oils), amulets (three oils) and Blighted maps, and an anointment takes up the item's enchantment slot.",
+      "sourceKind": "wiki",
+      "url": "https://poedb.tw/us/Oil",
+      "quote": "Oils can be applied by the player via Cassia, to Blighted maps, rings, amulets or blight unique items in order to add new modifiers or the effect of a passive skill: … Rings 2x Buffs to Towers … Amulets … 3x Allocate a notable passive skill from the passive skill tree without spending a skill point or being connected to the rest of the allocated skill tree. … Anointments on equipment take up the enchantment slot.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "oil.special-types",
+      "statement": "Tainted Oil is a fourth oil that lets a corrupted ring or amulet be anointed, Reflective Oil enchants mirrored rings and amulets, and Prismatic Oil enchants amulets only.",
+      "sourceKind": "game-text",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "Can be combined with other Oils at Cassia to enchant corrupted Rings, Amulets or Blighted Maps. … Can be combined with other Oils at Cassia to enchant mirrored Rings, Amulets or Blighted Maps. … Can be combined with other Oils at Cassia to enchant Amulets.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "pool.royale-excluded",
+      "statement": "The four item-domain mods whose id contains Royale are Battle Royale copies of real tiers that a league item cannot roll. Without them the Lapis Amulet suffix pool at item level 84 totals 123,450; with them it is 800 more, and the tier counts of other published pool figures agree only without them.",
+      "sourceKind": "experiment",
+      "url": "data/raw/mods.json",
+      "quote": "MovementVelocity2Royale IncreasedCastSpeed2Royale LocalIncreasedAttackSpeed2Royale____ IncreasedAttackSpeed2Royale",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "quality.amounts",
       "statement": "Before 3.25, Armourer's Scrap, Blacksmith's Whetstone and Glassblower's Bauble added 5% quality to a normal item, 2% to a magic item and 1% to a rare or unique item, up to 20%; since 3.25 the amount depends on item level (claim quality.per-level).",
       "sourceKind": "wiki",
       "url": "https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap",
       "quote": "As with other quality-increasing currency, consuming an Armourer's Scrap improves the quality of normal items by 5%, magic items by 2%, and rare and unique items by 1%.",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "quality.unique",
+      "statement": "It is not known how much quality one Armourer's Scrap, Blacksmith's Whetstone or Glassblower's Bauble adds to a unique item in 3.29, because the 3.25 item-level rule applies only to non-unique items and no source states the unique amount.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
       "patch": "3.29",
       "checked": false
     },
@@ -538,6 +610,15 @@
       "checked": true
     },
     {
+      "id": "rune.kingsmarch",
+      "statement": "Kalguuran runes are engraved onto weapons at the Kingsmarch Runesmithing Table, so a rune method takes weapons and nothing else.",
+      "sourceKind": "wiki",
+      "url": "https://poedb.tw/us/Rune",
+      "quote": "Operated by Dannig himself, a Runesmithing Table is using powerful Kalguuran blacksmithing arts to engrave runic magic onto your weapons.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "scour.locks",
       "statement": "Scouring with Suffixes Cannot Be Changed removes the prefixes (the metamod with them) and keeps the suffixes.",
       "sourceKind": "owner",
@@ -554,6 +635,15 @@
       "quote": "The array elements are evaluated in order, the first element with a tag (value of the `tag` property) the item in question has is taken. If the object with that tag `weight` greater than zero, the mod can spawn on the item and the weight defines the relative weight of it spawning. If it has `weight` zero, the mod can not spawn.",
       "patch": "3.29",
       "checked": true
+    },
+    {
+      "id": "tainted-exalt.locks",
+      "statement": "It is not known whether the Tainted Exalted Orb's removal respects Prefixes Cannot Be Changed and Suffixes Cannot Be Changed: Craft of Exile records it as not interacting with either lock, while the model treats the locks as respected.",
+      "sourceKind": "coe",
+      "url": "https://www.craftofexile.com/metamods",
+      "quote": "Tainted exalted | na | na | yes | yes",
+      "patch": "3.29",
+      "checked": false
     },
     {
       "id": "tainted.odds",
@@ -617,6 +707,15 @@
       "quote": "",
       "patch": "3.29",
       "checked": false
+    },
+    {
+      "id": "vaal.minimum-power-charges",
+      "statement": "A Vaal Orb on an amulet can roll +1 to Minimum Power Charges: the modifier rolls at item level 40 on amulets and shields at weight 1000 on each, so the amulet corruption pool holds it.",
+      "sourceKind": "wiki",
+      "url": "https://poedb.tw/us/Vaal_Orb",
+      "quote": "40 +1 to Minimum Power Charges Amulets (1000) Shields (1000)",
+      "patch": "3.29",
+      "checked": true
     },
     {
       "id": "vaal.outcomes",

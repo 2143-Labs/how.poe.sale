@@ -19,8 +19,9 @@ use serde::Deserialize;
 
 use crate::bundle::load_json;
 
-/// The Harvest tags a reforge or add-remove craft can name.
-pub const HARVEST_TAGS: [&str; 11] = [
+/// The Harvest tags a reforge or add-remove craft can name: the eleven the 3.24 list has plus the
+/// five reforges that also cost Crystallised Rancour (claim `harvest.list`).
+pub const HARVEST_TAGS: [&str; 16] = [
     "fire",
     "cold",
     "lightning",
@@ -32,6 +33,11 @@ pub const HARVEST_TAGS: [&str; 11] = [
     "caster",
     "speed",
     "critical",
+    "minion",
+    "elemental",
+    "attribute",
+    "mana",
+    "drop",
 ];
 
 /// The exclusion reasons a scope rule may give.
@@ -241,7 +247,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                         what: "what the bench reroll picks is not stated".into(),
                     },
                 }],
-                vec!["bench.reroll-mods".into()],
+                vec!["bench.reroll-mods".into(), "bench.reroll-unknown".into()],
             ),
         };
         let mut requires = Vec::new();
@@ -529,8 +535,14 @@ fn authoring_checks(m: &Method, counts: &[(u8, u32)]) -> anyhow::Result<()> {
 }
 
 /// The reviewed pairs where a currency's directions name a limit the method deliberately does
-/// not repeat, with the reason.
-const DIRECTION_EXCEPTIONS: [(&str, &str); 0] = [];
+/// not repeat, with the reason. The three quality currencies say "non-unique" in their
+/// directions because the 3.25 item-level scaling applies only to non-unique items (claim
+/// `quality.per-level`); a unique item is still a legal target (claim `quality.unique`).
+const DIRECTION_EXCEPTIONS: [(&str, &str); 3] = [
+    ("currency/armourers-scrap", "non-unique"),
+    ("currency/blacksmiths-whetstone", "non-unique"),
+    ("currency/glassblowers-bauble", "non-unique"),
+];
 
 /// The phrases in a currency's in-game `directions` line that limit its target, as the
 /// requirement each implies. The wording is the game's own, so a new currency whose directions

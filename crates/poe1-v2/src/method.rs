@@ -134,6 +134,8 @@ pub enum Require {
     NotCorrupted,
     Corrupted,
     NotMirrored,
+    /// A mirrored item (Reflective Oil).
+    Mirrored,
     NotSplit,
     NotSynthesised,
     NotUnique,
@@ -185,6 +187,11 @@ pub enum Require {
     },
     /// A tag the base itself carries (a Talisman base).
     BaseTag {
+        tag: String,
+    },
+    /// A tag the base must not carry: 3.29 Talismans cannot be anointed (claim
+    /// `anoint.talismans`).
+    NotBaseTag {
         tag: String,
     },
     /// The item's tag set, domain, item level and open slots leave at least one candidate in
@@ -489,7 +496,10 @@ pub enum SocketChange {
         n: u8,
     },
     RandomColours,
-    /// RePoE's colour spec, such as `"RRG"`.
+    /// The bench's colour spec. RePoE writes the colours it needs (`"RRG"`); since 3.29 the only
+    /// colour options are the non-white ones (`"NN"`, `"NNN"`, `"NNNN"`), where `N` means "not
+    /// white", which `Socket` has no value for; every socket op returns `Pending` until the
+    /// socket pass adds one.
     Colours {
         spec: String,
     },
@@ -670,7 +680,9 @@ fn validate_require(data: &Data, r: &Require) -> Result<(), String> {
             Ok(())
         }
         Require::GroupFree { r#mod } => known_mod(data, r#mod).map(|_| ()),
-        Require::BaseTag { tag } if data.tag_by_name(tag).is_none() => {
+        Require::BaseTag { tag } | Require::NotBaseTag { tag }
+            if data.tag_by_name(tag).is_none() =>
+        {
             Err(format!("unknown tag {tag}"))
         }
         Require::CanRoll { pool } => match pool {

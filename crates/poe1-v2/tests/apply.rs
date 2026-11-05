@@ -1434,11 +1434,12 @@ fn reroll_values() {
     );
 }
 
-/// R3: since 3.25 the quality a scrap adds depends on item level, so the op is not modelled;
-/// uniques are refused because the patch note's rework covers non-unique items only.
+/// R3: since 3.25 the quality a scrap adds depends on item level, so the op is not modelled; a
+/// unique item is a legal target too, and only the amount it receives is unknown (claim
+/// `quality.unique`).
 #[test]
 fn add_quality() {
-    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
+    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare, Rarity::Unique] {
         let it = edited("slink-boots-normal", |s| s.rarity = rarity);
         let out = run("currency/armourers-scrap", &it);
         let [(p, l)] = out.leaves.as_slice() else {
@@ -1449,10 +1450,11 @@ fn add_quality() {
         assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
         assert_eq!(pend.item, it);
     }
-    let unique = edited("slink-boots-normal", |s| s.rarity = Rarity::Unique);
+    // A 20%-quality unique is still refused: the cap is refused by `qualityBelow`.
+    let unique = edited("slink-boots-unique", |s| s.quality = 20);
     assert_eq!(
         reason("currency/armourers-scrap", &unique),
-        "the item is unique"
+        "quality is already 20%"
     );
 }
 
@@ -2465,5 +2467,46 @@ fn harvest_tag_reforge_ignores_current_groups() {
         pend.item.explicits().count(),
         0,
         "the clear removes the fire mod"
+    );
+}
+
+/// The 14 Horticrafting quality enchants place their own enchantment, and the anoint methods
+/// refuse a Talisman base (claim `anoint.talismans`).
+#[test]
+fn harvest_quality_enchant_and_talisman_refusal() {
+    let d = test_data();
+    let body = edited("slink-boots-normal", |s| {
+        s.base = "Metadata/Items/Armours/BodyArmours/BodyDex1".into()
+    });
+    let out = run("harvest/enchant-body-armour-life", &body);
+    let it = leaf_item(&out.leaves[0].1);
+    assert_eq!(it.enchants.len(), 1);
+    assert_eq!(
+        d.mod_at(it.enchants[0].m).id,
+        "HarvestAlternateArmourQualityIncreasedLife"
+    );
+    assert_eq!(
+        reason(
+            "harvest/enchant-body-armour-life",
+            &item("cobalt-jewel-normal")
+        ),
+        "only works on: Body Armours"
+    );
+    let talisman = edited("lapis-amulet-normal", |s| {
+        s.base = "Metadata/Items/Amulets/Talismans/TalismanChieftain".into()
+    });
+    assert_eq!(
+        reason("currency/anoint-clear-oil", &talisman),
+        "the item's base has the talisman tag"
+    );
+    assert_eq!(
+        reason(
+            "currency/anoint-prismatic-oil",
+            &item("cogwork-ring-normal")
+        ),
+        "only works on: Amulets"
+    );
+    assert!(
+        matches!(run("currency/anoint-clear-oil", &item("lapis-amulet-normal")), out if out.leaves.len() == 1)
     );
 }

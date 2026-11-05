@@ -260,8 +260,17 @@ fn method_requirements_follow_the_currency_directions() {
             };
             let dirs = cur.directions.as_str();
             let has = |p: &str| dirs.contains(p);
+            // The three quality currencies say "non-unique" because the 3.25 item-level scaling
+            // applies only to non-unique items (claim `quality.per-level`); a unique item is still
+            // a legal target (claim `quality.unique`), so their methods do not repeat the limit.
+            let non_unique_exempt = matches!(
+                m.id.as_str(),
+                "currency/armourers-scrap"
+                    | "currency/blacksmiths-whetstone"
+                    | "currency/glassblowers-bauble"
+            );
             let mut wants: Vec<(&str, Require)> = Vec::new();
-            if has("non-unique") || has("non-Unique") {
+            if (has("non-unique") || has("non-Unique")) && !non_unique_exempt {
                 wants.push(("non-unique", Require::NotUnique));
             }
             let cannot_influence = has("Cannot be used on") && has("Influenced");

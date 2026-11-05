@@ -380,6 +380,7 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
         Require::NotCorrupted if item.corrupted => return unmet("the item is corrupted"),
         Require::Corrupted if !item.corrupted => return unmet("needs a corrupted item"),
         Require::NotMirrored if item.mirrored => return unmet("the item is mirrored"),
+        Require::Mirrored if !item.mirrored => return unmet("needs a mirrored item"),
         Require::NotSplit if item.split => return unmet("the item is split"),
         Require::NotSynthesised if item.synthesised => return unmet("the item is synthesised"),
         Require::NotUnique if item.rarity == Rarity::Unique => return unmet("the item is unique"),
@@ -506,6 +507,14 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
             let wanted = data.tag_by_name(tag);
             if !wanted.is_some_and(|t| data.base_at(item.base).tags.contains(&t)) {
                 return unmet(format!("needs a {tag} base"));
+            }
+        }
+        Require::NotBaseTag { tag } => {
+            let Some(t) = data.tag_by_name(tag) else {
+                return unmet(format!("the bundle has no tag {tag}"));
+            };
+            if data.base_at(item.base).tags.contains(&t) {
+                return unmet(format!("the item's base has the {tag} tag"));
             }
         }
         Require::CanRoll { pool } => {

@@ -290,6 +290,33 @@
         ],
         "shows": "Suffixes Cannot Be Changed keeps the three suffixes while the reforge clears the prefixes and adds its life-tagged modifiers, so the kept suffixes are not part of the four, five or six additions."
       }
+    ],
+    "quality.unique": [
+      {
+        "method": "currency/armourers-scrap",
+        "fixtures": [
+          "slink-boots-unique"
+        ],
+        "shows": "The scrap is applied to a unique armour; how much quality the unique receives is not known, so the result stops at the missing rule."
+      }
+    ],
+    "enchant.font-shape": [
+      {
+        "method": "currency/enchant",
+        "fixtures": [
+          "crown-a"
+        ],
+        "shows": "The Enchant currency is applied to the crown; whether the Divine Font offers a choice among a few enchantments or one random enchantment is not known, so the result stops at the missing rule."
+      }
+    ],
+    "harvest.damage-conversion": [
+      {
+        "method": "harvest/fire-damage-to-cold-damage",
+        "fixtures": [
+          "cogwork-ring-fire"
+        ],
+        "shows": "The ring holds a modifier of the FireDamage type, so the craft applies, and the conversion itself stops at the unverified rule."
+      }
     ]
   },
   "evidence": {

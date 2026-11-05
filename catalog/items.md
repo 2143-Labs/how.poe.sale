@@ -49,6 +49,28 @@ Item Level: 1
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
+## `cogwork-ring-fire`
+
+```text
+Item Class: Rings
+Rarity: Rare
+Cogwork Ring
+--------
+Item Level: 84
+--------
+-1 Prefix Modifier allowed
++1 Suffix Modifier allowed
+Implicit Modifiers Cannot Be Changed
+25% increased Suffix Modifier magnitudes
+--------
+Adds 15 to 29 Fire Damage to Attacks
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
+
 ## `cogwork-ring-normal`
 
 ```text
@@ -674,6 +696,21 @@ Item Level: 84
 ```text
 Item Class: Boots
 Rarity: Normal
+Slink Boots
+--------
+Item Level: 84
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
+## `slink-boots-unique`
+
+```text
+Item Class: Boots
+Rarity: Unique
 Slink Boots
 --------
 Item Level: 84

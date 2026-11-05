@@ -1,0 +1,16 @@
+{
+  "base": "Cogwork Ring",
+  "itemLevel": 84,
+  "rarity": "rare",
+  "implicits": [
+    {
+      "id": "MaxPrefixMaxSuffixImplicitE1__"
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "AddedFireDamage7",
+      "values": [15, 29]
+    }
+  ]
+}

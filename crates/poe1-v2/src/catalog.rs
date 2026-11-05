@@ -300,6 +300,7 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
         Require::NotCorrupted => "not corrupted".into(),
         Require::Corrupted => "corrupted".into(),
         Require::NotMirrored => "not mirrored".into(),
+        Require::Mirrored => "mirrored".into(),
         Require::NotSplit => "not split".into(),
         Require::NotSynthesised => "not synthesised".into(),
         Require::NotUnique => "not unique".into(),
@@ -354,6 +355,7 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
         Require::HasMemoryStrands => "Memory Strands".into(),
         Require::HasModType { any_of } => format!("a {} modifier", any_of.join(" or ")),
         Require::BaseTag { tag } => format!("a base with the {tag} tag"),
+        Require::NotBaseTag { tag } => format!("a base without the {tag} tag"),
         Require::CanRoll { pool } => match pool {
             Pool::Natural => "at least one random modifier it can roll".into(),
             Pool::Influence { influence } => {

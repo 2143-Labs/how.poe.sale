@@ -348,3 +348,52 @@ fn presence_mods_cannot_show_their_condition() {
         );
     }
 }
+
+/// The data fixes the coverage audit asked for: no Remnant of Corruption among the essences, no
+/// Energy Blade skill buffs among the bases, every elevated mod with an influence, and the 14
+/// Horticrafting quality enchants kept as enchant mods that no random pool can draw.
+#[test]
+fn audit_data_fixes_hold() {
+    let d = test_data();
+    assert_eq!(d.essences.len(), 105);
+    assert!(d.essences.iter().all(|e| e.name != "Remnant of Corruption"));
+    assert!(d.bases.iter().all(|b| !b.id.contains("StormBlade")));
+    let mut elevated = 0;
+    for m in &d.mods {
+        if m.elevated {
+            elevated += 1;
+            assert!(
+                m.influence.is_some(),
+                "elevated mod {} has no influence",
+                m.id
+            );
+        }
+    }
+    assert_eq!(elevated, 247);
+    // The 21 whose group carries several influences read their own zero-weight spawn tag.
+    for (id, influence) in [
+        ("AdditionalChanceToEvadeInfluenceMaven", Influence::Redeemer),
+        ("AdditionalMinesPlacedSupportedUberMaven", Influence::Shaper),
+        ("FortifyEffectInfluenceMaven_", Influence::Crusader),
+    ] {
+        assert_eq!(
+            d.mod_at(d.mod_by_id(id).unwrap()).influence,
+            Some(influence),
+            "{id}"
+        );
+    }
+    let harvest_enchants: Vec<_> = d
+        .mods
+        .iter()
+        .filter(|m| m.id.starts_with("HarvestAlternate"))
+        .collect();
+    assert_eq!(harvest_enchants.len(), 14);
+    for m in harvest_enchants {
+        assert_eq!(m.kind, ModKind::Enchant, "{}", m.id);
+        assert!(
+            m.spawn.iter().all(|&(_, weight)| weight == 0) || m.spawn.is_empty(),
+            "{} can be drawn by a random enchant pool",
+            m.id
+        );
+    }
+}
