@@ -28,7 +28,7 @@ data/raw + rules/v2/*.json     -> datagen-v2 bundle   -> data/v2/bundle.json
 data/v2/bundle.json + fixtures/v2 -> datagen-v2 catalog -> catalog/*.md
 ```
 
-`rules/v2/` holds the hand-written side of the data: `item-classes.json` (every in-scope class, its category, socket count and affix limits), `claims.json` (the cited game rules), `methods.json` (the hand-authored methods) and `currency-scope.json` (which currency maps to which methods, or why it is out of scope). `datagen-v2 bundle` reads them, builds the bundle, and validates every reference in it. The two commands:
+`rules/v2/` holds the hand-written side of the data: `item-classes.json` (every in-scope class, its category, socket count and affix limits), `excluded-bases.json` (the current-league bases no data signal marks), `claims.json` (the cited game rules), `methods.json` (the hand-authored methods) and `currency-scope.json` (which currency maps to which methods, or why it is out of scope). `datagen-v2 bundle` reads them, builds the bundle, and validates every reference in it. The two commands:
 
 ```
 nix develop -c cargo run -q -p datagen-v2 --release -- bundle --raw data/raw --rules rules/v2 --out data/v2/bundle.json
@@ -119,6 +119,10 @@ Five limits in v1 forced the rebuild.
    An essence route on a Shaper base then reads as unreachable, because the normal item it starts from has no influence. v2 builds the item spec from the base and keeps the influence set, and `apply` checks it against the method.
 
 5. **The v1 bundle keeps two bench metamods and treats veiled mods as a source only.** `crates/datagen/src/main.rs:840-851` skips every bench option whose mod is not one of `DexMasterItemGenerationCannotChangeSuffixes` or `StrMasterItemGenerationCannotChangePrefixes`, and `crates/datagen/src/main.rs:616` keeps a veiled mod only as a resolvable source (`modelled || referenced || is_veiled(m)`): its spawn weights go to `veiled_weights` and its own weight list stays empty (see the `veiled_weights` comment at `crates/datagen/src/main.rs:248-250`), so no natural pool holds it. The Crown finish — veiled exalt, blocker craft, unveil — cannot be written down in v1. In v2 every bench option is a method, the veiled placeholder is an `Op`, unveiling is a `Chance` over offer sets, and an unveiled mod is a normal modifier.
+
+## Scope notes
+
+The Allflame Crafting Bench aboard The Sovereign is left out entirely (claim `allflame-bench.excluded`): it is treated as a league mechanic that will leave the game.
 
 ## Open questions
 

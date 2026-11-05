@@ -317,6 +317,31 @@
         ],
         "shows": "The ring holds a modifier of the FireDamage type, so the craft applies, and the conversion itself stops at the unverified rule."
       }
+    ],
+    "beast.talisman-fracture-cost": [
+      {
+        "method": "beast/fracture-talisman",
+        "fixtures": [
+          "talisman-rare-four"
+        ],
+        "shows": "The rare Talisman has four modifiers, so the craft is offered; the beast cost is not stated by any available source, so the method shows no cost."
+      },
+      {
+        "method": "beast/fracture-talisman-two",
+        "fixtures": [
+          "talisman-rare-six"
+        ],
+        "shows": "The rare Talisman has six modifiers, so the two-modifier fracture is offered; the beast cost is not stated by any available source, so the method shows no cost."
+      }
+    ],
+    "tainted-exalt.locks": [
+      {
+        "method": "currency/tainted-exalted-orb",
+        "fixtures": [
+          "crown-d2-scbc-corrupted"
+        ],
+        "shows": "The corrupted crown carries Suffixes Cannot Be Changed as a prefix and full suffixes, so every removal outcome takes a prefix and never a suffix, including the metamod itself."
+      }
     ]
   },
   "evidence": {
@@ -326,13 +351,6 @@
       ],
       "users": "`rules/v2/item-classes.json`, which gives the Tincture class its affix limits",
       "shows": "A magic tincture holds one prefix and one suffix, while the class allows no rare tincture at all, so a rare tincture has zero prefix slots and zero suffix slots."
-    },
-    "classes.flask-limits": {
-      "fixtures": [
-        "quicksilver-normal"
-      ],
-      "users": "`rules/v2/item-classes.json`, which gives the Flask category its affix limits",
-      "shows": "A normal flask has no explicit modifiers; the class allows one prefix and one suffix at magic rarity and none at rare rarity."
     },
     "generation.multiplier": {
       "fixtures": [],

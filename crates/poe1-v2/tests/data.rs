@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use poe1_v2::data::{Category, Decimals, Influence, ModKind, Side};
+use poe1_v2::data::{BenchAction, Category, Decimals, Influence, ModKind, Side};
 use poe1_v2::test_data;
 
 #[test]
@@ -227,6 +227,18 @@ fn currencies_carry_directions() {
 /// Stats the pinned data cannot translate, with why.
 const UNTRANSLATED: &[(&str, &str)] = &[
     (
+        "essence_buff_elemental_damage_taken_+%",
+        "a hidden essence-buff stat: the game shows the buff, not this value, on the item",
+    ),
+    (
+        "local_skills_granted_by_item_are_supported_by_level_x_unique_trigger_support",
+        "the hidden support level of the trigger supports; the game shows it only on the unique item that grants them",
+    ),
+    (
+        "local_use_skill_on_melee_hit_%",
+        "the hidden trigger chance of the on-hit experimented weapons; the game shows no line for it",
+    ),
+    (
         "dummy_stat_display_nothing",
         "a marker the game hides: its translation entry is empty",
     ),
@@ -271,18 +283,38 @@ fn every_spawnable_mod_stat_is_translated() {
             "the allow-list entry {stat} is stale: the pinned data now translates it"
         );
     }
-    let mut missing = BTreeSet::new();
-    for m in &d.mods {
-        if !(m.kind.is_explicit() || m.kind.is_implicit()) {
-            continue;
+    // Every mod the model can reach: a base implicit, a bench action, an essence, a fossil, or a
+    // positive spawn weight on some in-scope item's tags.
+    let mut reachable: BTreeSet<u32> = BTreeSet::new();
+    for b in &d.bases {
+        reachable.extend(b.implicits.iter().copied());
+    }
+    for option in &d.bench {
+        match option.action {
+            BenchAction::AddMod { m } | BenchAction::AddEnchant { m } => {
+                reachable.insert(m);
+            }
+            _ => {}
         }
-        if !m
-            .spawn
+    }
+    for e in &d.essences {
+        reachable.extend(e.mods.iter().map(|&(_, m)| m));
+    }
+    for f in &d.fossils {
+        reachable.extend(f.added_mods.iter().copied());
+        reachable.extend(f.forced_mods.iter().copied());
+    }
+    for (i, m) in d.mods.iter().enumerate() {
+        if m.spawn
             .iter()
             .any(|&(t, weight)| weight > 0 && item_tags.contains(&t))
         {
-            continue;
+            reachable.insert(i as u32);
         }
+    }
+    let mut missing = BTreeSet::new();
+    for &i in &reachable {
+        let m = d.mod_at(i);
         for s in &m.stats {
             let name = d.stat(s.stat);
             if d.translation_of_stat(s.stat).is_none()
@@ -306,7 +338,7 @@ fn tincture_mods_render_their_lines() {
     let d = test_data();
     let spec: poe1_v2::item::ItemSpec = serde_json::from_str(
         r#"{
-            "base": "Metadata/Items/Tinctures/TinctureStun",
+            "base": "Metadata/Items/Tinctures/Tincture4",
             "itemLevel": 84,
             "rarity": "magic",
             "prefixes": [{ "id": "TinctureEffect2", "values": [16] }]
@@ -395,5 +427,140 @@ fn audit_data_fixes_hold() {
             "{} can be drawn by a random enchant pool",
             m.id
         );
+    }
+}
+
+/// The current-league base scope (claim `bases.current-league`): every Standard-only base the
+/// owner listed is gone, the duplicate names they caused are unique, and the surviving
+/// Talisman bases all carry the one placeholder implicit.
+#[test]
+fn only_current_league_bases() {
+    let d = test_data();
+    let ids: BTreeSet<&str> = d.bases.iter().map(|b| b.id.as_str()).collect();
+    let quivers = [
+        "Metadata/Items/Quivers/Quiver6",
+        "Metadata/Items/Quivers/Quiver7",
+        "Metadata/Items/Quivers/Quiver8",
+        "Metadata/Items/Quivers/Quiver9",
+        "Metadata/Items/Quivers/Quiver10",
+        "Metadata/Items/Quivers/Quiver11",
+        "Metadata/Items/Quivers/Quiver12",
+        "Metadata/Items/Quivers/Quiver13",
+    ];
+    let tinctures = [
+        "Metadata/Items/Tinctures/TinctureStun",
+        "Metadata/Items/Tinctures/TinctureIgnite",
+        "Metadata/Items/Tinctures/TinctureShock",
+        "Metadata/Items/Tinctures/TincturePoison",
+        "Metadata/Items/Tinctures/TinctureCriticalStrike",
+        "Metadata/Items/Tinctures/TinctureCullingStrike",
+        "Metadata/Items/Tinctures/TinctureFreeze",
+        "Metadata/Items/Tinctures/TinctureBleed",
+    ];
+    let talismans = [
+        "Metadata/Items/Amulets/Talismans/Talisman1_1",
+        "Metadata/Items/Amulets/Talismans/Talisman1_2",
+        "Metadata/Items/Amulets/Talismans/Talisman1_3",
+        "Metadata/Items/Amulets/Talismans/Talisman1_4",
+        "Metadata/Items/Amulets/Talismans/Talisman1_5",
+        "Metadata/Items/Amulets/Talismans/Talisman1_6",
+        "Metadata/Items/Amulets/Talismans/Talisman1_7",
+        "Metadata/Items/Amulets/Talismans/Talisman1_8",
+        "Metadata/Items/Amulets/Talismans/Talisman1_9",
+        "Metadata/Items/Amulets/Talismans/Talisman1_10",
+        "Metadata/Items/Amulets/Talismans/Talisman1_11",
+        "Metadata/Items/Amulets/Talismans/Talisman1_12",
+        "Metadata/Items/Amulets/Talismans/Talisman2_1",
+        "Metadata/Items/Amulets/Talismans/Talisman2_2",
+        "Metadata/Items/Amulets/Talismans/Talisman2_3",
+        "Metadata/Items/Amulets/Talismans/Talisman2_4",
+        "Metadata/Items/Amulets/Talismans/Talisman2_5",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_1",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_2",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_3",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_4",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_5",
+        "Metadata/Items/Amulets/Talismans/Talisman2_6_6",
+        "Metadata/Items/Amulets/Talismans/Talisman2_7",
+        "Metadata/Items/Amulets/Talismans/Talisman2_8",
+        "Metadata/Items/Amulets/Talismans/Talisman3_1",
+        "Metadata/Items/Amulets/Talismans/Talisman3_2",
+        "Metadata/Items/Amulets/Talismans/Talisman3_3",
+        "Metadata/Items/Amulets/Talismans/Talisman3_4",
+        "Metadata/Items/Amulets/Talismans/Talisman3_5",
+        "Metadata/Items/Amulets/Talismans/Talisman3_6_1",
+        "Metadata/Items/Amulets/Talismans/Talisman3_6_2",
+        "Metadata/Items/Amulets/Talismans/Talisman3_6_3",
+        "Metadata/Items/Amulets/Talismans/Talisman3_7",
+    ];
+    let heist = [
+        "Metadata/Items/Weapons/TwoHandWeapons/Bows/BowE1",
+        "Metadata/Items/Weapons/OneHandWeapons/Claws/ClawE1",
+        "Metadata/Items/Weapons/OneHandWeapons/Daggers/DaggerE1",
+        "Metadata/Items/Weapons/OneHandWeapons/Daggers/RuneDaggerE1",
+        "Metadata/Items/Weapons/OneHandWeapons/OneHandAxes/OneHandAxeE1",
+        "Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/OneHandMaceE1",
+        "Metadata/Items/Weapons/OneHandWeapons/OneHandSwords/OneHandSwordE1",
+        "Metadata/Items/Weapons/TwoHandWeapons/Staves/StaffE1",
+        "Metadata/Items/Weapons/TwoHandWeapons/Staves/WarstaffE1",
+        "Metadata/Items/Weapons/TwoHandWeapons/TwoHandAxes/TwoHandAxeE1",
+        "Metadata/Items/Weapons/TwoHandWeapons/TwoHandMaces/TwoHandMaceE1",
+        "Metadata/Items/Weapons/TwoHandWeapons/TwoHandSwords/TwoHandSwordE1",
+        "Metadata/Items/Weapons/OneHandWeapons/Wands/WandE1",
+        "Metadata/Items/Armours/Shields/ShieldDexE1",
+        "Metadata/Items/Armours/Shields/ShieldIntE1",
+        "Metadata/Items/Armours/Shields/ShieldStrE1",
+        "Metadata/Items/Belts/BeltE2",
+    ];
+    let dropped: Vec<&str> = quivers
+        .into_iter()
+        .chain(tinctures)
+        .chain(talismans)
+        .chain(heist)
+        .chain(["Metadata/Items/Amulets/Talismans/Talisman4"])
+        .collect();
+    assert_eq!(dropped.len(), 68);
+    for id in &dropped {
+        assert!(!ids.contains(id), "{id} is still in the bundle");
+    }
+    // The names the dropped bases duplicated are now unique.
+    for name in [
+        "Serrated Arrow Quiver",
+        "Two-Point Arrow Quiver",
+        "Sharktooth Arrow Quiver",
+        "Blunt Arrow Quiver",
+        "Fire Arrow Quiver",
+        "Broadhead Arrow Quiver",
+        "Penetrating Arrow Quiver",
+        "Spike-Point Arrow Quiver",
+        "Ironwood Tincture",
+        "Ashbark Tincture",
+        "Fulgurite Tincture",
+        "Poisonberry Tincture",
+        "Rosethorn Tincture",
+        "Oakbranch Tincture",
+        "Borealwood Tincture",
+        "Blood Sap Tincture",
+        "Black Maw Talisman",
+        "Greatwolf Talisman",
+    ] {
+        assert_eq!(d.bases_named(name).len(), 1, "{name}");
+    }
+    // The data signals hold: no kept Tincture lacks its 3.25 implicit, and every kept Talisman
+    // base carries the one placeholder.
+    for (i, b) in d.bases.iter().enumerate() {
+        let class = d.class_of(i as u16);
+        if class.id == "Tincture" {
+            assert!(!b.implicits.is_empty(), "{} lost its implicit", b.id);
+        }
+        if b.tags.iter().any(|&t| d.tag(t) == "talisman") {
+            assert!(
+                b.implicits
+                    .iter()
+                    .any(|&m| d.mod_at(m).id == "TalismanImplicitPlaceholder"),
+                "{} lacks the talisman placeholder",
+                b.id
+            );
+        }
     }
 }

@@ -1,0 +1,51 @@
+{
+  "base": "Chieftain Talisman",
+  "itemLevel": 84,
+  "rarity": "rare",
+  "implicits": [
+    {
+      "id": "TalismanImplicitPlaceholder"
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "IncreasedMana8",
+      "values": [
+        52
+      ]
+    },
+    {
+      "id": "AddedPhysicalDamage8",
+      "values": [
+        10,
+        20
+      ]
+    },
+    {
+      "id": "IncreasedEnergyShield8",
+      "values": [
+        29
+      ]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "Strength8",
+      "values": [
+        46
+      ]
+    },
+    {
+      "id": "Intelligence6",
+      "values": [
+        35
+      ]
+    },
+    {
+      "id": "FireResist5",
+      "values": [
+        32
+      ]
+    }
+  ]
+}

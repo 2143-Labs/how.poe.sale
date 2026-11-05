@@ -2439,7 +2439,7 @@ fn talisman_crafts() {
         "needs a talisman base"
     );
     let talisman = edited("lapis-amulet-normal", |s| {
-        s.base = "Metadata/Items/Amulets/Talismans/Talisman1_1".into();
+        s.base = "Metadata/Items/Amulets/Talismans/TalismanChieftain".into();
         s.rarity = Rarity::Rare;
     });
     assert!(
@@ -2508,5 +2508,107 @@ fn harvest_quality_enchant_and_talisman_refusal() {
     );
     assert!(
         matches!(run("currency/anoint-clear-oil", &item("lapis-amulet-normal")), out if out.leaves.len() == 1)
+    );
+}
+
+/// The two 3.29 Talisman fracture beastcrafts replace the old split crafts (claim
+/// `beast.split-replaced`): one fractures a single modifier on a rare Talisman with four or more
+/// modifiers, the other fractures two on one with six or more. No source states their beast cost
+/// (claim `beast.talisman-fracture-cost`), so they carry none.
+#[test]
+fn talisman_fracture_beastcrafts() {
+    let d = test_data();
+    let four = item("talisman-rare-four");
+    let out = run("beast/fracture-talisman", &four);
+    assert!(close(out.mass(), 1.0, 1e-12));
+    assert_eq!(out.leaves.len(), 4);
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        assert_eq!(it.explicits().filter(|a| a.fractured).count(), 1);
+    }
+    let six = item("talisman-rare-six");
+    let out = run("beast/fracture-talisman-two", &six);
+    assert!(close(out.mass(), 1.0, 1e-12));
+    // Two ordered draws of the same pair merge, so the 30 orders are 15 unordered pairs.
+    assert_eq!(out.leaves.len(), 15);
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        assert_eq!(it.explicits().filter(|a| a.fractured).count(), 2);
+    }
+    for id in ["beast/fracture-talisman", "beast/fracture-talisman-two"] {
+        assert!(
+            cost(d, method(id), &Params::default()).unwrap().is_empty(),
+            "{id} states a cost no source gives"
+        );
+    }
+    assert_eq!(
+        reason("beast/fracture-talisman", &item("lapis-amulet-a")),
+        "needs a talisman base"
+    );
+    assert_eq!(
+        reason("beast/fracture-talisman-two", &four),
+        "needs at least 6 modifiers"
+    );
+}
+
+/// The Vaal pool of an amulet holds the 3.29 minimum-power-charges corrupted implicit: the amulet
+/// tags match its spawn list, so the implicit outcome can draw it.
+#[test]
+fn vaal_pool_includes_the_amulet_power_charge_implicit() {
+    let d = test_data();
+    let amulet = edited("lapis-amulet-normal", |s| s.rarity = Rarity::Rare);
+    let out = run("currency/vaal-socketless", &amulet);
+    assert!(
+        out.leaves.iter().any(|(_, l)| matches!(
+            l,
+            Leaf::Item(i) if i
+                .implicits
+                .iter()
+                .any(|r| d.mod_at(r.m).id == "V2MinPowerChargesCorruptedNew")
+        )),
+        "the amulet's Vaal pool lacks V2MinPowerChargesCorruptedNew"
+    );
+}
+
+/// The anointment, Rancour reforge and rune costs resolve from the rules: a standard oil, one
+/// special oil whose contract needs a corrupted item, a Harvest reforge that also spends
+/// Crystallised Rancour, and one Kalguuran rune.
+#[test]
+fn oil_rancour_and_rune_costs() {
+    let d = test_data();
+    let costs = |id: &str| cost(d, method(id), &Params::default()).unwrap();
+    let clear = costs("currency/anoint-clear-oil");
+    assert_eq!(clear.len(), 1);
+    assert_eq!(d.currency_by_id(&clear[0].key).unwrap().name, "Clear Oil");
+    assert_eq!(clear[0].amount, 1.0);
+
+    let tainted = costs("currency/anoint-tainted-oil");
+    assert_eq!(
+        d.currency_by_id(&tainted[0].key).unwrap().name,
+        "Tainted Oil"
+    );
+    assert_eq!(
+        reason("currency/anoint-tainted-oil", &item("lapis-amulet-normal")),
+        "needs a corrupted item"
+    );
+
+    let rancour = costs("harvest/reforge-minion");
+    let names: Vec<(&str, f64)> = rancour
+        .iter()
+        .map(|c| (d.currency_by_id(&c.key).unwrap().name.as_str(), c.amount))
+        .collect();
+    assert_eq!(
+        names,
+        vec![
+            ("Primal Crystallised Lifeforce", 200.0),
+            ("Crystallised Rancour", 3.0)
+        ]
+    );
+
+    let rune = costs("currency/rune-bound");
+    assert_eq!(d.currency_by_id(&rune[0].key).unwrap().name, "Bound Rune");
+    assert_eq!(
+        reason("currency/rune-bound", &item("cobalt-jewel-normal")),
+        "only works on: weapons"
     );
 }

@@ -11,7 +11,7 @@ use anyhow::{Context, bail};
 use poe1_v2::data::{
     BaseData, BenchAction, BenchData, Bundle, CatalystData, Category, Claim, ClassData, Condition,
     Cost, CurrencyData, Decimals, Domain, EssenceData, FORMAT, FossilData, Influence, Limits,
-    ModData, ModKind, Side, Slot, StatRange, TranslationData, Variant,
+    ModData, ModKind, Side, Slot, StatRange, TALISMAN_PLACEHOLDER, TranslationData, Variant,
 };
 use serde::Deserialize;
 
@@ -75,6 +75,23 @@ struct ClaimsFile {
     claims: Vec<Claim>,
 }
 
+/// Bases the current-league scope drops although no data signal marks them. A listed id must
+/// exist in the pinned export and must not survive the base filter, so a data refresh that drops
+/// or changes one fails the build instead of silently widening the bundle.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExcludedBasesFile {
+    claims: Vec<String>,
+    excluded: Vec<ExcludedBase>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExcludedBase {
+    id: String,
+    reason: String,
+}
+
 pub fn load_json<T: serde::de::DeserializeOwned>(dir: &Path, file: &str) -> anyhow::Result<T> {
     let path = dir.join(file);
     let text =
@@ -108,6 +125,9 @@ fn base_domain(d: &str) -> Option<Domain> {
         "abyss_jewel" => Domain::AbyssJewel,
         "flask" => Domain::Flask,
         "tincture" => Domain::Tincture,
+        // `undefined` is the export's domain for items that are not real bases a player crafts
+        // on. Ethereal Blade and Ethereal Bow carry it, and v2 keeps excluding them because they
+        // are temporary or area-only items (claim `bases.ethereal-not-craftable`).
         _ => return None,
     })
 }
@@ -289,12 +309,27 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     let raw_fossils: BTreeMap<String, RawFossil> = load_json(raw, "fossils.json")?;
     let class_rules: ItemClassesFile = load_json(rules, "item-classes.json")?;
     let claims: ClaimsFile = load_json(rules, "claims.json")?;
+    let excluded_bases: ExcludedBasesFile = load_json(rules, "excluded-bases.json")?;
 
-    for c in &class_rules.claims {
+    for c in class_rules.claims.iter().chain(&excluded_bases.claims) {
         if !claims.claims.iter().any(|k| &k.id == c) {
-            bail!("item-classes.json cites unknown claim {c}");
+            bail!("a rules file cites unknown claim {c}");
         }
     }
+    for e in &excluded_bases.excluded {
+        if !raw_bases.contains_key(&e.id) {
+            bail!(
+                "excluded-bases.json drops {}, which is not in the pinned export ({})",
+                e.id,
+                e.reason
+            );
+        }
+    }
+    let excluded_ids: BTreeSet<&str> = excluded_bases
+        .excluded
+        .iter()
+        .map(|e| e.id.as_str())
+        .collect();
 
     // ---- classes in scope, in rule order
     let class_idx: HashMap<&str, u16> = class_rules
@@ -309,6 +344,15 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
         .iter()
         .filter_map(|(id, b)| {
             let domain = base_domain(&b.domain)?;
+            // The current-league scope (claim `bases.current-league`): a base a current-league
+            // player cannot obtain is dropped. Three signals mark those bases in the export
+            // itself; the Heist experimented bases and the unreleased Greatwolf duplicate are
+            // listed in `excluded-bases.json` because the export gives them no signal.
+            let legacy_quiver = b.tags.iter().any(|t| t == "trade_market_legacy_item");
+            let legacy_tincture = b.item_class == "Tincture" && b.implicits.is_empty();
+            let legacy_talisman = b.item_class == "Amulet"
+                && b.tags.iter().any(|t| t == "talisman")
+                && b.implicits.iter().any(|i| i.starts_with("Talisman"));
             let keep = b.release_state == "released"
                 && class_idx.contains_key(b.item_class.as_str())
                 && !(b.item_class == "Jewel" && domain != Domain::Misc)
@@ -317,10 +361,23 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
                 && !id.contains("Royale")
                 // `StormBlade*` are the Energy Blade skill's buff weapons, not item bases a player
                 // crafts on: the skill grants them, and the export lists them beside a real sword.
-                && !id.contains("StormBlade");
+                && !id.contains("StormBlade")
+                && !legacy_quiver
+                && !legacy_tincture
+                && !legacy_talisman
+                && !excluded_ids.contains(id.as_str());
             keep.then_some((id, b, domain))
         })
         .collect();
+    for e in &excluded_bases.excluded {
+        if kept_bases.iter().any(|(id, _, _)| **id == e.id) {
+            bail!(
+                "excluded-bases.json drops {}, but the base filter kept it ({})",
+                e.id,
+                e.reason
+            );
+        }
+    }
     let base_implicits: BTreeSet<&str> = kept_bases
         .iter()
         .flat_map(|(_, b, _)| b.implicits.iter().map(String::as_str))
@@ -409,7 +466,14 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             .flat_map(|(_, m, _)| m.groups.iter().cloned())
             .collect(),
     );
-    let mod_types = Table::new(kept_mods.iter().map(|(_, m, _)| m.kind.clone()).collect());
+    let mod_types = Table::new(
+        kept_mods
+            .iter()
+            .map(|(_, m, _)| m.kind.clone())
+            // The placeholder's own mod type; no other mod carries it.
+            .chain(std::iter::once("TalismanImplicit".to_string()))
+            .collect(),
+    );
     let mut stats = Table::new(
         kept_mods
             .iter()
@@ -585,6 +649,28 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     for (i, inf) in elevated_influence {
         mods[i].influence = inf;
     }
+    // The one generic stand-in for a new Talisman's special modifier (claim `talisman.scope`).
+    // It has no stats and no text translation: its line is its RePoE text, and `text::parse`
+    // reads an unexplained talisman line back as this mod instead of reporting it.
+    mods.push(ModData {
+        id: TALISMAN_PLACEHOLDER.to_string(),
+        name: "Talisman Implicit Modifier".to_string(),
+        kind: ModKind::BaseImplicit,
+        side: None,
+        domain: "item".to_string(),
+        groups: Vec::new(),
+        mod_type: mod_types.get("TalismanImplicit", "mod type")?,
+        tags: Vec::new(),
+        adds_tags: Vec::new(),
+        spawn: Vec::new(),
+        generation: Vec::new(),
+        level: 1,
+        influence: None,
+        elevated: false,
+        eldritch_tier: None,
+        stats: Vec::new(),
+        text: "Talisman Implicit Modifier".to_string(),
+    });
     let mod_idx: HashMap<&str, u32> = mods
         .iter()
         .enumerate()
@@ -639,7 +725,7 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
         let (mut prefix_effect, mut suffix_effect) = (0i16, 0i16);
         let mut implicits_locked = false;
         let mut all_influences = false;
-        let mut implicits = Vec::with_capacity(b.implicits.len());
+        let mut implicits = Vec::with_capacity(b.implicits.len() + 1);
         for imp in &b.implicits {
             implicits.push(mod_ref(imp, &format!("base {id}"))?);
             for s in &raw_mods[imp].stats {
@@ -654,6 +740,11 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
                     _ => {}
                 }
             }
+        }
+        // A current-league Talisman base carries the one placeholder implicit: the pinned data
+        // has no 3.29 talisman enchantment pool (claim `talisman.pool-missing`).
+        if b.item_class == "Amulet" && b.tags.iter().any(|t| t == "talisman") {
+            implicits.push(mod_ref(TALISMAN_PLACEHOLDER, &format!("base {id}"))?);
         }
         let range =
             |r: &Option<crate::raw::RawRange>| r.as_ref().map(|r| [r.min as i32, r.max as i32]);

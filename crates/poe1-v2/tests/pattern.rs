@@ -10,8 +10,8 @@ use poe1_v2::data::{Data, Side};
 use poe1_v2::item::{AffixSpec, Item, MetaMod};
 use poe1_v2::method::PendingReason;
 use poe1_v2::pattern::{
-    AffixState, ClassSpec, Grade, LiftedLeaf, MatcherSpec, Pattern, classify, evaluate, lift,
-    matches_probability,
+    AffixState, ClassSpec, Grade, LiftedLeaf, MatcherSpec, Pattern, PatternSpec, classify,
+    evaluate, lift, matches_probability,
 };
 use poe1_v2::test_data;
 
@@ -654,4 +654,41 @@ fn compile_rejects_more() {
         err(s),
         "pattern \"crown-shaper\": prefix slots exceed what Archdemon Crown allows (3)"
     );
+}
+
+/// A pattern matches the one placeholder a new Talisman carries, and a Talisman without it does
+/// not pass the pattern's filter.
+#[test]
+fn talisman_placeholder_is_a_mod_matcher() {
+    let d = test_data();
+    let talisman_spec: PatternSpec = serde_json::from_str(
+        r#"{
+            "name": "talisman",
+            "item": {
+                "bases": ["Chieftain Talisman"],
+                "itemLevelMin": 80,
+                "rarity": "rare",
+                "influences": []
+            },
+            "implicits": [{"mod": "TalismanImplicitPlaceholder"}],
+            "classes": [
+                {"id": "any-other-prefix", "label": "Any Other Prefix", "side": "prefix", "grade": "bad", "matchers": [{"any": true}]},
+                {"id": "any-other-suffix", "label": "Any Other Suffix", "side": "suffix", "grade": "bad", "matchers": [{"any": true}]}
+            ],
+            "prefixes": [["any-other-prefix"]],
+            "suffixes": [["any-other-suffix"]]
+        }"#,
+    )
+    .unwrap();
+    let pattern = Pattern::compile(d, &talisman_spec).unwrap();
+    let states = evaluate(d, &pattern, &item("talisman-rare-four"));
+    assert_eq!(states.len(), 1);
+    assert!(states[0].1.item_ok);
+    assert_eq!(states[0].0, 1.0);
+
+    let mut bare = spec("talisman-rare-four");
+    bare.implicits.clear();
+    let bare = Item::from_spec(d, &bare).unwrap();
+    let states = evaluate(d, &pattern, &bare);
+    assert!(states.iter().all(|(_, s)| !s.item_ok));
 }

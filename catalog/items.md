@@ -365,6 +365,37 @@ Shaper Item
 |`crown-shaper`|1.000000|yes|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
 
+## `crown-d2-scbc-corrupted`
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
++137 to maximum Life
+14% additional Physical Damage Reduction while Focused
+15% increased Effect of Cold Ailments
+Suffixes Cannot Be Changed (crafted)
+--------
+Shaper Item
+Corrupted
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+
 ## `crown-d2-scbc-fractured`
 
 ```text
@@ -720,6 +751,52 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
+## `talisman-rare-four`
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Chieftain Talisman
+--------
+Item Level: 84
+--------
+Talisman Implicit Modifier
+--------
++46 to Strength
++35 to Intelligence
+Adds 10 to 20 Physical Damage to Attacks
++52 to maximum Mana
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+
+## `talisman-rare-six`
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Chieftain Talisman
+--------
+Item Level: 84
+--------
+Talisman Implicit Modifier
+--------
++46 to Strength
++35 to Intelligence
+Adds 10 to 20 Physical Damage to Attacks
++29 to maximum Energy Shield
++52 to maximum Mana
++32% to Fire Resistance
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
 
 ## `tincture-magic`
 

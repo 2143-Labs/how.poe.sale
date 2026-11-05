@@ -1786,9 +1786,168 @@ p = 1.000000: not computed in this pass: multi-draw reforge; the part that is ce
 
 Current source (coe): https://www.craftofexile.com/metamods
 
-**Used by:** no method or data file in this bundle records a user of this rule
+**What this shows:** The corrupted crown carries Suffixes Cannot Be Changed as a prefix and full suffixes, so every removal outcome takes a prefix and never a suffix, including the metamod itself.
 
-No item fixture exercises this rule yet.
+**Input** (`crown-d2-scbc-corrupted`)
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
++137 to maximum Life
+14% additional Physical Damage Reduction while Focused
+15% increased Effect of Cold Ailments
+Suffixes Cannot Be Changed (crafted)
+--------
+Shaper Item
+Corrupted
+```
+
+**Step**: Tainted Exalted Orb (`currency/tainted-exalted-orb`; cost: 1 × Tainted Exalted Orb)
+
+**Result**
+
+p = 0.500000
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+**Modifier counts:** 0.500000 end with 5 explicit modifiers, 0.500000 end with 6 explicit modifiers.
+
+**Diff** (input vs the most likely result)
+
+```diff
+  Item Class: Helmets
+  Rarity: Rare
+  Archdemon Crown
+  --------
+  Quality: +20% (augmented)
+  --------
+  Item Level: 87
+  --------
+  -2 to Level of Socketed Support Gems
+  +2 to Level of Socketed Skill Gems
+  --------
+  Socketed Gems are Supported by Level 18 Hypothermia
+  Socketed Gems deal 30% more Elemental Damage
+  Socketed Spells have +3% to Critical Strike Chance
+  +137 to maximum Life
+  14% additional Physical Damage Reduction while Focused
+  15% increased Effect of Cold Ailments
+  Suffixes Cannot Be Changed (crafted)
+  --------
+  Shaper Item
+  Corrupted
+```
+
+**Used by** 1 method: Tainted Exalted Orb (`currency/tainted-exalted-orb`)
 
 ## `tainted.odds`
 
@@ -2736,6 +2895,16 @@ p = 0.200000
 
 **Used by** 1 method: Orb of Annulment (`currency/annulment`)
 
+## `talisman.pool-missing`
+
+**Proposed rule:** The pinned RePoE export does not carry the 3.29 talisman enchantment modifier pool: its TalismanEnchant mods are unique-only, have no spawn weight and no base references them, so a new Talisman's real special modifier is unknown and one generic placeholder stands in for it.
+
+Current source (datamined): https://repoe-fork.github.io/
+
+**Used by:** no method or data file in this bundle records a user of this rule
+
+No item fixture exercises this rule yet.
+
 ## `bench.corrupted-sockets`
 
 **Proposed rule:** The bench's socket, link and colour crafts can be used on a corrupted item, at the cost of additional Vaal Orbs on top of the usual Orbs of Fusing; the number of extra Vaal Orbs is not stated by the sources.
@@ -2811,26 +2980,6 @@ p = 1.000000: not computed in this pass: socket outcome table; the item before t
 **Diff**: none; this pass does not compute a result item for this step.
 
 **Used by** 13 methods: Bench: colour sockets NN (`bench/colours/NN`), Bench: colour sockets NNN (`bench/colours/NNN`), Bench: colour sockets NNNN (`bench/colours/NNNN`), Bench: link 2 sockets (`bench/links/2`), Bench: link 3 sockets (`bench/links/3`), Bench: link 4 sockets (`bench/links/4`), Bench: link 5 sockets (`bench/links/5`), Bench: link 6 sockets (`bench/links/6`) and 5 more
-
-## `classes.flask-limits`
-
-**Proposed rule:** Flasks and tinctures are never rare and hold at most one prefix and one suffix.
-
-**Used by:** `rules/v2/item-classes.json`, which gives the Flask category its affix limits
-
-**What this shows:** A normal flask has no explicit modifiers; the class allows one prefix and one suffix at magic rarity and none at rare rarity.
-
-**Input** (`quicksilver-normal`)
-
-```text
-Item Class: Utility Flasks
-Rarity: Normal
-Quicksilver Flask
---------
-Item Level: 84
-```
-
-**Limits**: the Utility Flasks class allows at most 1 prefix and 1 suffix at magic rarity, and 0 and 0 at rare rarity.
 
 ## `enchant.lab-tiers`
 
@@ -3214,6 +3363,292 @@ p = 1.000000: not computed in this pass: multi-draw reforge; the part that is ce
 ```
 
 **Used by** 19 methods: Vaal Orb (`currency/vaal`), Vaal Orb (jewellery and quivers) (`currency/vaal-socketless`), Harvest: reforge with a Attack modifier (`harvest/reforge-attack`), Harvest: reforge with a Attribute modifier (`harvest/reforge-attribute`), Harvest: reforge with a Caster modifier (`harvest/reforge-caster`), Harvest: reforge with a Chaos modifier (`harvest/reforge-chaos`), Harvest: reforge with a Cold modifier (`harvest/reforge-cold`), Harvest: reforge with a Critical modifier (`harvest/reforge-critical`) and 11 more
+
+## `beast.talisman-fracture-cost`
+
+**Proposed rule:** No published source states the beast cost of the 3.29 Talisman fracture beastcrafts: the patch notes describe only the effect, Maxroll's Beastcrafting guide still describes the old split crafts, and the pinned RePoE export has no beast recipes, so both methods carry no cost until the owner supplies one.
+
+Current source (owner): https://maxroll.gg/poe/crafting/beastcrafting
+
+**Example 1**
+
+**What this shows:** The rare Talisman has four modifiers, so the craft is offered; the beast cost is not stated by any available source, so the method shows no cost.
+
+**Input** (`talisman-rare-four`)
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Chieftain Talisman
+--------
+Item Level: 84
+--------
+Talisman Implicit Modifier
+--------
++46 to Strength
++35 to Intelligence
+Adds 10 to 20 Physical Damage to Attacks
++52 to maximum Mana
+```
+
+**Step**: Beastcraft: fracture a modifier on a rare Talisman (`beast/fracture-talisman`; cost: none)
+
+**Result**
+
+p = 0.250000
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +46 to Strength (fractured)
+> +35 to Intelligence
+> Adds 10 to 20 Physical Damage to Attacks
+> +52 to maximum Mana
+> --------
+> Fractured Item
+> ```
+
+p = 0.250000
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +35 to Intelligence (fractured)
+> +46 to Strength
+> Adds 10 to 20 Physical Damage to Attacks
+> +52 to maximum Mana
+> --------
+> Fractured Item
+> ```
+
+p = 0.250000
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +52 to maximum Mana (fractured)
+> +46 to Strength
+> +35 to Intelligence
+> Adds 10 to 20 Physical Damage to Attacks
+> --------
+> Fractured Item
+> ```
+
+p = 0.250000
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> Adds 10 to 20 Physical Damage to Attacks (fractured)
+> +46 to Strength
+> +35 to Intelligence
+> +52 to maximum Mana
+> --------
+> Fractured Item
+> ```
+
+**Diff** (input vs the most likely result)
+
+```diff
+  Item Class: Amulets
+  Rarity: Rare
+  Chieftain Talisman
+  --------
+  Item Level: 84
+  --------
+  Talisman Implicit Modifier
+  --------
++ +46 to Strength (fractured)
+- +46 to Strength
+  +35 to Intelligence
+  Adds 10 to 20 Physical Damage to Attacks
+  +52 to maximum Mana
++ --------
++ Fractured Item
+```
+
+**Example 2**
+
+**What this shows:** The rare Talisman has six modifiers, so the two-modifier fracture is offered; the beast cost is not stated by any available source, so the method shows no cost.
+
+**Input** (`talisman-rare-six`)
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Chieftain Talisman
+--------
+Item Level: 84
+--------
+Talisman Implicit Modifier
+--------
++46 to Strength
++35 to Intelligence
+Adds 10 to 20 Physical Damage to Attacks
++29 to maximum Energy Shield
++52 to maximum Mana
++32% to Fire Resistance
+```
+
+**Step**: Beastcraft: fracture two modifiers on a rare Talisman (`beast/fracture-talisman-two`; cost: none)
+
+**Result**
+
+p = 0.066667
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +35 to Intelligence (fractured)
+> +46 to Strength (fractured)
+> Adds 10 to 20 Physical Damage to Attacks
+> +29 to maximum Energy Shield
+> +52 to maximum Mana
+> +32% to Fire Resistance
+> --------
+> Fractured Item
+> ```
+
+p = 0.066667
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +32% to Fire Resistance (fractured)
+> +46 to Strength (fractured)
+> +35 to Intelligence
+> Adds 10 to 20 Physical Damage to Attacks
+> +29 to maximum Energy Shield
+> +52 to maximum Mana
+> --------
+> Fractured Item
+> ```
+
+p = 0.066667
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +32% to Fire Resistance (fractured)
+> +35 to Intelligence (fractured)
+> +46 to Strength
+> Adds 10 to 20 Physical Damage to Attacks
+> +29 to maximum Energy Shield
+> +52 to maximum Mana
+> --------
+> Fractured Item
+> ```
+
+p = 0.066667
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +52 to maximum Mana (fractured)
+> +46 to Strength (fractured)
+> +35 to Intelligence
+> Adds 10 to 20 Physical Damage to Attacks
+> +29 to maximum Energy Shield
+> +32% to Fire Resistance
+> --------
+> Fractured Item
+> ```
+
+p = 0.066667
+
+> ```text
+> Item Class: Amulets
+> Rarity: Rare
+> Chieftain Talisman
+> --------
+> Item Level: 84
+> --------
+> Talisman Implicit Modifier
+> --------
+> +52 to maximum Mana (fractured)
+> +35 to Intelligence (fractured)
+> +46 to Strength
+> Adds 10 to 20 Physical Damage to Attacks
+> +29 to maximum Energy Shield
+> +32% to Fire Resistance
+> --------
+> Fractured Item
+> ```
+
+… 10 more outcomes (total p = 0.666667)
+
+**Diff** (input vs the most likely result)
+
+```diff
+  Item Class: Amulets
+  Rarity: Rare
+  Chieftain Talisman
+  --------
+  Item Level: 84
+  --------
+  Talisman Implicit Modifier
+  --------
++ +35 to Intelligence (fractured)
++ +46 to Strength (fractured)
+- +46 to Strength
+- +35 to Intelligence
+  Adds 10 to 20 Physical Damage to Attacks
+  +29 to maximum Energy Shield
+  +52 to maximum Mana
+  +32% to Fire Resistance
++ --------
++ Fractured Item
+```
+
+**Used by** 2 methods: Beastcraft: fracture a modifier on a rare Talisman (`beast/fracture-talisman`), Beastcraft: fracture two modifiers on a rare Talisman (`beast/fracture-talisman-two`)
 
 ## Pattern notes
 

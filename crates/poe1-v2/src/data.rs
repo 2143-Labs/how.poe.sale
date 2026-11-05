@@ -12,6 +12,11 @@ use serde::{Deserialize, Serialize};
 /// protection policy and write reforges as primitives.
 pub const FORMAT: u32 = 2;
 
+/// The synthetic modifier standing in for a new Talisman's special modifier. The pinned export
+/// has no 3.29 talisman enchantment pool, so every current-league Talisman base carries this one
+/// placeholder implicit (claims `talisman.scope` and `talisman.pool-missing`).
+pub const TALISMAN_PLACEHOLDER: &str = "TalismanImplicitPlaceholder";
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Bundle {

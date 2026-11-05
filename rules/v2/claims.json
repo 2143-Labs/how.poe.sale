@@ -1,6 +1,15 @@
 {
   "claims": [
     {
+      "id": "allflame-bench.excluded",
+      "statement": "The Allflame Crafting Bench aboard The Sovereign is not modelled: it is treated as a league mechanic that will leave the game, so no method places or resolves an Allflame craft.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Treat it as a league mechanic that will leave the game, and do not model it at all.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "annul.locks",
       "statement": "Orb of Annulment respects meta-crafting mods: it cannot remove a protected suffix, but it can remove the Suffixes Cannot Be Changed mod itself.",
       "sourceKind": "guide",
@@ -24,6 +33,51 @@
       "sourceKind": "patch-notes",
       "url": "https://www.pathofexile.com/forum/view-thread/3985332",
       "quote": "Talismans cannot be Anointed, and their Enchantment Modifiers cannot be removed using the crafting bench option.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bases.current-league",
+      "statement": "The bundle covers only bases obtainable in the current league: the eight legacy quivers tagged trade_market_legacy_item, the 17 Heist experimented bases, the eight pre-3.25 tinctures and the 34 old Talisman bases are dropped, along with the unreleased duplicate Greatwolf Talisman base, so a pasted item on one of them cannot be read.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Drop the Standard-only bases listed above. Name lookups become unambiguous and the pools are exactly the current league's, but a pasted item on one of those bases can no longer be read.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bases.ethereal-not-craftable",
+      "statement": "Ethereal Blade and Ethereal Bow are temporary or area-only items, so v2 keeps excluding them from the base list.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "They are temporary or area-only items, so v2 keeps excluding them.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bases.heist-experimented",
+      "statement": "The 17 Heist experimented bases are drop-disabled, so v2 drops them: Hedron Bow, Shadow Fangs, Hollowpoint Dagger, Flickerflame Blade, Maltreatment Axe, Flare Mace, Fickle Spiritblade, Transformer Staff, Capacity Rod, Prime Cleaver, Blunt Force Condenser, Rebuking Blade, Assembler Wand, Endothermic Buckler, Exhausting Spirit Shield, Exothermic Tower Shield and Mechalarm Belt.",
+      "sourceKind": "wiki",
+      "url": "https://poedb.tw/us/Hedron_Bow",
+      "quote": "Drop disabled",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bases.legacy-talismans",
+      "statement": "The 34 old Talisman base types that carry the old talisman implicits are no longer obtainable, so v2 drops them and keeps only the current-league Talisman bases.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/3985332",
+      "quote": "Old Talisman base types are no longer obtainable, but will still exist in Standard.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bases.unused-duplicate",
+      "statement": "The export's second Greatwolf Talisman base, Metadata/Items/Amulets/Talismans/Talisman4, carries no talisman tag and no item or modifier references it, so it is an unreleased duplicate of TalismanGreatwolf and v2 drops it.",
+      "sourceKind": "datamined",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "\"tags\": [\"amulet\", \"default\"]",
       "patch": "3.29",
       "checked": true
     },
@@ -763,6 +817,24 @@
       "checked": false
     },
     {
+      "id": "talisman.pool-missing",
+      "statement": "The pinned RePoE export does not carry the 3.29 talisman enchantment modifier pool: its TalismanEnchant mods are unique-only, have no spawn weight and no base references them, so a new Talisman's real special modifier is unknown and one generic placeholder stands in for it.",
+      "sourceKind": "datamined",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "talisman.scope",
+      "statement": "Talismans are in scope, and a new Talisman's special modifier is modelled as one general talisman implicit placeholder until the real 3.29 enchantment pool is available.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Yes, in scope, but we can treat them as \"general talisman implicit\" maybe?",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "veiled.side",
       "statement": "When one side already holds three modifiers the veiled modifier goes to the other side; with two suffixes on a side that has room, it is a 50% chance for either.",
       "sourceKind": "guide",
@@ -791,12 +863,12 @@
     },
     {
       "id": "classes.flask-limits",
-      "statement": "Flasks and tinctures are never rare and hold at most one prefix and one suffix.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "Flasks can only be normal, magic or unique, so a flask is never rare and holds at most one prefix and one suffix at magic rarity.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Flask",
+      "quote": "Flasks can only be normal, magic or unique.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "ducat.allflame",
@@ -1004,6 +1076,15 @@
       "quote": "The Craicic Chimeral Beast has been renamed to Craicic Croaker, which is a much more fitting name for a Gem Frog.",
       "patch": "3.29",
       "checked": true
+    },
+    {
+      "id": "beast.talisman-fracture-cost",
+      "statement": "No published source states the beast cost of the 3.29 Talisman fracture beastcrafts: the patch notes describe only the effect, Maxroll's Beastcrafting guide still describes the old split crafts, and the pinned RePoE export has no beast recipes, so both methods carry no cost until the owner supplies one.",
+      "sourceKind": "owner",
+      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
     },
     {
       "id": "beast.yellow",

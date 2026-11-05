@@ -463,3 +463,59 @@ fn round_trip() {
     }
     assert!(lossy.is_empty(), "{lossy:?}");
 }
+
+/// A new Talisman's special modifier is the one placeholder implicit: it prints one clear line,
+/// a rendered Talisman reads back unchanged, and an enchantment line the pinned data cannot
+/// explain reads as the placeholder instead of "not understood" (claim `talisman.pool-missing`).
+#[test]
+fn talisman_placeholder_prints_and_reads() {
+    let data = test_data();
+    let talisman = common::item("talisman-rare-four");
+    let text = render(data, &talisman);
+    assert!(
+        text.lines()
+            .any(|line| line == "Talisman Implicit Modifier"),
+        "{text}"
+    );
+    let parsed = parse(data, &text).expect("the rendered Talisman parses");
+    assert!(
+        !parsed
+            .warnings
+            .iter()
+            .any(|w| w.starts_with("not understood")),
+        "{:?}",
+        parsed.warnings
+    );
+    let back = Item::from_spec(data, &parsed.spec).expect("the parsed Talisman builds");
+    assert_eq!(back, talisman);
+
+    // The game's real line is unknown, so any unexplained enchantment line on a Talisman base is
+    // read as the placeholder.
+    let paste = "Item Class: Amulets\n\
+Rarity: Rare\n\
+Chieftain Talisman\n\
+--------\n\
+Item Level: 84\n\
+--------\n\
+15% increased maximum Life (enchant)\n\
+--------\n\
++52 to maximum Mana\n\
+--------\n\
++46 to Strength\n";
+    let parsed = parse(data, paste).expect("the Talisman paste parses");
+    assert!(
+        parsed
+            .spec
+            .implicits
+            .iter()
+            .any(|m| m.id == "TalismanImplicitPlaceholder"),
+        "{:?}",
+        parsed.spec.implicits
+    );
+    assert!(
+        !parsed.warnings.iter().any(|w| w.contains("not understood")),
+        "{:?}",
+        parsed.warnings
+    );
+    Item::from_spec(data, &parsed.spec).expect("the placeholder paste builds");
+}

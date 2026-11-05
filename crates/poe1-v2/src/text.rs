@@ -1621,6 +1621,12 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
     let mut suffixes: Vec<AffixSpec> = Vec::new();
     let mut implicits: Vec<ModSpec> = Vec::new();
     let mut enchants: Vec<ModSpec> = Vec::new();
+    let is_talisman = data
+        .base_at(base)
+        .tags
+        .iter()
+        .any(|&t| data.tag(t) == "talisman");
+    let mut talisman_placeholder = false;
 
     for (lines, pools, pool) in [
         (
@@ -1672,7 +1678,24 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
         if lines.is_empty() {
             continue;
         }
-        let affixes = pools.match_pool(lines, &mut warnings);
+        let mut pool_warnings = Vec::new();
+        let affixes = pools.match_pool(lines, &mut pool_warnings);
+        // A Talisman's special modifier is an enchantment the pinned export cannot spell out
+        // (claim `talisman.pool-missing`). Any line of its implicit or enchantment section that
+        // matches nothing is that modifier, so read it as the one placeholder instead of leaving
+        // the line unexplained.
+        if is_talisman && matches!(pool, Pool::Implicit | Pool::Enchant) {
+            let unexplained = |w: &str| {
+                lines
+                    .iter()
+                    .any(|line| w == format!("not understood: \"{line}\""))
+            };
+            if pool_warnings.iter().any(|w| unexplained(w)) {
+                pool_warnings.retain(|w| !unexplained(w));
+                talisman_placeholder = true;
+            }
+        }
+        warnings.extend(pool_warnings);
         match pool {
             Pool::Enchant => {
                 enchants.extend(affixes.into_iter().map(|a| ModSpec {
@@ -1696,6 +1719,13 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
                 }
             }
         }
+    }
+
+    if talisman_placeholder {
+        implicits.push(ModSpec {
+            id: crate::data::TALISMAN_PLACEHOLDER.to_string(),
+            values: None,
+        });
     }
 
     for side in veiled {

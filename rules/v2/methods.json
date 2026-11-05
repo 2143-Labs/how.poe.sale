@@ -98,6 +98,39 @@
       "claims": ["beast.talisman-create", "beast.yellow"]
     },
     {
+      "id": "beast/fracture-talisman",
+      "name": "Beastcraft: fracture a modifier on a rare Talisman",
+      "family": "beast",
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"},
+        {"kind": "minExplicits", "n": 4}
+      ],
+      "ops": [
+        {"op": "fracture"}
+      ],
+      "claims": ["beast.split-replaced", "talisman.scope", "beast.talisman-fracture-cost"]
+    },
+    {
+      "id": "beast/fracture-talisman-two",
+      "name": "Beastcraft: fracture two modifiers on a rare Talisman",
+      "family": "beast",
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"},
+        {"kind": "minExplicits", "n": 6}
+      ],
+      "ops": [
+        {"op": "fracture"},
+        {"op": "fracture"}
+      ],
+      "claims": ["beast.split-replaced", "talisman.scope", "beast.talisman-fracture-cost"]
+    },
+    {
       "id": "beast/hinekoras-lock",
       "name": "Beastcraft: foresee the next result",
       "family": "beast",
@@ -2352,7 +2385,7 @@
       "ops": [
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
       ],
-      "claims": ["game-text", "tainted.odds"]
+      "claims": ["game-text", "tainted.odds", "tainted-exalt.locks"]
     },
     {
       "id": "currency/tainted-jewellers-orb",

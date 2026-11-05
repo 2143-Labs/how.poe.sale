@@ -110,7 +110,7 @@ fn rejects() {
     });
     let narrowed = Data::from_bundle(bundle).unwrap();
     let mut s = spec("quicksilver-normal");
-    s.base = "Metadata/Items/Tinctures/TinctureStun".into();
+    s.base = "Metadata/Items/Tinctures/Tincture4".into();
     assert_eq!(
         err(&narrowed, &s),
         format!("item class {} is not covered by v2", d.classes.len() - 1)
