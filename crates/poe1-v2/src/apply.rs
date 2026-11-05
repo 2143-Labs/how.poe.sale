@@ -267,6 +267,87 @@ fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
         .map(|&(_, m)| m)
 }
 
+/// Why a pool has no candidate, in the same words `AddRandom` refuses with.
+fn pool_empty_text(pool: &Pool) -> String {
+    match pool {
+        Pool::Natural => "no modifier can roll on this item".into(),
+        Pool::Influence { influence } => {
+            format!("no {} modifier can roll on this item", influence.name())
+        }
+        Pool::Influenced => "no influenced modifier can roll on this item".into(),
+        Pool::Tag { tag } => format!("no {tag} modifier can roll on this item"),
+        Pool::Ducat { .. } => "no modifier from this ducat can roll on this item".into(),
+    }
+}
+
+/// The weighted candidate mods `AddRandom` draws from, at item level, with the attack and
+/// caster mods a Cannot Roll metamod bars left out (claim `metamod.cannot-roll`). `ignore_limits`
+/// keeps a mod whose side has no room, and `ignore_groups` keeps a mod whose group the item
+/// already holds: a requirement asks whether the modifier can roll on the item at all, before the
+/// reforge clears it, while an add must respect both.
+fn pool_candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+) -> Vec<(u32, f64)> {
+    let tags = item.tags(data);
+    let base = data.base_at(item.base);
+    let groups = item.explicit_groups(data);
+    let allowed = sides(data, item, side);
+    let open = [
+        room(data, item, Side::Prefix),
+        room(data, item, Side::Suffix),
+    ];
+    let level_cap = if item.has_meta(data, MetaMod::Level28) {
+        item.item_level.min(28)
+    } else {
+        item.item_level
+    };
+    let barred: Vec<u16> = [(MetaMod::NoAttack, "attack"), (MetaMod::NoCaster, "caster")]
+        .into_iter()
+        .filter(|(meta, _)| item.has_meta(data, *meta))
+        .filter_map(|(_, name)| data.tag_by_name(name))
+        .collect();
+    let (kind, tag) = match pool {
+        Pool::Ducat { tag } => (ModKind::Ducat, data.tag_by_name(tag)),
+        Pool::Tag { tag } => (ModKind::Natural, data.tag_by_name(tag)),
+        _ => (ModKind::Natural, None),
+    };
+    if matches!(pool, Pool::Tag { .. } | Pool::Ducat { .. }) && tag.is_none() {
+        return Vec::new();
+    }
+    let mut weighted = Vec::new();
+    for &i in data.mods_of_kind(kind) {
+        let m = data.mod_at(i);
+        let Some(s) = m.side else { continue };
+        let pool_ok = match pool {
+            Pool::Natural | Pool::Ducat { .. } => true,
+            Pool::Influence { influence } => m.influence == Some(*influence),
+            Pool::Influenced => m.influence.is_some_and(|i| item.has_influence(i)),
+            Pool::Tag { .. } => tag.is_some_and(|t| m.tags.contains(&t)),
+        };
+        if !pool_ok
+            || (kind != ModKind::Ducat && m.domain != base.domain.repoe())
+            || m.level > level_cap
+            || !allowed.contains(&s)
+            || (!ignore_limits && open[s.index()] == 0)
+            || (!ignore_groups && m.groups.iter().any(|g| groups.contains(g)))
+            || barred.iter().any(|t| m.tags.contains(t))
+        {
+            continue;
+        }
+        let w = match pool {
+            Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
+            _ => pool::weight(m, &tags),
+        };
+        weighted.push((i, w));
+    }
+    pool::normalise(weighted)
+}
+
 fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(), Unmet> {
     let class = item.class(data);
     let explicit_count = item.prefixes.len() + item.suffixes.len();
@@ -421,6 +502,25 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
                 return unmet(format!("needs a {} modifier", any_of.join(" or ")));
             }
         }
+        Require::BaseTag { tag } => {
+            let wanted = data.tag_by_name(tag);
+            if !wanted.is_some_and(|t| data.base_at(item.base).tags.contains(&t)) {
+                return unmet(format!("needs a {tag} base"));
+            }
+        }
+        Require::CanRoll { pool } => {
+            // Ask whether the pool can roll on the item at all, not whether it has room now: a
+            // reforge clears the sides it changes before it fills them.
+            if pool_candidates(data, item, pool, SideReq::Any, true, true).is_empty() {
+                return unmet(pool_empty_text(pool));
+            }
+        }
+        Require::MinSockets { n } => {
+            let count: usize = item.sockets.iter().map(Vec::len).sum();
+            if count < *n as usize {
+                return unmet(format!("needs at least {n} sockets"));
+            }
+        }
         Require::EssenceFits { essence } if essence_mod(data, item, essence).is_none() => {
             return unmet(format!("{essence} has no modifier for {}", class.id));
         }
@@ -428,6 +528,23 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
             let n = params.fossils.len();
             if n < *min as usize || n > *max as usize {
                 return unmet(format!("needs {min} to {max} fossils"));
+            }
+        }
+        Require::FossilLimits => {
+            for &f in &params.fossils {
+                let Some(fossil) = data.fossils.get(f as usize) else {
+                    continue;
+                };
+                let fractures = fossil
+                    .descriptions
+                    .iter()
+                    .any(|d| d.to_lowercase().contains("fracture a random modifier"));
+                if fractures && (item.influences != 0 || item.explicits().any(|a| a.fractured)) {
+                    return unmet(format!(
+                        "{} cannot be used on an influenced or fractured item",
+                        fossil.name
+                    ));
+                }
             }
         }
         Require::ImplicitsChangeable if data.base_at(item.base).implicits_locked => {
@@ -1066,20 +1183,7 @@ impl Run<'_> {
             } => {
                 let candidates = self.add_candidates(item, pool, *side, *ignore_limits);
                 if candidates.is_empty() {
-                    let what = match pool {
-                        Pool::Natural => "no modifier can roll on this item".to_string(),
-                        Pool::Influence { influence } => {
-                            format!("no {} modifier can roll on this item", influence.name())
-                        }
-                        Pool::Influenced => {
-                            "no influenced modifier can roll on this item".to_string()
-                        }
-                        Pool::Tag { tag } => format!("no {tag} modifier can roll on this item"),
-                        Pool::Ducat { .. } => {
-                            "no modifier from this ducat can roll on this item".to_string()
-                        }
-                    };
-                    return Err(what);
+                    return Err(pool_empty_text(pool));
                 }
                 Ok(candidates
                     .into_iter()
@@ -1520,60 +1624,7 @@ impl Run<'_> {
         side: SideReq,
         ignore_limits: bool,
     ) -> Vec<(u32, f64)> {
-        let data = self.data;
-        let tags = item.tags(data);
-        let base = data.base_at(item.base);
-        let groups = item.explicit_groups(data);
-        let allowed = sides(data, item, side);
-        let open = [
-            room(data, item, Side::Prefix),
-            room(data, item, Side::Suffix),
-        ];
-        let level_cap = if item.has_meta(data, MetaMod::Level28) {
-            item.item_level.min(28)
-        } else {
-            item.item_level
-        };
-        let barred: Vec<u16> = [(MetaMod::NoAttack, "attack"), (MetaMod::NoCaster, "caster")]
-            .into_iter()
-            .filter(|(meta, _)| item.has_meta(data, *meta))
-            .filter_map(|(_, name)| data.tag_by_name(name))
-            .collect();
-        let (kind, tag) = match pool {
-            Pool::Ducat { tag } => (ModKind::Ducat, data.tag_by_name(tag)),
-            Pool::Tag { tag } => (ModKind::Natural, data.tag_by_name(tag)),
-            _ => (ModKind::Natural, None),
-        };
-        if matches!(pool, Pool::Tag { .. } | Pool::Ducat { .. }) && tag.is_none() {
-            return Vec::new();
-        }
-        let mut weighted = Vec::new();
-        for &i in data.mods_of_kind(kind) {
-            let m = data.mod_at(i);
-            let Some(s) = m.side else { continue };
-            let pool_ok = match pool {
-                Pool::Natural | Pool::Ducat { .. } => true,
-                Pool::Influence { influence } => m.influence == Some(*influence),
-                Pool::Influenced => m.influence.is_some_and(|i| item.has_influence(i)),
-                Pool::Tag { .. } => tag.is_some_and(|t| m.tags.contains(&t)),
-            };
-            if !pool_ok
-                || (kind != ModKind::Ducat && m.domain != base.domain.repoe())
-                || m.level > level_cap
-                || !allowed.contains(&s)
-                || (!ignore_limits && open[s.index()] == 0)
-                || m.groups.iter().any(|g| groups.contains(g))
-                || barred.iter().any(|t| m.tags.contains(t))
-            {
-                continue;
-            }
-            let w = match pool {
-                Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
-                _ => pool::weight(m, &tags),
-            };
-            weighted.push((i, w));
-        }
-        pool::normalise(weighted)
+        pool_candidates(self.data, item, pool, side, ignore_limits, false)
     }
 
     /// Turns the `from` resistance that can change into the `to` mod of the same rank among the

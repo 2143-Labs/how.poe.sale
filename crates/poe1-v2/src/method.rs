@@ -183,6 +183,19 @@ pub enum Require {
     HasModType {
         any_of: Vec<String>,
     },
+    /// A tag the base itself carries (a Talisman base).
+    BaseTag {
+        tag: String,
+    },
+    /// The item's tag set, domain, item level and open slots leave at least one candidate in
+    /// `pool`. A qualified reforge still refuses when no guaranteed modifier can roll at all.
+    CanRoll {
+        pool: Pool,
+    },
+    /// The item holds at least `n` sockets (a link craft of `n` sockets).
+    MinSockets {
+        n: u8,
+    },
     EssenceFits {
         essence: String,
     },
@@ -190,6 +203,9 @@ pub enum Require {
         min: u8,
         max: u8,
     },
+    /// The selected fossils' own usage limits (claim `fossil.fractured-limits`): a fossil whose
+    /// text fractures a modifier refuses influenced and fractured items.
+    FossilLimits,
     ImplicitsChangeable,
 }
 
@@ -420,10 +436,10 @@ impl Element {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Fill {
     /// (explicit total the reforge ends with, relative weight), by total: `[[4, 8], [5, 3],
-    /// [6, 1]]`, which datagen checks against claim `chaos.count`. Which modifiers count toward
-    /// the total (kept, locked, guaranteed) is claim `reforge.counts`, an open owner question.
-    /// Empty when the count rule is not known, or when the weighting brings its own (a
-    /// recombine).
+    /// [6, 1]]`, which datagen checks against claim `chaos.count`. The counts are what the
+    /// reforge *adds*: modifiers a metamod keeps are not part of them, and the additions are
+    /// limited by the open slots (claim `reforge.counts`, owner Q7). Empty when the count rule
+    /// is not known, or when the weighting brings its own (a recombine).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub counts: Vec<(u8, u32)>,
     #[serde(default)]
@@ -435,6 +451,11 @@ pub struct Fill {
     /// below" (claim `essence.ilvl`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mod_level_max: Option<u8>,
+    /// The drawn set must hold at least one modifier from this pool: a Harvest reforge with a
+    /// tag repeats until it rolls at least one modifier carrying the tag (claim
+    /// `reforge.counts`, owner Q7). Not a guaranteed first draw, and no fixed placement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include: Option<Pool>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -476,6 +497,8 @@ pub enum SocketChange {
     TaintedCount,
     TaintedLinks,
     TaintedColours,
+    /// The 3.29 corruption outcome: a random white socket turns non-white.
+    Dewhiten,
     Reforge,
 }
 
@@ -647,6 +670,15 @@ fn validate_require(data: &Data, r: &Require) -> Result<(), String> {
             Ok(())
         }
         Require::GroupFree { r#mod } => known_mod(data, r#mod).map(|_| ()),
+        Require::BaseTag { tag } if data.tag_by_name(tag).is_none() => {
+            Err(format!("unknown tag {tag}"))
+        }
+        Require::CanRoll { pool } => match pool {
+            Pool::Tag { tag } | Pool::Ducat { tag } if data.tag_by_name(tag).is_none() => {
+                Err(format!("unknown tag {tag}"))
+            }
+            _ => Ok(()),
+        },
         Require::HasModType { any_of } => {
             for t in any_of {
                 if data.mod_type_by_name(t).is_none() {
@@ -752,6 +784,11 @@ fn validate_op(data: &Data, m: &Method, op: &Op, followed: bool) -> Result<(), S
             }
             if fill.mod_level_max == Some(0) {
                 return Err("Fill caps modifier level at 0".into());
+            }
+            if let Some(Pool::Tag { tag } | Pool::Ducat { tag }) = &fill.include
+                && data.tag_by_name(tag).is_none()
+            {
+                return Err(format!("Fill include names unknown tag {tag}"));
             }
             Ok(())
         }

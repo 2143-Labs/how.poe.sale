@@ -56,10 +56,10 @@
     },
     {
       "id": "bench.normal-to-magic",
-      "statement": "A bench craft that adds a modifier works on a normal, magic or rare item; a normal item turns magic.",
+      "statement": "A bench craft that adds a modifier on a normal item turns it magic.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "a bench craft on a normal item turns it magic",
+      "quote": "Turns it magic",
       "patch": "3.29",
       "checked": true
     },
@@ -74,21 +74,21 @@
     },
     {
       "id": "catalyst.amounts",
-      "statement": "Twenty catalysts take an item from 0% to 20% catalyst quality.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "Before 3.25, each catalyst added 1% quality up to the 20% maximum; since 3.25 the amount a catalyst adds depends on the item's item level (claim quality.per-level).",
+      "sourceKind": "guide",
+      "url": "https://vhpg.com/poe-how-do-catalysts-work/",
+      "quote": "Each catalyst application adds 1% quality, so you need 20 applications to reach the maximum.",
       "patch": "3.29",
       "checked": false
     },
     {
       "id": "catalyst.switch-resets",
-      "statement": "A catalyst of a different type replaces the quality type and sets quality to its own first step (1%)",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "A catalyst of a different type replaces the item's quality type; the previous catalyst quality does not carry over.",
+      "sourceKind": "wiki",
+      "url": "https://pathofexile.fandom.com/wiki/Catalyst",
+      "quote": "Using a different type of catalyst on an item that has quality will set the previous quality back.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "chaos.count",
@@ -115,10 +115,10 @@
     },
     {
       "id": "classes.affix-limits",
-      "statement": "A magic item holds 1 prefix and 1 suffix and a rare item 3 and 3; rare jewels and abyss jewels hold 2 and 2; flasks are never rare.",
-      "sourceKind": "wiki",
-      "url": "https://pathofexile.fandom.com/wiki/Regal_Orb",
-      "quote": "Converting a magic item to a rare is important for crafting in that a rare item has space for six affixes (three prefixes and three suffixes) while a magic item only has space for two affixes (one prefix and one suffix).",
+      "statement": "A magic item holds at most 1 prefix and 1 suffix and a rare item at most 3 and 3; jewels hold at most 2 prefixes and 2 suffixes.",
+      "sourceKind": "coe",
+      "url": "https://www.craftofexile.com/basics",
+      "quote": "An item of magic rarity has at least one explicit mod and can have a maximum of 1 prefix and 1 suffix for a maximum of two affixes. Rare (yellow name text): An item of rare rarity can have much more mods then a magic item. They will usually have more than four mods, with a limit of 3 prefixes and 3 suffixes for a total of 6 maximum explicit mods. Jewels (of any kind) are the exception with a maximum of 4 mods, with a maximum 2 prefixes and 2 suffixes.",
       "patch": "3.29",
       "checked": true
     },
@@ -143,15 +143,6 @@
     {
       "id": "dominance.pairs",
       "statement": "Orb of Dominance picks the removed and the upgraded influenced modifier uniformly among ordered pairs",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
-      "patch": "3.29",
-      "checked": false
-    },
-    {
-      "id": "ducat.odds",
-      "statement": "Tzamoto's Ducat removes intangibility or destroys the item with equal chance",
       "sourceKind": "owner",
       "url": "",
       "quote": "",
@@ -206,9 +197,9 @@
     {
       "id": "fracture.crafted",
       "statement": "A Fracturing Orb can fracture a crafted modifier.",
-      "sourceKind": "experiment",
-      "url": "https://www.pathofexile.com/forum/view-thread/3589504",
-      "quote": "Crafted modifiers can be fractured so this would not work.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Asked \"Can a Fracturing Orb fracture a crafted modifier?\", the owner chose \"Yes\".",
       "patch": "3.29",
       "checked": true
     },
@@ -249,15 +240,6 @@
       "checked": true
     },
     {
-      "id": "harvest.first-draw-influenced",
-      "statement": "Harvest's influenced reforge draws its first new mod from the influenced mods only.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
-      "patch": "3.29",
-      "checked": false
-    },
-    {
       "id": "harvest.list",
       "statement": "The horticrafting options and lifeforce costs listed in Maxroll's Harvest Crafting Guide (3.24) are the Harvest methods' contracts and costs.",
       "sourceKind": "guide",
@@ -295,10 +277,10 @@
     },
     {
       "id": "magic.mod-count",
-      "statement": "An Orb of Transmutation makes a magic item with 1 or 2 explicit mods, and an Orb of Alteration rerolls a magic item to 1 or 2 mods, each count with chance 1/2 whatever the item held before.",
+      "statement": "An Orb of Transmutation makes a magic item with one or two explicit mods, and an Orb of Alteration rerolls a magic item to up to two explicit mods; rarity-changing currencies roll modifiers the way items found on the ground do.",
       "sourceKind": "coe",
       "url": "https://www.craftofexile.com/basics",
-      "quote": "Will turn a normal item into a magic item (with one or two random explicit mods).",
+      "quote": "Items that change the rarity of an item follow the same rules for rolling their modifiers as items of that rarity you pick up off the floor. Orb of Transmutation : Will turn a normal item into a magic item (with one or two random explicit mods). Orb of Alteration : This is one of the most commonly used orbs in crafting. It will reroll a magic rarity item into a new magic item, removing all old explicits on it and giving it up to 2 new explicits mods.",
       "patch": "3.29",
       "checked": true,
       "value": {
@@ -326,12 +308,12 @@
     },
     {
       "id": "quality.amounts",
-      "statement": "Armourer's Scrap, Blacksmith's Whetstone and Glassblower's Bauble add 5% quality to a normal item, 2% to a magic item and 1% to a rare or unique item, up to 20%.",
+      "statement": "Before 3.25, Armourer's Scrap, Blacksmith's Whetstone and Glassblower's Bauble added 5% quality to a normal item, 2% to a magic item and 1% to a rare or unique item, up to 20%; since 3.25 the amount depends on item level (claim quality.per-level).",
       "sourceKind": "wiki",
       "url": "https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap",
       "quote": "As with other quality-increasing currency, consuming an Armourer's Scrap improves the quality of normal items by 5%, magic items by 2%, and rare and unique items by 1%.",
       "patch": "3.29",
-      "checked": true
+      "checked": false
     },
     {
       "id": "recombine.base_and_item_level",
@@ -530,12 +512,12 @@
     },
     {
       "id": "reforge.counts",
-      "statement": "A reforge's count table (4, 5 or 6 explicit modifiers at 8:3:1) gives how many modifiers it ends with; whether the modifiers it keeps (locked or fractured) and the one it guarantees count toward that total is not settled. No outcome in this pass depends on it: every reforge stops at its Fill.",
+      "statement": "A reforge adds 4, 5 or 6 modifiers; a reforge with a tag repeats until the result holds at least one modifier carrying the tag, rather than guaranteeing the first draw.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "It can add 4, 5, or 6 prefixes. But, reroll repeatedly until we have at LEAST one life mod.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "reforge.guarantee-first",
@@ -566,10 +548,10 @@
     },
     {
       "id": "spawn.first-match",
-      "statement": "A mod's spawn weight is the weight of the first spawn entry whose tag the item has; generation weights are percentage multipliers found the same way",
+      "statement": "A mod's spawn weight is the weight of the first spawn entry whose tag the item has.",
       "sourceKind": "datamined",
       "url": "https://github.com/repoe-fork/RePoE/blob/master/RePoE/docs/mods.md",
-      "quote": "Defines on which items of the domain this mod can be spawned/crafted on. Only contains elements for mods that appear \"normally\", e.g. not for master crafted mods or essences. The array elements are evaluated in order, the first element with a tag (value of the `tag` property) the item in question has is taken. If the object with that tag `weight` greater than zero, the mod can spawn on the item and the weight defines the relative weight of it spawning. If it has `weight` zero, the mod can not spawn.",
+      "quote": "The array elements are evaluated in order, the first element with a tag (value of the `tag` property) the item in question has is taken. If the object with that tag `weight` greater than zero, the mod can spawn on the item and the weight defines the relative weight of it spawning. If it has `weight` zero, the mod can not spawn.",
       "patch": "3.29",
       "checked": true
     },
@@ -638,10 +620,10 @@
     },
     {
       "id": "vaal.outcomes",
-      "statement": "A Vaal Orb used on an item has four outcomes, weighted equally: nothing happens; a random corrupted implicit modifier is added; one or more sockets turn white; the item is bricked into a random rare item.",
+      "statement": "A Vaal Orb used on a piece of equipment has four outcomes, weighted equally: nothing happens; a random corrupted implicit modifier is added; one or more sockets turn white; the item is bricked into a random rare item.",
       "sourceKind": "guide",
       "url": "https://maxroll.gg/poe/resources/corruption",
-      "quote": "Corrupting an Item has several different outcomes weighted equally.",
+      "quote": "Corrupting an Item has several different outcomes weighted equally.\nAdds a random implicit modifier\nTurns 1 or more sockets into white sockets\nBricks the item into a random rare item\nNothing happens",
       "patch": "3.29",
       "checked": true
     },
@@ -687,6 +669,258 @@
       "sourceKind": "guide",
       "url": "https://maxroll.gg/poe/crafting/veiled-crafting",
       "quote": "If there were only 2 Suffixes, it would be a 50% chance for either.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "bench.corrupted-sockets",
+      "statement": "The bench's socket, link and colour crafts can be used on a corrupted item, at the cost of additional Vaal Orbs on top of the usual Orbs of Fusing; the number of extra Vaal Orbs is not stated by the sources.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "One exception to that rule, is that you can still change sockets and links using your crafting bench at the cost of additional Vaal Orbs on top of the usual Orbs of Fusing.",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "bench.reroll-mods",
+      "statement": "The bench options Reroll 3 Modifiers and Reroll a Modifier, added in 3.29, take a rare item and cost 3 and 8 Chaos Orbs.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "Added 2 new crafting bench options, unlocked by default. Reroll 3 Modifiers on a Rare Item for a cost of 3 Chaos Orbs, and Reroll a Modifier on a Rare Item for a cost of 8 Chaos Orbs.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "classes.flask-limits",
+      "statement": "Flasks and tinctures are never rare and hold at most one prefix and one suffix.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "ducat.allflame",
+      "statement": "Ducats can be used as part of Allflame Crafting aboard The Sovereign.",
+      "sourceKind": "game-text",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "Can be used as part of Allflame Crafting aboard The Sovereign.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "enchant.lab-tiers",
+      "statement": "The Enchant currency offers the enchantments its item level unlocks, so the possible enchantments depend on the item's item level.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "empty.refused",
+      "statement": "Using a currency on an item it has nothing to change is refused; the currency is not consumed.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Asked \"When a currency has nothing it can change, what does the game do?\", the owner chose \"Refused\".",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "fossil.fractured-limits",
+      "statement": "A Fractured Fossil fractures a random modifier and cannot be used on fractured or influenced items.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "Fractured Fossils now Fracture a random Modifier, and cannot be used on Fractured and Influenced items.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "generation.multiplier",
+      "statement": "A mod's generation weights are percentage multipliers on its spawn weight, found by the first generation entry whose tag the item has.",
+      "sourceKind": "datamined",
+      "url": "https://github.com/repoe-fork/RePoE/blob/master/RePoE/docs/mods.md",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "metamod.crafted-room",
+      "statement": "A bench craft on an item whose crafted-modifier slot is taken does not replace the existing craft for free: the player uses the bench's remove-crafted-modifiers option (one Orb of Scouring) first, then crafts again.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "it replaces the craft if you use crafting bench, but it still costs a scour. so we might as well model it as disparate steps anyway. (uncraft -> beastctaft = beast + scour, recraft = scour + 2 div)",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "metamod.level-28",
+      "statement": "The MaxModRequiredLevelOverride metamod caps the required level of modifiers at 28, not the modifier level; a modifier's required level is about 80% of its level.",
+      "sourceKind": "datamined",
+      "url": "https://repoe-fork.github.io/",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "metamod.multicraft-does-not-block",
+      "statement": "Can have up to 3 Crafted Modifiers alone does not block essences or fossils.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Asked \"Does \"Can have up to 3 Crafted Modifiers\" alone block essences and fossils?\", the owner chose \"Doesn't block\".",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "multicraft.annul",
+      "statement": "When the Orb of Annulment removes Can have up to 3 Crafted Modifiers while other crafted modifiers remain, those crafted modifiers stay on the item.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Asked what happens when the Orb of Annulment removes \"Can have up to 3 Crafted Modifiers\" while two other crafted modifiers remain, the owner chose \"Others stay\".",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "pattern.crown-ideal-finished",
+      "statement": "The crown-ideal fixture counts as finished against the Shaper pattern.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Asked whether crown-ideal counts as finished, the owner chose \"Yes\".",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "magic.count-weights",
+      "statement": "A magic item roll gives one modifier or two with equal chance.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "quality.per-level",
+      "statement": "Since 3.25 the quality a quality currency or catalyst adds to a non-unique item depends on the item's item level, not its rarity: 20% at very low level, reducing as the item level rises, up to the 20% maximum.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/patch-notes-for-poe-3-25-settlers-of-kalguur-league",
+      "quote": "Item Quality has been reworked. The rarity of the item is no longer relevant when applying Cartographer's Chisels, Blacksmith's Whetstones, Armourer's Scraps, Glassblower's Baubles, and Catalysts to non-Unique items. Instead, the amount of Quality they provide is now based on the item level. These currencies now apply 20% Quality to very low-level equipment, with this amount reducing as the item level increases.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "reforge.counts-scope",
+      "statement": "The 4/5/6 count is the modifiers the reforge adds: modifiers a metamod keeps are not part of it, and the additions are limited by the open slots.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
+      "id": "vaal.jewel-outcomes",
+      "statement": "A Vaal Orb on a jewel has four equally weighted outcomes: add a random implicit modifier, turn the jewel into a random unique vaal jewel, reroll it with random modifiers, or nothing.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "Corrupting a Jewel has several different outcomes weighted equally.\nAdds a random implicit modifier\nTransforms the jewel into a random unique vaal jewel\nReroll the item with random modifiers\nNothing happens",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "vaal.flask-outcomes",
+      "statement": "Corrupting a flask randomly changes its quality by up to 10%, raising or lowering it, up to 30% quality.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "Flasks can be corrupted with a Vaal Orb. This randomly modifies the Quality, raising or lowering it by up to 10%. Corrupt your flasks to obtain up to 30% quality, increasing their duration.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "vaal.one-implicit",
+      "statement": "Corrupting an item with several implicits replaces one random implicit and leaves the others untouched.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "The trick here is that corrupting an item with several implicits only replaces one random implicit and leave the others untouched, allowing you to potentially keep the base implicit of the item.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "vaal.socket-outcome-329",
+      "statement": "Since 3.29 the Vaal Orb outcome that changed a socket to a white socket instead turns a random white socket on the item non-white.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "The Corruption outcome from Vaal Orbs that changes a Socket on a piece of Equipment to a White Socket has been removed. This outcome instead now turns a random White Socket on the item to be a Non-White Socket.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "vaal.unique-outcomes",
+      "statement": "Some items have a fifth corruption outcome which upgrades the item to another one.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/resources/corruption",
+      "quote": "Some items have a fifth outcome which upgrades the item to another one:",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "harvest.synthesise-removed",
+      "statement": "The Harvest crafting option to Synthesise an item has been removed.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "The Harvest crafting option to Synthesise an item has been removed.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.split-replaced",
+      "statement": "In 3.29 the Bestiary crafts that split an item into two or three were replaced by crafts that fracture a modifier, or two, on a rare Talisman.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "The Beastcrafting option to Split an item into two has been replaced with a new option that Fractures a Modifier on a Rare Talisman with at least 4 Modifiers. The Beastcrafting option to Split an item into three has been replaced with a new option that Fractures two Modifiers on a Rare Talisman with at least 6 Modifiers.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.talisman",
+      "statement": "In 3.29 a Bestiary craft rerolls a Talisman base type keeping its implicit and explicit modifiers, and another creates an imprint of a rare Talisman.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "The Bestiary craft to create a Rare Talisman has been replaced with a craft that Rerolls a Talisman base type, keeping the same Implicit and Explicit Modifiers. The Bestiary craft to Transform an item from an Amulet into a Talisman has been replaced with a craft that creates an Imprint of a Rare Talisman.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.talisman-create",
+      "statement": "A Bestiary recipe requiring The Black Mórrigan creates a new unique Talisman.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "they instead now have a chance to drop from Bestiary Bosses or from a new Beast-crafting recipe to create a new Talisman, which requires The Black Mórrigan beast to craft.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.croaker",
+      "statement": "The Craicic Chimeral beast has been renamed Craicic Croaker.",
+      "sourceKind": "patch-notes",
+      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
+      "quote": "The Craicic Chimeral Beast has been renamed to Craicic Croaker, which is a much more fitting name for a Gem Frog.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "beast.yellow",
+      "statement": "Most Bestiary recipes require a red beast and 3 yellow beasts.",
+      "sourceKind": "guide",
+      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
+      "quote": "Most recipes require a Red beast and 3 Yellow beasts found through engaging with the Bestiary League mechanic.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "hinekoras.unmodelled",
+      "statement": "Hinekora's Lock is not modelled: the player may hover an unlimited number of currencies before choosing one, so the lock cannot be reduced to a single method.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Mark Locks as a TODO. They are EXTREMELY hard to model because you can hover as many currencies as you want",
       "patch": "3.29",
       "checked": true
     }

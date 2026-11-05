@@ -2,14 +2,15 @@
 //! bench, essence, catalyst and fossil families from the bundle, fills each currency method's game
 //! text, validates every method with the library's own `Method::validate` (by loading the bundle
 //! as `Data`), checks what only the authoring side knows (every Fill count table is claim
-//! `chaos.count`'s, every tag pool names a Harvest tag), and applies
+//! `chaos.count`'s, every tag pool names a Harvest tag, and a currency method never requires less
+//! than its currency's in-game `directions` line states), and applies
 //! `rules/v2/currency-scope.json` to every currency.
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
 use anyhow::{Context, bail};
-use poe1_v2::data::{BenchAction, Bundle, Rarity, Scope};
+use poe1_v2::data::{BenchAction, Bundle, Category, Rarity, Scope};
 use poe1_v2::method::{
     CostSpec, Family, Fill, Method, Op, PendingReason, Policy, Pool, Protection, Require, SideReq,
     SocketChange, Weighting,
@@ -81,11 +82,6 @@ pub fn price_key(name: &str) -> String {
         .replace(' ', "-")
 }
 
-fn common(r: &mut Vec<Require>) {
-    r.push(Require::NotCorrupted);
-    r.push(Require::NotMirrored);
-}
-
 fn cost(name: &str, amount: f64) -> CostSpec {
     CostSpec {
         name: name.to_string(),
@@ -150,49 +146,39 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
     let counts = chaos_counts(b)?;
     let mut out = Vec::new();
 
-    // ---- bench
+    // ---- bench. Ids name the action, not the file position, so a RePoE refresh keeps them.
     for o in &b.bench {
-        let classes = Require::Class {
-            any_of: o
-                .classes
+        let class_ids = |max_sockets: Option<u8>| -> Vec<String> {
+            o.classes
                 .iter()
-                .map(|&c| b.classes[c as usize].id.clone())
-                .collect(),
+                .map(|&c| &b.classes[c as usize])
+                .filter(|c| max_sockets.is_none_or(|n| c.max_sockets >= n))
+                .map(|c| c.id.clone())
+                .collect()
         };
-        let mut requires = Vec::new();
-        let mut claims = Vec::new();
-        let (name, ops) = match &o.action {
+        let classes = |max_sockets: Option<u8>| Require::Class {
+            any_of: class_ids(max_sockets),
+        };
+        let (id, name, ops, claims) = match &o.action {
             BenchAction::AddMod { m } => {
                 let md = &b.mods[*m as usize];
-                let side = match md.side {
-                    Some(poe1_v2::data::Side::Prefix) => SideReq::Prefix,
-                    Some(poe1_v2::data::Side::Suffix) => SideReq::Suffix,
-                    None => bail!("bench mod {} has no side", md.id),
-                };
-                // A craft on a normal item turns it magic (owner, Q3).
-                requires.push(Require::Rarity {
-                    any_of: vec![Rarity::Normal, Rarity::Magic, Rarity::Rare],
-                });
-                common(&mut requires);
-                requires.push(classes);
-                requires.push(Require::OpenAffix { side });
-                requires.push(Require::CraftedRoom);
-                requires.push(Require::GroupFree {
-                    r#mod: md.id.clone(),
-                });
-                claims = vec!["bench.normal-to-magic".into(), "metamod.slot".into()];
                 (
+                    format!("bench/add/{}", md.id),
                     format!("Bench: {}", md.text.lines().next().unwrap_or(&md.id)),
                     vec![Op::AddMod {
                         r#mod: md.id.clone(),
                     }],
+                    vec![
+                        "bench.normal-to-magic".to_string(),
+                        "metamod.slot".into(),
+                        "metamod.crafted-room".into(),
+                    ],
                 )
             }
             BenchAction::AddEnchant { m } => {
                 let md = &b.mods[*m as usize];
-                requires.push(classes);
-                requires.push(Require::NotCorrupted);
                 (
+                    format!("bench/enchant/{}", md.id),
                     format!(
                         "Bench enchant: {}",
                         md.text.lines().next().unwrap_or(&md.id)
@@ -200,75 +186,132 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                     vec![Op::SetEnchantMod {
                         r#mod: md.id.clone(),
                     }],
+                    Vec::new(),
                 )
             }
+            BenchAction::RemoveCrafted => (
+                "bench/remove-crafted".into(),
+                "Bench: remove crafted modifiers".into(),
+                vec![Op::RemoveCrafted],
+                Vec::new(),
+            ),
+            BenchAction::RemoveEnchants => (
+                "bench/remove-enchants".into(),
+                "Bench: remove enchantments".into(),
+                vec![Op::ClearEnchants],
+                Vec::new(),
+            ),
+            BenchAction::Sockets { count } => (
+                format!("bench/sockets/{count}"),
+                format!("Bench: {count} sockets"),
+                vec![Op::Sockets {
+                    change: SocketChange::Count { n: *count },
+                }],
+                vec!["bench.corrupted-sockets".into()],
+            ),
+            BenchAction::Links { count } => (
+                format!("bench/links/{count}"),
+                format!("Bench: link {count} sockets"),
+                vec![Op::Sockets {
+                    change: SocketChange::Links { n: *count },
+                }],
+                vec!["bench.corrupted-sockets".into()],
+            ),
+            BenchAction::Colours { spec } => (
+                format!("bench/colours/{spec}"),
+                format!("Bench: colour sockets {spec}"),
+                vec![Op::Sockets {
+                    change: SocketChange::Colours { spec: spec.clone() },
+                }],
+                vec!["bench.corrupted-sockets".into()],
+            ),
+            BenchAction::RerollRarity => (
+                "bench/reroll-rarity".into(),
+                "Bench: reroll rarity".into(),
+                vec![Op::Unmodelled {
+                    reason: PendingReason::Unverified,
+                }],
+                vec!["bench.reroll-unknown".into()],
+            ),
+            BenchAction::RerollRareMods { n } => (
+                format!("bench/reroll-rare-mods/{n}"),
+                format!("Bench: reroll {n} rare modifiers"),
+                vec![Op::Unmodelled {
+                    reason: PendingReason::NeedsData {
+                        what: "what the bench reroll picks is not stated".into(),
+                    },
+                }],
+                vec!["bench.reroll-mods".into()],
+            ),
+        };
+        let mut requires = Vec::new();
+        match &o.action {
+            BenchAction::AddMod { m } => {
+                let md = &b.mods[*m as usize];
+                let side = match md.side {
+                    Some(poe1_v2::data::Side::Prefix) => SideReq::Prefix,
+                    Some(poe1_v2::data::Side::Suffix) => SideReq::Suffix,
+                    None => bail!("bench mod {} has no side", md.id),
+                };
+                // A craft on a normal item turns it magic (owner, Q3), and a metamod craft
+                // needs the crafted slot free: the player removes the old craft first (Q2).
+                requires.push(Require::Rarity {
+                    any_of: vec![Rarity::Normal, Rarity::Magic, Rarity::Rare],
+                });
+                requires.push(classes(None));
+                requires.push(Require::OpenAffix { side });
+                requires.push(Require::CraftedRoom);
+                requires.push(Require::GroupFree {
+                    r#mod: md.id.clone(),
+                });
+            }
+            BenchAction::AddEnchant { .. } => requires.push(classes(None)),
             BenchAction::RemoveCrafted => {
-                requires.push(classes);
+                requires.push(classes(None));
                 requires.push(Require::HasCrafted);
-                requires.push(Require::NotCorrupted);
-                (
-                    "Bench: remove crafted modifiers".into(),
-                    vec![Op::RemoveCrafted],
-                )
             }
             BenchAction::RemoveEnchants => {
-                requires.push(classes);
+                requires.push(classes(None));
                 requires.push(Require::HasEnchant);
-                ("Bench: remove enchantments".into(), vec![Op::ClearEnchants])
             }
             BenchAction::Sockets { count } => {
-                requires.push(classes);
+                requires.push(classes(Some(*count)));
                 requires.push(Require::CanHaveSockets);
-                requires.push(Require::NotCorrupted);
-                (
-                    format!("Bench: {count} sockets"),
-                    vec![Op::Sockets {
-                        change: SocketChange::Count { n: *count },
-                    }],
-                )
             }
             BenchAction::Links { count } => {
-                requires.push(classes);
+                requires.push(classes(Some(*count)));
                 requires.push(Require::HasSockets);
-                requires.push(Require::NotCorrupted);
-                (
-                    format!("Bench: link {count} sockets"),
-                    vec![Op::Sockets {
-                        change: SocketChange::Links { n: *count },
-                    }],
-                )
+                requires.push(Require::MinSockets { n: *count });
             }
             BenchAction::Colours { spec } => {
-                requires.push(classes);
+                requires.push(classes(Some(spec.len() as u8)));
                 requires.push(Require::HasSockets);
-                requires.push(Require::NotCorrupted);
-                (
-                    format!("Bench: colour sockets {spec}"),
-                    vec![Op::Sockets {
-                        change: SocketChange::Colours { spec: spec.clone() },
-                    }],
-                )
+                requires.push(Require::MinSockets {
+                    n: spec.len() as u8,
+                });
             }
-            BenchAction::RerollRarity | BenchAction::RerollRareMods { .. } => {
-                requires.push(classes);
-                requires.push(Require::NotCorrupted);
-                claims = vec!["bench.reroll-unknown".into()];
-                let name = match &o.action {
-                    BenchAction::RerollRareMods { n } => {
-                        format!("Bench: reroll {n} rare modifiers")
-                    }
-                    _ => "Bench: reroll rarity".into(),
-                };
-                (
-                    name,
-                    vec![Op::Unmodelled {
-                        reason: PendingReason::Unverified,
-                    }],
-                )
+            BenchAction::RerollRarity => requires.push(classes(None)),
+            BenchAction::RerollRareMods { .. } => {
+                requires.push(classes(None));
+                requires.push(Require::Rarity {
+                    any_of: vec![Rarity::Rare],
+                });
             }
-        };
+        }
+        // A bench craft changes no existing explicit except the remove-crafted option, which
+        // needs no protection policy.
+        requires.insert(0, Require::NotCorrupted);
+        requires.insert(1, Require::NotMirrored);
+        // Socket, link and colour crafts are the exception: the bench offers them on a
+        // corrupted item at an extra Vaal Orb cost (claim bench.corrupted-sockets).
+        if matches!(
+            o.action,
+            BenchAction::Sockets { .. } | BenchAction::Links { .. } | BenchAction::Colours { .. }
+        ) {
+            requires.remove(0);
+        }
         out.push(Method {
-            id: format!("bench/{}", o.index),
+            id,
             name,
             family: Family::Bench,
             inputs: 1,
@@ -290,7 +333,9 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
 
     // ---- essences (those with a modifier for some in-scope class)
     for e in b.essences.iter().filter(|e| !e.mods.is_empty()) {
-        let mut requires = vec![
+        let requires = vec![
+            Require::NotCorrupted,
+            Require::NotMirrored,
             Require::Rarity {
                 any_of: if e.allows_rare {
                     vec![Rarity::Normal, Rarity::Rare]
@@ -302,7 +347,6 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 essence: e.name.clone(),
             },
         ];
-        common(&mut requires);
         out.push(Method {
             id: format!("essence/{}", price_key(&e.name)),
             name: e.name.clone(),
@@ -328,6 +372,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                         weighting: Weighting::Normal,
                         side: SideReq::Any,
                         mod_level_max: e.item_level_max,
+                        include: None,
                     },
                 },
             ],
@@ -336,6 +381,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 "essence.ilvl".into(),
                 "reforge.guarantee-first".into(),
                 "reforge.counts".into(),
+                "metamod.multicraft-does-not-block".into(),
             ],
             game_text: None,
             example: None,
@@ -345,13 +391,16 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
 
     // ---- catalysts
     for c in &b.catalysts {
-        let mut requires = vec![Require::Class {
-            any_of: vec!["Ring".into(), "Amulet".into(), "Belt".into()],
-        }];
-        common(&mut requires);
-        requires.push(Require::CatalystRoom {
-            catalyst: c.name.clone(),
-        });
+        let requires = vec![
+            Require::NotCorrupted,
+            Require::NotMirrored,
+            Require::Class {
+                any_of: vec!["Ring".into(), "Amulet".into(), "Belt".into()],
+            },
+            Require::CatalystRoom {
+                catalyst: c.name.clone(),
+            },
+        ];
         out.push(Method {
             id: format!("catalyst/{}", price_key(&c.name)),
             name: c.name.clone(),
@@ -361,12 +410,15 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             requires,
             pair: Vec::new(),
             protect: None,
-            ops: vec![Op::CatalystQuality {
-                catalyst: c.name.clone(),
+            // Since 3.25 the amount a catalyst adds depends on the item's item level.
+            ops: vec![Op::Unmodelled {
+                reason: PendingReason::NeedsData {
+                    what: "the catalyst quality amount depends on item level".into(),
+                },
             }],
             claims: vec![
                 "game-text".into(),
-                "catalyst.amounts".into(),
+                "quality.per-level".into(),
                 "catalyst.switch-resets".into(),
             ],
             game_text: None,
@@ -390,13 +442,26 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             "Alchemical",
         ),
     ] {
-        let mut requires = vec![
+        // A fossil reforge only applies to item classes that can be rare.
+        let requires = vec![
+            Require::NotCorrupted,
+            Require::NotMirrored,
+            Require::Category {
+                any_of: vec![
+                    Category::Weapon,
+                    Category::Armour,
+                    Category::Jewellery,
+                    Category::Quiver,
+                    Category::Jewel,
+                    Category::AbyssJewel,
+                ],
+            },
             Require::Rarity {
                 any_of: vec![rarity],
             },
             Require::Fossils { min: 1, max: 4 },
+            Require::FossilLimits,
         ];
-        common(&mut requires);
         let mut ops = vec![Op::SetRarity {
             rarity: Rarity::Rare,
         }];
@@ -410,6 +475,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 weighting: Weighting::Fossils,
                 side: SideReq::Any,
                 mod_level_max: None,
+                include: None,
             },
         });
         out.push(Method {
@@ -426,6 +492,8 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 "game-text".into(),
                 "chaos.count".into(),
                 "reforge.counts".into(),
+                "fossil.fractured-limits".into(),
+                "metamod.multicraft-does-not-block".into(),
             ],
             game_text: None,
             example: None,
@@ -458,6 +526,122 @@ fn authoring_checks(m: &Method, counts: &[(u8, u32)]) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+/// The reviewed pairs where a currency's directions name a limit the method deliberately does
+/// not repeat, with the reason.
+const DIRECTION_EXCEPTIONS: [(&str, &str); 0] = [];
+
+/// The phrases in a currency's in-game `directions` line that limit its target, as the
+/// requirement each implies. The wording is the game's own, so a new currency whose directions
+/// state a limit lands here instead of passing silently.
+fn direction_rules(dirs: &str) -> Vec<(&'static str, Require)> {
+    let mut out = Vec::new();
+    let has = |p: &str| dirs.contains(p);
+    if has("non-unique") || has("non-Unique") {
+        out.push(("non-unique", Require::NotUnique));
+    }
+    let cannot_influence = has("Cannot be used on") && has("Influenced");
+    if cannot_influence || has("with no influence") {
+        out.push(("no-influence", Require::NoInfluence));
+    }
+    if has("Influenced") && !cannot_influence && !has("with no influence") {
+        out.push(("influenced", Require::MinInfluencedMods { n: 2 }));
+    }
+    if has("Fractured") {
+        out.push(("no-fractured", Require::NoFractured));
+    }
+    if has("Cannot be used on Veiled") {
+        out.push(("no-veiled", Require::NoVeiled));
+    }
+    if has("normal, magic or rare") {
+        out.push((
+            "normal-magic-rare",
+            Require::Rarity {
+                any_of: vec![Rarity::Normal, Rarity::Magic, Rarity::Rare],
+            },
+        ));
+    } else if has("magic or rare item") {
+        out.push((
+            "magic-or-rare",
+            Require::Rarity {
+                any_of: vec![Rarity::Magic, Rarity::Rare],
+            },
+        ));
+    } else if has("magic, rare or unique") {
+        out.push((
+            "magic-rare-unique",
+            Require::Rarity {
+                any_of: vec![Rarity::Magic, Rarity::Rare, Rarity::Unique],
+            },
+        ));
+    } else if has("rare item") {
+        out.push((
+            "rare",
+            Require::Rarity {
+                any_of: vec![Rarity::Rare],
+            },
+        ));
+    }
+    if has("normal item") {
+        out.push((
+            "normal",
+            Require::Rarity {
+                any_of: vec![Rarity::Normal],
+            },
+        ));
+    }
+    if has("corrupted") {
+        out.push(("corrupted", Require::Corrupted));
+    }
+    out
+}
+
+/// Whether `m` meets the limits its costing currency's directions state. A method may be
+/// stricter than the directions, never looser.
+fn check_directions(b: &Bundle, m: &Method) -> anyhow::Result<()> {
+    if m.family != Family::Currency {
+        return Ok(());
+    }
+    for c in &m.cost {
+        if c.name.starts_with("beast:") {
+            continue;
+        }
+        let Some(currency) = b.currencies.iter().find(|x| x.name == c.name) else {
+            continue;
+        };
+        for (key, want) in direction_rules(&currency.directions) {
+            if DIRECTION_EXCEPTIONS.contains(&(m.id.as_str(), key)) || satisfies(m, &want) {
+                continue;
+            }
+            bail!(
+                "method {} costs {} whose directions state \"{key}\", but the method does not require it",
+                m.id,
+                c.name
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Whether the method's requirements imply `want`.
+fn satisfies(m: &Method, want: &Require) -> bool {
+    m.requires.iter().any(|have| match (have, want) {
+        (Require::NotUnique, Require::NotUnique)
+        | (Require::NoInfluence, Require::NoInfluence)
+        | (Require::NoFractured, Require::NoFractured)
+        | (Require::NoVeiled, Require::NoVeiled)
+        | (Require::NotCorrupted, Require::NotCorrupted)
+        | (Require::Corrupted, Require::Corrupted) => true,
+        (Require::Rarity { any_of: a }, Require::Rarity { any_of: b }) => {
+            b.iter().all(|r| a.contains(r))
+        }
+        (Require::HasInfluence { .. } | Require::SingleInfluence, Require::HasInfluence { .. }) => {
+            true
+        }
+        (Require::MinInfluencedMods { n }, Require::MinInfluencedMods { n: want }) => n >= want,
+        _ => false,
+    })
 }
 
 /// Applies the scope rules to every currency: the first matching rule wins.
@@ -565,6 +749,7 @@ pub fn attach(b: &mut Bundle, rules: &Path) -> anyhow::Result<()> {
     let counts = chaos_counts(b)?;
     for m in &methods {
         authoring_checks(m, &counts)?;
+        check_directions(b, m)?;
     }
     methods.sort_by(|a, b| a.id.cmp(&b.id));
     b.methods = methods;

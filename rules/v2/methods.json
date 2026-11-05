@@ -5,13 +5,15 @@
       "name": "Beastcraft: add Aspect of the Avian",
       "family": "beast",
       "cost": [
-        {"name": "beast:Saqawal", "amount": 1}
+        {"name": "beast:Saqawal", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "openAffix", "side": "suffix"},
         {"kind": "groupFree", "mod": "GrantsBirdAspectCrafted"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
       ],
       "ops": [
         {"op": "addMod", "mod": "GrantsBirdAspectCrafted"}
@@ -23,13 +25,15 @@
       "name": "Beastcraft: add Aspect of the Cat",
       "family": "beast",
       "cost": [
-        {"name": "beast:Farrul", "amount": 1}
+        {"name": "beast:Farrul", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "openAffix", "side": "suffix"},
         {"kind": "groupFree", "mod": "GrantsCatAspectCrafted"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
       ],
       "ops": [
         {"op": "addMod", "mod": "GrantsCatAspectCrafted"}
@@ -41,13 +45,15 @@
       "name": "Beastcraft: add Aspect of the Crab",
       "family": "beast",
       "cost": [
-        {"name": "beast:Craiceann", "amount": 1}
+        {"name": "beast:Craiceann", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "openAffix", "side": "suffix"},
         {"kind": "groupFree", "mod": "GrantsCrabAspectCrafted"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
       ],
       "ops": [
         {"op": "addMod", "mod": "GrantsCrabAspectCrafted"}
@@ -59,13 +65,15 @@
       "name": "Beastcraft: add Aspect of the Spider",
       "family": "beast",
       "cost": [
-        {"name": "beast:Fenumus", "amount": 1}
+        {"name": "beast:Fenumus", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "openAffix", "side": "suffix"},
         {"kind": "groupFree", "mod": "GrantsSpiderAspectCrafted"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
       ],
       "ops": [
         {"op": "addMod", "mod": "GrantsSpiderAspectCrafted"}
@@ -73,12 +81,30 @@
       "claims": ["beast.list", "beast.aspect-level"]
     },
     {
+      "id": "beast/create-talisman",
+      "name": "Beastcraft: create a unique Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the Talisman base table is not in the RePoE export"}}
+      ],
+      "claims": ["beast.talisman-create", "beast.yellow"]
+    },
+    {
       "id": "beast/hinekoras-lock",
       "name": "Beastcraft: foresee the next result",
       "family": "beast",
       "cost": [
-        {"name": "beast:Craicic Chimeral", "amount": 1},
-        {"name": "beast:Black Mórrigan", "amount": 1}
+        {"name": "beast:Craicic Croaker", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
         {"kind": "rarity", "anyOf": ["magic"]},
@@ -87,7 +113,7 @@
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
       ],
-      "claims": ["beast.list"],
+      "claims": ["beast.list", "hinekoras.unmodelled"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -95,7 +121,8 @@
       "name": "Beastcraft: imprint",
       "family": "beast",
       "cost": [
-        {"name": "beast:Craicic Chimeral", "amount": 1}
+        {"name": "beast:Craicic Croaker", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
         {"kind": "rarity", "anyOf": ["magic"]},
@@ -108,20 +135,39 @@
       "example": "cobalt-jewel-magic"
     },
     {
+      "id": "beast/imprint-talisman",
+      "name": "Beastcraft: imprint a rare Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "imprint"}
+      ],
+      "claims": ["beast.talisman", "beast.yellow"]
+    },
+    {
       "id": "beast/influence-slam-crusader",
       "name": "Beastcraft: add a Crusader modifier",
       "family": "beast",
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Farric Goliath", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "crusader"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -135,14 +181,15 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Saqawine Blood Viper", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "elder"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -156,14 +203,15 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Craicic Watcher", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "hunter"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -177,14 +225,15 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Queen", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "redeemer"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -198,14 +247,15 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Devourer", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "shaper"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -220,14 +270,15 @@
       "cost": [
         {"name": "beast:Craicic Maw", "amount": 1},
         {"name": "beast:Fenumal Scrabbler", "amount": 1},
-        {"name": "beast:Yellow beast", "amount": 2}
+        {"name": "beast:Yellow beast", "amount": 2},
+        {"name": "beast:Yellow Beast", "amount": 2}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence", "influence": "warlord"},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -240,9 +291,12 @@
       "family": "beast",
       "cost": [
         {"name": "beast:Craicic Sand Spitter", "amount": 1},
-        {"name": "beast:Black Mórrigan", "amount": 1}
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "hasSockets"}
       ],
       "ops": [
@@ -256,13 +310,14 @@
       "name": "Beastcraft: remove a prefix, add a suffix",
       "family": "beast",
       "cost": [
-        {"name": "beast:Farric Lynx Alpha", "amount": 1}
+        {"name": "beast:Farric Lynx Alpha", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "suffix"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "suffix"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -271,6 +326,24 @@
       ],
       "claims": ["beast.list", "beast.farric", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "beast/reroll-talisman-base",
+      "name": "Beastcraft: reroll a Talisman base type",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the Talisman base table is not in the RePoE export"}}
+      ],
+      "claims": ["beast.talisman", "beast.yellow"]
     },
     {
       "id": "beast/restore-imprint",
@@ -285,60 +358,18 @@
       "claims": ["beast.list"]
     },
     {
-      "id": "beast/split",
-      "name": "Beastcraft: split an item in two",
-      "family": "beast",
-      "cost": [
-        {"name": "beast:Fenumal Plagued Arachnid", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "noInfluence"},
-        {"kind": "noFractured"},
-        {"kind": "notSynthesised"},
-        {"kind": "notUnique"},
-        {"kind": "notCorrupted"},
-        {"kind": "noEnchant"},
-        {"kind": "notSplit"}
-      ],
-      "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
-      ],
-      "claims": ["beast.list"]
-    },
-    {
-      "id": "beast/split-three",
-      "name": "Beastcraft: split an item into three",
-      "family": "beast",
-      "cost": [
-        {"name": "beast:Fenumal Plagued Arachnid", "amount": 1},
-        {"name": "beast:Black Mórrigan", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "noInfluence"},
-        {"kind": "noFractured"},
-        {"kind": "notSynthesised"},
-        {"kind": "notUnique"},
-        {"kind": "notCorrupted"},
-        {"kind": "noEnchant"},
-        {"kind": "notSplit"}
-      ],
-      "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
-      ],
-      "claims": ["beast.list"]
-    },
-    {
       "id": "beast/suffix-to-prefix",
       "name": "Beastcraft: remove a suffix, add a prefix",
       "family": "beast",
       "cost": [
-        {"name": "beast:Farric Wolf Alpha", "amount": 1}
+        {"name": "beast:Farric Wolf Alpha", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "prefix"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "prefix"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -353,17 +384,18 @@
       "name": "Beastcraft: add Suffixes Cannot Be Changed",
       "family": "beast",
       "cost": [
-        {"name": "beast:Wild Bristle Matron", "amount": 1}
+        {"name": "beast:Wild Bristle Matron", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["armour"]},
         {"kind": "fullSuffixes"},
         {"kind": "openAffix", "side": "prefix"},
         {"kind": "craftedRoom"},
         {"kind": "groupFree", "mod": "DexMasterItemGenerationCannotChangeSuffixes"},
-        {"kind": "notUnique"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notUnique"}
       ],
       "ops": [
         {"op": "addMod", "mod": "DexMasterItemGenerationCannotChangeSuffixes"}
@@ -379,10 +411,10 @@
         {"name": "Orb of Alchemy", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["normal"]},
-        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
       ],
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
@@ -399,16 +431,16 @@
         {"name": "Orb of Alteration", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "clear"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count"],
+      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -434,16 +466,16 @@
         {"name": "Orb of Annulment", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "minExplicits", "n": 1},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "minExplicits", "n": 1}
       ],
       "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
         {"op": "removeRandom", "filter": {"kind": "any"}}
       ],
-      "claims": ["game-text", "annul.locks", "annul.uniform", "fractured.kept", "metamod.cannot-roll", "veiled.placeholder-removable"],
+      "claims": ["game-text", "annul.locks", "annul.uniform", "fractured.kept", "metamod.cannot-roll", "veiled.placeholder-removable", "multicraft.annul"],
       "example": "crown-d2-scbc"
     },
     {
@@ -467,9 +499,10 @@
         {"name": "Armour Recombinator", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["armour"]}
       ],
       "pair": ["same-class"],
       "ops": [
@@ -485,16 +518,18 @@
         {"name": "Armourer's Scrap", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["armour"]},
         {"kind": "qualityBelow", "max": 20},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notUnique"}
       ],
       "ops": [
-        {"op": "addQuality", "byRarity": [5, 2, 1, 1], "max": 20}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
       ],
-      "claims": ["game-text", "quality.amounts"],
-      "example": "slink-boots-normal"
+      "claims": ["game-text", "quality.per-level"],
+      "example": "slink-boots-normal",
+      "protect": null
     },
     {
       "id": "currency/augmentation",
@@ -504,10 +539,10 @@
         {"name": "Orb of Augmentation", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic"]},
-        {"kind": "openAffix", "side": "any"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -524,12 +559,12 @@
         {"name": "Awakener's Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]},
         {"kind": "singleInfluence"},
         {"kind": "noFractured"},
-        {"kind": "notSynthesised"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"}
       ],
       "pair": ["same-class", "different-single-influence"],
       "protect": {"locks": "ignore", "cannotRoll": "ignore"},
@@ -550,10 +585,10 @@
         {"name": "Orb of Binding", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["normal"]},
-        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
       ],
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
@@ -571,15 +606,17 @@
         {"name": "Blacksmith's Whetstone", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["weapon"]},
         {"kind": "qualityBelow", "max": 20},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notUnique"}
       ],
       "ops": [
-        {"op": "addQuality", "byRarity": [5, 2, 1, 1], "max": 20}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
       ],
-      "claims": ["game-text", "quality.amounts"]
+      "claims": ["game-text", "quality.per-level"],
+      "protect": null
     },
     {
       "id": "currency/blessed",
@@ -589,10 +626,10 @@
         {"name": "Blessed Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasImplicit"},
-        {"kind": "implicitsChangeable"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasImplicit"},
+        {"kind": "implicitsChangeable"}
       ],
       "ops": [
         {"op": "rerollValues", "scope": "implicit"}
@@ -608,16 +645,18 @@
         {"name": "Brinehook's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver"]},
         {"kind": "openAffix", "side": "suffix"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "ducat", "tag": "deepwater_pantheon_aspect"}, "side": "suffix"}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"],
-      "example": "slink-boots-eldritch"
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "slink-boots-eldritch",
+      "protect": null
     },
     {
       "id": "currency/chance",
@@ -627,9 +666,9 @@
         {"name": "Orb of Chance", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["normal"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
@@ -645,9 +684,9 @@
         {"name": "Chaos Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -666,9 +705,9 @@
         {"name": "Chromatic Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasSockets"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "random-colours"}}
@@ -713,12 +752,14 @@
         {"name": "Crusader's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "crusader"},
@@ -734,17 +775,15 @@
         {"name": "Cyaxan's Ducat", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
-      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "protect": null,
       "ops": [
-        {"op": "setRarity", "rarity": "rare"},
-        {"op": "clear"},
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "which modifiers count as Infamous is not in the RePoE export"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"],
+      "claims": ["game-text", "ducat.allflame"],
       "example": "crown-a"
     },
     {
@@ -755,10 +794,10 @@
         {"name": "Divine Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare", "unique"]},
-        {"kind": "minExplicits", "n": 1},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare", "unique"]},
+        {"kind": "minExplicits", "n": 1}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -790,12 +829,14 @@
         {"name": "Elder's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "elder"},
@@ -811,11 +852,11 @@
         {"name": "Eldritch Orb of Annulment", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "eldritchDominant"},
-        {"kind": "minExplicits", "n": 1},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "eldritchDominant"},
+        {"kind": "minExplicits", "n": 1}
       ],
       "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
@@ -831,10 +872,10 @@
         {"name": "Eldritch Chaos Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "eldritchDominant"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "eldritchDominant"}
       ],
       "protect": {"locks": "ignore", "cannotRoll": "ignore"},
       "ops": [
@@ -852,11 +893,11 @@
         {"name": "Eldritch Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "eldritchDominant"},
-        {"kind": "openAffix", "side": "dominant"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "dominant"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "dominant"}
@@ -872,13 +913,13 @@
         {"name": "Enchant", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["Helmet", "Gloves", "Boots"]},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Helmet", "Gloves", "Boots"]}
       ],
       "ops": [
         {"op": "setEnchant", "pool": "lab"}
       ],
-      "claims": ["game-text"],
+      "claims": ["game-text", "enchant.lab-tiers"],
       "example": "crown-a"
     },
     {
@@ -889,9 +930,9 @@
         {"name": "Enkindling Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["UtilityFlask"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["UtilityFlask"]}
       ],
       "ops": [
         {"op": "setEnchant", "pool": "flask-enkindling"}
@@ -907,10 +948,10 @@
         {"name": "Exalted Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "openAffix", "side": "any"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
@@ -926,12 +967,14 @@
         {"name": "Exceptional Eldritch Ember", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
@@ -947,12 +990,14 @@
         {"name": "Exceptional Eldritch Ichor", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
@@ -969,7 +1014,10 @@
       ],
       "requires": [
         {"kind": "class", "anyOf": ["Ring", "Amulet"]},
-        {"kind": "rarity", "anyOf": ["rare"]}
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noVeiled"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -984,10 +1032,10 @@
         {"name": "Foulborn Orb of Augmentation", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic"]},
-        {"kind": "openAffix", "side": "any"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1002,10 +1050,10 @@
         {"name": "Foulborn Exalted Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "openAffix", "side": "any"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1020,10 +1068,10 @@
         {"name": "Foulborn Regal Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic"]},
-        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1038,19 +1086,18 @@
         {"name": "Fracturing Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "minExplicits", "n": 4},
         {"kind": "noFractured"},
         {"kind": "noInfluence"},
-        {"kind": "notSynthesised"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"}
       ],
       "ops": [
         {"op": "fracture"}
       ],
-      "claims": ["game-text", "fracture.eligible", "fracture.crafted"],
-      "example": "crown-actual"
+      "claims": ["game-text", "fracture.eligible", "fracture.crafted"]
     },
     {
       "id": "currency/genteels-ducat",
@@ -1060,12 +1107,14 @@
         {"name": "The Genteel's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notMirrored"},
         {"kind": "hasModType", "anyOf": ["Strength", "Dexterity", "Intelligence"]}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
     },
     {
       "id": "currency/glassblowers-bauble",
@@ -1075,16 +1124,18 @@
         {"name": "Glassblower's Bauble", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "category", "anyOf": ["flask", "tincture"]},
         {"kind": "qualityBelow", "max": 20},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notUnique"}
       ],
       "ops": [
-        {"op": "addQuality", "byRarity": [5, 2, 1, 1], "max": 20}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25"}}
       ],
-      "claims": ["game-text", "quality.amounts"],
-      "example": "quicksilver-normal"
+      "claims": ["game-text", "quality.per-level"],
+      "example": "quicksilver-normal",
+      "protect": null
     },
     {
       "id": "currency/grand-eldritch-ember",
@@ -1094,12 +1145,14 @@
         {"name": "Grand Eldritch Ember", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
@@ -1115,12 +1168,14 @@
         {"name": "Grand Eldritch Ichor", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
@@ -1136,12 +1191,14 @@
         {"name": "Greater Eldritch Ember", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 2}
@@ -1157,12 +1214,14 @@
         {"name": "Greater Eldritch Ichor", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "eater", "tier": 2}
@@ -1178,14 +1237,14 @@
         {"name": "Hinekora's Lock", "amount": 1}
       ],
       "requires": [
-        {"kind": "notForeseen"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "notForeseen"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
       ],
-      "claims": ["game-text"],
+      "claims": ["game-text", "hinekoras.unmodelled"],
       "example": "crown-a"
     },
     {
@@ -1196,12 +1255,14 @@
         {"name": "Hunter's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "hunter"},
@@ -1217,9 +1278,9 @@
         {"name": "Instilling Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["UtilityFlask"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["UtilityFlask"]}
       ],
       "ops": [
         {"op": "setEnchant", "pool": "flask-instilling"}
@@ -1235,9 +1296,9 @@
         {"name": "Jeweller's Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "canHaveSockets"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "canHaveSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "random-count"}}
@@ -1254,9 +1315,10 @@
         {"name": "Jewellery Recombinator", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["jewellery"]}
       ],
       "pair": ["same-class"],
       "ops": [
@@ -1272,13 +1334,15 @@
         {"name": "Katakohi's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Gloves"]},
         {"kind": "hasSockets"}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
     },
     {
       "id": "currency/kisharas-ducat",
@@ -1288,12 +1352,14 @@
         {"name": "Kishara's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notMirrored"},
         {"kind": "minExplicits", "n": 2}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
     },
     {
       "id": "currency/lesser-eldritch-ember",
@@ -1303,12 +1369,14 @@
         {"name": "Lesser Eldritch Ember", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 1}
@@ -1324,12 +1392,14 @@
         {"name": "Lesser Eldritch Ichor", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
         {"kind": "notUnique"},
         {"kind": "noInfluence"},
         {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "eldritchImplicit", "eldritch": "eater", "tier": 1}
@@ -1360,16 +1430,16 @@
         {"name": "Merrick's Ducat", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["AbyssJewel"]},
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["AbyssJewel"]},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any", "ignoreLimits": true},
-        {"op": "corrupt"}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
     },
     {
       "id": "currency/mirror",
@@ -1379,13 +1449,104 @@
         {"name": "Mirror of Kalandra", "amount": 1}
       ],
       "requires": [
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "notUnique"}
       ],
       "ops": [
         {"op": "mirror"}
       ],
       "claims": ["game-text"],
       "example": "crown-actual"
+    },
+    {
+      "id": "currency/oil-extractor",
+      "name": "Oil Extractor",
+      "family": "currency",
+      "cost": [
+        {"name": "Oil Extractor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Amulet"]},
+        {"kind": "hasEnchant"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the oils an anointment recovers are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-connections",
+      "name": "Omen of Connections",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Connections", "amount": 1},
+        {"name": "Orb of Fusing", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees maximum links"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-fortune",
+      "name": "Omen of Fortune",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Fortune", "amount": 1},
+        {"name": "Orb of Chance", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees a unique upgrade of an Orb of Chance"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-the-jeweller",
+      "name": "Omen of the Jeweller",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of the Jeweller", "amount": 1},
+        {"name": "Jeweller's Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "canHaveSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees maximum sockets"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-trichromatism",
+      "name": "Omen of Trichromatism",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Trichromatism", "amount": 1},
+        {"name": "Chromatic Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees one red, green and blue socket"}}
+      ],
+      "claims": ["game-text"]
     },
     {
       "id": "currency/orb-of-conflict",
@@ -1395,9 +1556,10 @@
         {"name": "Orb of Conflict", "amount": 1}
       ],
       "requires": [
-        {"kind": "bothEldritch"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "bothEldritch"},
+        {"kind": "notUnique"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1413,10 +1575,10 @@
         {"name": "Orb of Dominance", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
-        {"kind": "minInfluencedMods", "n": 2},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "minInfluencedMods", "n": 2}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -1433,9 +1595,9 @@
         {"name": "Orb of Fusing", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasSockets"},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "random-links"}}
@@ -1481,12 +1643,14 @@
         {"name": "Redeemer's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "redeemer"},
@@ -1503,7 +1667,10 @@
       ],
       "requires": [
         {"kind": "class", "anyOf": ["Ring", "Amulet"]},
-        {"kind": "rarity", "anyOf": ["rare"]}
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noVeiled"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1518,10 +1685,10 @@
         {"name": "Regal Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic"]},
-        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
       ],
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
@@ -1538,16 +1705,17 @@
         {"name": "Rotmother's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Belt"]},
         {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "ducat", "tag": "deepwater_hazard_belt"}, "side": "any"}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
     },
     {
       "id": "currency/runesmith",
@@ -1569,9 +1737,9 @@
         {"name": "Sacred Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "category", "anyOf": ["armour"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]}
       ],
       "ops": [
         {"op": "rerollValues", "scope": "defences"}
@@ -1587,10 +1755,10 @@
         {"name": "Orb of Scouring", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "minExplicits", "n": 1},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "minExplicits", "n": 1}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -1607,12 +1775,14 @@
         {"name": "Shaper's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "shaper"},
@@ -1628,8 +1798,8 @@
         {"name": "Tailoring Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["Body Armour"]},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1644,13 +1814,15 @@
         {"name": "Tainted Armourer's Scrap", "amount": 1}
       ],
       "requires": [
-        {"kind": "category", "anyOf": ["armour"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text"],
+      "protect": null
     },
     {
       "id": "currency/tainted-blacksmiths-whetstone",
@@ -1660,13 +1832,32 @@
         {"name": "Tainted Blacksmith's Whetstone", "amount": 1}
       ],
       "requires": [
-        {"kind": "category", "anyOf": ["weapon"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text"],
+      "protect": null
+    },
+    {
+      "id": "currency/tainted-blessing",
+      "name": "Tainted Blessing",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Blessing", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Gloves", "Boots", "Helmet", "Belt"]}
+      ],
+      "ops": [
+        {"op": "setEnchant", "pool": "lab"}
+      ],
+      "claims": ["game-text", "enchant.lab-tiers"]
     },
     {
       "id": "currency/tainted-catalyst",
@@ -1676,13 +1867,15 @@
         {"name": "Tainted Catalyst", "amount": 1}
       ],
       "requires": [
-        {"kind": "class", "anyOf": ["Ring", "Amulet", "Belt"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet", "Belt"]}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
       ],
-      "claims": ["game-text"]
+      "claims": ["game-text"],
+      "protect": null
     },
     {
       "id": "currency/tainted-chaos-orb",
@@ -1692,8 +1885,9 @@
         {"name": "Tainted Chaos Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -1709,8 +1903,9 @@
         {"name": "Tainted Chromatic Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasSockets"},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "tainted-colours"}}
@@ -1725,8 +1920,9 @@
         {"name": "Tainted Divine Teardrop", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1741,8 +1937,9 @@
         {"name": "Tainted Exalted Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
@@ -1758,8 +1955,9 @@
         {"name": "Tainted Jeweller's Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasSockets"},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "tainted-count"}}
@@ -1775,6 +1973,7 @@
       ],
       "requires": [
         {"kind": "corrupted"},
+        {"kind": "notMirrored"},
         {"kind": "notUnique"}
       ],
       "ops": [
@@ -1790,8 +1989,9 @@
         {"name": "Tainted Orb of Fusing", "amount": 1}
       ],
       "requires": [
-        {"kind": "hasSockets"},
-        {"kind": "corrupted"}
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
       ],
       "ops": [
         {"op": "sockets", "change": {"kind": "tainted-links"}}
@@ -1806,8 +2006,8 @@
         {"name": "Tempering Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "category", "anyOf": ["weapon"]},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "unverified"}}
@@ -1822,15 +2022,15 @@
         {"name": "Orb of Transmutation", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["normal"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
       ],
       "ops": [
         {"op": "setRarity", "rarity": "magic"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count"],
+      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-normal"
     },
     {
@@ -1841,13 +2041,15 @@
         {"name": "Tzamoto's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notMirrored"},
         {"kind": "intangible"}
       ],
       "ops": [
-        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "removeIntangibility"}]}, {"p": 0.5, "ops": [{"op": "destroy"}]}]}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text", "ducat.odds"],
-      "example": "crown-actual"
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "crown-actual",
+      "protect": null
     },
     {
       "id": "currency/ukatoas-ducat",
@@ -1857,16 +2059,17 @@
         {"name": "Ukatoa's Ducat", "amount": 1}
       ],
       "requires": [
+        {"kind": "notMirrored"},
         {"kind": "class", "anyOf": ["Amulet"]},
         {"kind": "notUnique"},
-        {"kind": "noEldritch"},
-        {"kind": "notMirrored"}
+        {"kind": "noEldritch"}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
       ],
-      "claims": ["game-text"],
-      "example": "lapis-amulet-normal"
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "lapis-amulet-normal",
+      "protect": null
     },
     {
       "id": "currency/vaal",
@@ -1878,15 +2081,94 @@
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon", "armour"]},
         {"kind": "notUnique"}
       ],
-      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
       "ops": [
         {"op": "corrupt"},
-        {"op": "chance", "branches": [{"p": 0.25, "ops": []}, {"p": 0.25, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.25, "ops": [{"op": "sockets", "change": {"kind": "reforge"}}]}, {"p": 0.25, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
+        {"op": "chance", "branches": [{"p": 0.25, "ops": []}, {"p": 0.25, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.25, "ops": [{"op": "sockets", "change": {"kind": "dewhiten"}}]}, {"p": 0.25, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
       ],
-      "claims": ["game-text", "vaal.outcomes", "vaal.locked-implicits", "reforge.counts"],
+      "claims": ["game-text", "vaal.outcomes", "vaal.one-implicit", "vaal.socket-outcome-329", "vaal.locked-implicits", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-actual"
+    },
+    {
+      "id": "currency/vaal-flask",
+      "name": "Vaal Orb (flasks)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["flask", "tincture"]},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a flask's corruption quality change is not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.flask-outcomes"],
+      "example": "quicksilver-normal"
+    },
+    {
+      "id": "currency/vaal-jewel",
+      "name": "Vaal Orb (jewels)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["jewel", "abyss-jewel"]},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a jewel's four corruption outcomes are not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.jewel-outcomes"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/vaal-socketless",
+      "name": "Vaal Orb (jewellery and quivers)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["jewellery", "quiver"]},
+        {"kind": "notUnique"}
+      ],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "chance", "branches": [{"p": 0.3333333333333333, "ops": []}, {"p": 0.3333333333333333, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.3333333333333333, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
+      ],
+      "claims": ["game-text", "vaal.outcomes", "vaal.one-implicit", "vaal.locked-implicits", "reforge.counts", "reforge.counts-scope"]
+    },
+    {
+      "id": "currency/vaal-unique",
+      "name": "Vaal Orb (uniques)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a unique item's own corruption outcomes are not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.unique-outcomes"]
     },
     {
       "id": "currency/veiled-chaos",
@@ -1896,9 +2178,9 @@
         {"name": "Veiled Chaos Orb", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -1918,11 +2200,11 @@
         {"name": "Veiled Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "minExplicits", "n": 1},
-        {"kind": "noVeiled"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noVeiled"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -1955,12 +2237,14 @@
         {"name": "Warlord's Exalted Orb", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "noInfluence"},
         {"kind": "influenceable"},
         {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
       ],
       "ops": [
         {"op": "addInfluence", "influence": "warlord"},
@@ -1977,9 +2261,10 @@
         {"name": "Weapon Recombinator", "amount": 1}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["magic", "rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["weapon", "quiver"]}
       ],
       "pair": ["same-class"],
       "ops": [
@@ -1996,11 +2281,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2019,11 +2304,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2042,11 +2327,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2065,11 +2350,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2088,11 +2373,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2111,11 +2396,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2134,11 +2419,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2157,11 +2442,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2180,11 +2465,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2203,11 +2488,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2226,11 +2511,11 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "noInfluence"},
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
-        {"kind": "openAffix", "side": "any"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "openAffix", "side": "any"}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2248,9 +2533,9 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["ColdResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2266,9 +2551,9 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["ColdResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2284,9 +2569,9 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["FireResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2302,9 +2587,9 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["FireResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2320,9 +2605,9 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["LightningResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2338,9 +2623,9 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 500}
       ],
       "requires": [
-        {"kind": "hasModType", "anyOf": ["LightningResistance"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningResistance"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2356,10 +2641,10 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 1000}
       ],
       "requires": [
-        {"kind": "hasInfluence"},
-        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "hasInfluence"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
         {"op": "unmodelled", "reason": {"kind": "multiDraw"}}
@@ -2374,18 +2659,18 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 75}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "attack"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attack"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2396,18 +2681,18 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 75}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "caster"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "caster"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2418,18 +2703,18 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 100}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "chaos"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "chaos"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2440,18 +2725,18 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 50}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "cold"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "cold"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2462,18 +2747,18 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 150}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "critical"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "critical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2484,18 +2769,18 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 50}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "defences"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "defences"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2506,18 +2791,18 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 50}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "fire"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "fire"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2529,19 +2814,19 @@
         {"name": "Sacred Crystallised Lifeforce", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "hasInfluence"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "canRoll", "pool": {"kind": "influenced"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "influenced"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "influenced"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "harvest.first-draw-influenced", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2552,9 +2837,9 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 200}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2572,18 +2857,18 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 75}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "life"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "life"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2594,18 +2879,18 @@
         {"name": "Primal Crystallised Lifeforce", "amount": 50}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "lightning"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "lightning"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2616,9 +2901,9 @@
         {"name": "Wild Crystallised Lifeforce", "amount": 200}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
@@ -2636,18 +2921,18 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 50}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "physical"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "physical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -2658,41 +2943,19 @@
         {"name": "Vivid Crystallised Lifeforce", "amount": 150}
       ],
       "requires": [
-        {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "speed"}}
       ],
       "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "speed"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
-    },
-    {
-      "id": "harvest/synthesise",
-      "name": "Harvest: synthesise",
-      "family": "harvest",
-      "cost": [
-        {"name": "Vivid Crystallised Lifeforce", "amount": 5000},
-        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "notUnique"},
-        {"kind": "noInfluence"},
-        {"kind": "notSynthesised"},
-        {"kind": "noFractured"},
-        {"kind": "implicitsChangeable"},
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"}
-      ],
-      "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "synthesis implicit rules are not in the RePoE export"}}
-      ],
-      "claims": ["harvest.list", "implicits.locked"]
     },
     {
       "id": "unveil",

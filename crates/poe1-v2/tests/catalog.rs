@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use poe1_v2::data::{BenchAction, Data, Scope};
+use poe1_v2::data::{Data, Scope};
 use poe1_v2::method::{CostSpec, Family, Method, Op, Policy, Protection, Require};
 use poe1_v2::test_data;
 
@@ -73,15 +73,10 @@ fn known_methods() {
     let scbc = d
         .mod_by_id("DexMasterItemGenerationCannotChangeSuffixes")
         .unwrap();
-    let bench = d
-        .bench
-        .iter()
-        .find(|b| b.action == BenchAction::AddMod { m: scbc })
-        .unwrap();
     for id in [
         "currency/veiled-exalted".to_string(),
         "unveil".to_string(),
-        format!("bench/{}", bench.index),
+        format!("bench/add/{}", d.mod_at(scbc).id),
         "essence/deafening-essence-of-hatred".to_string(),
     ] {
         assert!(d.method(&id).is_some(), "{id} missing");
@@ -243,6 +238,284 @@ fn resonators_are_data() {
             let c = d.currency_by_id(r).unwrap();
             assert_eq!(c.name, format!("{size} {kind} Resonator"));
             assert_eq!(c.class, "DelveStackableSocketableCurrency");
+        }
+    }
+}
+
+/// The directions check `datagen-v2` runs, restated here so the bundle itself is guarded: a
+/// method's costing currency directions may state a limit the method must repeat, never looser.
+#[test]
+fn method_requirements_follow_the_currency_directions() {
+    let d = test_data();
+    for m in &d.methods {
+        if m.family != Family::Currency {
+            continue;
+        }
+        for c in &m.cost {
+            if c.name.starts_with("beast:") {
+                continue;
+            }
+            let Some(cur) = d.currencies.iter().find(|x| x.name == c.name) else {
+                continue;
+            };
+            let dirs = cur.directions.as_str();
+            let has = |p: &str| dirs.contains(p);
+            let mut wants: Vec<(&str, Require)> = Vec::new();
+            if has("non-unique") || has("non-Unique") {
+                wants.push(("non-unique", Require::NotUnique));
+            }
+            let cannot_influence = has("Cannot be used on") && has("Influenced");
+            if cannot_influence || has("with no influence") {
+                wants.push(("no-influence", Require::NoInfluence));
+            }
+            if has("Influenced") && !cannot_influence && !has("with no influence") {
+                wants.push(("influenced", Require::MinInfluencedMods { n: 2 }));
+            }
+            if has("Fractured") {
+                wants.push(("no-fractured", Require::NoFractured));
+            }
+            if has("Cannot be used on Veiled") {
+                wants.push(("no-veiled", Require::NoVeiled));
+            }
+            let rarities = if has("normal, magic or rare") {
+                Some(vec![
+                    poe1_v2::data::Rarity::Normal,
+                    poe1_v2::data::Rarity::Magic,
+                    poe1_v2::data::Rarity::Rare,
+                ])
+            } else if has("magic or rare item") {
+                Some(vec![
+                    poe1_v2::data::Rarity::Magic,
+                    poe1_v2::data::Rarity::Rare,
+                ])
+            } else if has("magic, rare or unique") {
+                Some(vec![
+                    poe1_v2::data::Rarity::Magic,
+                    poe1_v2::data::Rarity::Rare,
+                    poe1_v2::data::Rarity::Unique,
+                ])
+            } else if has("rare item") {
+                Some(vec![poe1_v2::data::Rarity::Rare])
+            } else {
+                None
+            };
+            if let Some(any_of) = rarities {
+                wants.push(("rarity", Require::Rarity { any_of }));
+            }
+            if has("normal item") {
+                wants.push((
+                    "normal",
+                    Require::Rarity {
+                        any_of: vec![poe1_v2::data::Rarity::Normal],
+                    },
+                ));
+            }
+            if has("corrupted") {
+                wants.push(("corrupted", Require::Corrupted));
+            }
+            for (key, want) in wants {
+                assert!(
+                    implies(m, &want),
+                    "{} costs {} whose directions state {key}",
+                    m.id,
+                    c.name
+                );
+            }
+        }
+    }
+}
+
+/// Whether the method's requirements imply `want`.
+fn implies(m: &Method, want: &Require) -> bool {
+    m.requires.iter().any(|have| match (have, want) {
+        (Require::NotUnique, Require::NotUnique)
+        | (Require::NoInfluence, Require::NoInfluence)
+        | (Require::NoFractured, Require::NoFractured)
+        | (Require::NoVeiled, Require::NoVeiled)
+        | (Require::NotCorrupted, Require::NotCorrupted)
+        | (Require::Corrupted, Require::Corrupted) => true,
+        (Require::Rarity { any_of: a }, Require::Rarity { any_of: b }) => {
+            b.iter().all(|r| a.contains(r))
+        }
+        (Require::HasInfluence { .. } | Require::SingleInfluence, Require::HasInfluence { .. }) => {
+            true
+        }
+        (Require::MinInfluencedMods { n }, Require::MinInfluencedMods { n: want }) => n >= want,
+        _ => false,
+    })
+}
+
+/// The owner decisions are recorded as owner claims with the owner's words.
+#[test]
+fn owner_decisions_are_claims() {
+    let d = test_data();
+    for id in [
+        "empty.refused",
+        "metamod.crafted-room",
+        "bench.normal-to-magic",
+        "fracture.crafted",
+        "multicraft.annul",
+        "hinekoras.unmodelled",
+        "reforge.counts",
+        "pattern.crown-ideal-finished",
+        "metamod.multicraft-does-not-block",
+    ] {
+        let c = d.claim(id).unwrap_or_else(|| panic!("{id} missing"));
+        assert_eq!(c.source_kind, poe1_v2::data::SourceKind::Owner, "{id}");
+        assert!(c.checked, "{id} is not checked");
+        assert!(!c.quote.is_empty(), "{id} has no quote");
+    }
+    assert_eq!(
+        d.claim("bench.normal-to-magic").unwrap().quote,
+        "Turns it magic"
+    );
+}
+
+/// The 3.29 removals and the claim they displace are gone, and the new family is scoped.
+#[test]
+fn removed_and_new_methods() {
+    let d = test_data();
+    for id in ["harvest/synthesise", "beast/split", "beast/split-three"] {
+        assert!(d.method(id).is_none(), "{id} still exists");
+    }
+    for id in ["harvest.first-draw-influenced", "ducat.odds"] {
+        assert!(d.claim(id).is_none(), "{id} still exists");
+    }
+    let vaal = d.currencies.iter().find(|c| c.name == "Vaal Orb").unwrap();
+    let Scope::Methods { ids } = &d.scope.iter().find(|(k, _)| *k == vaal.id).unwrap().1 else {
+        panic!("Vaal Orb is not scoped to methods")
+    };
+    for m in [
+        "currency/vaal",
+        "currency/vaal-socketless",
+        "currency/vaal-jewel",
+        "currency/vaal-flask",
+        "currency/vaal-unique",
+    ] {
+        assert!(ids.iter().any(|x| x == m), "Vaal Orb does not scope {m}");
+    }
+    for name in [
+        "Oil Extractor",
+        "Tainted Blessing",
+        "Omen of Fortune",
+        "Omen of Trichromatism",
+        "Omen of Connections",
+        "Omen of the Jeweller",
+    ] {
+        let c = d.currencies.iter().find(|c| c.name == name).unwrap();
+        assert!(
+            matches!(
+                d.scope.iter().find(|(k, _)| *k == c.id).unwrap().1,
+                Scope::Methods { .. }
+            ),
+            "{name} is not scoped to a method"
+        );
+    }
+}
+
+/// Every requirement the review's findings require, present on the method they name.
+#[test]
+fn finding_requirements_are_present() {
+    let d = test_data();
+    let has = |id: &str, f: &dyn Fn(&Require) -> bool| {
+        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+        assert!(
+            m.requires.iter().any(f),
+            "{id} lacks the requirement the finding asks for: {:?}",
+            m.requires
+        );
+    };
+    // R8: influence Exalted Orbs refuse fractured items and eldritch implicits.
+    for id in [
+        "currency/shapers-exalted",
+        "currency/elders-exalted",
+        "currency/crusaders-exalted",
+        "currency/redeemers-exalted",
+        "currency/hunters-exalted",
+        "currency/warlords-exalted",
+    ] {
+        has(id, &|r| matches!(r, Require::NoFractured));
+        has(id, &|r| matches!(r, Require::NoEldritch));
+    }
+    // R9: embers and ichors refuse synthesised items; the Eldritch Annulment takes magic or rare.
+    for id in [
+        "currency/lesser-eldritch-ember",
+        "currency/greater-eldritch-ember",
+        "currency/grand-eldritch-ember",
+        "currency/exceptional-eldritch-ember",
+        "currency/lesser-eldritch-ichor",
+        "currency/greater-eldritch-ichor",
+        "currency/grand-eldritch-ichor",
+        "currency/exceptional-eldritch-ichor",
+    ] {
+        has(id, &|r| matches!(r, Require::NotSynthesised));
+    }
+    has(
+        "currency/eldritch-annulment",
+        &|r| matches!(r, Require::Rarity { any_of } if any_of == &[poe1_v2::data::Rarity::Magic, poe1_v2::data::Rarity::Rare]),
+    );
+    has("currency/orb-of-conflict", &|r| {
+        matches!(r, Require::NotUnique)
+    });
+    // R11: each recombinator takes its own item classes.
+    has(
+        "currency/armour-recombinator",
+        &|r| matches!(r, Require::Category { any_of } if any_of == &[poe1_v2::data::Category::Armour]),
+    );
+    has(
+        "currency/weapon-recombinator",
+        &|r| matches!(r, Require::Category { any_of } if any_of == &[poe1_v2::data::Category::Weapon, poe1_v2::data::Category::Quiver]),
+    );
+    has(
+        "currency/jewellery-recombinator",
+        &|r| matches!(r, Require::Category { any_of } if any_of == &[poe1_v2::data::Category::Jewellery]),
+    );
+    // R13: the Mirror takes a non-unique item; the Mists refuse veiled, influenced and synthesised.
+    has("currency/mirror", &|r| matches!(r, Require::NotUnique));
+    for id in [
+        "currency/reflecting-mist",
+        "currency/fading-reflecting-mist",
+    ] {
+        has(id, &|r| matches!(r, Require::NoVeiled));
+        has(id, &|r| matches!(r, Require::NoInfluence));
+        has(id, &|r| matches!(r, Require::NotSynthesised));
+    }
+    // R18: aspect crafts and the fossil family's own limits.
+    for id in [
+        "beast/aspect-avian",
+        "beast/aspect-cat",
+        "beast/aspect-crab",
+        "beast/aspect-spider",
+    ] {
+        has(
+            id,
+            &|r| matches!(r, Require::Rarity { any_of } if any_of.contains(&poe1_v2::data::Rarity::Magic)),
+        );
+    }
+    has("beast/maximum-links", &|r| {
+        matches!(r, Require::NotCorrupted)
+    });
+    has("beast/maximum-links", &|r| {
+        matches!(r, Require::NotMirrored)
+    });
+    for id in ["fossil/chaotic-resonator", "fossil/alchemical-resonator"] {
+        has(id, &|r| matches!(r, Require::Category { .. }));
+        has(id, &|r| matches!(r, Require::FossilLimits));
+    }
+    // R21: the Level 28 reading is recorded, unchecked.
+    let level28 = d.claim("metamod.level-28").expect("metamod.level-28");
+    assert!(!level28.checked);
+    // R25: the presence checks come first on every method.
+    for m in &d.methods {
+        let mut seen_other = false;
+        for r in &m.requires {
+            match r {
+                Require::NotCorrupted | Require::Corrupted => {
+                    assert!(!seen_other, "{}: presence check not first", m.id)
+                }
+                Require::NotMirrored => assert!(!seen_other, "{}: mirrored check not early", m.id),
+                _ => seen_other = true,
+            }
         }
     }
 }

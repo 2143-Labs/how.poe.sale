@@ -196,8 +196,12 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
         Require::Intangible => "intangibility".into(),
         Require::HasMemoryStrands => "Memory Strands".into(),
         Require::HasModType { any_of } => format!("a {} modifier", any_of.join(" or ")),
+        Require::BaseTag { tag } => format!("a {tag} base"),
+        Require::CanRoll { pool } => format!("a modifier from the {} pool", pool_phrase(pool)),
+        Require::MinSockets { n } => format!("at least {n} sockets"),
         Require::EssenceFits { essence } => format!("a class {essence} has a modifier for"),
         Require::Fossils { min, max } => format!("{min} to {max} fossils"),
+        Require::FossilLimits => "fossils whose own limits allow this item".into(),
         Require::ImplicitsChangeable => "implicit modifiers that can be changed".into(),
     }
 }
@@ -270,6 +274,7 @@ fn socket_phrase(c: &SocketChange) -> String {
         SocketChange::TaintedCount => "adds or removes a socket (Tainted)".into(),
         SocketChange::TaintedLinks => "adds or removes a link (Tainted)".into(),
         SocketChange::TaintedColours => "rerolls the socket colours (Tainted)".into(),
+        SocketChange::Dewhiten => "turns a random white socket non-white (3.29)".into(),
         SocketChange::Reforge => "rerolls the sockets, links and colours".into(),
     }
 }

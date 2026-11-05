@@ -125,7 +125,11 @@
         "Vaal Orb"
       ],
       "methods": [
-        "currency/vaal"
+        "currency/vaal",
+        "currency/vaal-socketless",
+        "currency/vaal-jewel",
+        "currency/vaal-flask",
+        "currency/vaal-unique"
       ]
     },
     {
@@ -689,6 +693,59 @@
       ]
     },
     {
+      "names": [
+        "Oil Extractor"
+      ],
+      "methods": [
+        "currency/oil-extractor"
+      ]
+    },
+    {
+      "names": [
+        "Tainted Blessing"
+      ],
+      "methods": [
+        "currency/tainted-blessing"
+      ]
+    },
+    {
+      "names": [
+        "Omen of Fortune"
+      ],
+      "methods": [
+        "currency/omen-of-fortune"
+      ]
+    },
+    {
+      "names": [
+        "Omen of Trichromatism"
+      ],
+      "methods": [
+        "currency/omen-of-trichromatism"
+      ]
+    },
+    {
+      "names": [
+        "Omen of Connections"
+      ],
+      "methods": [
+        "currency/omen-of-connections"
+      ]
+    },
+    {
+      "names": [
+        "Omen of the Jeweller"
+      ],
+      "methods": [
+        "currency/omen-of-the-jeweller"
+      ]
+    },
+    {
+      "pattern": "Incubator",
+      "excluded": "other-item-class",
+      "note": "Incubators are a separate item class, not currency, and are outside the bundle's currency set."
+    },
+    {
       "pattern": " Oil$",
       "methods": [
         "currency/anoint"
@@ -905,16 +962,14 @@
         "Albino Crab Claw",
         "Albino Rhoa Feather",
         "Broken Mirror of Kalandra",
-        "Oil Extractor",
         "The Changeling's Ducat",
         "Orb of Regret",
         "Crystalline Geode",
         "Igneous Geode",
-        "Tainted Blessing",
         "Crystallised Rancour"
       ],
       "excluded": "not-used-on-items",
-      "note": "Tainted Blessing needs the Divine Font service, which is an NPC service and not a method in this pass."
+      "note": "Tainted Blessing and Oil Extractor have their own methods."
     }
   ]
 }

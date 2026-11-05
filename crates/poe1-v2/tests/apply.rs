@@ -43,7 +43,7 @@ use common::{item, pattern, spec};
 use poe1_v2::apply::{Leaf, Outcome, Params, Pending, apply, check, cost};
 use poe1_v2::data::{Data, Influence, ModKind, Rarity};
 use poe1_v2::item::{AffixSpec, Item, ItemSpec, ModSpec};
-use poe1_v2::method::{Method, Op, PendingReason, Require};
+use poe1_v2::method::{Method, Op, PendingReason, Pool, Require};
 use poe1_v2::pattern::{LiftedLeaf, lift};
 use poe1_v2::test_data;
 
@@ -625,14 +625,20 @@ fn pending_and_vaal() {
     assert_eq!(ids(d, &p.item.prefixes), ["VeiledPrefix"]);
     assert_eq!(p.item.suffixes, l1.suffixes);
 
+    // Q7: the tag reforge clears what can change (SCBC itself is a prefix) and fills until at
+    // least one life modifier is drawn, so no prefix is placed before the Fill.
     let life = d.tag_by_name("life").unwrap();
     let out = run("harvest/reforge-life", &l1);
     assert!(close(out.mass(), 1.0, 1e-9));
     for (_, l) in &out.leaves {
-        let it = &pending(l).item;
-        assert_eq!(it.suffixes, l1.suffixes);
-        assert_eq!(it.prefixes.len(), 1);
-        assert!(d.mod_at(it.prefixes[0].roll.m).tags.contains(&life));
+        let pend = pending(l);
+        assert_eq!(pend.item.suffixes, l1.suffixes);
+        assert!(pend.item.prefixes.is_empty());
+        let Op::Fill { fill } = &pend.ops[0] else {
+            panic!("{:?}", pend.ops);
+        };
+        assert_eq!(fill.include, Some(Pool::Tag { tag: "life".into() }));
+        assert_eq!(d.tag_by_name("life"), Some(life));
     }
 
     // Vaal Orb: nothing, one implicit replaced, sockets, or a reforge as rare, a quarter each.
@@ -1062,13 +1068,13 @@ fn simplex_locks() {
         reason("currency/blessed", &simplex),
         "the item's implicit modifiers cannot be changed"
     );
-    // The implicit outcome changes nothing and merges with the no-change outcome.
-    let out = run("currency/vaal", &simplex);
+    // The implicit outcome changes nothing and merges with the no-change outcome (2 of 3).
+    let out = run("currency/vaal-socketless", &simplex);
     let unchanged = mass(
         &out,
         |l| matches!(l, Leaf::Item(i) if i.corrupted && i.implicits == simplex.implicits),
     );
-    assert_eq!(unchanged, 0.5);
+    assert!(close(unchanged, 2.0 / 3.0, 1e-12));
 }
 
 #[test]
@@ -1310,28 +1316,25 @@ fn eldritch_exalt_dominant_side() {
     }
 }
 
-/// A ducat pool weighs by its own tag. Recount: suffix ducat mods with a
-/// `deepwater_pantheon_aspect` entry: the four aspect mods at 100 each.
+/// R16: every ducat is an Allflame crafting ingredient, so its preview table is not modelled.
 #[test]
 fn ducat_pool() {
-    let d = test_data();
-    let out = run("currency/brinehooks-ducat", &item("slink-boots-eldritch"));
-    assert_eq!(out.leaves.len(), 4);
-    for (p, l) in &out.leaves {
-        assert_eq!(*p, 0.25);
-        let m = d.mod_at(leaf_item(l).suffixes[0].roll.m);
-        assert!(m.id.starts_with("Grants") && m.id.ends_with("AspectCrafted"));
-    }
+    let boots = item("slink-boots-eldritch");
+    let out = run("currency/brinehooks-ducat", &boots);
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    let pend = pending(l);
+    assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+    assert_eq!(pend.item, boots);
+    assert!(!pend.certain);
 }
 
-/// ignoreLimits: Merrick's Ducat adds past a full rare abyss jewel's limits. Recount on a rare
-/// Murderous Eye Jewel holding AbyssAddedChaosDamageWithClawsJewel1,
-/// AbyssAddedColdDamageWithAxesJewel1, AbyssAccuracyRatingJewel2 and AbyssAddedChaosSuffixJewel1:
-/// `pool('abyss_jewel', tags_of(jewel, on=have), 84, ['prefix', 'suffix'], taken=groups(have))`:
-/// 147 mods, weight 111250.
+/// R16: Merrick's Ducat is an Allflame ingredient too, so nothing adds past the limits in this
+/// pass and the method no longer claims to.
 #[test]
 fn merricks_ducat_ignores_limits() {
-    let d = test_data();
     let jewel = edited("slink-boots-normal", |s| {
         s.base = "Murderous Eye Jewel".into();
         s.rarity = Rarity::Rare;
@@ -1345,16 +1348,14 @@ fn merricks_ducat_ignores_limits() {
         ];
     });
     let m = method("currency/merricks-ducat");
-    assert!(m.ignores_limits());
+    assert!(!m.ignores_limits());
     let out = run("currency/merricks-ducat", &jewel);
-    assert_eq!(out.leaves.len(), 147);
-    for (_, l) in &out.leaves {
-        let it = leaf_item(l);
-        assert!(it.corrupted);
-        assert_eq!(it.explicits().count(), 5);
-        assert!(it.validate(d).is_err(), "over the limit");
-        it.validate_over_limit(d).unwrap();
-    }
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    assert!(matches!(pending(l).reason, PendingReason::NeedsData { .. }));
+    assert_eq!(pending(l).item.explicits().count(), 4);
 }
 
 /// AddInfluence and the Influence pool. Recount on an uninfluenced rare Archdemon Crown with
@@ -1381,22 +1382,24 @@ fn influence_exalt() {
     }
 }
 
-/// The influenced reforge's guaranteed mod. Recount on crown-a, cleared: Shaper mods on both
-/// sides, `pool('item', tags_of(crown, ['shaper'], imp), 87, ['prefix', 'suffix'],
-/// infl='shaper')`: 31, weight 16700.
+/// Q7: the influenced reforge clears what can change and then fills until at least one
+/// influenced modifier is drawn; it does not place a guaranteed first one.
 #[test]
 fn influenced_reforge_places_one_influenced_mod() {
-    let d = test_data();
     let out = run("harvest/reforge-influenced", &item("crown-a"));
-    assert_eq!(out.leaves.len(), 31);
-    let aoe = d.mod_by_id("AreaOfEffectSupportedUber1_").unwrap();
-    for (p, l) in &out.leaves {
-        let it = &pending(l).item;
-        assert_eq!(it.explicits().count(), 1);
-        if it.prefixes.first().map(|a| a.roll.m) == Some(aoe) {
-            assert!(close(*p, 800.0 / 16700.0, 1e-12));
-        }
-    }
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    let pend = pending(l);
+    assert_eq!(pend.reason, PendingReason::MultiDraw);
+    assert!(pend.certain);
+    assert_eq!(pend.item.explicits().count(), 0);
+    assert_eq!(pend.item.rarity, Rarity::Rare);
+    let Op::Fill { fill } = &pend.ops[0] else {
+        panic!("{:?}", pend.ops);
+    };
+    assert_eq!(fill.include, Some(Pool::Influenced));
 }
 
 #[test]
@@ -1431,52 +1434,51 @@ fn reroll_values() {
     );
 }
 
+/// R3: since 3.25 the quality a scrap adds depends on item level, so the op is not modelled;
+/// uniques are refused because the patch note's rework covers non-unique items only.
 #[test]
 fn add_quality() {
-    for (rarity, want) in [
-        (Rarity::Normal, 5),
-        (Rarity::Magic, 2),
-        (Rarity::Rare, 1),
-        (Rarity::Unique, 1),
-    ] {
+    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
         let it = edited("slink-boots-normal", |s| s.rarity = rarity);
-        assert_eq!(
-            run("currency/armourers-scrap", &it).item().unwrap().quality,
-            want
-        );
+        let out = run("currency/armourers-scrap", &it);
+        let [(p, l)] = out.leaves.as_slice() else {
+            panic!("{out:?}")
+        };
+        assert_eq!(*p, 1.0);
+        let pend = pending(l);
+        assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+        assert_eq!(pend.item, it);
     }
-    let nearly = edited("slink-boots-normal", |s| s.quality = 18);
+    let unique = edited("slink-boots-normal", |s| s.rarity = Rarity::Unique);
     assert_eq!(
-        run("currency/armourers-scrap", &nearly)
-            .item()
-            .unwrap()
-            .quality,
-        20
+        reason("currency/armourers-scrap", &unique),
+        "the item is unique"
     );
 }
 
+/// R3: the catalyst amount depends on item level since 3.25, so the op is NeedsData; the
+/// catalyst-room refusal still applies at 20% of the same catalyst.
 #[test]
 fn catalyst_quality() {
     let d = test_data();
     let lapis = item("lapis-amulet-normal");
-    let fertile = d.catalyst_by_name("Fertile Catalyst");
-    let once = run("catalyst/fertile-catalyst", &lapis)
-        .item()
-        .unwrap()
-        .clone();
-    assert_eq!((once.catalyst, once.quality), (fertile, 1));
-    let twice = run("catalyst/fertile-catalyst", &once)
-        .item()
-        .unwrap()
-        .clone();
-    assert_eq!((twice.catalyst, twice.quality), (fertile, 2));
-    let other = run("catalyst/prismatic-catalyst", &twice)
-        .item()
-        .unwrap()
-        .clone();
+    let out = run("catalyst/fertile-catalyst", &lapis);
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    let pend = pending(l);
+    assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+    assert_eq!(pend.item, lapis);
+    let c = d.catalyst_by_name("Fertile Catalyst").unwrap();
+    let label = d.catalysts[c as usize].label.clone();
+    let full = edited("lapis-amulet-normal", |s| {
+        s.quality = 20;
+        s.catalyst = Some("Fertile Catalyst".into());
+    });
     assert_eq!(
-        (other.catalyst, other.quality),
-        (d.catalyst_by_name("Prismatic Catalyst"), 1)
+        reason("catalyst/fertile-catalyst", &full),
+        format!("the item already has 20% {label} quality")
     );
 }
 
@@ -1537,16 +1539,20 @@ fn link_all() {
     );
 }
 
+/// R16: Tzamoto's Ducat is an Allflame ingredient, so its 50/50 destroy-or-clear is not
+/// modelled; the item is unchanged in the Pending result.
 #[test]
 fn destroy_and_intangibility() {
     let crown = item("crown-actual");
+    assert_eq!(crown.intangibility, 97);
     let out = run("currency/tzamotos-ducat", &crown);
-    assert_eq!(out.leaves.len(), 2);
-    assert_eq!(mass(&out, |l| matches!(l, Leaf::Destroyed)), 0.5);
-    assert_eq!(
-        mass(&out, |l| matches!(l, Leaf::Item(i) if i.intangibility == 0)),
-        0.5
-    );
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    let pend = pending(l);
+    assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+    assert_eq!(pend.item, crown);
 }
 
 /// Q4: crafted modifiers can be fractured; the orb refuses influenced items (its game text).
@@ -2138,4 +2144,326 @@ fn every_method_keeps_its_properties() {
             "fossils"
         ));
     }
+}
+
+/// R3: catalysts are not modelled either; since 3.25 the quality they add depends on item level.
+#[test]
+fn catalyst_quality_is_needs_data() {
+    let amulet = edited("lapis-amulet-normal", |s| s.quality = 20);
+    let out = run("catalyst/fertile-catalyst", &amulet);
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    let pend = pending(l);
+    assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+    assert_eq!(pend.item, amulet);
+}
+
+/// R9: the Eldritch Orb of Annulment takes a magic or rare item (its directions).
+#[test]
+fn eldritch_annulment_takes_magic() {
+    let normal = edited("slink-boots-eldritch", |s| s.rarity = Rarity::Normal);
+    assert_eq!(
+        reason("currency/eldritch-annulment", &normal),
+        "needs a magic or rare item"
+    );
+    let magic = edited("slink-boots-eldritch", |s| s.rarity = Rarity::Magic);
+    assert_ne!(
+        reason("currency/eldritch-annulment", &magic),
+        "needs a magic or rare item"
+    );
+}
+
+/// R14: the bench offers socket and link crafts on corrupted items, never above the class
+/// maximum, and a link craft needs that many sockets.
+#[test]
+fn bench_sockets_on_corrupted_and_limits() {
+    let corrupted = edited("crown-actual", |s| s.corrupted = true);
+    let out = run("bench/sockets/4", &corrupted);
+    let [(p, l)] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*p, 1.0);
+    assert_eq!(pending(l).reason, PendingReason::Sockets);
+    // Six sockets is not a helmet option at all; four links needs four sockets.
+    assert!(reason("bench/sockets/6", &item("crown-actual")).starts_with("only works on:"));
+    let short = edited("crown-actual", |s| s.sockets = "B-B".into());
+    assert_eq!(reason("bench/links/4", &short), "needs at least 4 sockets");
+    // A corrupted item still refuses the modifier crafts.
+    assert_eq!(
+        reason("bench/add/EinharMasterIncreasedMana2", &corrupted),
+        "the item is corrupted"
+    );
+}
+
+/// R18/3.29: a Fractured Fossil refuses influenced and fractured items.
+#[test]
+fn fractured_fossil_limits() {
+    let d = test_data();
+    let index = d
+        .fossils
+        .iter()
+        .position(|f| f.name == "Fractured Fossil")
+        .unwrap() as u16;
+    let params = Params {
+        fossils: vec![index],
+    };
+    let boots = edited("slink-boots-normal", |s| s.rarity = Rarity::Rare);
+    assert!(
+        apply(
+            d,
+            method("fossil/chaotic-resonator"),
+            std::slice::from_ref(&boots),
+            &params
+        )
+        .is_ok()
+    );
+    for input in [item("crown-a"), item("crown-d2-scbc-fractured")] {
+        assert_eq!(
+            reason_of(
+                method("fossil/chaotic-resonator"),
+                std::slice::from_ref(&input),
+                &params
+            ),
+            "Fractured Fossil cannot be used on an influenced or fractured item"
+        );
+    }
+}
+
+/// Q7: a tag reforge refuses when no modifier carrying the tag can roll on the item. On a
+/// helmet no speed modifier spawns (recount over `data/raw/mods.json`: 0 of the 11 Harvest tags
+/// is speed there).
+#[test]
+fn harvest_tag_reforge_refuses_when_no_tag_can_roll() {
+    assert_eq!(
+        reason("harvest/reforge-speed", &item("crown-a")),
+        "no speed modifier can roll on this item"
+    );
+}
+
+/// R5: Vaal Orb splits by item class, and uniques are no longer refused outright.
+#[test]
+fn vaal_tables() {
+    let unique = edited("lapis-amulet-normal", |s| s.rarity = Rarity::Unique);
+    assert_eq!(
+        reason(
+            "currency/vaal",
+            &edited("crown-actual", |s| s.rarity = Rarity::Unique)
+        ),
+        "the item is unique"
+    );
+    let out = run("currency/vaal-unique", &unique);
+    let pend = pending(&out.leaves[0].1);
+    assert!(matches!(pend.reason, PendingReason::NeedsData { .. }));
+    assert!(pend.item.corrupted);
+    assert_eq!(pend.item.rarity, Rarity::Unique);
+
+    for (id, name) in [
+        ("currency/vaal-jewel", "cobalt-jewel-magic"),
+        ("currency/vaal-flask", "quicksilver-normal"),
+    ] {
+        let out = run(id, &item(name));
+        let [(p, l)] = out.leaves.as_slice() else {
+            panic!("{out:?}")
+        };
+        assert_eq!(*p, 1.0);
+        assert!(matches!(pending(l).reason, PendingReason::NeedsData { .. }));
+        assert!(pending(l).item.corrupted);
+    }
+
+    // Jewellery has no socket outcome, so the other three take a third each, and the implicit
+    // outcome of an implicit-less item merges with the no-change one where they coincide.
+    let ring = edited("lapis-amulet-normal", |s| s.rarity = Rarity::Rare);
+    let out = run("currency/vaal-socketless", &ring);
+    assert!(close(out.mass(), 1.0, 1e-12));
+    let unchanged = mass(
+        &out,
+        |l| matches!(l, Leaf::Item(i) if i.corrupted && i.implicits == ring.implicits),
+    );
+    let implicit = mass(
+        &out,
+        |l| matches!(l, Leaf::Item(i) if i.corrupted && i.implicits != ring.implicits),
+    );
+    let reforge = mass(
+        &out,
+        |l| matches!(l, Leaf::Pending(p) if p.reason == PendingReason::MultiDraw),
+    );
+    for got in [unchanged, implicit, reforge] {
+        assert!(close(got, 1.0 / 3.0, 1e-12), "{got}");
+    }
+}
+
+/// R15/D7: bench ids name the action, and the 3.29 bench reroll takes a rare item.
+#[test]
+fn bench_ids_are_stable() {
+    let d = test_data();
+    for id in [
+        "bench/remove-crafted",
+        "bench/sockets/6",
+        "bench/links/6",
+        "bench/colours/NN",
+        "bench/reroll-rare-mods/3",
+        "bench/add/EinharMasterIncreasedMana2",
+    ] {
+        assert!(d.method(id).is_some(), "{id} missing");
+    }
+    assert_eq!(
+        reason("bench/reroll-rare-mods/3", &item("cobalt-jewel-magic")),
+        "needs a rare item"
+    );
+}
+
+/// R18: the aspect beastcrafts put a suffix on a magic or rare item only.
+#[test]
+fn aspect_needs_magic_or_rare() {
+    assert_eq!(
+        reason("beast/aspect-avian", &item("slink-boots-normal")),
+        "needs a magic or rare item"
+    );
+}
+
+/// R23: every beast recipe pays its yellow beasts (maxroll's beastcrafting guide).
+#[test]
+fn beast_costs_include_yellow_beasts() {
+    let d = test_data();
+    for id in [
+        "beast/aspect-avian",
+        "beast/imprint",
+        "beast/prefix-to-suffix",
+        "beast/influence-slam-shaper",
+        "beast/suffixes-cannot-be-changed",
+        "beast/create-talisman",
+    ] {
+        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+        assert!(
+            m.cost.iter().any(|c| c.name == "beast:Yellow Beast"),
+            "{id} pays no yellow beasts"
+        );
+        assert!(
+            !m.cost.iter().any(|c| c.name.contains("Chimeral")),
+            "{id} still names Craicic Chimeral"
+        );
+    }
+}
+
+/// Q2: a metamod craft needs the crafted slot free, so the player removes the old craft first.
+#[test]
+fn metamod_craft_needs_room() {
+    let mana = item("crown-a-mana");
+    assert_eq!(
+        reason(
+            "bench/add/DexMasterItemGenerationCannotChangeSuffixes",
+            &mana
+        ),
+        "the item already has as many crafted modifiers as it can hold"
+    );
+    let out = run("bench/remove-crafted", &mana);
+    let bare = out.item().expect("one item").clone();
+    assert_eq!(bare.crafted_count(test_data()), 0);
+    assert!(
+        run(
+            "bench/add/DexMasterItemGenerationCannotChangeSuffixes",
+            &bare
+        )
+        .item()
+        .is_some()
+    );
+}
+
+/// R13: the Mirror takes a non-unique item; the Reflecting Mists refuse veiled, influenced and
+/// synthesised items (directions and the 3.29 notes).
+#[test]
+fn mirror_and_mist_limits() {
+    assert_eq!(
+        reason(
+            "currency/mirror",
+            &edited("lapis-amulet-normal", |s| s.rarity = Rarity::Unique)
+        ),
+        "the item is unique"
+    );
+    for id in [
+        "currency/reflecting-mist",
+        "currency/fading-reflecting-mist",
+    ] {
+        let influenced = edited("lapis-amulet-normal", |s| {
+            s.rarity = Rarity::Rare;
+            s.influences = vec![Influence::Shaper];
+        });
+        assert_eq!(reason(id, &influenced), "the item is influenced");
+        let synthesised = edited("lapis-amulet-normal", |s| {
+            s.rarity = Rarity::Rare;
+            s.synthesised = true;
+        });
+        assert_eq!(reason(id, &synthesised), "the item is synthesised");
+    }
+}
+
+/// R16: every ducat is an Allflame ingredient, so none of them is modelled exactly.
+#[test]
+fn ducats_are_allflame() {
+    let d = test_data();
+    let ducats: Vec<&Method> = d
+        .methods
+        .iter()
+        .filter(|m| m.id.ends_with("-ducat"))
+        .collect();
+    assert_eq!(ducats.len(), 9);
+    for m in ducats {
+        let unmodelled = m.all_ops().iter().any(|op| {
+            matches!(
+                op,
+                Op::Unmodelled {
+                    reason: PendingReason::NeedsData { .. }
+                }
+            )
+        });
+        assert!(unmodelled, "{} is modelled", m.id);
+        assert!(
+            m.claims.iter().any(|c| c == "ducat.allflame"),
+            "{} does not cite ducat.allflame",
+            m.id
+        );
+    }
+}
+
+/// R15: the Talisman crafts exist and key on the base tag.
+#[test]
+fn talisman_crafts() {
+    let d = test_data();
+    let amulet = edited("lapis-amulet-normal", |s| s.rarity = Rarity::Rare);
+    assert_eq!(
+        reason("beast/imprint-talisman", &amulet),
+        "needs a talisman base"
+    );
+    let talisman = edited("lapis-amulet-normal", |s| {
+        s.base = "Metadata/Items/Amulets/Talismans/Talisman1_1".into();
+        s.rarity = Rarity::Rare;
+    });
+    assert!(
+        run("beast/imprint-talisman", &talisman)
+            .item()
+            .unwrap()
+            .imprint
+            .is_some()
+    );
+    for id in ["beast/reroll-talisman-base", "beast/create-talisman"] {
+        assert!(d.method(id).is_some(), "{id} missing");
+    }
+}
+
+/// Q7: a tag reforge only asks whether the tag can roll at all. A modifier the item already has
+/// in that tag's groups is cleared first, so it must not make the method refuse.
+#[test]
+fn harvest_tag_reforge_ignores_current_groups() {
+    let with_fire = edited("crown-a", |s| {
+        s.suffixes = vec![affix("FireResist5", None)];
+    });
+    let out = run("harvest/reforge-fire", &with_fire);
+    let pend = pending(&out.leaves[0].1);
+    assert_eq!(
+        pend.item.explicits().count(),
+        0,
+        "the clear removes the fire mod"
+    );
 }
