@@ -1,0 +1,331 @@
+{
+  "examples": {
+    "beast.aspect-level": [
+      {
+        "method": "beast/aspect-avian",
+        "fixtures": [
+          "slink-boots-eldritch"
+        ],
+        "shows": "The beastcraft adds the Level 20 Aspect of the Avian skill to the boots, not a Level 30 version."
+      }
+    ],
+    "bench.reroll-unknown": [
+      {
+        "method": "bench/reroll-rarity",
+        "fixtures": [
+          "crown-a"
+        ],
+        "shows": "The bench option exists in the game data, but its result is left uncomputed because the rule it follows is not known."
+      }
+    ],
+    "dominance.pairs": [
+      {
+        "method": "currency/orb-of-dominance",
+        "fixtures": [
+          "crown-actual"
+        ],
+        "shows": "The Orb of Dominance removes one of the crown's three influenced modifiers and upgrades another, and every ordered pair of those modifiers is equally likely."
+      }
+    ],
+    "eldritch.dominance-ties": [
+      {
+        "method": "currency/eldritch-exalted",
+        "fixtures": [
+          "slink-boots-eldritch-tie"
+        ],
+        "shows": "The boots carry a tier 2 Searing Exarch implicit and a tier 2 Eater of Worlds implicit, so neither side is dominant and the eldritch exalted orb is refused."
+      }
+    ],
+    "eldritch.ember-tier": [
+      {
+        "method": "currency/greater-eldritch-ember",
+        "fixtures": [
+          "slink-boots-normal"
+        ],
+        "shows": "Every result gives the boots one Searing Exarch implicit of tier 2, the tier of a Greater Eldritch Ember."
+      }
+    ],
+    "eldritch.not-influenced": [
+      {
+        "method": "currency/lesser-eldritch-ember",
+        "fixtures": [
+          "crown-a"
+        ],
+        "shows": "The ember is refused because the crown is influenced."
+      }
+    ],
+    "exalt.both-sides": [
+      {
+        "method": "currency/exalted",
+        "fixtures": [
+          "cobalt-jewel-rare-open"
+        ],
+        "shows": "The rare jewel has eligible modifiers on both sides, so some exalted orb outcomes add a prefix and others add a suffix."
+      }
+    ],
+    "fracture.eligible": [
+      {
+        "method": "currency/fracturing",
+        "fixtures": [
+          "crown-uninfluenced-fracture"
+        ],
+        "shows": "The orb fractures one of the three modifiers that can be fractured: the crafted armour modifier is a candidate, while the unrevealed veiled prefix is never picked."
+      }
+    ],
+    "recombine.inputs": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The recombinator takes two rare amulets of the same item class, so the pair is accepted and the recombine itself is not computed in this pass."
+      }
+    ],
+    "recombine.count_table": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The two amulets pool their prefixes and suffixes, which is the count that the table turns into the chances of keeping zero, one, two or three modifiers on a side."
+      }
+    ],
+    "recombine.count_table_alt": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The two amulets show the pooled modifiers that the alternate table counts when a side pools six or more of them."
+      }
+    ],
+    "recombine.one_prefix_one_suffix": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "Each amulet contributes one prefix and one suffix, the shape that the rule keeps at most one of each of when the result is magic."
+      }
+    ],
+    "recombine.selection_alpha": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The two amulets carry four different modifiers, which are the modifiers whose selection weight the result would draw by."
+      }
+    ],
+    "recombine.exclusive_weight": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The two amulets carry modifiers from different groups, which is the case where the group-exclusivity rule decides which modifiers can survive together."
+      }
+    ],
+    "recombine.non_native": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "Both amulets are the same base type, so the non-native modifier rule is not exercised by this pair; the recombine result is not computed in this pass."
+      }
+    ],
+    "recombine.output_rarity": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "Both inputs are rare, so the rule makes the result rare; the recombine itself is not computed in this pass."
+      }
+    ],
+    "recombine.base_properties": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The two amulets show the base properties, such as the implicit modifier, that the result takes from one of the inputs."
+      }
+    ],
+    "recombine.cost": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The step costs one Jewellery Recombinator; the Thaumaturgic Dust and gold in the rule are outside the item model, so the catalogue cannot show them."
+      }
+    ],
+    "recombine.base_and_item_level": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "Both amulets are rare and item level 84, the inputs whose base type and item level the result rule chooses between."
+      }
+    ],
+    "recombine.pools_and_groups": [
+      {
+        "method": "currency/jewellery-recombinator",
+        "fixtures": [
+          "lapis-amulet-a",
+          "lapis-amulet-b"
+        ],
+        "shows": "The four modifiers on the two amulets belong to four different groups, which are the pools that the group rule draws from."
+      }
+    ],
+    "reforge.guarantee-first": [
+      {
+        "method": "essence/deafening-essence-of-hatred",
+        "fixtures": [
+          "slink-boots-normal"
+        ],
+        "shows": "The reforge first adds the Hatred modifier that the essence guarantees for boots, and then leaves the remaining modifiers to the count table."
+      }
+    ],
+    "tainted.odds": [
+      {
+        "method": "currency/tainted-chaos-orb",
+        "fixtures": [
+          "crown-a-corrupted"
+        ],
+        "shows": "The corrupted crown is either reforged or scoured, and both results have the same chance."
+      }
+    ],
+    "unveil.free": [
+      {
+        "method": "unveil",
+        "fixtures": [
+          "crown-c2-blocked"
+        ],
+        "shows": "The unveiling step costs nothing, and its result offers three weighted options from which the player picks one."
+      }
+    ],
+    "vaal.locked-implicits": [
+      {
+        "method": "currency/vaal-socketless",
+        "fixtures": [
+          "simplex-normal"
+        ],
+        "shows": "The Vaal Orb corrupts the amulet, and its corrupted-implicit outcome leaves the locked implicit unchanged, so that outcome merges with the outcome that changes nothing."
+      }
+    ],
+    "veiled-chaos.side": [
+      {
+        "method": "currency/veiled-chaos",
+        "fixtures": [
+          "crown-a"
+        ],
+        "shows": "The reforge leaves a veiled modifier on a prefix or on a suffix, and both sides have the same chance."
+      }
+    ],
+    "veiled.one-per-item": [
+      {
+        "method": "currency/veiled-exalted",
+        "fixtures": [
+          "crown-c1"
+        ],
+        "shows": "The Veiled Exalted Orb is refused because the crown already has an unrevealed veiled prefix."
+      }
+    ],
+    "veiled.placeholder-removable": [
+      {
+        "method": "currency/annulment",
+        "fixtures": [
+          "crown-c1"
+        ],
+        "shows": "One of the five equally likely annulment results removes the unrevealed veiled prefix from the crown."
+      }
+    ],
+    "bench.corrupted-sockets": [
+      {
+        "method": "bench/links/4",
+        "fixtures": [
+          "crown-actual-corrupted"
+        ],
+        "shows": "The bench link craft is offered on the corrupted crown and links its four sockets; the extra Vaal Orbs that the rule adds to the cost are not part of the item cost shown here."
+      }
+    ],
+    "magic.count-weights": [
+      {
+        "method": "currency/transmutation",
+        "fixtures": [
+          "cobalt-jewel-normal"
+        ],
+        "shows": "The Orb of Transmutation gives the jewel one modifier or two with equal chance, as the rule says."
+      }
+    ],
+    "enchant.lab-tiers": [
+      {
+        "method": "currency/enchant",
+        "fixtures": [
+          "crown-a"
+        ],
+        "shows": "The Enchant currency offers the Labyrinth enchantments that item level 87 unlocks for a helmet."
+      }
+    ],
+    "reforge.counts-scope": [
+      {
+        "method": "harvest/reforge-life",
+        "fixtures": [
+          "crown-l1"
+        ],
+        "shows": "Suffixes Cannot Be Changed keeps the three suffixes while the reforge clears the prefixes and adds its life-tagged modifiers, so the kept suffixes are not part of the four, five or six additions."
+      }
+    ]
+  },
+  "evidence": {
+    "classes.tincture-limits": {
+      "fixtures": [
+        "tincture-magic"
+      ],
+      "users": "`rules/v2/item-classes.json`, which gives the Tincture class its affix limits",
+      "shows": "A magic tincture holds one prefix and one suffix, while the class allows no rare tincture at all, so a rare tincture has zero prefix slots and zero suffix slots."
+    },
+    "classes.flask-limits": {
+      "fixtures": [
+        "quicksilver-normal"
+      ],
+      "users": "`rules/v2/item-classes.json`, which gives the Flask category its affix limits",
+      "shows": "A normal flask has no explicit modifiers; the class allows one prefix and one suffix at magic rarity and none at rare rarity."
+    },
+    "generation.multiplier": {
+      "fixtures": [],
+      "users": "`crates/poe1-v2/src/pool.rs`, the weight calculation that multiplies a spawn weight by the first generation weight its tag matches",
+      "shows": "No item fixture exercises this rule, because it is an engine rule for computing modifier weights rather than a step on an item."
+    },
+    "metamod.level-28": {
+      "fixtures": [],
+      "users": "`crates/poe1-v2/src/apply.rs`, which recognises the MaxModRequiredLevelOverride modifier and caps the added modifier level at 28",
+      "shows": "No item fixture exercises this rule, because it is an engine rule about the metamod cap rather than a step on an item."
+    },
+    "quality.amounts": {
+      "fixtures": [],
+      "users": "no current method or data file; it records the pre-3.25 quality amounts, superseded by the checked rule `quality.per-level`",
+      "shows": "No item fixture exercises this rule, because the quality currencies now stop at a result that needs item data."
+    },
+    "catalyst.amounts": {
+      "fixtures": [],
+      "users": "no current method or data file; it records the pre-3.25 catalyst amounts, superseded by the checked rule `quality.per-level`",
+      "shows": "No item fixture exercises this rule, because the catalyst methods now stop at a result that needs item data."
+    }
+  }
+}

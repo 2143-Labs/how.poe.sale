@@ -1,13 +1,17 @@
-//! The generated review catalog: `catalog/methods.md` (every method's cost, game text, needs,
-//! metamod policy, effect, a worked example counted in leaves, and sources; essences as one
-//! table), `catalog/bench.md` (the bench crafts that add one modifier, as one table),
-//! `catalog/questions.md` (each unconfirmed rule a method relies on, shown on a full input item
-//! with the step, the result and the diff), `catalog/items.md` (every fixture and how each
-//! pattern reads it) and `catalog/scope.md` (every currency's methods or exclusion reason).
-//! Output is deterministic.
+//! The generated review catalog: `catalog/methods.md` (every method's cost, game text and usage
+//! line, needs, metamod policy, effect, a worked example counted in leaves, and sources;
+//! essences as one table), `catalog/bench.md` (the bench crafts that add one modifier, as one
+//! table), `catalog/questions.md` (each unconfirmed rule a method relies on, shown on the item
+//! inputs that exercise it with the step, the result and the diff; rules no method cites listed
+//! with what uses them), `catalog/items.md` (every fixture and how each pattern reads it) and
+//! `catalog/scope.md` (every currency's methods or exclusion reason). The question examples come
+//! from `fixtures/v2/questions.json`, and generation fails when an unconfirmed rule that a
+//! method cites has no example. Output is deterministic.
 
 use std::collections::BTreeMap;
 use std::path::Path;
+
+use serde::Deserialize;
 
 use crate::apply::{Leaf, Outcome, Params, apply};
 use crate::data::{Category, Data, Scope};
@@ -23,7 +27,43 @@ use crate::render::{item_block, item_diff, leaf_counts, most_likely_item, outcom
 pub struct Fixtures {
     pub items: BTreeMap<String, (ItemSpec, Item)>,
     pub patterns: BTreeMap<String, Pattern>,
+    pub examples: BTreeMap<String, Vec<ClaimExample>>,
+    pub evidence: BTreeMap<String, ClaimEvidence>,
 }
+
+/// One question example: a method, the item fixtures it runs on, and what the example shows.
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClaimExample {
+    pub method: String,
+    pub fixtures: Vec<String>,
+    pub shows: String,
+}
+
+/// Evidence for an unconfirmed rule that no method cites: the item fixture that the rule
+/// decides, what uses the rule, and what the example shows.
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClaimEvidence {
+    pub fixtures: Vec<String>,
+    pub users: String,
+    pub shows: String,
+}
+
+/// `fixtures/v2/questions.json`.
+#[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct QuestionExamples {
+    #[serde(default)]
+    examples: BTreeMap<String, Vec<ClaimExample>>,
+    #[serde(default)]
+    evidence: BTreeMap<String, ClaimEvidence>,
+}
+
+/// A catalog that cannot be generated: a missing or mismatched question example.
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
+pub struct CatalogError(pub String);
 
 fn read_dir_json(dir: &Path) -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = std::fs::read_dir(dir)
@@ -45,7 +85,9 @@ fn read_dir_json(dir: &Path) -> Vec<(String, String)> {
 }
 
 impl Fixtures {
-    /// Reads `items/*.json` and `patterns/*.json`; panics on an invalid fixture.
+    /// Reads `items/*.json`, `patterns/*.json` and `questions.json`; panics on an invalid
+    /// fixture or a malformed questions file. `validate_examples` checks the references against
+    /// the bundle.
     pub fn load(data: &Data, dir: &Path) -> Fixtures {
         let mut items = BTreeMap::new();
         for (name, text) in read_dir_json(&dir.join("items")) {
@@ -62,7 +104,122 @@ impl Fixtures {
                 Pattern::compile(data, &spec).unwrap_or_else(|e| panic!("patterns/{name}: {e}"));
             patterns.insert(name, p);
         }
-        Fixtures { items, patterns }
+        let path = dir.join("questions.json");
+        let examples = match std::fs::read_to_string(&path) {
+            Ok(text) => {
+                let parsed: QuestionExamples = serde_json::from_str(&text)
+                    .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+                (parsed.examples, parsed.evidence)
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                (BTreeMap::new(), BTreeMap::new())
+            }
+            Err(e) => panic!("{}: {e}", path.display()),
+        };
+        Fixtures {
+            items,
+            patterns,
+            examples: examples.0,
+            evidence: examples.1,
+        }
+    }
+}
+
+/// Checks the question examples against the bundle: every unconfirmed rule a method cites has an
+/// example, every example names a method that cites the rule and lists exactly as many item
+/// fixtures as the method takes, every fixture name loads, and every piece of evidence names an
+/// unconfirmed rule that no method cites.
+pub fn validate_examples(data: &Data, fx: &Fixtures) -> Result<(), CatalogError> {
+    let mut errors: Vec<String> = Vec::new();
+    for (claim_id, examples) in &fx.examples {
+        if data.claim(claim_id).is_none() {
+            errors.push(format!("questions.json names unknown rule `{claim_id}`"));
+            continue;
+        }
+        if examples.is_empty() {
+            errors.push(format!("questions.json lists no example for `{claim_id}`"));
+        }
+        for example in examples {
+            if example.shows.trim().is_empty() {
+                errors.push(format!(
+                    "the example for `{claim_id}` has no `shows` sentence"
+                ));
+            }
+            let Some(method) = data.method(&example.method) else {
+                errors.push(format!(
+                    "the example for `{claim_id}` names unknown method `{}`",
+                    example.method
+                ));
+                continue;
+            };
+            if !method.claims.contains(claim_id) {
+                errors.push(format!(
+                    "the example for `{claim_id}` uses `{}`, which does not cite it",
+                    example.method
+                ));
+            }
+            let wanted = method.inputs as usize;
+            if example.fixtures.len() != wanted {
+                errors.push(format!(
+                    "`{}` takes {wanted} item{}, but the example for `{claim_id}` lists {}",
+                    example.method,
+                    if wanted == 1 { "" } else { "s" },
+                    example.fixtures.len()
+                ));
+            }
+            for name in &example.fixtures {
+                if !fx.items.contains_key(name) {
+                    errors.push(format!(
+                        "the example for `{claim_id}` names unknown fixture `{name}`"
+                    ));
+                }
+            }
+        }
+    }
+    let mut missing: Vec<String> = Vec::new();
+    for m in &data.methods {
+        for id in &m.claims {
+            let Some(claim) = data.claim(id) else {
+                continue;
+            };
+            if !claim.checked && !fx.examples.contains_key(id) && !missing.contains(id) {
+                missing.push(id.clone());
+                errors.push(format!(
+                    "no example for the unconfirmed rule `{id}`, which `{}` cites (add one to fixtures/v2/questions.json)",
+                    m.id
+                ));
+            }
+        }
+    }
+    for (claim_id, evidence) in &fx.evidence {
+        if data.claim(claim_id).is_none() {
+            errors.push(format!(
+                "questions.json evidence names unknown rule `{claim_id}`"
+            ));
+            continue;
+        }
+        if data.methods.iter().any(|m| m.claims.contains(claim_id)) {
+            errors.push(format!(
+                "`{claim_id}` is cited by a method, so it needs an example rather than evidence"
+            ));
+        }
+        if evidence.shows.trim().is_empty() || evidence.users.trim().is_empty() {
+            errors.push(format!(
+                "the evidence for `{claim_id}` needs both `shows` and `users`"
+            ));
+        }
+        for name in &evidence.fixtures {
+            if !fx.items.contains_key(name) {
+                errors.push(format!(
+                    "the evidence for `{claim_id}` names unknown fixture `{name}`"
+                ));
+            }
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(CatalogError(errors.join("\n")))
     }
 }
 
@@ -196,8 +353,16 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
         Require::Intangible => "intangibility".into(),
         Require::HasMemoryStrands => "Memory Strands".into(),
         Require::HasModType { any_of } => format!("a {} modifier", any_of.join(" or ")),
-        Require::BaseTag { tag } => format!("a {tag} base"),
-        Require::CanRoll { pool } => format!("a modifier from the {} pool", pool_phrase(pool)),
+        Require::BaseTag { tag } => format!("a base with the {tag} tag"),
+        Require::CanRoll { pool } => match pool {
+            Pool::Natural => "at least one random modifier it can roll".into(),
+            Pool::Influence { influence } => {
+                format!("at least one {} modifier it can roll", influence.name())
+            }
+            Pool::Influenced => "at least one influenced modifier it can roll".into(),
+            Pool::Tag { tag } => format!("at least one {tag}-tagged modifier it can roll"),
+            Pool::Ducat { tag } => format!("at least one ducat {tag} modifier it can roll"),
+        },
         Require::MinSockets { n } => format!("at least {n} sockets"),
         Require::EssenceFits { essence } => format!("a class {essence} has a modifier for"),
         Require::Fossils { min, max } => format!("{min} to {max} fossils"),
@@ -232,6 +397,12 @@ fn fill_phrase(f: &Fill) -> String {
     }
     if let Some(n) = f.mod_level_max {
         out.push_str(&format!(", modifiers of level {n} and below"));
+    }
+    if let Some(include) = &f.include {
+        out.push_str(&format!(
+            ", repeating until at least one modifier comes from the {} pool",
+            pool_phrase(include)
+        ));
     }
     out.push_str(match f.weighting {
         Weighting::Normal => "",
@@ -559,11 +730,12 @@ fn bench_md(data: &Data) -> String {
     out.join("\n")
 }
 
-const ESSENCE_CLAIMS: [&str; 4] = [
+const ESSENCE_CLAIMS: [&str; 5] = [
     "game-text",
     "essence.ilvl",
     "reforge.guarantee-first",
     "reforge.counts",
+    "metamod.multicraft-does-not-block",
 ];
 
 /// A generated essence method: the rarities it takes and the level its reforge's modifiers are
@@ -579,10 +751,10 @@ fn standard_essence(m: &Method) -> Option<(&[crate::data::Rarity], Option<u8>)> 
         return None;
     };
     let [
-        Require::Rarity { any_of },
-        Require::EssenceFits { .. },
         Require::NotCorrupted,
         Require::NotMirrored,
+        Require::Rarity { any_of },
+        Require::EssenceFits { .. },
     ] = m.requires.as_slice()
     else {
         return None;
@@ -652,7 +824,11 @@ fn essence_table(data: &Data, methods: &[&Method]) -> String {
     out.join("\n")
 }
 
-const BENCH_ADD_CLAIMS: [&str; 2] = ["bench.normal-to-magic", "metamod.slot"];
+const BENCH_ADD_CLAIMS: [&str; 3] = [
+    "bench.normal-to-magic",
+    "metamod.slot",
+    "metamod.crafted-room",
+];
 
 /// A generated bench craft that adds one modifier with the standard requirements: its mod id,
 /// side and classes. Those print as one table row instead of a full entry.
@@ -661,9 +837,9 @@ fn standard_bench_add(m: &Method) -> Option<(&str, SideReq, &[String])> {
         return None;
     };
     let [
-        Require::Rarity { any_of },
         Require::NotCorrupted,
         Require::NotMirrored,
+        Require::Rarity { any_of },
         Require::Class { any_of: classes },
         Require::OpenAffix { side },
         Require::CraftedRoom,
@@ -692,8 +868,8 @@ fn bench_table(data: &Data, methods: &[&Method]) -> String {
     let first = methods[0];
     let mut out = vec![
         format!(
-            "Each bench craft in this table needs: {}; not corrupted; not mirrored; one of the classes listed; an open affix on the modifier's side; {}; no modifier of the added one's group yet. It adds that modifier, and a normal item turns magic. Sources: {}.",
-            require_phrase(data, &first.requires[0]),
+            "Each bench craft in this table needs: not corrupted; not mirrored; {}; one of the classes listed; an open affix on the modifier's side; {}; no modifier of the added one's group yet. It adds that modifier, and a normal item turns magic. Sources: {}.",
+            require_phrase(data, &first.requires[2]),
             require_phrase(data, &Require::CraftedRoom),
             sources(data, first)
         ),
@@ -725,6 +901,16 @@ fn method_entry(data: &Data, fx: &Fixtures, m: &Method) -> Vec<String> {
     ];
     if let Some(t) = &m.game_text {
         lines.push(format!("- Game text: {}", t.replace('\n', " / ")));
+    }
+    if m.family == Family::Currency
+        && let Some(directions) = m
+            .cost
+            .first()
+            .and_then(|c| data.currency_by_name(&c.name))
+            .map(|c| c.directions.trim())
+            .filter(|d| !d.is_empty())
+    {
+        lines.push(format!("- Directions: {directions}"));
     }
     if m.inputs > 1 {
         lines.push(format!("- Takes {} items.", m.inputs));
@@ -760,35 +946,186 @@ fn method_entry(data: &Data, fx: &Fixtures, m: &Method) -> Vec<String> {
     lines
 }
 
-/// The worked example for a claim: the first method (by id) citing it that names an example
-/// fixture, else the first (method, fixture) pair where the method applies.
-fn worked_example<'a>(
-    data: &Data,
-    fx: &'a Fixtures,
-    users: &[&'a Method],
-) -> Option<(&'a Method, &'a str, &'a Item)> {
-    for m in users {
-        if let Some(ex) = &m.example
-            && let Some((name, (_, item))) = fx.items.get_key_value(ex)
-        {
-            return Some((m, name.as_str(), item));
+/// The methods that cite a rule, by name and id, to at most eight.
+fn method_list(users: &[&Method]) -> String {
+    let shown: Vec<String> = users
+        .iter()
+        .take(8)
+        .map(|m| format!("{} (`{}`)", m.name, m.id))
+        .collect();
+    let more = users.len().saturating_sub(8);
+    format!(
+        "{} method{}: {}{}",
+        users.len(),
+        if users.len() == 1 { "" } else { "s" },
+        shown.join(", "),
+        if more > 0 {
+            format!(" and {more} more")
+        } else {
+            String::new()
         }
-    }
-    for m in users {
-        for (name, (_, item)) in &fx.items {
-            if apply_on(data, m, item).is_ok() {
-                return Some((m, name.as_str(), item));
+    )
+}
+
+/// The probability mass of the outcomes that add a prefix and of those that add a suffix,
+/// counted against the first input. A choice counts each of its options equally, as in
+/// `most_likely_item`.
+fn change_mass(input: &Item, o: &Outcome, scale: f64, prefix: &mut f64, suffix: &mut f64) {
+    for (p, leaf) in &o.leaves {
+        let p = p * scale;
+        let item = match leaf {
+            Leaf::Item(item) => Some(item),
+            Leaf::Items(items) => items.first(),
+            Leaf::Choice(options) => {
+                let n = options.len().max(1) as f64;
+                for option in options {
+                    change_mass(input, option, p / n, prefix, suffix);
+                }
+                None
+            }
+            Leaf::Pending(_) | Leaf::Destroyed => None,
+        };
+        if let Some(item) = item {
+            if item.prefixes.len() > input.prefixes.len() {
+                *prefix += p;
+            }
+            if item.suffixes.len() > input.suffixes.len() {
+                *suffix += p;
             }
         }
     }
-    None
 }
 
-fn questions_md(data: &Data, fx: &Fixtures) -> String {
+/// The probability mass of the outcomes by their number of explicit modifiers, counted against
+/// the first input. A choice counts each of its options equally, as in `most_likely_item`.
+fn count_mass(o: &Outcome, scale: f64, counts: &mut BTreeMap<usize, f64>) {
+    for (p, leaf) in &o.leaves {
+        let p = p * scale;
+        match leaf {
+            Leaf::Item(item) => {
+                *counts.entry(item.explicits().count()).or_default() += p;
+            }
+            Leaf::Items(items) => {
+                if let Some(item) = items.first() {
+                    *counts.entry(item.explicits().count()).or_default() += p;
+                }
+            }
+            Leaf::Choice(options) => {
+                let n = options.len().max(1) as f64;
+                for option in options {
+                    count_mass(option, p / n, counts);
+                }
+            }
+            Leaf::Pending(_) | Leaf::Destroyed => {}
+        }
+    }
+}
+
+/// One question example: what it shows, every input item, the step with its cost, the result and
+/// the diff between the first input and the most likely result.
+fn question_example(
+    data: &Data,
+    fx: &Fixtures,
+    index: usize,
+    count: usize,
+    example: &ClaimExample,
+) -> Vec<String> {
+    let method = data
+        .method(&example.method)
+        .expect("validated examples name a method");
+    let mut out = Vec::new();
+    if count > 1 {
+        out.push(format!("**Example {index}**"));
+        out.push(String::new());
+    }
+    out.push(format!("**What this shows:** {}", example.shows));
+    out.push(String::new());
+    for (i, name) in example.fixtures.iter().enumerate() {
+        let (_, item) = fx
+            .items
+            .get(name)
+            .expect("validated examples name a fixture");
+        let label = if example.fixtures.len() == 1 {
+            "Input".to_string()
+        } else {
+            format!("Input {}", i + 1)
+        };
+        out.push(format!("**{label}** (`{name}`)"));
+        out.push(String::new());
+        out.push(item_block(data, item));
+        out.push(String::new());
+    }
+    out.push(format!(
+        "**Step**: {} (`{}`; cost: {})",
+        method.name,
+        method.id,
+        cost_text(method)
+    ));
+    out.push(String::new());
+    out.push("**Result**".into());
+    out.push(String::new());
+    let items: Vec<Item> = example
+        .fixtures
+        .iter()
+        .map(|name| fx.items[name].1.clone())
+        .collect();
+    match apply(data, method, &items, &Params::default()) {
+        Ok(o) => {
+            out.push(outcome(data, &o));
+            let (mut prefix, mut suffix) = (0.0, 0.0);
+            change_mass(&items[0], &o, 1.0, &mut prefix, &mut suffix);
+            if prefix > 0.0 || suffix > 0.0 {
+                out.push(String::new());
+                out.push(format!(
+                    "**Where the result changes:** {prefix:.6} of the outcomes add a prefix and {suffix:.6} add a suffix; a result that adds both is counted in both numbers."
+                ));
+            }
+            let mut counts: BTreeMap<usize, f64> = BTreeMap::new();
+            count_mass(&o, 1.0, &mut counts);
+            counts.retain(|_, p| *p > 0.0);
+            let unchanged = counts.len() == 1 && counts.contains_key(&items[0].explicits().count());
+            if !counts.is_empty() && !unchanged {
+                let parts: Vec<String> = counts
+                    .iter()
+                    .map(|(n, p)| {
+                        format!(
+                            "{p:.6} end with {n} explicit modifier{}",
+                            if *n == 1 { "" } else { "s" }
+                        )
+                    })
+                    .collect();
+                out.push(String::new());
+                out.push(format!("**Modifier counts:** {}.", parts.join(", ")));
+            }
+            out.push(String::new());
+            match most_likely_item(&o) {
+                Some(best) => {
+                    let label = if items.len() == 1 {
+                        "**Diff** (input vs the most likely result)"
+                    } else {
+                        "**Diff** (input 1 vs the most likely result)"
+                    };
+                    out.push(label.into());
+                    out.push(String::new());
+                    out.push(item_diff(data, &items[0], best));
+                }
+                None => out.push(
+                    "**Diff**: none; this pass does not compute a result item for this step."
+                        .into(),
+                ),
+            }
+        }
+        Err(reason) => out.push(format!("**Refused**: {reason}")),
+    }
+    out
+}
+
+fn questions_md(data: &Data, fx: &Fixtures) -> Result<String, CatalogError> {
+    validate_examples(data, fx)?;
     let mut out = vec![
         "# Questions for the owner".to_string(),
         String::new(),
-        "Generated by `datagen-v2 catalog`; do not edit. Each section is a rule a method relies on that no published source confirmed. It shows the rule on a full input item: the step, the full result and the diff between the input and the most likely result. Confirm or correct the proposed rule.".into(),
+        "Generated by `datagen-v2 catalog`; do not edit. Each section is one rule that a method relies on and that no published source confirmed. The section shows a full item input, the step, the result and the difference between the input and the most likely result, so the rule can be checked without opening any other file. Confirm or correct each proposed rule.".into(),
     ];
     for claim in data.claims.iter().filter(|c| !c.checked) {
         let users: Vec<&Method> = data
@@ -796,13 +1133,10 @@ fn questions_md(data: &Data, fx: &Fixtures) -> String {
             .iter()
             .filter(|m| m.claims.contains(&claim.id))
             .collect();
-        if users.is_empty() {
-            continue;
-        }
         out.push(String::new());
         out.push(format!("## `{}`", claim.id));
         out.push(String::new());
-        out.push(claim.statement.clone());
+        out.push(format!("**Proposed rule:** {}", claim.statement));
         if !claim.url.is_empty() {
             out.push(String::new());
             out.push(format!(
@@ -811,52 +1145,66 @@ fn questions_md(data: &Data, fx: &Fixtures) -> String {
                 claim.url
             ));
         }
-        out.push(String::new());
-        match worked_example(data, fx, &users) {
-            Some((m, name, item)) => {
-                out.push(format!("**Input** (`{name}`)"));
-                out.push(String::new());
-                out.push(item_block(data, item));
-                out.push(String::new());
-                out.push(format!("**Step**: {} (`{}`)", m.name, m.id));
-                out.push(String::new());
-                out.push("**Result**".into());
-                out.push(String::new());
-                match apply_on(data, m, item) {
-                    Ok(o) => {
-                        out.push(outcome(data, &o));
-                        if let Some(best) = most_likely_item(&o) {
-                            out.push(String::new());
-                            out.push("**Diff** (input vs the most likely result)".into());
-                            out.push(String::new());
-                            out.push(item_diff(data, item, best));
-                        }
+        if users.is_empty() {
+            out.push(String::new());
+            let evidence = fx.evidence.get(&claim.id);
+            out.push(format!(
+                "**Used by:** {}",
+                evidence.map_or(
+                    "no method or data file in this bundle records a user of this rule",
+                    |e| e.users.as_str()
+                )
+            ));
+            match evidence {
+                None => {
+                    out.push(String::new());
+                    out.push("No item fixture exercises this rule yet.".into());
+                }
+                Some(evidence) => {
+                    out.push(String::new());
+                    out.push(format!("**What this shows:** {}", evidence.shows));
+                    for (i, name) in evidence.fixtures.iter().enumerate() {
+                        let (_, item) = fx
+                            .items
+                            .get(name)
+                            .expect("validated evidence names a fixture");
+                        let label = if evidence.fixtures.len() == 1 {
+                            "Input".to_string()
+                        } else {
+                            format!("Input {}", i + 1)
+                        };
+                        out.push(String::new());
+                        out.push(format!("**{label}** (`{name}`)"));
+                        out.push(String::new());
+                        out.push(item_block(data, item));
+                        out.push(String::new());
+                        let limits = &item.class(data).limits;
+                        out.push(format!(
+                            "**Limits**: the {} class allows at most {} prefix{} and {} suffix{} at magic rarity, and {} and {} at rare rarity.",
+                            item.class(data).name,
+                            limits.magic[0],
+                            if limits.magic[0] == 1 { "" } else { "es" },
+                            limits.magic[1],
+                            if limits.magic[1] == 1 { "" } else { "es" },
+                            limits.rare[0],
+                            limits.rare[1]
+                        ));
                     }
-                    Err(reason) => out.push(format!("does not apply: {reason}")),
                 }
             }
-            None => out.push("No fixture demonstrates this rule yet.".into()),
+            continue;
+        }
+        let examples = fx
+            .examples
+            .get(&claim.id)
+            .expect("validated methods' unconfirmed rules have examples");
+        let count = examples.len();
+        for (i, example) in examples.iter().enumerate() {
+            out.push(String::new());
+            out.extend(question_example(data, fx, i + 1, count, example));
         }
         out.push(String::new());
-        out.push(format!("**Proposed rule:** {}", claim.statement));
-        out.push(String::new());
-        let shown: Vec<String> = users
-            .iter()
-            .take(8)
-            .map(|m| format!("`{}`", m.id))
-            .collect();
-        let more = users.len().saturating_sub(8);
-        out.push(format!(
-            "Used by {} method{}: {}{}",
-            users.len(),
-            if users.len() == 1 { "" } else { "s" },
-            shown.join(", "),
-            if more > 0 {
-                format!(" and {more} more")
-            } else {
-                String::new()
-            }
-        ));
+        out.push(format!("**Used by** {}", method_list(&users)));
     }
     out.push(String::new());
     out.push("## Pattern notes".into());
@@ -867,7 +1215,7 @@ fn questions_md(data: &Data, fx: &Fixtures) -> String {
         }
     }
     out.push(String::new());
-    out.join("\n")
+    Ok(out.join("\n"))
 }
 
 fn items_md(data: &Data, fx: &Fixtures) -> String {
@@ -969,13 +1317,13 @@ fn scope_md(data: &Data) -> String {
 }
 
 /// Every catalog file name and its content.
-pub fn render_all(data: &Data, fixtures: &Path) -> BTreeMap<String, String> {
+pub fn render_all(data: &Data, fixtures: &Path) -> Result<BTreeMap<String, String>, CatalogError> {
     let fx = Fixtures::load(data, fixtures);
     let mut out = BTreeMap::new();
     out.insert("methods.md".to_string(), methods_md(data, &fx));
     out.insert("bench.md".to_string(), bench_md(data));
-    out.insert("questions.md".to_string(), questions_md(data, &fx));
+    out.insert("questions.md".to_string(), questions_md(data, &fx)?);
     out.insert("items.md".to_string(), items_md(data, &fx));
     out.insert("scope.md".to_string(), scope_md(data));
-    out
+    Ok(out)
 }

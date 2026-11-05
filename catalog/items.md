@@ -34,6 +34,41 @@ Item Level: 84
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
+## `cobalt-jewel-rare-open`
+
+```text
+Item Class: Jewels
+Rarity: Rare
+Cobalt Jewel
+--------
+Item Level: 1
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
+## `cogwork-ring-normal`
+
+```text
+Item Class: Rings
+Rarity: Normal
+Cogwork Ring
+--------
+Item Level: 84
+--------
+-1 Prefix Modifier allowed
++1 Suffix Modifier allowed
+Implicit Modifiers Cannot Be Changed
+25% increased Suffix Modifier magnitudes
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
 ## `crown-a`
 
 ```text
@@ -59,6 +94,34 @@ Shaper Item
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|—|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|—|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+
+## `crown-a-corrupted`
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
+15% increased Effect of Cold Ailments
+--------
+Shaper Item
+Corrupted
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|—|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-a-mana`
@@ -123,6 +186,43 @@ Shaper Item
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|desired-veiled, ok-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|2 / none|no|
+|`crown-shaper-elder`|1.000000|no|desired-veiled, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|1, 2 / none|no|
+
+## `crown-actual-corrupted`
+
+Note: the paste shows only the summed 17% Area of Effect; split chosen as 8 (support) + 9 (veiled)
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+[Intangibility|Intangibility]: 97%
+--------
+Sockets: B-B-B-B
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
++2 to Level of Socketed AoE Gems
+Socketed Gems are Supported by Level 16 Increased Area of Effect
+Socketed Gems are Supported by Level 18 Hypothermia
+Socketed Gems deal 30% more Elemental Damage
+Socketed Spells have +3% to Critical Strike Chance
+88% increased Armour and Energy Shield
+17% increased Area of Effect
+15% increased Effect of Cold Ailments
+--------
+Shaper Item
+Corrupted
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|desired-veiled, ok-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|2 / none|no|
 |`crown-shaper-elder`|1.000000|no|desired-veiled, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|1, 2 / none|no|
 
 ## `crown-c1`
@@ -202,7 +302,6 @@ Socketed Gems deal 30% more Elemental Damage
 Socketed Spells have +3% to Critical Strike Chance
 15% increased Effect of Cold Ailments
 +1 to maximum number of Raised Zombies (crafted)
-0 to maximum number of Spectres (crafted)
 +1 to maximum number of Skeletons (crafted)
 Veiled Prefix
 --------
@@ -267,6 +366,7 @@ Socketed Spells have +3% to Critical Strike Chance
 Suffixes Cannot Be Changed (crafted)
 --------
 Shaper Item
+Fractured Item
 ```
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
@@ -397,6 +497,90 @@ Elder Item
 |`crown-shaper`|1.000000|no|desired-veiled, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|1 / none|no|
 |`crown-shaper-elder`|1.000000|yes|desired-veiled, very-good-prefix, any-crafted-prefix|hypothermia, essence-elemental, good-spell-crit|none / none|yes|
 
+## `crown-uninfluenced-fracture`
+
+```text
+Item Class: Helmets
+Rarity: Rare
+Archdemon Crown
+--------
+Quality: +20% (augmented)
+--------
+Item Level: 87
+--------
+-2 to Level of Socketed Support Gems
++2 to Level of Socketed Skill Gems
+--------
++35 to Intelligence
++137 to maximum Life
+60% increased Armour (crafted)
+Veiled Prefix
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|good-prefix, any-crafted-prefix, any-other-prefix|any-other-suffix|0 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|any-other-suffix|0, 1 / 0, 1, 2|no|
+
+## `lapis-amulet-a`
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Lapis Amulet
+--------
+Item Level: 84
+--------
++(20-30) to Intelligence
+--------
++46 to Strength
++52 to maximum Mana
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+
+## `lapis-amulet-b`
+
+```text
+Item Class: Amulets
+Rarity: Rare
+Lapis Amulet
+--------
+Item Level: 84
+--------
++(20-30) to Intelligence
+--------
++35 to Intelligence
++137 to maximum Life
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|good-prefix|any-other-suffix|0, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+
+## `lapis-amulet-fertile`
+
+```text
+Item Class: Amulets
+Rarity: Normal
+Lapis Amulet
+--------
+Quality (Life and Mana Modifiers): +20% (augmented)
+--------
+Item Level: 84
+--------
++(20-30) to Intelligence
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
 ## `lapis-amulet-normal`
 
 ```text
@@ -467,6 +651,24 @@ Item Level: 84
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
+## `slink-boots-eldritch-tie`
+
+```text
+Item Class: Boots
+Rarity: Rare
+Slink Boots
+--------
+Item Level: 84
+--------
+8% increased Life Regeneration rate
+6% increased Movement Speed
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
 ## `slink-boots-normal`
 
 ```text
@@ -481,3 +683,21 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+
+## `tincture-magic`
+
+```text
+Item Class: Tinctures
+Rarity: Magic
+Prismatic Tincture
+--------
+Item Level: 84
+--------
+15% increased effect
+40% increased Duration of Elemental Ailments from Melee Weapon Attacks
+```
+
+|Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
+|---|---|---|---|---|---|---|
+|`crown-shaper`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|

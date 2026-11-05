@@ -1,0 +1,65 @@
+{
+  "base": "Archdemon Crown",
+  "itemLevel": 87,
+  "rarity": "rare",
+  "influences": [
+    "shaper"
+  ],
+  "quality": 20,
+  "implicits": [
+    {
+      "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+      "values": [
+        2,
+        -2
+      ]
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "JunMasterVeiledSkillAreaOfEffectPercentAndAreaOfEffectGemLevel",
+      "values": [
+        9,
+        2
+      ]
+    },
+    {
+      "id": "AreaOfEffectSupportedUber1_",
+      "values": [
+        8,
+        16
+      ]
+    },
+    {
+      "id": "LocalIncreasedArmourAndEnergyShield6",
+      "values": [
+        88
+      ]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "IncreasedChillEffectSupportedUber2",
+      "values": [
+        15,
+        18
+      ]
+    },
+    {
+      "id": "SocketedGemsDealMoreElementalDamageEssence1",
+      "values": [
+        30
+      ]
+    },
+    {
+      "id": "SocketedSpellCriticalStrikeChanceUber3",
+      "values": [
+        300
+      ]
+    }
+  ],
+  "sockets": "B-B-B-B",
+  "intangibility": 97,
+  "note": "the paste shows only the summed 17% Area of Effect; split chosen as 8 (support) + 9 (veiled)",
+  "corrupted": true
+}

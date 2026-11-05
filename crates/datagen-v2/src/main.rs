@@ -69,7 +69,7 @@ fn main() -> anyhow::Result<()> {
                 .with_context(|| format!("reading {}", bundle.display()))?;
             let data = poe1_v2::data::Data::from_json(&text)
                 .with_context(|| format!("loading {}", bundle.display()))?;
-            let files = poe1_v2::catalog::render_all(&data, &fixtures);
+            let files = poe1_v2::catalog::render_all(&data, &fixtures)?;
             std::fs::create_dir_all(&out).with_context(|| format!("creating {}", out.display()))?;
             // A file the catalog no longer produces is stale: remove it.
             for entry in std::fs::read_dir(&out)? {

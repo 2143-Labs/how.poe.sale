@@ -1,0 +1,12 @@
+{
+  "base": "Lapis Amulet",
+  "itemLevel": 84,
+  "rarity": "normal",
+  "quality": 20,
+  "catalyst": "Fertile Catalyst",
+  "implicits": [
+    {
+      "id": "IntelligenceImplicitAmulet1"
+    }
+  ]
+}

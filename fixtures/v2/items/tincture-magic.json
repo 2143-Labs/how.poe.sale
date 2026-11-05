@@ -1,0 +1,17 @@
+{
+  "base": "Prismatic Tincture",
+  "itemLevel": 84,
+  "rarity": "magic",
+  "prefixes": [
+    {
+      "id": "TinctureEffect2",
+      "values": [15]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "TinctureIncreasedAilmentDuration2",
+      "values": [40]
+    }
+  ]
+}

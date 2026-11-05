@@ -1,0 +1,22 @@
+{
+  "base": "Lapis Amulet",
+  "itemLevel": 84,
+  "rarity": "rare",
+  "implicits": [
+    {
+      "id": "IntelligenceImplicitAmulet1"
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "IncreasedMana8",
+      "values": [52]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "Strength8",
+      "values": [46]
+    }
+  ]
+}
