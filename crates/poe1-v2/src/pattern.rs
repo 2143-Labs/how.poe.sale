@@ -2,15 +2,21 @@
 //! ("Desired Veiled Prefix", "Good Prefix", "Any Crafted Prefix", "Any Other Affix"), each with a
 //! grade. Patterns are JSON data compiled by `Pattern::compile`; a new kind of class is one new
 //! `MatcherSpec` variant plus its `classify` arm. `evaluate` reads a concrete item as pattern
-//! states (with probabilities where values are unrolled) and `lift` maps method outcomes onto
-//! them.
+//! states (with probabilities where values are unrolled). A state carries what the catalog's
+//! methods read besides the classes: rarity, influences, corruption and mirroring, the locks and
+//! metamods, crafted count and limit, the veiled sides, and per affix its class, fractured and
+//! crafted flags and, in a catch-all class, its mod groups. `lift` maps a method's flat outcome
+//! onto a flat distribution of such states.
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::apply::{Leaf, Outcome};
 use crate::data::{Data, Influence, ModKind, Rarity, Side};
-use crate::item::{Affix, Item};
+use crate::item::{Affix, Item, MetaMod};
+use crate::method::PendingReason;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -84,15 +90,48 @@ pub enum MatcherSpec {
     },
 }
 
-/// A concrete item read against a pattern.
+/// One affix read against a pattern.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct AffixState {
+    /// The class index.
+    pub class: u16,
+    pub fractured: bool,
+    pub crafted: bool,
+    /// The mod's groups when a catch-all class (`{"any": true}` or `{"crafted": true}`) took the
+    /// affix: the class alone does not say which mod it is, and the groups decide what can still
+    /// be added. Empty for every other class, whose listed mods say it.
+    pub groups: Vec<u16>,
+}
+
+/// A concrete item read against a pattern: what a method's next step depends on, at the
+/// pattern's level of detail. Two items with equal states hold the same classes in the same
+/// slots with the same protections and room; they can still differ in what a class leaves open
+/// (the tier of a listed mod, values, item level, implicits), which the classes are written to
+/// make irrelevant.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct PatternState {
+    /// The item passes the pattern's filter: base, item level, rarity, influences, corruption
+    /// and every implicit matcher.
     pub item_ok: bool,
-    /// Class indices of the prefixes, sorted.
-    pub prefixes: Vec<u16>,
-    /// Class indices of the suffixes, sorted.
-    pub suffixes: Vec<u16>,
+    pub rarity: Rarity,
+    /// Bit `Influence::bit` per influence.
+    pub influences: u8,
+    pub corrupted: bool,
+    pub mirrored: bool,
+    /// Per side, whether Prefixes/Suffixes Cannot Be Changed locks it.
+    pub locks: [bool; 2],
+    /// The metamods on the item, in `MetaMod` order.
+    pub metamods: Vec<MetaMod>,
+    /// The crafted modifiers on the item, and how many it can hold.
+    pub crafted: [u8; 2],
+    /// The side of each veiled placeholder, prefixes first.
+    pub veiled: Vec<Side>,
+    /// The prefixes, sorted.
+    pub prefixes: Vec<AffixState>,
+    /// The suffixes, sorted.
+    pub suffixes: Vec<AffixState>,
     pub open: [u8; 2],
     pub matches: bool,
     /// Per side, slot indices no affix fills in the chosen assignment.
@@ -101,22 +140,28 @@ pub struct PatternState {
     pub unused: [u8; 2],
 }
 
-/// A method outcome read against a pattern.
+/// A method outcome read against a pattern: every distinct lifted leaf with its probability,
+/// most likely first; equal leaves merge.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Lifted {
+pub struct Lifted {
+    pub leaves: Vec<(f64, LiftedLeaf)>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum LiftedLeaf {
     State(PatternState),
-    /// One entry per item result, each with its own distribution (the items are alternatives of
-    /// a multi-item outcome such as Mirror, not further states of one item).
-    Many(Vec<Lifted>),
+    /// A multi-item result (a Mirror): each item's own state distribution, in the outcome's
+    /// order. The items exist together; they are not alternatives.
+    Many(Vec<Vec<(f64, PatternState)>>),
     Destroyed,
-    Chance(Vec<(f64, Lifted)>),
     /// Options in canonical order, so equal choices compare equal whatever order the method
     /// produced them in.
     Choice(Vec<Lifted>),
+    /// `known` is the state of a reforge's certain part; `None` when the outcome stopped at the
+    /// item before a step it does not run, which says nothing about the result.
     Pending {
-        reason: crate::method::PendingReason,
-        /// Every state the partial item can be in, with its probability.
-        known: Vec<(f64, PatternState)>,
+        reason: PendingReason,
+        known: Option<PatternState>,
     },
 }
 
@@ -180,6 +225,16 @@ pub struct Class {
     pub side: Side,
     pub grade: Grade,
     matchers: Vec<Matcher>,
+}
+
+impl Class {
+    /// Whether the class takes modifiers by kind (`{"any": true}` or `{"crafted": true}`)
+    /// rather than by id, so it does not say which mod an affix in it is.
+    pub fn catch_all(&self) -> bool {
+        self.matchers
+            .iter()
+            .any(|m| matches!(m, Matcher::Any(true) | Matcher::Crafted(_)))
+    }
 }
 
 /// A compiled pattern.
@@ -688,6 +743,9 @@ fn assign(slots: &[Vec<u16>], classes: &[u16], affixes: usize) -> (Vec<u8>, u8) 
     (missing, affixes.saturating_sub(used) as u8)
 }
 
+/// One affix with its side and the classes it can fall into.
+type AffixClasses<'a> = (Side, &'a Affix, Vec<(u16, f64)>);
+
 /// Every pattern state the item can be in (several when values are unrolled and a class or an
 /// implicit has a threshold), merged and sorted by probability descending, then state.
 pub fn evaluate(data: &Data, pattern: &Pattern, item: &Item) -> Vec<(f64, PatternState)> {
@@ -695,41 +753,77 @@ pub fn evaluate(data: &Data, pattern: &Pattern, item: &Item) -> Vec<(f64, Patter
     let counts = [item.prefixes.len(), item.suffixes.len()];
     // Per affix (prefixes then suffixes) its class distribution; an affix no class takes (only
     // possible without a catch-all) contributes no state and counts as unused.
-    let per_affix: Vec<(Side, Vec<(u16, f64)>)> = Side::BOTH
+    let per_affix: Vec<AffixClasses> = Side::BOTH
         .into_iter()
         .flat_map(|side| {
             item.affixes(side)
                 .iter()
-                .map(|a| (side, classify(data, pattern, item, side, a)))
-                .filter(|(_, d)| !d.is_empty())
+                .map(|a| (side, a, classify(data, pattern, item, side, a)))
+                .filter(|(_, _, d)| !d.is_empty())
                 .collect::<Vec<_>>()
+        })
+        .collect();
+    let metamods: Vec<MetaMod> = MetaMod::ALL
+        .into_iter()
+        .filter(|&m| item.has_meta(data, m))
+        .collect();
+    let veiled: Vec<Side> = Side::BOTH
+        .into_iter()
+        .flat_map(|side| {
+            item.affixes(side)
+                .iter()
+                .filter(|a| data.mod_at(a.roll.m).kind == ModKind::Veiled)
+                .map(move |_| side)
         })
         .collect();
     let mut merged: BTreeMap<PatternState, f64> = BTreeMap::new();
     let mut choice = vec![0usize; per_affix.len()];
     loop {
         let mut p = 1.0;
-        let mut sides: [Vec<u16>; 2] = [Vec::new(), Vec::new()];
-        for (i, (side, dist)) in per_affix.iter().enumerate() {
+        let mut sides: [Vec<AffixState>; 2] = [Vec::new(), Vec::new()];
+        for (i, (side, affix, dist)) in per_affix.iter().enumerate() {
             let (class, q) = dist[choice[i]];
             p *= q;
-            sides[side.index()].push(class);
+            let md = data.mod_at(affix.roll.m);
+            sides[side.index()].push(AffixState {
+                class,
+                fractured: affix.fractured,
+                crafted: md.kind == ModKind::Crafted,
+                groups: if pattern.classes[class as usize].catch_all() {
+                    md.groups.clone()
+                } else {
+                    Vec::new()
+                },
+            });
         }
-        let (missing_p, unused_p) = assign(&pattern.slots[0], &sides[0], counts[0]);
-        let (missing_s, unused_s) = assign(&pattern.slots[1], &sides[1], counts[1]);
-        let state = |item_ok: bool| {
-            let mut s = PatternState {
-                item_ok,
-                prefixes: sides[0].clone(),
-                suffixes: sides[1].clone(),
-                open: [item.open(data, Side::Prefix), item.open(data, Side::Suffix)],
-                matches: item_ok && missing_p.is_empty() && missing_s.is_empty(),
-                missing: [missing_p.clone(), missing_s.clone()],
-                unused: [unused_p, unused_s],
-            };
-            s.prefixes.sort_unstable();
-            s.suffixes.sort_unstable();
-            s
+        for s in &mut sides {
+            s.sort_unstable();
+        }
+        let classes = |s: &[AffixState]| s.iter().map(|a| a.class).collect::<Vec<u16>>();
+        let (missing_p, unused_p) = assign(&pattern.slots[0], &classes(&sides[0]), counts[0]);
+        let (missing_s, unused_s) = assign(&pattern.slots[1], &classes(&sides[1]), counts[1]);
+        let state = |item_ok: bool| PatternState {
+            item_ok,
+            rarity: item.rarity,
+            influences: item.influences,
+            corrupted: item.corrupted,
+            mirrored: item.mirrored,
+            locks: [
+                item.locked(data, Side::Prefix),
+                item.locked(data, Side::Suffix),
+            ],
+            metamods: metamods.clone(),
+            crafted: [
+                item.crafted_count(data) as u8,
+                item.crafted_limit(data) as u8,
+            ],
+            veiled: veiled.clone(),
+            prefixes: sides[0].clone(),
+            suffixes: sides[1].clone(),
+            open: [item.open(data, Side::Prefix), item.open(data, Side::Suffix)],
+            matches: item_ok && missing_p.is_empty() && missing_s.is_empty(),
+            missing: [missing_p.clone(), missing_s.clone()],
+            unused: [unused_p, unused_s],
         };
         if ok > 0.0 {
             *merged.entry(state(true)).or_default() += p * ok;
@@ -747,7 +841,7 @@ pub fn evaluate(data: &Data, pattern: &Pattern, item: &Item) -> Vec<(f64, Patter
                 return out;
             }
             choice[i] += 1;
-            if choice[i] < per_affix[i].1.len() {
+            if choice[i] < per_affix[i].2.len() {
                 break;
             }
             choice[i] = 0;
@@ -765,69 +859,127 @@ pub fn matches_probability(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
         .sum()
 }
 
-/// The full distribution of an item, with a bare state when it is certain.
-fn lift_item(data: &Data, pattern: &Pattern, item: &Item) -> Lifted {
-    let mut states = evaluate(data, pattern, item);
-    if states.len() == 1 && states[0].0 == 1.0 {
-        Lifted::State(states.remove(0).1)
-    } else {
-        Lifted::Chance(
-            states
-                .into_iter()
-                .map(|(p, s)| (p, Lifted::State(s)))
-                .collect(),
-        )
+impl LiftedLeaf {
+    fn rank(&self) -> u8 {
+        match self {
+            LiftedLeaf::State(_) => 0,
+            LiftedLeaf::Many(_) => 1,
+            LiftedLeaf::Destroyed => 2,
+            LiftedLeaf::Choice(_) => 3,
+            LiftedLeaf::Pending { .. } => 4,
+        }
+    }
+
+    /// A total order: variant, then contents.
+    pub fn order(&self, other: &LiftedLeaf) -> Ordering {
+        let states = |a: &[(f64, PatternState)], b: &[(f64, PatternState)]| {
+            a.iter()
+                .zip(b)
+                .map(|((p, x), (q, y))| q.total_cmp(p).then_with(|| x.cmp(y)))
+                .find(|o| o.is_ne())
+                .unwrap_or_else(|| a.len().cmp(&b.len()))
+        };
+        match (self, other) {
+            (LiftedLeaf::State(a), LiftedLeaf::State(b)) => a.cmp(b),
+            (LiftedLeaf::Many(a), LiftedLeaf::Many(b)) => a
+                .iter()
+                .zip(b)
+                .map(|(x, y)| states(x, y))
+                .find(|o| o.is_ne())
+                .unwrap_or_else(|| a.len().cmp(&b.len())),
+            (LiftedLeaf::Choice(a), LiftedLeaf::Choice(b)) => a
+                .iter()
+                .zip(b)
+                .map(|(x, y)| x.order(y))
+                .find(|o| o.is_ne())
+                .unwrap_or_else(|| a.len().cmp(&b.len())),
+            (
+                LiftedLeaf::Pending {
+                    reason: ra,
+                    known: ka,
+                },
+                LiftedLeaf::Pending {
+                    reason: rb,
+                    known: kb,
+                },
+            ) => ra.cmp(rb).then_with(|| ka.cmp(kb)),
+            _ => self.rank().cmp(&other.rank()),
+        }
     }
 }
 
-/// Sorts every Choice's options canonically, so two choices with the same options in different
-/// orders compare equal.
-fn canonicalise(lifted: Lifted) -> Lifted {
-    match lifted {
-        Lifted::Choice(options) => {
-            let mut options: Vec<Lifted> = options.into_iter().map(canonicalise).collect();
-            options.sort_by_key(|l| format!("{l:?}"));
-            Lifted::Choice(options)
-        }
-        Lifted::Chance(children) => Lifted::Chance(
-            children
-                .into_iter()
-                .map(|(p, l)| (p, canonicalise(l)))
-                .collect(),
-        ),
-        Lifted::Many(items) => Lifted::Many(items.into_iter().map(canonicalise).collect()),
-        other => other,
+impl Lifted {
+    /// A total order over lifted outcomes: their leaves in turn (chance, then leaf).
+    pub fn order(&self, other: &Lifted) -> Ordering {
+        self.leaves
+            .iter()
+            .zip(&other.leaves)
+            .map(|((p, a), (q, b))| q.total_cmp(p).then_with(|| a.order(b)))
+            .find(|o| o.is_ne())
+            .unwrap_or_else(|| self.leaves.len().cmp(&other.leaves.len()))
+    }
+
+    /// The leaves' total chance (1 for the lift of any `apply` outcome).
+    pub fn mass(&self) -> f64 {
+        self.leaves.iter().map(|(p, _)| p).sum()
     }
 }
 
-/// Reads a method outcome as pattern states: an item becomes its full distribution (or a bare
-/// state when certain), several items one distribution per item, and a Pending outcome the full
-/// distribution of what the partial item already holds. Equal Chance children merge.
-pub fn lift(data: &Data, pattern: &Pattern, outcome: &crate::apply::Outcome) -> Lifted {
-    use crate::apply::Outcome;
-    canonicalise(match outcome {
-        Outcome::Item(item) => lift_item(data, pattern, item),
-        Outcome::Items(items) => {
-            Lifted::Many(items.iter().map(|i| lift_item(data, pattern, i)).collect())
-        }
-        Outcome::Destroyed => Lifted::Destroyed,
-        Outcome::Choice(options) => {
-            Lifted::Choice(options.iter().map(|o| lift(data, pattern, o)).collect())
-        }
-        Outcome::Pending { item, reason, .. } => Lifted::Pending {
-            reason: reason.clone(),
-            known: evaluate(data, pattern, item),
-        },
-        Outcome::Chance(children) => {
-            let mut merged: Vec<(f64, Lifted)> = Vec::with_capacity(children.len());
-            for (p, o) in children {
-                let l = lift(data, pattern, o);
-                match merged.iter_mut().find(|(_, x)| *x == l) {
-                    Some((q, _)) => *q += p,
-                    None => merged.push((*p, l)),
+/// Reads a method outcome as pattern states, flat: an item leaf becomes one leaf per state it
+/// can be in (its chance times the state's); a Mirror's items one `Many` with each item's
+/// distribution; a choice its options lifted, in canonical order; a reforge's certain part one
+/// `Pending` leaf per state it can be in; any other Pending one leaf with no known state. Equal
+/// leaves merge.
+pub fn lift(data: &Data, pattern: &Pattern, outcome: &Outcome) -> Lifted {
+    let mut states: BTreeMap<PatternState, f64> = BTreeMap::new();
+    let mut other: Vec<(f64, LiftedLeaf)> = Vec::new();
+    let mut push = |p: f64, leaf: LiftedLeaf| match other.iter_mut().find(|(_, x)| *x == leaf) {
+        Some((q, _)) => *q += p,
+        None => other.push((p, leaf)),
+    };
+    for (p, leaf) in &outcome.leaves {
+        match leaf {
+            Leaf::Item(item) => {
+                for (q, s) in evaluate(data, pattern, item) {
+                    *states.entry(s).or_insert(0.0) += p * q;
                 }
             }
-            Lifted::Chance(merged)
+            Leaf::Items(items) => push(
+                *p,
+                LiftedLeaf::Many(items.iter().map(|i| evaluate(data, pattern, i)).collect()),
+            ),
+            Leaf::Destroyed => push(*p, LiftedLeaf::Destroyed),
+            Leaf::Choice(options) => {
+                let mut lifted: Vec<Lifted> =
+                    options.iter().map(|o| lift(data, pattern, o)).collect();
+                lifted.sort_by(|a, b| a.order(b));
+                push(*p, LiftedLeaf::Choice(lifted));
+            }
+            Leaf::Pending(pending) if pending.certain => {
+                for (q, s) in evaluate(data, pattern, &pending.item) {
+                    push(
+                        p * q,
+                        LiftedLeaf::Pending {
+                            reason: pending.reason.clone(),
+                            known: Some(s),
+                        },
+                    );
+                }
+            }
+            Leaf::Pending(pending) => push(
+                *p,
+                LiftedLeaf::Pending {
+                    reason: pending.reason.clone(),
+                    known: None,
+                },
+            ),
         }
-    })
+    }
+    let mut leaves: Vec<(f64, LiftedLeaf)> = states
+        .into_iter()
+        .map(|(s, p)| (p, LiftedLeaf::State(s)))
+        .chain(other)
+        .collect();
+    leaves.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.order(&b.1)));
+    Lifted { leaves }
 }

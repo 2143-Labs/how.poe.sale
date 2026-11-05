@@ -102,6 +102,12 @@ fn rejects() {
     let mut bundle = d.bundle.clone();
     let dropped = bundle.classes.pop().unwrap();
     assert_eq!(dropped.id, "Tincture");
+    // Methods naming the dropped class would no longer validate; drop them with it.
+    bundle.methods.retain(|m| {
+        !m.requires.iter().any(|r| {
+            matches!(r, poe1_v2::method::Require::Class { any_of } if any_of.contains(&dropped.id))
+        })
+    });
     let narrowed = Data::from_bundle(bundle).unwrap();
     let mut s = spec("quicksilver-normal");
     s.base = "Metadata/Items/Tinctures/TinctureStun".into();
@@ -151,8 +157,13 @@ fn rejects() {
     s.prefixes.push(affix("IncreasedLife8", None));
     check(s, "two modifiers share the group IncreasedLife");
 
+    // An item keeps the crafted modifiers it had when the multi-craft metamod goes (owner, Q5),
+    // so two crafted modifiers without it are legal; more than the metamod's three are not.
     let mut s = spec("crown-l1");
     s.prefixes.push(affix("EinharMasterIncreasedMana2", None));
+    Item::from_spec(d, &s).expect("two crafted modifiers after the metamod went");
+    s.prefixes[0] = affix("EinharMasterIncreasedLife4", None);
+    s.suffixes[0] = affix("StrIntMasterItemGenerationCanHaveMultipleCraftedMods", None);
     check(s, "more crafted modifiers than the item allows");
 
     let mut s = spec("crown-a");

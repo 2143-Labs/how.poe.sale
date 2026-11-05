@@ -1,28 +1,36 @@
 //! `apply(item(s), method) → outcome`: checks a method's requirements against real items (with
-//! the failing reason) and runs its ops. Single-draw randomness becomes exact `Chance` tables
-//! (weighted by `pool`), unveiling becomes `Chance` over offer sets of `Choice`s, a reforge's
-//! guaranteed part is applied exactly and the rest stays `Pending`, as do socket outcomes and
-//! unconfirmed rules.
+//! the failing reason) and runs its ops over a distribution of item states, merging equal states
+//! after every op. The outcome is one flat distribution of distinct leaves: an item, the two items
+//! of a Mirror, a destroyed item, a player's choice (unveiling; each option is itself an outcome),
+//! or `Pending`. Single draws are exact, weighted by `pool`. A reforge applies its certain part
+//! (rarity, the clear, the guaranteed modifier) and stops at its `Fill`; socket outcomes and
+//! rules not modelled yet stop at the item before their step. Whether an affix can change is
+//! decided in one place (`Guard`), from the method's `Protection`. An op with nothing to do
+//! outside a `Chance` branch refuses the method (owner, Q1); inside a branch it leaves that
+//! branch's item unchanged. `check` runs the same program as `apply`, so the two agree.
 
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 
-use crate::data::{Category, Cost, Data, Eldritch, Influence, ModKind, Rarity, Side};
+use crate::data::{Category, Cost, Data, Eldritch, ModKind, Rarity, Side};
 use crate::item::{Affix, Item, MetaMod, Roll};
 use crate::method::{
-    Element, EnchantPool, Family, Guarantee, Method, Op, PairRequire, PendingReason, Pool,
-    ReforgeSpec, RemoveFilter, Require, SideReq, ValueScope, Weighting,
+    Element, EnchantPool, Family, Method, Op, PairRequire, PendingReason, Policy, Pool,
+    RemoveFilter, Require, SideReq, ValueScope, Weighting,
 };
 use crate::pool;
 
-/// More leaves than this and `apply` reports `Pending { reason: TooLarge }`.
+/// More states or leaves than this and `apply` reports `Pending { reason: TooLarge }`.
 pub const MAX_BRANCHES: usize = 100_000;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+/// The veiled placeholder modifiers, prefix then suffix.
+pub const VEILED: [&str; 2] = ["VeiledPrefix", "VeiledSuffix"];
+
+/// What a method needs besides its items.
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Params {
-    /// Fossil indices (`Bundle::fossils`) for the fossil family.
+    /// Fossil indices (`Bundle::fossils`) for a fossil method: one to four, each once.
     pub fossils: Vec<u16>,
-    /// The essence a Reforge with guarantee Essence places; defaults to the method's own.
-    pub essence: Option<String>,
 }
 
 /// Why a method cannot be used.
@@ -37,142 +45,151 @@ impl std::fmt::Display for Unmet {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Outcome {
-    Item(Item),
-    Items(Vec<Item>),
-    Destroyed,
-    Chance(Vec<(f64, Outcome)>),
-    Choice(Vec<Outcome>),
-    /// Not computed in this pass: `item` is the partial result, `ops` what is left to run.
-    Pending {
-        item: Item,
-        ops: Vec<Op>,
-        reason: PendingReason,
-    },
+fn unmet<T>(reason: impl Into<String>) -> Result<T, Unmet> {
+    Err(Unmet {
+        reason: reason.into(),
+    })
 }
 
-impl Outcome {
+/// Every distinct result of a method with its probability, most likely first; the masses sum to
+/// 1. One item reached through different draw orders is one leaf.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Outcome {
+    pub leaves: Vec<(f64, Leaf)>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Leaf {
+    Item(Item),
+    /// Every item a multi-item result leaves (a Mirror: the item and its mirrored copy).
+    Items(Vec<Item>),
+    Destroyed,
+    /// The player picks one option; each option is the outcome of the ops after the choice.
+    Choice(Vec<Outcome>),
+    Pending(Pending),
+}
+
+/// A result the model stops short of.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Pending {
+    /// Every input the method was given, in order.
+    pub inputs: Vec<Item>,
+    pub params: Params,
+    /// Where the model stopped.
+    pub item: Item,
+    /// `true`: every result holds `item` as it is plus what the rest adds (a reforge's `Fill`
+    /// only adds). `false`: `item` is the item before a step the model does not run, and says
+    /// nothing about the result.
+    pub certain: bool,
+    /// The ops still to run, starting with the one the model stopped at.
+    pub ops: Vec<Op>,
+    pub reason: PendingReason,
+}
+
+impl Pending {
+    fn order(&self, other: &Pending) -> Ordering {
+        let ops = |p: &Pending| serde_json::to_string(&p.ops).unwrap_or_default();
+        self.item
+            .cmp(&other.item)
+            .then_with(|| self.certain.cmp(&other.certain))
+            .then_with(|| self.reason.cmp(&other.reason))
+            .then_with(|| ops(self).cmp(&ops(other)))
+            .then_with(|| self.inputs.cmp(&other.inputs))
+            .then_with(|| self.params.cmp(&other.params))
+    }
+}
+
+impl Leaf {
     fn rank(&self) -> u8 {
         match self {
-            Outcome::Item(_) => 0,
-            Outcome::Items(_) => 1,
-            Outcome::Destroyed => 2,
-            Outcome::Chance(_) => 3,
-            Outcome::Choice(_) => 4,
-            Outcome::Pending { .. } => 5,
+            Leaf::Item(_) => 0,
+            Leaf::Items(_) => 1,
+            Leaf::Destroyed => 2,
+            Leaf::Choice(_) => 3,
+            Leaf::Pending(_) => 4,
         }
     }
 
     /// A total order: variant, then contents.
-    pub fn order(&self, other: &Outcome) -> Ordering {
+    pub fn order(&self, other: &Leaf) -> Ordering {
         match (self, other) {
-            (Outcome::Item(a), Outcome::Item(b)) => a.cmp(b),
-            (Outcome::Items(a), Outcome::Items(b)) => a.cmp(b),
-            (Outcome::Chance(a), Outcome::Chance(b)) => {
-                for ((pa, oa), (pb, ob)) in a.iter().zip(b) {
-                    let o = pb.total_cmp(pa).then_with(|| oa.order(ob));
-                    if o != Ordering::Equal {
-                        return o;
-                    }
-                }
-                a.len().cmp(&b.len())
-            }
-            (Outcome::Choice(a), Outcome::Choice(b)) => {
-                for (oa, ob) in a.iter().zip(b) {
-                    let o = oa.order(ob);
-                    if o != Ordering::Equal {
-                        return o;
-                    }
-                }
-                a.len().cmp(&b.len())
-            }
-            (
-                Outcome::Pending {
-                    item: a,
-                    reason: ra,
-                    ops: oa,
-                },
-                Outcome::Pending {
-                    item: b,
-                    reason: rb,
-                    ops: ob,
-                },
-            ) => a
-                .cmp(b)
-                .then_with(|| ra.cmp(rb))
-                .then_with(|| oa.len().cmp(&ob.len())),
+            (Leaf::Item(a), Leaf::Item(b)) => a.cmp(b),
+            (Leaf::Items(a), Leaf::Items(b)) => a.cmp(b),
+            (Leaf::Choice(a), Leaf::Choice(b)) => a
+                .iter()
+                .zip(b)
+                .map(|(x, y)| x.order(y))
+                .find(|o| o.is_ne())
+                .unwrap_or_else(|| a.len().cmp(&b.len())),
+            (Leaf::Pending(a), Leaf::Pending(b)) => a.order(b),
             _ => self.rank().cmp(&other.rank()),
         }
     }
 
-    /// Every item the outcome can end in (Pending partial items included).
+    /// Every item the leaf holds: its item, a Mirror's items, a Pending's item, and every item
+    /// of every choice option.
     pub fn items(&self) -> Vec<&Item> {
-        let mut out = Vec::new();
-        fn walk<'a>(o: &'a Outcome, out: &mut Vec<&'a Item>) {
-            match o {
-                Outcome::Item(i) | Outcome::Pending { item: i, .. } => out.push(i),
-                Outcome::Items(v) => out.extend(v),
-                Outcome::Destroyed => {}
-                Outcome::Chance(c) => c.iter().for_each(|(_, o)| walk(o, out)),
-                Outcome::Choice(c) => c.iter().for_each(|o| walk(o, out)),
-            }
-        }
-        walk(self, &mut out);
-        out
-    }
-
-    fn items_mut(&mut self, f: &mut dyn FnMut(&mut Item)) {
         match self {
-            Outcome::Item(i) | Outcome::Pending { item: i, .. } => f(i),
-            Outcome::Items(v) => v.iter_mut().for_each(f),
-            Outcome::Destroyed => {}
-            Outcome::Chance(c) => c.iter_mut().for_each(|(_, o)| o.items_mut(f)),
-            Outcome::Choice(c) => c.iter_mut().for_each(|o| o.items_mut(f)),
-        }
-    }
-
-    /// Merges equal Chance children (summing p), sorts them by p descending then outcome order,
-    /// and replaces a Chance left with one child by that child.
-    fn normalise(&mut self) {
-        match self {
-            Outcome::Chance(children) => {
-                for (_, o) in children.iter_mut() {
-                    o.normalise();
-                }
-                children.sort_by(|a, b| a.1.order(&b.1));
-                let mut merged: Vec<(f64, Outcome)> = Vec::with_capacity(children.len());
-                for (p, o) in children.drain(..) {
-                    match merged.last_mut() {
-                        Some((q, last)) if *last == o => *q += p,
-                        _ => merged.push((p, o)),
-                    }
-                }
-                merged.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.order(&b.1)));
-                if merged.len() == 1 {
-                    *self = merged.pop().map(|(_, o)| o).unwrap_or(Outcome::Destroyed);
-                } else {
-                    *children = merged;
-                }
-            }
-            Outcome::Choice(options) => options.iter_mut().for_each(Outcome::normalise),
-            _ => {}
-        }
-    }
-
-    /// The Chance masses at this level (1 for a non-Chance outcome).
-    pub fn mass(&self) -> f64 {
-        match self {
-            Outcome::Chance(c) => c.iter().map(|(p, _)| p).sum(),
-            _ => 1.0,
+            Leaf::Item(i) => vec![i],
+            Leaf::Items(v) => v.iter().collect(),
+            Leaf::Destroyed => Vec::new(),
+            Leaf::Choice(options) => options.iter().flat_map(Outcome::items).collect(),
+            Leaf::Pending(p) => vec![&p.item],
         }
     }
 }
 
-fn unmet(reason: impl Into<String>) -> Result<(), Unmet> {
-    Err(Unmet {
-        reason: reason.into(),
-    })
+impl Outcome {
+    /// Merges equal leaves (summing their chances) and sorts them by chance descending, then
+    /// leaf order.
+    fn from_leaves(raw: Vec<(f64, Leaf)>) -> Outcome {
+        let mut items: BTreeMap<Item, f64> = BTreeMap::new();
+        let mut other: Vec<(f64, Leaf)> = Vec::new();
+        for (p, leaf) in raw {
+            match leaf {
+                Leaf::Item(i) => *items.entry(i).or_insert(0.0) += p,
+                l => match other.iter_mut().find(|(_, x)| *x == l) {
+                    Some((q, _)) => *q += p,
+                    None => other.push((p, l)),
+                },
+            }
+        }
+        let mut leaves: Vec<(f64, Leaf)> = items
+            .into_iter()
+            .map(|(i, p)| (p, Leaf::Item(i)))
+            .chain(other)
+            .collect();
+        leaves.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.order(&b.1)));
+        Outcome { leaves }
+    }
+
+    /// The leaves' total chance (1 for every outcome `apply` returns).
+    pub fn mass(&self) -> f64 {
+        self.leaves.iter().map(|(p, _)| p).sum()
+    }
+
+    /// Every item any leaf holds.
+    pub fn items(&self) -> Vec<&Item> {
+        self.leaves.iter().flat_map(|(_, l)| l.items()).collect()
+    }
+
+    /// The item, when the outcome is one certain item.
+    pub fn item(&self) -> Option<&Item> {
+        match self.leaves.as_slice() {
+            [(_, Leaf::Item(i))] => Some(i),
+            _ => None,
+        }
+    }
+
+    /// A total order over outcomes: their leaves in turn (chance, then leaf).
+    pub fn order(&self, other: &Outcome) -> Ordering {
+        self.leaves
+            .iter()
+            .zip(&other.leaves)
+            .map(|((p, a), (q, b))| q.total_cmp(p).then_with(|| a.order(b)))
+            .find(|o| o.is_ne())
+            .unwrap_or_else(|| self.leaves.len().cmp(&other.leaves.len()))
+    }
 }
 
 fn category_name(c: Category) -> &'static str {
@@ -214,21 +231,36 @@ fn open_text(side: Option<Side>) -> &'static str {
     }
 }
 
-/// The essence a method's Essence guarantee places.
-fn method_essence<'a>(m: &'a Method, params: &'a Params) -> Option<&'a str> {
-    params.essence.as_deref().or_else(|| {
-        m.requires.iter().find_map(|r| match r {
-            Require::EssenceFits { essence } => Some(essence.as_str()),
-            _ => None,
+/// The text of the first explicit carrying the metamod, for refusals that name it.
+fn metamod_text(data: &Data, item: &Item, meta: MetaMod) -> Option<String> {
+    let g = data.group_by_name(meta.group())?;
+    item.explicits()
+        .map(|a| data.mod_at(a.roll.m))
+        .find(|m| m.groups.contains(&g))
+        .map(|m| {
+            m.text
+                .lines()
+                .next()
+                .filter(|t| !t.is_empty())
+                .unwrap_or(meta.group())
+                .to_string()
         })
-    })
 }
 
+/// A mod's first group, by name, for refusals.
+fn group_conflict(data: &Data, item: &Item, m: u32) -> Option<String> {
+    let have = item.explicit_groups(data);
+    data.mod_at(m)
+        .groups
+        .iter()
+        .find(|g| have.contains(g))
+        .map(|&g| format!("the item already has a {} modifier", data.group(g)))
+}
+
+/// The essence's modifier for the item's class.
 fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
     let class = data.base_at(item.base).class;
-    data.essences
-        .iter()
-        .find(|e| e.name == essence)?
+    data.essences[data.essence_by_name(essence)? as usize]
         .mods
         .iter()
         .find(|(c, _)| *c == class)
@@ -257,10 +289,8 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
                 let names: Vec<&str> = any_of
                     .iter()
                     .map(|id| {
-                        data.classes
-                            .iter()
-                            .find(|c| &c.id == id)
-                            .map_or(id.as_str(), |c| c.name.as_str())
+                        data.class_by_id(id)
+                            .map_or(id.as_str(), |c| data.classes[c as usize].name.as_str())
                     })
                     .collect();
                 return unmet(format!("only works on: {}", names.join(", ")));
@@ -333,14 +363,11 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
             return unmet("the item already has as many crafted modifiers as it can hold");
         }
         Require::GroupFree { r#mod } => {
-            if let Some(m) = data.mod_by_id(r#mod) {
-                let have = item.explicit_groups(data);
-                if let Some(g) = data.mod_at(m).groups.iter().find(|g| have.contains(g)) {
-                    return unmet(format!(
-                        "the item already has a {} modifier",
-                        data.group(*g)
-                    ));
-                }
+            if let Some(reason) = data
+                .mod_by_id(r#mod)
+                .and_then(|m| group_conflict(data, item, m))
+            {
+                return unmet(reason);
             }
         }
         Require::HasVeiled if item.veiled(data).is_none() => {
@@ -353,9 +380,11 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
             return unmet(format!("quality is already {max}%"));
         }
         Require::CatalystRoom { catalyst } => {
-            let c = data.catalyst_by_name(catalyst);
-            if c.is_some() && item.catalyst == c && item.quality >= 20 {
-                let label = &data.catalysts[c.unwrap_or_default() as usize].label;
+            if let Some(c) = data.catalyst_by_name(catalyst)
+                && item.catalyst == Some(c)
+                && item.quality >= 20
+            {
+                let label = &data.catalysts[c as usize].label;
                 return unmet(format!("the item already has 20% {label} quality"));
             }
         }
@@ -392,15 +421,8 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
                 return unmet(format!("needs a {} modifier", any_of.join(" or ")));
             }
         }
-        Require::ItemLevelAtMost { n } if item.item_level > *n => {
-            return unmet(format!("needs item level {n} or lower"));
-        }
-        Require::EssenceFits { essence } => {
-            // The essence a Reforge places (`Params::essence` overrides the method's own).
-            let essence = params.essence.as_deref().unwrap_or(essence);
-            if essence_mod(data, item, essence).is_none() {
-                return unmet(format!("{essence} has no modifier for {}", class.id));
-            }
+        Require::EssenceFits { essence } if essence_mod(data, item, essence).is_none() => {
+            return unmet(format!("{essence} has no modifier for {}", class.id));
         }
         Require::Fossils { min, max } => {
             let n = params.fossils.len();
@@ -416,8 +438,35 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
     Ok(())
 }
 
-/// Whether the method can be used on these inputs; the first failing requirement's reason if not.
-pub fn check(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<(), Unmet> {
+/// Fossil indices are known, distinct, and only given to a method that takes fossils.
+fn check_params(data: &Data, m: &Method, params: &Params) -> Result<(), Unmet> {
+    let takes = m
+        .requires
+        .iter()
+        .any(|r| matches!(r, Require::Fossils { .. }));
+    if !takes && !params.fossils.is_empty() {
+        return unmet("this method takes no fossils");
+    }
+    for (i, &f) in params.fossils.iter().enumerate() {
+        let Some(fossil) = data.fossils.get(f as usize) else {
+            return unmet(format!("unknown fossil {f}"));
+        };
+        if params.fossils[..i].contains(&f) {
+            return unmet(format!("{} is given twice", fossil.name));
+        }
+    }
+    Ok(())
+}
+
+/// Everything `check` decides before the ops run: the method is valid, the item count, every
+/// requirement on every input, the pair rules, the params, and the metamods the method's
+/// protection forbids.
+fn prepare(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<(), Unmet> {
+    // A bundle method was validated when the bundle loaded; any other is validated here.
+    if !data.methods.as_ptr_range().contains(&std::ptr::from_ref(m)) {
+        m.validate(data)
+            .or_else(|problem| unmet(format!("method {} is invalid: {problem}", m.id)))?;
+    }
     if inputs.len() != m.inputs as usize {
         return unmet(format!("needs {} items", m.inputs));
     }
@@ -445,158 +494,220 @@ pub fn check(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
             }
         }
     }
+    check_params(data, m, params)?;
+    if let Some(p) = m.protect {
+        let forbidden = [
+            (p.locks, [MetaMod::LockPrefixes, MetaMod::LockSuffixes]),
+            (p.cannot_roll, [MetaMod::NoAttack, MetaMod::NoCaster]),
+        ];
+        for item in inputs {
+            for (policy, metas) in forbidden {
+                if policy != Policy::Forbid {
+                    continue;
+                }
+                if let Some(text) = metas.iter().find_map(|&mm| metamod_text(data, item, mm)) {
+                    return unmet(format!("cannot be used on an item with \"{text}\""));
+                }
+            }
+        }
+    }
     Ok(())
 }
 
-struct Ctx<'a> {
-    data: &'a Data,
-    method: &'a Method,
-    params: &'a Params,
-    last_added: Option<(Side, u32)>,
-    leaves: usize,
-    /// Set when an op finds the method cannot do its job on this item (an empty tag pool, no
-    /// resistance to change); `apply` then reports it as `Unmet`.
-    unmet: Option<String>,
+/// Whether the method can be used on these inputs; the first failing requirement's reason if
+/// not. It runs the same program `apply` does, so it is `Ok` exactly when `apply` is.
+pub fn check(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<(), Unmet> {
+    apply(data, m, inputs, params).map(|_| ())
 }
 
-impl Ctx<'_> {
-    fn too_large(&self) -> bool {
-        self.leaves > MAX_BRANCHES
+/// Applies a method: checks it, then runs its ops on (a clone of) the first input. `apply`
+/// returns `Err` exactly when `check` does.
+pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<Outcome, Unmet> {
+    prepare(data, m, inputs, params)?;
+    let mut run = Run {
+        data,
+        method: m,
+        inputs,
+        params,
+        size: 0,
+        in_choice: 0,
+    };
+    let start = State {
+        item: inputs[0].clone(),
+        last_added: None,
+    };
+    let root = Prog {
+        ops: &m.ops,
+        conditional: false,
+        then: None,
+    };
+    match run.exec(vec![(1.0, start)], root) {
+        Ok(leaves) => Ok(Outcome::from_leaves(leaves)),
+        Err(Stop::Unmet(reason)) => Err(Unmet { reason }),
+        Err(Stop::TooLarge) => Ok(Outcome {
+            leaves: vec![(
+                1.0,
+                Leaf::Pending(Pending {
+                    inputs: inputs.to_vec(),
+                    params: params.clone(),
+                    item: inputs[0].clone(),
+                    certain: false,
+                    ops: m.ops.clone(),
+                    reason: PendingReason::TooLarge,
+                }),
+            )],
+        }),
     }
 }
 
-/// One random-op branch: its chance, the item, and the mod it added (for `keepLastAdded`).
+/// What one use costs: the method's costs resolved to currency ids (or `beast:` keys); for the
+/// fossil family, the resonator for the fossil count plus each fossil.
+pub fn cost(data: &Data, m: &Method, params: &Params) -> Result<Vec<Cost>, Unmet> {
+    check_params(data, m, params)?;
+    if m.family == Family::Fossil {
+        let n = params.fossils.len();
+        let Some(resonator) = n.checked_sub(1).and_then(|i| m.resonators.get(i)) else {
+            return unmet(format!("needs 1 to {} fossils", m.resonators.len()));
+        };
+        let mut out = vec![Cost {
+            key: resonator.clone(),
+            amount: 1.0,
+        }];
+        out.extend(params.fossils.iter().map(|&f| Cost {
+            key: data.fossils[f as usize].currency.clone(),
+            amount: 1.0,
+        }));
+        return Ok(out);
+    }
+    m.cost
+        .iter()
+        .map(|c| {
+            let key = if c.name.starts_with("beast:") {
+                c.name.clone()
+            } else {
+                match data.currency_by_name(&c.name) {
+                    Some(currency) => currency.id.clone(),
+                    None => return unmet(format!("unknown currency {}", c.name)),
+                }
+            };
+            Ok(Cost {
+                key,
+                amount: c.amount,
+            })
+        })
+        .collect()
+}
+
+/// One item in the middle of a method, with what the random ops after it need.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct State {
+    item: Item,
+    /// The mod the last add placed (for `RemoveRandom { keep_last_added }`).
+    last_added: Option<(Side, u32)>,
+}
+
+/// A program position: the ops left in this list, then the lists it returns to. Ops in a
+/// Chance branch's own list are conditional.
+#[derive(Clone, Copy)]
+struct Prog<'p> {
+    ops: &'p [Op],
+    conditional: bool,
+    then: Option<&'p Prog<'p>>,
+}
+
+impl<'p> Prog<'p> {
+    /// The next op, whether it is conditional, and the program after it.
+    fn next(self) -> Option<(&'p Op, bool, Prog<'p>)> {
+        let mut p = self;
+        loop {
+            if let Some((op, rest)) = p.ops.split_first() {
+                return Some((op, p.conditional, Prog { ops: rest, ..p }));
+            }
+            p = *p.then?;
+        }
+    }
+
+    /// Every op left, in order.
+    fn remaining(self) -> Vec<Op> {
+        let mut out = self.ops.to_vec();
+        let mut p = self.then;
+        while let Some(frame) = p {
+            out.extend_from_slice(frame.ops);
+            p = frame.then;
+        }
+        out
+    }
+}
+
+enum Stop {
+    Unmet(String),
+    TooLarge,
+}
+
+/// One way an op changes an item: its chance, the item, and the mod it added.
 type Branch = (f64, Item, Option<(Side, u32)>);
 
-fn rest_with(head: &[Op], rest: &[Op]) -> Vec<Op> {
-    head.iter().chain(rest).cloned().collect()
+/// What one op does to one state: further states with their chances, or final leaves.
+enum Step {
+    Go(Vec<(f64, State)>),
+    End(Vec<(f64, Leaf)>),
 }
 
-/// Runs each (p, item, last_added) branch through the remaining ops.
-fn branch(ctx: &mut Ctx, branches: Vec<Branch>, rest: &[Op]) -> Outcome {
-    let saved = ctx.last_added;
-    let mut out = Vec::with_capacity(branches.len());
-    for (p, item, last) in branches {
-        if ctx.too_large() {
-            break;
+/// Which affixes can change under a method's protection on one item, decided before the op
+/// touches anything (scouring removes Suffixes Cannot Be Changed yet keeps the suffixes).
+struct Guard {
+    locked: [bool; 2],
+    attack: Option<u16>,
+    caster: Option<u16>,
+}
+
+impl Guard {
+    /// Fractured modifiers never change; a side a respected lock protects is kept; a modifier
+    /// with the tag a respected Cannot Roll metamod names is kept.
+    fn can_change(&self, data: &Data, side: Side, a: &Affix) -> bool {
+        if a.fractured || self.locked[side.index()] {
+            return false;
         }
-        if last.is_some() {
-            ctx.last_added = last;
-        }
-        out.push((p, run(ctx, item, rest)));
-        ctx.last_added = saved;
-    }
-    Outcome::Chance(out)
-}
-
-/// Random-op result: a Chance over the branches, or the item unchanged when there are none.
-fn random(ctx: &mut Ctx, item: Item, branches: Vec<Branch>, rest: &[Op]) -> Outcome {
-    if branches.is_empty() {
-        run(ctx, item, rest)
-    } else {
-        branch(ctx, branches, rest)
+        let tags = &data.mod_at(a.roll.m).tags;
+        ![self.attack, self.caster]
+            .into_iter()
+            .flatten()
+            .any(|t| tags.contains(&t))
     }
 }
 
-/// Candidate mods an AddRandom draws from, with their probabilities.
-fn add_candidates(
-    data: &Data,
-    item: &Item,
-    pool: &Pool,
-    side: SideReq,
-    ignore_limits: bool,
-) -> Vec<(u32, f64)> {
-    let tags = item.tags(data);
-    let base = data.base_at(item.base);
-    let groups = item.explicit_groups(data);
-    let allowed = sides(data, item, side);
-    let level_cap = if item.has_meta(data, MetaMod::Level28) {
-        item.item_level.min(28)
-    } else {
-        item.item_level
-    };
-    let no_attack = item.has_meta(data, MetaMod::NoAttack);
-    let no_caster = item.has_meta(data, MetaMod::NoCaster);
-    let attack = data.tag_by_name("attack");
-    let caster = data.tag_by_name("caster");
-    let (kind, tag) = match pool {
-        Pool::Ducat { tag } => (ModKind::Ducat, data.tag_by_name(tag)),
-        Pool::Tag { tag } => (ModKind::Natural, data.tag_by_name(tag)),
-        _ => (ModKind::Natural, None),
-    };
-    if matches!(pool, Pool::Tag { .. } | Pool::Ducat { .. }) && tag.is_none() {
-        return Vec::new();
-    }
-    let mut weighted = Vec::new();
-    for &i in data.mods_of_kind(kind) {
-        let m = data.mod_at(i);
-        let Some(s) = m.side else { continue };
-        let pool_ok = match pool {
-            Pool::Natural => true,
-            Pool::Influence { influence } => m.influence == Some(*influence),
-            Pool::Tag { .. } => tag.is_some_and(|t| m.tags.contains(&t)),
-            Pool::Ducat { .. } => true,
-        };
-        if !pool_ok
-            || (kind != ModKind::Ducat && m.domain != base.domain.repoe())
-            || m.level > level_cap
-            || !allowed.contains(&s)
-            || (!ignore_limits && item.open(data, s) == 0)
-            || m.groups.iter().any(|g| groups.contains(g))
-            || (no_attack && attack.is_some_and(|t| m.tags.contains(&t)))
-            || (no_caster && caster.is_some_and(|t| m.tags.contains(&t)))
-        {
-            continue;
-        }
-        let w = match pool {
-            Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
-            _ => pool::weight(m, &tags),
-        };
-        weighted.push((i, w));
-    }
-    pool::normalise(weighted)
+struct Run<'a> {
+    data: &'a Data,
+    method: &'a Method,
+    inputs: &'a [Item],
+    params: &'a Params,
+    /// States and leaves made so far, against `MAX_BRANCHES`.
+    size: usize,
+    /// Set while the ops after a player's choice run; they are conditional too.
+    in_choice: usize,
 }
 
-fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
-    let side = data.mod_at(m).side?;
-    item.affixes_mut(side).push(Affix::new(m));
-    Some(side)
-}
-
-/// Removes every non-fractured explicit on the sides that can change; with `respect_locks`, a
-/// side a metamod locks (decided before anything is removed) is kept whole.
-fn clear(data: &Data, item: &mut Item, respect_locks: bool) {
-    let locked = [
-        respect_locks && item.locked(data, Side::Prefix),
-        respect_locks && item.locked(data, Side::Suffix),
-    ];
-    for side in Side::BOTH {
-        if !locked[side.index()] {
-            item.affixes_mut(side).retain(|a| a.fractured);
+/// The display-only and one-shot fields after an op: the pasted defence figures go once
+/// anything that feeds them changes (explicits, implicits, quality, catalyst), so within one
+/// method they are a function of the rest of the item and never split equal states; foresight
+/// goes once the item changes at all (game text: "Modifying the item in any way removes the
+/// ability to foresee").
+fn settle(before: &Item, after: &mut Item) {
+    let fed = before.prefixes != after.prefixes
+        || before.suffixes != after.suffixes
+        || before.implicits != after.implicits
+        || before.quality != after.quality
+        || before.catalyst != after.catalyst;
+    if fed {
+        after.defences = None;
+    }
+    if after.foreseen {
+        let mut same = before.clone();
+        same.defences = after.defences;
+        if same != *after {
+            after.foreseen = false;
         }
     }
-}
-
-/// The weighted pool of one kind for an implicit or enchantment op.
-fn kind_pool(
-    data: &Data,
-    item: &Item,
-    kinds: &[ModKind],
-    extra: impl Fn(&crate::data::ModData) -> bool,
-) -> Vec<(u32, f64)> {
-    let tags = item.tags(data);
-    let w: Vec<(u32, f64)> = pool::weighted(data, kinds, &tags)
-        .filter(|(_, m, _)| m.level <= item.item_level && extra(m))
-        .map(|(i, _, w)| (i, w))
-        .collect();
-    pool::normalise(w)
-}
-
-fn veiled_mod(data: &Data, side: Side) -> Option<u32> {
-    data.mod_by_id(match side {
-        Side::Prefix => "VeiledPrefix",
-        Side::Suffix => "VeiledSuffix",
-    })
 }
 
 /// The next tier up a Dominance upgrade gives `m`, or `None` when `m` is elevated already.
@@ -678,721 +789,944 @@ fn resistance_ranks(data: &Data, item: &Item, mod_type: &str) -> Vec<u32> {
     list
 }
 
-fn reforge(ctx: &mut Ctx, mut item: Item, spec: &ReforgeSpec, ops: &[Op]) -> Outcome {
-    let data = ctx.data;
-    let rest = &ops[1..];
-    let pending = |item: Item| Outcome::Pending {
-        item,
-        ops: ops.to_vec(),
-        reason: PendingReason::MultiDraw,
-    };
-    let guaranteed = matches!(
-        spec.guarantee,
-        Some(
-            Guarantee::Essence
-                | Guarantee::Veiled
-                | Guarantee::Tag { .. }
-                | Guarantee::InfluenceMod
-        )
-    );
-    if !guaranteed || spec.weighting != Weighting::Normal {
-        return pending(item);
+/// Puts `m` on its side, unrolled; a normal item that gains an explicit turns magic (owner,
+/// Q3, for a bench craft; every add follows it, so no result is a normal item with explicits).
+fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
+    let side = data.mod_at(m).side?;
+    item.affixes_mut(side).push(Affix::new(m));
+    if item.rarity == Rarity::Normal {
+        item.rarity = Rarity::Magic;
     }
-    item.rarity = spec.rarity;
-    clear(data, &mut item, spec.respects_locks);
-    let fill: Vec<Op> = std::iter::once(Op::Fill { spec: spec.clone() })
-        .chain(rest.iter().cloned())
-        .collect();
-    let leaf = |item: Item| Outcome::Pending {
-        item,
-        ops: fill.clone(),
-        reason: PendingReason::MultiDraw,
-    };
-    let branches: Vec<(f64, Item)> = match &spec.guarantee {
-        Some(Guarantee::Essence) => {
-            let m =
-                method_essence(ctx.method, ctx.params).and_then(|e| essence_mod(data, &item, e));
-            let groups = item.explicit_groups(data);
-            if let Some(m) = m
-                && let Some(s) = data.mod_at(m).side
-                && item.open(data, s) > 0
-                && !data.mod_at(m).groups.iter().any(|g| groups.contains(g))
-            {
-                add_affix(data, &mut item, m);
-            }
-            vec![(1.0, item)]
+    Some(side)
+}
+
+/// The room on `side` for an added explicit: a normal item turns magic when it gains one, so
+/// it has a magic item's room.
+fn room(data: &Data, item: &Item, side: Side) -> u8 {
+    if item.rarity == Rarity::Normal {
+        let mut magic = item.clone();
+        magic.rarity = Rarity::Magic;
+        magic.open(data, side)
+    } else {
+        item.open(data, side)
+    }
+}
+
+fn has_range(data: &Data, m: u32) -> bool {
+    data.mod_at(m).stats.iter().any(|s| s.min != s.max)
+}
+
+impl Run<'_> {
+    fn grow(&mut self, n: usize) -> Result<(), Stop> {
+        self.size += n;
+        if self.size > MAX_BRANCHES {
+            Err(Stop::TooLarge)
+        } else {
+            Ok(())
         }
-        Some(Guarantee::Veiled) => {
-            let room: Vec<Side> = Side::BOTH
-                .into_iter()
-                .filter(|&s| item.open(data, s) > 0)
-                .collect();
-            if room.is_empty() {
-                vec![(1.0, item)]
+    }
+
+    fn guard(&self, item: &Item) -> Guard {
+        let data = self.data;
+        let p = self
+            .method
+            .protect
+            .expect("validated: a method that changes explicits states its protection");
+        let locks = p.locks == Policy::Respect;
+        let tags = p.cannot_roll == Policy::Respect;
+        let tag_of = |meta: MetaMod, name: &str| {
+            if tags && item.has_meta(data, meta) {
+                data.tag_by_name(name)
             } else {
-                let p = 1.0 / room.len() as f64;
-                room.into_iter()
-                    .filter_map(|s| {
-                        let mut it = item.clone();
-                        add_affix(data, &mut it, veiled_mod(data, s)?);
-                        Some((p, it))
-                    })
-                    .collect()
+                None
             }
+        };
+        Guard {
+            locked: [
+                locks && item.locked(data, Side::Prefix),
+                locks && item.locked(data, Side::Suffix),
+            ],
+            attack: tag_of(MetaMod::NoAttack, "attack"),
+            caster: tag_of(MetaMod::NoCaster, "caster"),
         }
-        Some(Guarantee::Tag { tag }) => {
-            let c = add_candidates(
-                data,
-                &item,
-                &Pool::Tag { tag: tag.clone() },
-                SideReq::Any,
-                false,
-            );
-            if c.is_empty() {
-                ctx.unmet = Some(format!("no {tag} modifier can roll on this item"));
-                return pending(item);
+    }
+
+    /// An op with nothing to do: refuse the method, or inside a Chance branch (or after a
+    /// player's choice) leave the state as it is.
+    fn nothing(&self, conditional: bool, state: State, reason: String) -> Result<Step, Stop> {
+        if conditional {
+            Ok(Step::Go(vec![(1.0, state)]))
+        } else {
+            Err(Stop::Unmet(reason))
+        }
+    }
+
+    fn pending(&self, item: Item, certain: bool, ops: Vec<Op>, reason: PendingReason) -> Step {
+        Step::End(vec![(
+            1.0,
+            Leaf::Pending(Pending {
+                inputs: self.inputs.to_vec(),
+                params: self.params.clone(),
+                item,
+                certain,
+                ops,
+                reason,
+            }),
+        )])
+    }
+
+    /// Runs `prog` over the distribution, merging equal states after every op.
+    fn exec(&mut self, dist: Vec<(f64, State)>, prog: Prog<'_>) -> Result<Vec<(f64, Leaf)>, Stop> {
+        let mut dist = dist;
+        let mut prog = prog;
+        let mut leaves = Vec::new();
+        loop {
+            let Some((op, conditional, rest)) = prog.next() else {
+                leaves.extend(dist.into_iter().map(|(p, s)| (p, Leaf::Item(s.item))));
+                return Ok(leaves);
+            };
+            let conditional = conditional || self.in_choice > 0;
+            if let Op::Chance { branches } = op {
+                for b in branches {
+                    let frame = Prog {
+                        ops: &b.ops,
+                        conditional: true,
+                        then: Some(&rest),
+                    };
+                    let sub: Vec<(f64, State)> =
+                        dist.iter().map(|(p, s)| (p * b.p, s.clone())).collect();
+                    leaves.extend(self.exec(sub, frame)?);
+                }
+                return Ok(leaves);
             }
-            c.into_iter()
-                .map(|(m, p)| {
-                    let mut it = item.clone();
-                    add_affix(data, &mut it, m);
-                    (p, it)
-                })
+            let mut next: BTreeMap<State, f64> = BTreeMap::new();
+            for (p, state) in dist {
+                match self.step(op, state, rest, conditional)? {
+                    Step::Go(states) => {
+                        self.grow(states.len())?;
+                        for (q, s) in states {
+                            *next.entry(s).or_insert(0.0) += p * q;
+                        }
+                    }
+                    Step::End(ends) => {
+                        self.grow(ends.len())?;
+                        leaves.extend(ends.into_iter().map(|(q, l)| (p * q, l)));
+                    }
+                }
+            }
+            dist = next.into_iter().map(|(s, p)| (p, s)).collect();
+            prog = rest;
+        }
+    }
+
+    /// One op on one state.
+    fn step(
+        &mut self,
+        op: &Op,
+        state: State,
+        rest: Prog<'_>,
+        conditional: bool,
+    ) -> Result<Step, Stop> {
+        let data = self.data;
+        let here = || -> Vec<Op> {
+            std::iter::once(op.clone())
+                .chain(rest.remaining())
                 .collect()
-        }
-        _ => {
-            // InfluenceMod: a Natural mod of one of the item's influences.
-            let mut c: Vec<(u32, f64)> = Vec::new();
-            for i in Influence::ALL
-                .into_iter()
-                .filter(|i| item.has_influence(*i))
-            {
-                let raw = add_candidates(
-                    data,
-                    &item,
-                    &Pool::Influence { influence: i },
-                    SideReq::Any,
-                    false,
-                );
-                // Re-weight: candidates of every influence share one pool.
-                let tags = item.tags(data);
-                c.extend(
-                    raw.into_iter()
-                        .map(|(m, _)| (m, pool::weight(data.mod_at(m), &tags))),
-                );
+        };
+        // Ops that end the program, replace the item, or branch on their own.
+        match op {
+            Op::Mirror => {
+                let mut copy = state.item.clone();
+                copy.mirrored = true;
+                copy.imprint = None;
+                return Ok(Step::End(vec![(1.0, Leaf::Items(vec![state.item, copy]))]));
             }
-            let c = pool::normalise(c);
-            if c.is_empty() {
-                ctx.unmet = Some("no influenced modifier can roll on this item".into());
-                return pending(item);
-            } else {
-                c.into_iter()
+            Op::Destroy => return Ok(Step::End(vec![(1.0, Leaf::Destroyed)])),
+            Op::Fill { fill } => {
+                let certain = fill.weighting != Weighting::Recombine;
+                return Ok(self.pending(state.item, certain, here(), PendingReason::MultiDraw));
+            }
+            Op::Sockets { .. } => {
+                return Ok(self.pending(state.item, false, here(), PendingReason::Sockets));
+            }
+            Op::Unmodelled { reason } => {
+                return Ok(self.pending(state.item, false, here(), reason.clone()));
+            }
+            Op::Unveil => return self.unveil(state, rest, conditional),
+            Op::TakeInput { input } => {
+                let item = self.inputs[*input as usize].clone();
+                return Ok(Step::Go(vec![(
+                    1.0,
+                    State {
+                        item,
+                        last_added: None,
+                    },
+                )]));
+            }
+            Op::Restore => {
+                let item = &state.item;
+                let reason = if item.imprint.is_none() {
+                    Some("the item has no imprint")
+                } else if item.corrupted {
+                    Some("the item is corrupted")
+                } else if item.mirrored {
+                    Some("the item is mirrored")
+                } else {
+                    None
+                };
+                if let Some(r) = reason {
+                    return self.nothing(conditional, state, r.into());
+                }
+                // The imprint comes back as it was, defence figures included.
+                let mut item = state.item.imprint.clone().map(|b| *b).unwrap_or(state.item);
+                item.imprint = None;
+                return Ok(Step::Go(vec![(
+                    1.0,
+                    State {
+                        item,
+                        last_added: None,
+                    },
+                )]));
+            }
+            _ => {}
+        }
+        let before = state.item.clone();
+        let branches = match self.change(op, &state) {
+            Ok(b) => b,
+            Err(reason) => return self.nothing(conditional, state, reason),
+        };
+        Ok(Step::Go(
+            branches
+                .into_iter()
+                .map(|(p, mut item, added)| {
+                    item.canonical(data);
+                    settle(&before, &mut item);
+                    let last_added = added.or(state.last_added);
+                    (p, State { item, last_added })
+                })
+                .collect(),
+        ))
+    }
+
+    /// The ops that change the item: (chance, item, the mod it added) per branch, or why the op
+    /// has nothing to do.
+    fn change(&self, op: &Op, state: &State) -> Result<Vec<Branch>, String> {
+        let data = self.data;
+        let item = &state.item;
+        let one = |it: Item| Ok(vec![(1.0, it, None)]);
+        let uniform = |items: Vec<Item>| {
+            let p = 1.0 / items.len() as f64;
+            items
+                .into_iter()
+                .map(|it| (p, it, None))
+                .collect::<Vec<_>>()
+        };
+        match op {
+            Op::SetRarity { rarity } => {
+                let mut it = item.clone();
+                it.rarity = *rarity;
+                one(it)
+            }
+            Op::Clear { side } => {
+                let guard = self.guard(item);
+                let mut it = item.clone();
+                for s in sides(data, item, *side) {
+                    it.affixes_mut(s).retain(|a| !guard.can_change(data, s, a));
+                }
+                one(it)
+            }
+            Op::Scour => {
+                let guard = self.guard(item);
+                let mut it = item.clone();
+                for s in Side::BOTH {
+                    it.affixes_mut(s).retain(|a| !guard.can_change(data, s, a));
+                }
+                let removed = item.prefixes.len() + item.suffixes.len()
+                    - it.prefixes.len()
+                    - it.suffixes.len();
+                if removed == 0 {
+                    return Err("no modifier can be removed".into());
+                }
+                // vhpg (fractured items): one fractured modifier left makes the item magic, two
+                // or more rare; nothing left, normal. A side a metamod kept leaves the rarity.
+                let left: Vec<&Affix> = it.explicits().collect();
+                if left.iter().all(|a| a.fractured) {
+                    it.rarity = match left.len() {
+                        0 => Rarity::Normal,
+                        1 => Rarity::Magic,
+                        _ => Rarity::Rare,
+                    };
+                }
+                one(it)
+            }
+            Op::AddRandom {
+                pool,
+                side,
+                ignore_limits,
+            } => {
+                let candidates = self.add_candidates(item, pool, *side, *ignore_limits);
+                if candidates.is_empty() {
+                    let what = match pool {
+                        Pool::Natural => "no modifier can roll on this item".to_string(),
+                        Pool::Influence { influence } => {
+                            format!("no {} modifier can roll on this item", influence.name())
+                        }
+                        Pool::Influenced => {
+                            "no influenced modifier can roll on this item".to_string()
+                        }
+                        Pool::Tag { tag } => format!("no {tag} modifier can roll on this item"),
+                        Pool::Ducat { .. } => {
+                            "no modifier from this ducat can roll on this item".to_string()
+                        }
+                    };
+                    return Err(what);
+                }
+                Ok(candidates
+                    .into_iter()
                     .map(|(m, p)| {
                         let mut it = item.clone();
-                        add_affix(data, &mut it, m);
-                        (p, it)
+                        let side = add_affix(data, &mut it, m);
+                        (p, it, side.map(|s| (s, m)))
                     })
-                    .collect()
+                    .collect())
             }
-        }
-    };
-    ctx.leaves += branches.len();
-    let mut branches = branches;
-    if branches.len() == 1 {
-        let (_, it) = branches.remove(0);
-        return leaf(it);
-    }
-    Outcome::Chance(branches.into_iter().map(|(p, it)| (p, leaf(it))).collect())
-}
-
-fn run(ctx: &mut Ctx, mut item: Item, ops: &[Op]) -> Outcome {
-    let data = ctx.data;
-    let Some(op) = ops.first() else {
-        ctx.leaves += 1;
-        return Outcome::Item(item);
-    };
-    if ctx.too_large() {
-        return Outcome::Item(item);
-    }
-    let rest = &ops[1..];
-    match op {
-        Op::SetRarity { rarity } => {
-            item.rarity = *rarity;
-            run(ctx, item, rest)
-        }
-        Op::ClearExplicits => {
-            clear(data, &mut item, true);
-            if item.prefixes.is_empty() && item.suffixes.is_empty() {
-                item.rarity = Rarity::Normal;
-            }
-            run(ctx, item, rest)
-        }
-        Op::RerollMagic => {
-            clear(data, &mut item, false);
-            run(ctx, item, rest)
-        }
-        Op::ClearAll => {
-            item.prefixes.clear();
-            item.suffixes.clear();
-            item.rarity = Rarity::Normal;
-            run(ctx, item, rest)
-        }
-        Op::AddRandom {
-            pool,
-            side,
-            ignore_limits,
-        } => {
-            let branches: Vec<Branch> = add_candidates(data, &item, pool, *side, *ignore_limits)
-                .into_iter()
-                .map(|(m, p)| {
-                    let mut it = item.clone();
-                    let s = add_affix(data, &mut it, m);
-                    (p, it, s.map(|s| (s, m)))
-                })
-                .collect();
-            // A tag or ducat pool is the method's whole point: with nothing to add it cannot
-            // be used on this item.
-            if branches.is_empty() {
-                match pool {
-                    Pool::Tag { tag } => {
-                        ctx.unmet = Some(format!("no {tag} modifier can roll on this item"));
-                    }
-                    Pool::Ducat { .. } => {
-                        ctx.unmet =
-                            Some("no modifier from this ducat can roll on this item".into());
-                    }
-                    _ => {}
-                }
-            }
-            random(ctx, item, branches, rest)
-        }
-        Op::RemoveRandom {
-            filter,
-            keep_last_added,
-            respects_cannot_roll,
-        } => {
-            let no_attack = *respects_cannot_roll && item.has_meta(data, MetaMod::NoAttack);
-            let no_caster = *respects_cannot_roll && item.has_meta(data, MetaMod::NoCaster);
-            let attack = data.tag_by_name("attack");
-            let caster = data.tag_by_name("caster");
-            let filter_sides: Vec<Side> = match filter {
-                RemoveFilter::Side { side } => sides(data, &item, *side),
-                _ => Side::BOTH.to_vec(),
-            };
-            let mut candidates = Vec::new();
-            for side in Side::BOTH {
-                if item.locked(data, side) || !filter_sides.contains(&side) {
-                    continue;
-                }
-                for (i, a) in item.affixes(side).iter().enumerate() {
-                    let m = data.mod_at(a.roll.m);
-                    let skip = a.fractured
-                        || (matches!(filter, RemoveFilter::Influenced) && m.influence.is_none())
-                        || (*keep_last_added && ctx.last_added == Some((side, a.roll.m)))
-                        || (no_attack && attack.is_some_and(|t| m.tags.contains(&t)))
-                        || (no_caster && caster.is_some_and(|t| m.tags.contains(&t)));
-                    if !skip {
-                        candidates.push((side, i));
-                    }
-                }
-            }
-            let p = 1.0 / candidates.len() as f64;
-            let branches = candidates
-                .into_iter()
-                .map(|(side, i)| {
-                    let mut it = item.clone();
-                    it.affixes_mut(side).remove(i);
-                    (p, it, None)
-                })
-                .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::AddVeiled => {
-            let room: Vec<Side> = Side::BOTH
-                .into_iter()
-                .filter(|&s| item.open(data, s) > 0)
-                .collect();
-            let p = 1.0 / room.len() as f64;
-            let branches = room
-                .into_iter()
-                .filter_map(|s| {
-                    let m = veiled_mod(data, s)?;
-                    let mut it = item.clone();
-                    it.affixes_mut(s).push(Affix::new(m));
-                    Some((p, it, Some((s, m))))
-                })
-                .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::Unveil => unveil(ctx, item, rest),
-        Op::AddMod { r#mod } => {
-            if let Some(m) = data.mod_by_id(r#mod)
-                && let Some(s) = add_affix(data, &mut item, m)
-            {
-                ctx.last_added = Some((s, m));
-            }
-            run(ctx, item, rest)
-        }
-        Op::RemoveCrafted => {
-            for side in Side::BOTH {
-                item.affixes_mut(side)
-                    .retain(|a| data.mod_at(a.roll.m).kind != ModKind::Crafted);
-            }
-            run(ctx, item, rest)
-        }
-        Op::SetEnchant { pool: which } => {
-            let kind = match which {
-                EnchantPool::Lab => ModKind::Enchant,
-                EnchantPool::FlaskEnkindling => ModKind::FlaskEnkindling,
-                EnchantPool::FlaskInstilling => ModKind::FlaskInstilling,
-            };
-            let branches = kind_pool(data, &item, &[kind], |_| true)
-                .into_iter()
-                .map(|(m, p)| {
-                    let mut it = item.clone();
-                    it.enchants = vec![Roll { m, values: None }];
-                    (p, it, None)
-                })
-                .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::SetEnchantMod { r#mod } => {
-            if let Some(m) = data.mod_by_id(r#mod) {
-                item.enchants = vec![Roll { m, values: None }];
-            }
-            run(ctx, item, rest)
-        }
-        Op::ClearEnchants => {
-            item.enchants.clear();
-            run(ctx, item, rest)
-        }
-        Op::RerollValues { scope } => {
-            match scope {
-                ValueScope::Explicit => {
-                    for side in Side::BOTH {
-                        for a in item.affixes_mut(side) {
-                            if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Crafted {
-                                a.roll.values = None;
-                            }
+            Op::RemoveRandom {
+                filter,
+                keep_last_added,
+                optional,
+            } => {
+                let guard = self.guard(item);
+                let allowed = match filter {
+                    RemoveFilter::Side { side } => sides(data, item, *side),
+                    _ => Side::BOTH.to_vec(),
+                };
+                let mut items = Vec::new();
+                for &s in &allowed {
+                    for (i, a) in item.affixes(s).iter().enumerate() {
+                        let influenced = data.mod_at(a.roll.m).influence.is_some();
+                        if guard.can_change(data, s, a)
+                            && (influenced || !matches!(filter, RemoveFilter::Influenced))
+                            && !(*keep_last_added && state.last_added == Some((s, a.roll.m)))
+                        {
+                            let mut it = item.clone();
+                            it.affixes_mut(s).remove(i);
+                            items.push(it);
                         }
                     }
                 }
-                ValueScope::Implicit => item.implicits.iter_mut().for_each(|r| r.values = None),
-                ValueScope::Defences => item.defences = None,
+                if items.is_empty() {
+                    if *optional {
+                        return one(item.clone());
+                    }
+                    let what = match (filter, allowed.as_slice()) {
+                        (RemoveFilter::Influenced, _) => "no influenced modifier can be removed",
+                        (RemoveFilter::Side { .. }, []) => "neither eldritch implicit is dominant",
+                        (RemoveFilter::Side { .. }, [Side::Prefix]) => "no prefix can be removed",
+                        (RemoveFilter::Side { .. }, [Side::Suffix]) => "no suffix can be removed",
+                        _ => "no modifier can be removed",
+                    };
+                    return Err(what.into());
+                }
+                Ok(uniform(items))
             }
-            run(ctx, item, rest)
-        }
-        Op::Fracture => {
-            let candidates: Vec<(Side, usize)> = Side::BOTH
-                .into_iter()
-                .flat_map(|s| {
-                    item.affixes(s)
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, a)| {
-                            let k = data.mod_at(a.roll.m).kind;
-                            !a.fractured && k != ModKind::Crafted && k != ModKind::Veiled
-                        })
-                        .map(move |(i, _)| (s, i))
-                        .collect::<Vec<_>>()
-                })
-                .collect();
-            let p = 1.0 / candidates.len() as f64;
-            let branches = candidates
-                .into_iter()
-                .map(|(s, i)| {
-                    let mut it = item.clone();
-                    it.affixes_mut(s)[i].fractured = true;
-                    (p, it, None)
-                })
-                .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::AddInfluence { influence } => {
-            item.influences |= influence.bit();
-            run(ctx, item, rest)
-        }
-        Op::Corrupt => {
-            item.corrupted = true;
-            run(ctx, item, rest)
-        }
-        Op::VaalImplicit => {
-            if data.base_at(item.base).implicits_locked {
-                return run(ctx, item, rest);
+            Op::AddVeiled => {
+                let open: Vec<Side> = Side::BOTH
+                    .into_iter()
+                    .filter(|&s| room(data, item, s) > 0)
+                    .collect();
+                if open.is_empty() {
+                    return Err("no side has room for a veiled modifier".into());
+                }
+                let p = 1.0 / open.len() as f64;
+                Ok(open
+                    .into_iter()
+                    .filter_map(|s| {
+                        let m = data.mod_by_id(VEILED[s.index()])?;
+                        let mut it = item.clone();
+                        add_affix(data, &mut it, m);
+                        Some((p, it, Some((s, m))))
+                    })
+                    .collect())
             }
-            let domain = data.base_at(item.base).domain.repoe();
-            let branches = kind_pool(data, &item, &[ModKind::CorruptedImplicit], |m| {
-                m.domain == domain
-            })
-            .into_iter()
-            .map(|(m, p)| {
+            Op::AddMod { r#mod } => {
+                let Some(m) = data.mod_by_id(r#mod) else {
+                    return Err(format!("unknown modifier {mod}", mod = r#mod));
+                };
+                if let Some(reason) = self.cannot_place(item, m) {
+                    return Err(reason);
+                }
                 let mut it = item.clone();
-                it.implicits = vec![Roll { m, values: None }];
-                (p, it, None)
-            })
-            .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::EldritchImplicit { eldritch, tier } => {
-            let (kind, other) = match eldritch {
-                Eldritch::Exarch => (ModKind::Exarch, ModKind::Eater),
-                Eldritch::Eater => (ModKind::Eater, ModKind::Exarch),
-            };
-            let branches = kind_pool(data, &item, &[kind], |m| m.eldritch_tier == Some(*tier))
-                .into_iter()
-                .map(|(m, p)| {
-                    let mut it = item.clone();
-                    it.implicits.retain(|r| data.mod_at(r.m).kind == other);
-                    it.implicits.push(Roll { m, values: None });
-                    (p, it, None)
-                })
-                .collect();
-            random(ctx, item, branches, rest)
-        }
-        Op::Dominance => {
-            let influenced: Vec<(Side, usize)> = Side::BOTH
-                .into_iter()
-                .flat_map(|s| {
-                    item.affixes(s)
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, a)| !a.fractured && data.mod_at(a.roll.m).influence.is_some())
-                        .map(move |(i, _)| (s, i))
-                        .collect::<Vec<_>>()
-                })
-                .collect();
-            let n = influenced.len();
-            let pairs = n * n.saturating_sub(1);
-            let mut branches = Vec::with_capacity(pairs);
-            for &(xs, xi) in &influenced {
-                for &(ys, yi) in &influenced {
-                    if (xs, xi) == (ys, yi) {
-                        continue;
-                    }
-                    let mut it = item.clone();
-                    let y = &mut it.affixes_mut(ys)[yi];
-                    match upgrade(data, &item, y.roll.m) {
-                        Some(up) => {
-                            y.roll = Roll {
-                                m: up,
-                                values: None,
+                let side = add_affix(data, &mut it, m);
+                Ok(vec![(1.0, it, side.map(|s| (s, m)))])
+            }
+            Op::AddEssence { essence } => {
+                let Some(m) = essence_mod(data, item, essence) else {
+                    return Err(format!(
+                        "{essence} has no modifier for {}",
+                        item.class(data).id
+                    ));
+                };
+                if let Some(reason) = self.cannot_place(item, m) {
+                    return Err(reason);
+                }
+                let mut it = item.clone();
+                let side = add_affix(data, &mut it, m);
+                Ok(vec![(1.0, it, side.map(|s| (s, m)))])
+            }
+            Op::RemoveCrafted => {
+                if item.crafted_count(data) == 0 {
+                    return Err("needs a crafted modifier".into());
+                }
+                let mut it = item.clone();
+                for s in Side::BOTH {
+                    it.affixes_mut(s)
+                        .retain(|a| data.mod_at(a.roll.m).kind != ModKind::Crafted);
+                }
+                one(it)
+            }
+            Op::SetEnchant { pool: which } => {
+                let kind = match which {
+                    EnchantPool::Lab => ModKind::Enchant,
+                    EnchantPool::FlaskEnkindling => ModKind::FlaskEnkindling,
+                    EnchantPool::FlaskInstilling => ModKind::FlaskInstilling,
+                };
+                let candidates = self.kind_pool(item, kind, true, |_| true);
+                if candidates.is_empty() {
+                    return Err("no enchantment can roll on this item".into());
+                }
+                Ok(candidates
+                    .into_iter()
+                    .map(|(m, p)| {
+                        let mut it = item.clone();
+                        it.enchants = vec![Roll { m, values: None }];
+                        (p, it, None)
+                    })
+                    .collect())
+            }
+            Op::SetEnchantMod { r#mod } => {
+                let Some(m) = data.mod_by_id(r#mod) else {
+                    return Err(format!("unknown modifier {mod}", mod = r#mod));
+                };
+                let mut it = item.clone();
+                it.enchants = vec![Roll { m, values: None }];
+                one(it)
+            }
+            Op::ClearEnchants => {
+                if item.enchants.is_empty() {
+                    return Err("needs an enchantment".into());
+                }
+                let mut it = item.clone();
+                it.enchants.clear();
+                one(it)
+            }
+            Op::RerollValues { scope } => {
+                let mut it = item.clone();
+                let rerolled = match scope {
+                    ValueScope::Explicit => {
+                        let guard = self.guard(item);
+                        let mut n = 0;
+                        for s in Side::BOTH {
+                            for a in it.affixes_mut(s) {
+                                if guard.can_change(data, s, a)
+                                    && data.mod_at(a.roll.m).kind != ModKind::Crafted
+                                    && has_range(data, a.roll.m)
+                                {
+                                    a.roll.values = None;
+                                    n += 1;
+                                }
                             }
                         }
-                        None => y.roll.values = None,
+                        (n > 0)
+                            .then_some(())
+                            .ok_or("no modifier has values to reroll")
                     }
-                    it.affixes_mut(xs).remove(xi);
-                    branches.push((1.0 / pairs as f64, it, None));
+                    ValueScope::Implicit => {
+                        let mut n = 0;
+                        for r in &mut it.implicits {
+                            if has_range(data, r.m) {
+                                r.values = None;
+                                n += 1;
+                            }
+                        }
+                        (n > 0)
+                            .then_some(())
+                            .ok_or("no implicit modifier has values to reroll")
+                    }
+                    ValueScope::Defences => {
+                        let base = data.base_at(item.base);
+                        it.defences = None;
+                        base.defences
+                            .iter()
+                            .flatten()
+                            .any(|[lo, hi]| lo != hi)
+                            .then_some(())
+                            .ok_or("the base has no defence values to reroll")
+                    }
+                };
+                match rerolled {
+                    Ok(()) => one(it),
+                    Err(reason) => Err(reason.into()),
                 }
             }
-            random(ctx, item, branches, rest)
-        }
-        Op::ChangeResistance { from, to } => {
-            if let Err(reason) = change_resistance(data, &mut item, *from, *to) {
-                ctx.unmet = Some(reason);
-            }
-            run(ctx, item, rest)
-        }
-        Op::AddQuality { by_rarity, max } => {
-            let add = by_rarity[item.rarity as usize];
-            item.quality = (*max).min(item.quality.saturating_add(add));
-            run(ctx, item, rest)
-        }
-        Op::CatalystQuality { catalyst } => {
-            let c = data.catalyst_by_name(catalyst);
-            if c.is_some() && item.catalyst == c {
-                item.quality = 20.min(item.quality + 1);
-            } else {
-                item.catalyst = c;
-                item.quality = 1;
-            }
-            run(ctx, item, rest)
-        }
-        Op::Foresee => {
-            item.foreseen = true;
-            run(ctx, item, rest)
-        }
-        Op::Imprint => {
-            let mut copy = item.clone();
-            copy.imprint = None;
-            item.imprint = Some(Box::new(copy));
-            run(ctx, item, rest)
-        }
-        Op::Restore => {
-            if let Some(imprint) = item.imprint.take() {
-                item = *imprint;
-                item.imprint = None;
-            }
-            run(ctx, item, rest)
-        }
-        Op::LinkAll => {
-            let all: Vec<_> = item.sockets.concat();
-            item.sockets = if all.is_empty() {
-                Vec::new()
-            } else {
-                vec![all]
-            };
-            run(ctx, item, rest)
-        }
-        Op::Mirror => {
-            let mut copy = item.clone();
-            copy.mirrored = true;
-            ctx.leaves += 2;
-            Outcome::Items(vec![item, copy])
-        }
-        Op::Destroy => {
-            ctx.leaves += 1;
-            Outcome::Destroyed
-        }
-        Op::RemoveIntangibility => {
-            item.intangibility = 0;
-            run(ctx, item, rest)
-        }
-        Op::Chance { branches } => {
-            let saved = ctx.last_added;
-            let mut out = Vec::with_capacity(branches.len());
-            for b in branches {
-                let ops = rest_with(&b.ops, rest);
-                out.push((b.p, run(ctx, item.clone(), &ops)));
-                ctx.last_added = saved;
-            }
-            Outcome::Chance(out)
-        }
-        Op::Reforge { spec } => reforge(ctx, item, spec, ops),
-        Op::Fill { .. } => {
-            ctx.leaves += 1;
-            Outcome::Pending {
-                item,
-                ops: ops.to_vec(),
-                reason: PendingReason::MultiDraw,
-            }
-        }
-        Op::Sockets { .. } => {
-            ctx.leaves += 1;
-            Outcome::Pending {
-                item,
-                ops: ops.to_vec(),
-                reason: PendingReason::Sockets,
-            }
-        }
-        Op::Unmodelled { reason } => {
-            ctx.leaves += 1;
-            Outcome::Pending {
-                item,
-                ops: ops.to_vec(),
-                reason: reason.clone(),
-            }
-        }
-    }
-}
-
-/// Turns the first changeable (natural, not fractured) `from` resistance into the `to` mod of
-/// the same rank among the mods that can spawn on the item (the nearest lower rank when `to` has
-/// fewer tiers).
-fn change_resistance(
-    data: &Data,
-    item: &mut Item,
-    from: Element,
-    to: Element,
-) -> Result<(), String> {
-    let from_ranks = resistance_ranks(data, item, from.resistance_type());
-    let to_ranks = resistance_ranks(data, item, to.resistance_type());
-    let found = Side::BOTH.into_iter().find_map(|side| {
-        item.affixes(side)
-            .iter()
-            .position(|a| !a.fractured && from_ranks.contains(&a.roll.m))
-            .map(|i| (side, i))
-    });
-    let Some((side, i)) = found else {
-        return Err(format!(
-            "no {} modifier can be changed",
-            from.resistance_type()
-        ));
-    };
-    let Some(&last) = to_ranks.last() else {
-        return Err(format!(
-            "no {} modifier can roll on this item",
-            to.resistance_type()
-        ));
-    };
-    let m = item.affixes(side)[i].roll.m;
-    let rank = from_ranks.iter().position(|&x| x == m).unwrap_or(0);
-    let target = to_ranks.get(rank).copied().unwrap_or(last);
-    let groups = item.explicit_groups(data);
-    if data
-        .mod_at(target)
-        .groups
-        .iter()
-        .any(|g| groups.contains(g))
-    {
-        return Err(format!(
-            "the item already has a {} modifier",
-            to.resistance_type()
-        ));
-    }
-    item.affixes_mut(side).remove(i);
-    if let Some(s) = data.mod_at(target).side {
-        item.affixes_mut(s).push(Affix::new(target));
-    }
-    Ok(())
-}
-
-/// Unveiling: three options drawn by weight without replacement; the player picks one.
-fn unveil(ctx: &mut Ctx, item: Item, rest: &[Op]) -> Outcome {
-    let data = ctx.data;
-    let Some((side, index)) = item.veiled(data) else {
-        return run(ctx, item, rest);
-    };
-    let tags = item.tags(data);
-    let placeholder = item.affixes(side)[index].roll.m;
-    let mut groups = item.explicit_groups(data);
-    for g in &data.mod_at(placeholder).groups {
-        groups.remove(g);
-    }
-    let mut options: Vec<(u32, f64)> = pool::weighted(data, &[ModKind::Unveiled], &tags)
-        .filter(|(_, m, _)| {
-            m.side == Some(side)
-                && m.level <= item.item_level
-                && !m.groups.iter().any(|g| groups.contains(g))
-        })
-        .map(|(i, m, _)| (i, f64::from(pool::spawn(m, &tags))))
-        .collect();
-    options.sort_by_key(|(m, _)| *m);
-    let with = |ctx: &mut Ctx, m: u32| {
-        let mut it = item.clone();
-        let fractured = it.affixes(side)[index].fractured;
-        it.affixes_mut(side)[index] = Affix {
-            roll: Roll { m, values: None },
-            fractured,
-        };
-        run(ctx, it, rest)
-    };
-    if options.is_empty() {
-        return run(ctx, item, rest);
-    }
-    if options.len() <= 3 {
-        let choices = options.iter().map(|&(m, _)| with(ctx, m)).collect();
-        return Outcome::Choice(choices);
-    }
-    let total: f64 = options.iter().map(|(_, w)| w).sum();
-    let n = options.len();
-    let mut sets = Vec::new();
-    for a in 0..n {
-        for b in a + 1..n {
-            for c in b + 1..n {
-                let idx = [a, b, c];
-                let mut p = 0.0;
-                for perm in [
-                    [0, 1, 2],
-                    [0, 2, 1],
-                    [1, 0, 2],
-                    [1, 2, 0],
-                    [2, 0, 1],
-                    [2, 1, 0],
-                ] {
-                    let w = |k: usize| options[idx[perm[k]]].1;
-                    p += w(0) / total * w(1) / (total - w(0)) * w(2) / (total - w(0) - w(1));
+            Op::Fracture => {
+                let mut items = Vec::new();
+                for s in Side::BOTH {
+                    for (i, a) in item.affixes(s).iter().enumerate() {
+                        if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled {
+                            let mut it = item.clone();
+                            it.affixes_mut(s)[i].fractured = true;
+                            items.push(it);
+                        }
+                    }
                 }
-                if ctx.too_large() {
-                    break;
+                if items.is_empty() {
+                    return Err("no modifier can be fractured".into());
                 }
-                let choices = idx.iter().map(|&k| with(ctx, options[k].0)).collect();
-                sets.push((p, Outcome::Choice(choices)));
+                Ok(uniform(items))
             }
-        }
-    }
-    Outcome::Chance(sets)
-}
-
-/// Applies a method: checks it, runs its ops on (a clone of) the first input, then clears the
-/// foresight, consumes catalyst quality, drops stale defence figures, canonicalises items and
-/// merges equal Chance children.
-pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<Outcome, Unmet> {
-    check(data, m, inputs, params)?;
-    let input = &inputs[0];
-    let mut ctx = Ctx {
-        data,
-        method: m,
-        params,
-        last_added: None,
-        leaves: 0,
-        unmet: None,
-    };
-    let mut out = run(&mut ctx, input.clone(), &m.ops);
-    if let Some(reason) = ctx.unmet {
-        return Err(Unmet { reason });
-    }
-    if ctx.too_large() {
-        return Ok(Outcome::Pending {
-            item: input.clone(),
-            ops: m.ops.clone(),
-            reason: PendingReason::TooLarge,
-        });
-    }
-    let foresees = m.ops.contains(&Op::Foresee);
-    // A mirror copies the item exactly, catalyst quality included.
-    let consumes = input.catalyst.is_some()
-        && matches!(
-            m.family,
-            Family::Currency | Family::Essence | Family::Fossil
-        )
-        && !m.ops.contains(&Op::Mirror);
-    out.items_mut(&mut |it| {
-        if !foresees {
-            it.foreseen = false;
-        }
-        // Claim catalyst.consumed.
-        if consumes {
-            it.catalyst = None;
-            it.quality = 0;
-        }
-        if it.prefixes != input.prefixes
-            || it.suffixes != input.suffixes
-            || it.implicits != input.implicits
-            || it.quality != input.quality
-            || it.rarity != input.rarity
-        {
-            it.defences = None;
-        }
-        it.canonical(data);
-    });
-    out.normalise();
-    Ok(out)
-}
-
-/// What one use costs: the method's costs, resolved to currency ids (or `beast:` keys); for the
-/// fossil family, the resonator for the fossil count plus each fossil.
-pub fn cost(data: &Data, m: &Method, params: &Params) -> Vec<Cost> {
-    let resolve = |name: &str, amount: f64| Cost {
-        key: if name.starts_with("beast:") {
-            name.to_string()
-        } else {
-            data.currency_by_name(name)
-                .map_or_else(|| name.to_string(), |c| c.id.clone())
-        },
-        amount,
-    };
-    if m.family == Family::Fossil {
-        let size = match params.fossils.len() {
-            1 => "Primitive",
-            2 => "Potent",
-            3 => "Powerful",
-            _ => "Prime",
-        };
-        let kind = if m.id.contains("alchemical") {
-            "Alchemical"
-        } else {
-            "Chaotic"
-        };
-        let mut out = vec![resolve(&format!("{size} {kind} Resonator"), 1.0)];
-        for &f in &params.fossils {
-            if let Some(fossil) = data.fossils.get(f as usize) {
-                out.push(Cost {
-                    key: fossil.currency.clone(),
-                    amount: 1.0,
+            Op::AddInfluence { influence } => {
+                if item.class(data).influence_tags.is_none() {
+                    return Err("this item class cannot be influenced".into());
+                }
+                let mut it = item.clone();
+                it.influences |= influence.bit();
+                one(it)
+            }
+            Op::AddInfluences { input } => {
+                if item.class(data).influence_tags.is_none() {
+                    return Err("this item class cannot be influenced".into());
+                }
+                let mut it = item.clone();
+                it.influences |= self.inputs[*input as usize].influences;
+                one(it)
+            }
+            Op::Corrupt => {
+                let mut it = item.clone();
+                it.corrupted = true;
+                one(it)
+            }
+            Op::VaalImplicit => {
+                if data.base_at(item.base).implicits_locked {
+                    return Err("the item's implicit modifiers cannot be changed".into());
+                }
+                let domain = data.base_at(item.base).domain.repoe();
+                let candidates = self.kind_pool(item, ModKind::CorruptedImplicit, true, |m| {
+                    m.domain == domain
                 });
+                if candidates.is_empty() {
+                    return Err("no corrupted implicit can roll on this item".into());
+                }
+                // One random implicit is replaced (maxroll, corruption); with none, one is added.
+                let n = item.implicits.len().max(1);
+                let mut out = Vec::new();
+                for slot in 0..n {
+                    for &(m, p) in &candidates {
+                        let mut it = item.clone();
+                        let roll = Roll { m, values: None };
+                        match it.implicits.get_mut(slot) {
+                            Some(r) => *r = roll,
+                            None => it.implicits.push(roll),
+                        }
+                        out.push((p / n as f64, it, None));
+                    }
+                }
+                Ok(out)
+            }
+            Op::EldritchImplicit { eldritch, tier } => {
+                let (kind, other, name) = match eldritch {
+                    Eldritch::Exarch => (ModKind::Exarch, ModKind::Eater, "Searing Exarch"),
+                    Eldritch::Eater => (ModKind::Eater, ModKind::Exarch, "Eater of Worlds"),
+                };
+                // Embers and ichors have no item level requirement (maxroll, eldritch crafting).
+                let candidates =
+                    self.kind_pool(item, kind, false, |m| m.eldritch_tier == Some(*tier));
+                if candidates.is_empty() {
+                    return Err(format!(
+                        "no tier {tier} {name} implicit can roll on this item"
+                    ));
+                }
+                Ok(candidates
+                    .into_iter()
+                    .map(|(m, p)| {
+                        let mut it = item.clone();
+                        it.implicits.retain(|r| data.mod_at(r.m).kind == other);
+                        it.implicits.push(Roll { m, values: None });
+                        (p, it, None)
+                    })
+                    .collect())
+            }
+            Op::Dominance => {
+                let guard = self.guard(item);
+                let influenced: Vec<(Side, usize)> = Side::BOTH
+                    .into_iter()
+                    .flat_map(|s| {
+                        item.affixes(s)
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, a)| {
+                                guard.can_change(data, s, a)
+                                    && data.mod_at(a.roll.m).influence.is_some()
+                            })
+                            .map(move |(i, _)| (s, i))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect();
+                if influenced.len() < 2 {
+                    return Err("needs at least 2 influenced modifiers that can change".into());
+                }
+                let mut items = Vec::new();
+                for &(xs, xi) in &influenced {
+                    for &(ys, yi) in &influenced {
+                        if (xs, xi) == (ys, yi) {
+                            continue;
+                        }
+                        let mut it = item.clone();
+                        let y = &mut it.affixes_mut(ys)[yi];
+                        match upgrade(data, item, y.roll.m) {
+                            Some(up) => {
+                                y.roll = Roll {
+                                    m: up,
+                                    values: None,
+                                }
+                            }
+                            None => y.roll.values = None,
+                        }
+                        it.affixes_mut(xs).remove(xi);
+                        items.push(it);
+                    }
+                }
+                Ok(uniform(items))
+            }
+            Op::ChangeResistance { from, to } => {
+                let guard = self.guard(item);
+                self.change_resistance(item, &guard, *from, *to)
+                    .map(|it| vec![(1.0, it, None)])
+            }
+            Op::AddQuality { by_rarity, max } => {
+                if item.quality >= *max {
+                    return Err(format!("quality is already {max}%"));
+                }
+                let mut it = item.clone();
+                let add = by_rarity[item.rarity as usize];
+                it.quality = (*max).min(item.quality.saturating_add(add));
+                one(it)
+            }
+            Op::CatalystQuality { catalyst } => {
+                let Some(c) = data.catalyst_by_name(catalyst) else {
+                    return Err(format!("unknown catalyst {catalyst}"));
+                };
+                let mut it = item.clone();
+                if item.catalyst == Some(c) {
+                    if item.quality >= 20 {
+                        let label = &data.catalysts[c as usize].label;
+                        return Err(format!("the item already has 20% {label} quality"));
+                    }
+                    it.quality += 1;
+                } else {
+                    it.catalyst = Some(c);
+                    it.quality = 1;
+                }
+                one(it)
+            }
+            Op::Imprint => {
+                let mut copy = item.clone();
+                copy.imprint = None;
+                let mut it = item.clone();
+                it.imprint = Some(Box::new(copy));
+                one(it)
+            }
+            Op::LinkAll => {
+                if item.sockets.is_empty() {
+                    return Err("the item has no sockets".into());
+                }
+                if item.sockets.len() == 1 {
+                    return Err("every socket is already linked".into());
+                }
+                let mut it = item.clone();
+                it.sockets = vec![item.sockets.concat()];
+                one(it)
+            }
+            Op::RemoveIntangibility => {
+                if item.intangibility == 0 {
+                    return Err("the item is not intangible".into());
+                }
+                let mut it = item.clone();
+                it.intangibility = 0;
+                one(it)
+            }
+            Op::Mirror
+            | Op::Destroy
+            | Op::Fill { .. }
+            | Op::Sockets { .. }
+            | Op::Unmodelled { .. }
+            | Op::Unveil
+            | Op::TakeInput { .. }
+            | Op::Restore
+            | Op::Chance { .. } => unreachable!("handled by step and exec"),
+        }
+    }
+
+    /// Why `m` cannot go on the item: a mod of another base domain, no room on its side, a
+    /// group the item has, or no crafted room for a crafted modifier.
+    fn cannot_place(&self, item: &Item, m: u32) -> Option<String> {
+        let data = self.data;
+        let md = data.mod_at(m);
+        let side = md.side?;
+        let own_domain = matches!(
+            md.domain.as_str(),
+            "item" | "misc" | "abyss_jewel" | "flask" | "tincture"
+        );
+        if own_domain && md.domain != data.base_at(item.base).domain.repoe() {
+            return Some(format!(
+                "{} cannot go on a {}",
+                md.id,
+                item.class(data).name
+            ));
+        }
+        if room(data, item, side) == 0 {
+            return Some(open_text(Some(side)).into());
+        }
+        if let Some(reason) = group_conflict(data, item, m) {
+            return Some(reason);
+        }
+        (md.kind == ModKind::Crafted && item.crafted_count(data) >= item.crafted_limit(data))
+            .then(|| "the item already has as many crafted modifiers as it can hold".into())
+    }
+
+    /// The weighted pool of one implicit or enchantment kind, normalised; `level` caps mod level
+    /// at the item level.
+    fn kind_pool(
+        &self,
+        item: &Item,
+        kind: ModKind,
+        level: bool,
+        extra: impl Fn(&crate::data::ModData) -> bool,
+    ) -> Vec<(u32, f64)> {
+        let data = self.data;
+        let tags = item.tags(data);
+        let w: Vec<(u32, f64)> = pool::weighted(data, &[kind], &tags)
+            .filter(|(_, m, _)| (!level || m.level <= item.item_level) && extra(m))
+            .map(|(i, _, w)| (i, w))
+            .collect();
+        pool::normalise(w)
+    }
+
+    /// Candidate mods an AddRandom draws from, with their probabilities. Every add leaves out
+    /// the attack or caster modifiers a Cannot Roll metamod names (claim `metamod.cannot-roll`).
+    fn add_candidates(
+        &self,
+        item: &Item,
+        pool: &Pool,
+        side: SideReq,
+        ignore_limits: bool,
+    ) -> Vec<(u32, f64)> {
+        let data = self.data;
+        let tags = item.tags(data);
+        let base = data.base_at(item.base);
+        let groups = item.explicit_groups(data);
+        let allowed = sides(data, item, side);
+        let open = [
+            room(data, item, Side::Prefix),
+            room(data, item, Side::Suffix),
+        ];
+        let level_cap = if item.has_meta(data, MetaMod::Level28) {
+            item.item_level.min(28)
+        } else {
+            item.item_level
+        };
+        let barred: Vec<u16> = [(MetaMod::NoAttack, "attack"), (MetaMod::NoCaster, "caster")]
+            .into_iter()
+            .filter(|(meta, _)| item.has_meta(data, *meta))
+            .filter_map(|(_, name)| data.tag_by_name(name))
+            .collect();
+        let (kind, tag) = match pool {
+            Pool::Ducat { tag } => (ModKind::Ducat, data.tag_by_name(tag)),
+            Pool::Tag { tag } => (ModKind::Natural, data.tag_by_name(tag)),
+            _ => (ModKind::Natural, None),
+        };
+        if matches!(pool, Pool::Tag { .. } | Pool::Ducat { .. }) && tag.is_none() {
+            return Vec::new();
+        }
+        let mut weighted = Vec::new();
+        for &i in data.mods_of_kind(kind) {
+            let m = data.mod_at(i);
+            let Some(s) = m.side else { continue };
+            let pool_ok = match pool {
+                Pool::Natural | Pool::Ducat { .. } => true,
+                Pool::Influence { influence } => m.influence == Some(*influence),
+                Pool::Influenced => m.influence.is_some_and(|i| item.has_influence(i)),
+                Pool::Tag { .. } => tag.is_some_and(|t| m.tags.contains(&t)),
+            };
+            if !pool_ok
+                || (kind != ModKind::Ducat && m.domain != base.domain.repoe())
+                || m.level > level_cap
+                || !allowed.contains(&s)
+                || (!ignore_limits && open[s.index()] == 0)
+                || m.groups.iter().any(|g| groups.contains(g))
+                || barred.iter().any(|t| m.tags.contains(t))
+            {
+                continue;
+            }
+            let w = match pool {
+                Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
+                _ => pool::weight(m, &tags),
+            };
+            weighted.push((i, w));
+        }
+        pool::normalise(weighted)
+    }
+
+    /// Turns the `from` resistance that can change into the `to` mod of the same rank among the
+    /// mods that can spawn on the item (the nearest lower rank when `to` has fewer tiers).
+    fn change_resistance(
+        &self,
+        item: &Item,
+        guard: &Guard,
+        from: Element,
+        to: Element,
+    ) -> Result<Item, String> {
+        let data = self.data;
+        let from_ranks = resistance_ranks(data, item, from.resistance_type());
+        let to_ranks = resistance_ranks(data, item, to.resistance_type());
+        let found = Side::BOTH.into_iter().find_map(|side| {
+            item.affixes(side)
+                .iter()
+                .position(|a| guard.can_change(data, side, a) && from_ranks.contains(&a.roll.m))
+                .map(|i| (side, i))
+        });
+        let Some((side, i)) = found else {
+            return Err(format!(
+                "no {} modifier can be changed",
+                from.resistance_type()
+            ));
+        };
+        let Some(&last) = to_ranks.last() else {
+            return Err(format!(
+                "no {} modifier can roll on this item",
+                to.resistance_type()
+            ));
+        };
+        let m = item.affixes(side)[i].roll.m;
+        let rank = from_ranks.iter().position(|&x| x == m).unwrap_or(0);
+        let target = to_ranks.get(rank).copied().unwrap_or(last);
+        if group_conflict(data, item, target).is_some() {
+            return Err(format!(
+                "the item already has a {} modifier",
+                to.resistance_type()
+            ));
+        }
+        let mut it = item.clone();
+        it.affixes_mut(side).remove(i);
+        if let Some(s) = data.mod_at(target).side {
+            it.affixes_mut(s).push(Affix::new(target));
+        }
+        Ok(it)
+    }
+
+    /// Unveiling: up to three options drawn by weight without replacement, each draw leaving
+    /// out the options that share a group with one already drawn (an offer never holds two mods
+    /// of one group); the player picks one, and the ops after the unveil run on the pick.
+    fn unveil(&mut self, state: State, rest: Prog<'_>, conditional: bool) -> Result<Step, Stop> {
+        let data = self.data;
+        let item = &state.item;
+        let Some((side, index)) = item.veiled(data) else {
+            return self.nothing(conditional, state, "needs a veiled modifier".into());
+        };
+        let tags = item.tags(data);
+        let placeholder = item.affixes(side)[index].roll.m;
+        let mut groups = item.explicit_groups(data);
+        for g in &data.mod_at(placeholder).groups {
+            groups.remove(g);
+        }
+        let mut options: Vec<(u32, f64)> = pool::weighted(data, &[ModKind::Unveiled], &tags)
+            .filter(|(_, m, _)| {
+                m.side == Some(side)
+                    && m.level <= item.item_level
+                    && !m.groups.iter().any(|g| groups.contains(g))
+            })
+            .map(|(i, m, _)| (i, f64::from(pool::spawn(m, &tags))))
+            .collect();
+        if options.is_empty() {
+            return self.nothing(
+                conditional,
+                state,
+                "no unveiled modifier can be offered".into(),
+            );
+        }
+        options.sort_by_key(|(m, _)| *m);
+        let mut sets: BTreeMap<Vec<usize>, f64> = BTreeMap::new();
+        self.draw(&options, &mut Vec::new(), 1.0, &mut sets)?;
+        let mut ends = Vec::with_capacity(sets.len());
+        for (set, p) in sets {
+            let mut picks = Vec::with_capacity(set.len());
+            for k in set {
+                let mut it = item.clone();
+                let fractured = it.affixes(side)[index].fractured;
+                it.affixes_mut(side)[index] = Affix {
+                    roll: Roll {
+                        m: options[k].0,
+                        values: None,
+                    },
+                    fractured,
+                };
+                it.canonical(data);
+                settle(item, &mut it);
+                self.in_choice += 1;
+                let leaves = self.exec(
+                    vec![(
+                        1.0,
+                        State {
+                            item: it,
+                            last_added: None,
+                        },
+                    )],
+                    rest,
+                );
+                self.in_choice -= 1;
+                picks.push(Outcome::from_leaves(leaves?));
+            }
+            // A single option is no choice at all.
+            if picks.len() == 1 {
+                let only = picks.remove(0);
+                ends.extend(only.leaves.into_iter().map(|(q, l)| (p * q, l)));
+            } else {
+                ends.push((p, Leaf::Choice(picks)));
             }
         }
-        return out;
+        Ok(Step::End(ends))
     }
-    m.cost.iter().map(|c| resolve(&c.name, c.amount)).collect()
+
+    /// Every ordered draw of up to three options, summed per unordered set.
+    fn draw(
+        &mut self,
+        options: &[(u32, f64)],
+        drawn: &mut Vec<usize>,
+        p: f64,
+        sets: &mut BTreeMap<Vec<usize>, f64>,
+    ) -> Result<(), Stop> {
+        let data = self.data;
+        let shares = |a: usize, b: usize| {
+            let ga = &data.mod_at(options[a].0).groups;
+            data.mod_at(options[b].0)
+                .groups
+                .iter()
+                .any(|g| ga.contains(g))
+        };
+        let eligible: Vec<usize> = (0..options.len())
+            .filter(|&k| !drawn.iter().any(|&d| d == k || shares(d, k)))
+            .collect();
+        if drawn.len() == 3 || eligible.is_empty() {
+            let mut key = drawn.clone();
+            key.sort_unstable();
+            *sets.entry(key).or_insert(0.0) += p;
+            return self.grow(1);
+        }
+        let total: f64 = eligible.iter().map(|&k| options[k].1).sum();
+        for &k in &eligible {
+            drawn.push(k);
+            self.draw(options, drawn, p * options[k].1 / total, sets)?;
+            drawn.pop();
+        }
+        Ok(())
+    }
 }

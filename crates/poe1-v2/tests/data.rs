@@ -8,7 +8,7 @@ use poe1_v2::test_data;
 #[test]
 fn bundle_loads() {
     let d = test_data();
-    assert_eq!(d.format, 1);
+    assert_eq!(d.format, poe1_v2::data::FORMAT);
     let kind = |id: &str| {
         let m = d.mod_at(d.mod_by_id(id).unwrap_or_else(|| panic!("{id} missing")));
         (m.kind, m.side)

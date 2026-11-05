@@ -1,14 +1,16 @@
 //! The v2 game-data bundle: every base, modifier, bench option, essence, fossil, catalyst,
 //! currency and stat translation an in-scope item can touch, plus the method catalog, the cited
 //! claims and each currency's scope. `datagen-v2` builds exactly these types; there is no second
-//! copy of the schema.
+//! copy of the schema. `Data::from_bundle` indexes the bundle by every id methods name and
+//! validates every method (`Method::validate`), so a bundle with a bad method does not load.
 
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-/// Bundle format version; `Data::from_json` rejects any other.
-pub const FORMAT: u32 = 1;
+/// Bundle format version; `Data::from_json` rejects any other. 2: methods state their
+/// protection policy and write reforges as primitives.
+pub const FORMAT: u32 = 2;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -514,6 +516,8 @@ pub enum DataError {
     Json(#[from] serde_json::Error),
     #[error("bundle format {found}, expected {expected}; regenerate it")]
     Format { found: u32, expected: u32 },
+    #[error("method {id}: {problem}")]
+    Method { id: String, problem: String },
 }
 
 /// The bundle plus lookup indexes.
@@ -534,6 +538,10 @@ pub struct Data {
     claim_index: HashMap<String, usize>,
     currency_by_name: HashMap<String, usize>,
     currency_by_id: HashMap<String, usize>,
+    /// Name or id → first position, for the ids methods name.
+    class_index: HashMap<String, usize>,
+    catalyst_index: HashMap<String, usize>,
+    essence_index: HashMap<String, usize>,
     /// Mod indices per kind, in bundle order.
     kind_index: HashMap<ModKind, Vec<u32>>,
 }
@@ -544,6 +552,15 @@ impl std::ops::Deref for Data {
     fn deref(&self) -> &Bundle {
         &self.bundle
     }
+}
+
+/// Each name's first position.
+fn first_positions<'a>(names: impl Iterator<Item = &'a String>) -> HashMap<String, usize> {
+    let mut out = HashMap::new();
+    for (i, n) in names.enumerate() {
+        out.entry(n.clone()).or_insert(i);
+    }
+    out
 }
 
 /// A translation string with every `{k}` replaced by `#`.
@@ -607,7 +624,7 @@ impl Data {
         for (i, c) in bundle.currencies.iter().enumerate() {
             currency_by_name.entry(c.name.clone()).or_insert(i);
         }
-        Ok(Data {
+        let data = Data {
             mod_index: bundle
                 .mods
                 .iter()
@@ -652,8 +669,18 @@ impl Data {
                 .enumerate()
                 .map(|(i, c)| (c.id.clone(), i))
                 .collect(),
+            class_index: first_positions(bundle.classes.iter().map(|c| &c.id)),
+            catalyst_index: first_positions(bundle.catalysts.iter().map(|c| &c.name)),
+            essence_index: first_positions(bundle.essences.iter().map(|e| &e.name)),
             bundle,
-        })
+        };
+        for m in &data.bundle.methods {
+            m.validate(&data).map_err(|problem| DataError::Method {
+                id: m.id.clone(),
+                problem,
+            })?;
+        }
+        Ok(data)
     }
 
     pub fn mod_at(&self, m: u32) -> &ModData {
@@ -685,11 +712,7 @@ impl Data {
     }
 
     pub fn class_by_id(&self, id: &str) -> Option<u16> {
-        self.bundle
-            .classes
-            .iter()
-            .position(|c| c.id == id)
-            .map(|i| i as u16)
+        self.class_index.get(id).map(|&i| i as u16)
     }
 
     pub fn tag(&self, t: u16) -> &str {
@@ -763,11 +786,12 @@ impl Data {
     }
 
     pub fn catalyst_by_name(&self, name: &str) -> Option<u8> {
-        self.bundle
-            .catalysts
-            .iter()
-            .position(|c| c.name == name)
-            .map(|i| i as u8)
+        self.catalyst_index.get(name).map(|&i| i as u8)
+    }
+
+    /// The essence with this name (index into `Bundle::essences`).
+    pub fn essence_by_name(&self, name: &str) -> Option<u16> {
+        self.essence_index.get(name).map(|&i| i as u16)
     }
 
     /// Every mod of this kind, in bundle order.

@@ -1,15 +1,17 @@
 //! Patterns: the owner's two Archdemon Crown patterns against the Crown fixtures, value
-//! thresholds on unrolled values, slot progress and compile errors.
+//! thresholds on unrolled values, slot progress, the solver-grade state and its flat lift, and
+//! compile errors.
 
 mod common;
 
 use common::{item, pattern, pattern_spec, spec};
-use poe1_v2::apply::Outcome;
+use poe1_v2::apply::{Leaf, Outcome, Params, Pending, apply};
 use poe1_v2::data::{Data, Side};
-use poe1_v2::item::{AffixSpec, Item};
+use poe1_v2::item::{AffixSpec, Item, MetaMod};
 use poe1_v2::method::PendingReason;
 use poe1_v2::pattern::{
-    ClassSpec, Grade, Lifted, MatcherSpec, Pattern, classify, evaluate, lift, matches_probability,
+    AffixState, ClassSpec, Grade, LiftedLeaf, MatcherSpec, Pattern, classify, evaluate, lift,
+    matches_probability,
 };
 use poe1_v2::test_data;
 
@@ -59,10 +61,10 @@ fn affix_index(d: &Data, item: &Item, side: Side, id: &str) -> usize {
         .unwrap_or_else(|| panic!("no {side:?} affix {id}"))
 }
 
-fn class_ids(p: &Pattern, classes: &[u16]) -> Vec<String> {
-    let mut ids: Vec<String> = classes
+fn class_ids(p: &Pattern, affixes: &[AffixState]) -> Vec<String> {
+    let mut ids: Vec<String> = affixes
         .iter()
-        .map(|&c| p.classes[c as usize].id.clone())
+        .map(|a| p.classes[a.class as usize].id.clone())
         .collect();
     ids.sort();
     ids
@@ -402,40 +404,67 @@ fn missing_prefers_flexible_slot() {
     assert_eq!(states[0].1.unused, [0, 0]);
 }
 
+/// One certain leaf.
+fn single(leaf: Leaf) -> Outcome {
+    Outcome {
+        leaves: vec![(1.0, leaf)],
+    }
+}
+
 /// P4: `lift` keeps the whole distribution of every item in a multi-item outcome.
 #[test]
 fn lift_many_keeps_distribution() {
     let d = test_data();
     let p = big_life_pattern(d);
     let it = crown_a_life(d, None);
-    let Lifted::Many(items) = lift(d, &p, &Outcome::Items(vec![it])) else {
-        panic!("not Many")
+    let lifted = lift(d, &p, &single(Leaf::Items(vec![it])));
+    let [(mass, LiftedLeaf::Many(items))] = lifted.leaves.as_slice() else {
+        panic!("not one Many: {lifted:?}")
     };
+    assert_eq!(*mass, 1.0);
     assert_eq!(items.len(), 1);
-    let Lifted::Chance(states) = &items[0] else {
-        panic!("not Chance: {:?}", items[0])
-    };
-    assert_eq!(states.len(), 2);
-    assert!((states[0].0 - 8.0 / 15.0).abs() < 1e-12);
-    assert!((states[1].0 - 7.0 / 15.0).abs() < 1e-12);
+    assert_eq!(items[0].len(), 2);
+    assert!((items[0][0].0 - 8.0 / 15.0).abs() < 1e-12);
+    assert!((items[0][1].0 - 7.0 / 15.0).abs() < 1e-12);
 }
 
-/// P4: a Pending outcome carries the whole distribution of what the item already holds.
+/// P4: a reforge's certain part lifts to one Pending leaf per state it can be in; a result
+/// stopped before its step lifts to no known state at all.
 #[test]
 fn lift_pending_keeps_distribution() {
     let d = test_data();
     let p = big_life_pattern(d);
     let it = crown_a_life(d, None);
-    let out = Outcome::Pending {
-        item: it,
-        ops: Vec::new(),
-        reason: PendingReason::MultiDraw,
+    let pending = |certain: bool| {
+        single(Leaf::Pending(Pending {
+            inputs: vec![it.clone()],
+            params: Params::default(),
+            item: it.clone(),
+            certain,
+            ops: Vec::new(),
+            reason: PendingReason::MultiDraw,
+        }))
     };
-    let Lifted::Pending { known, .. } = lift(d, &p, &out) else {
-        panic!("not Pending")
-    };
-    assert_eq!(known.len(), 2);
-    assert!((known.iter().map(|(p, _)| p).sum::<f64>() - 1.0).abs() < 1e-12);
+    let lifted = lift(d, &p, &pending(true));
+    assert_eq!(lifted.leaves.len(), 2);
+    assert!((lifted.mass() - 1.0).abs() < 1e-12);
+    assert!(
+        lifted
+            .leaves
+            .iter()
+            .all(|(_, l)| matches!(l, LiftedLeaf::Pending { known: Some(_), .. }))
+    );
+    let before = lift(d, &p, &pending(false));
+    assert_eq!(
+        before.leaves,
+        [(
+            1.0,
+            LiftedLeaf::Pending {
+                reason: PendingReason::MultiDraw,
+                known: None
+            }
+        )]
+    );
 }
 
 /// P4: Choice options are sorted canonically, so order of production does not matter.
@@ -443,11 +472,83 @@ fn lift_pending_keeps_distribution() {
 fn choice_options_sorted() {
     let d = test_data();
     let p = pattern("crown-shaper");
-    let a = Outcome::Item(item("crown-a"));
-    let b = Outcome::Item(item("crown-a-mana"));
-    let one = lift(d, &p, &Outcome::Choice(vec![a.clone(), b.clone()]));
-    let two = lift(d, &p, &Outcome::Choice(vec![b, a]));
+    let a = single(Leaf::Item(item("crown-a")));
+    let b = single(Leaf::Item(item("crown-a-mana")));
+    let one = lift(d, &p, &single(Leaf::Choice(vec![a.clone(), b.clone()])));
+    let two = lift(d, &p, &single(Leaf::Choice(vec![b, a])));
     assert_eq!(one, two);
+}
+
+/// A2: the lifted state keys what the next step reads. The two Crowns hold the same classes,
+/// but one's life prefix is fractured: Annulment gives 3 outcomes at 1/3 on the first and 2 at
+/// 1/2 on the second, so their states must differ.
+#[test]
+fn fractured_and_locks_split_states() {
+    let d = test_data();
+    let p = pattern("crown-shaper");
+    let plain = evaluate(d, &p, &item("crown-d2-scbc"));
+    let fractured = evaluate(d, &p, &item("crown-d2-scbc-fractured"));
+    assert_eq!((plain.len(), fractured.len()), (1, 1));
+    let (a, b) = (&plain[0].1, &fractured[0].1);
+    assert_ne!(a, b);
+    assert_eq!(class_ids(&p, &a.prefixes), class_ids(&p, &b.prefixes));
+    assert_eq!(
+        a.prefixes.iter().filter(|x| x.fractured).count() + 1,
+        b.prefixes.iter().filter(|x| x.fractured).count()
+    );
+    // The lifts of the two fixtures as outcomes differ the same way.
+    let lift_of = |name: &str| lift(d, &p, &single(Leaf::Item(item(name))));
+    assert_ne!(lift_of("crown-d2-scbc"), lift_of("crown-d2-scbc-fractured"));
+    // Suffixes Cannot Be Changed shows as a lock and a metamod; a crafted mana prefix in its
+    // place reads as the same class but no lock.
+    assert_eq!(a.locks, [false, true]);
+    assert_eq!(a.metamods, [MetaMod::LockSuffixes]);
+    let l1 = &evaluate(d, &p, &item("crown-l1"))[0].1;
+    let mut s = spec("crown-l1");
+    s.prefixes
+        .retain(|x| x.id != "DexMasterItemGenerationCannotChangeSuffixes");
+    s.prefixes.push(AffixSpec {
+        id: "EinharMasterIncreasedMana2".into(),
+        values: Some(vec![40]),
+        fractured: false,
+    });
+    let mana = &evaluate(d, &p, &Item::from_spec(d, &s).unwrap())[0].1;
+    assert_eq!(class_ids(&p, &l1.prefixes), class_ids(&p, &mana.prefixes));
+    assert_ne!(l1, mana);
+    assert_eq!(mana.locks, [false, false]);
+    // The crafted class is a catch-all: it carries the mod groups, which differ.
+    let crafted = p.class_index("any-crafted-prefix").unwrap();
+    let groups = |s: &poe1_v2::pattern::PatternState| {
+        s.prefixes
+            .iter()
+            .find(|a| a.class == crafted)
+            .map(|a| a.groups.clone())
+            .unwrap()
+    };
+    assert_ne!(groups(l1), groups(mana));
+}
+
+/// The lift of a real outcome is flat and carries all its mass.
+#[test]
+fn lift_of_exalt_is_flat() {
+    let d = test_data();
+    let p = pattern("crown-shaper");
+    let m = d.method("currency/exalted").unwrap();
+    let out = apply(d, m, &[item("crown-a-mana")], &Params::default()).unwrap();
+    let lifted = lift(d, &p, &out);
+    assert!((lifted.mass() - 1.0).abs() < 1e-12);
+    assert!(
+        lifted
+            .leaves
+            .iter()
+            .all(|(_, l)| matches!(l, LiftedLeaf::State(_)))
+    );
+    // Distinct states only.
+    for (i, (_, a)) in lifted.leaves.iter().enumerate() {
+        for (_, b) in &lifted.leaves[i + 1..] {
+            assert_ne!(a, b);
+        }
+    }
 }
 
 #[test]

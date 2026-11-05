@@ -1,16 +1,23 @@
 //! Crafting methods as data: what a currency, bench option, essence, fossil, catalyst, harvest
-//! craft, beastcraft or unveil needs from an item (`Require`, `PairRequire`) and what it does to
-//! it (`Op`, run by `apply`). Hand-authored methods live in `rules/v2/methods.json`; `datagen-v2`
-//! generates the bench, essence, catalyst and fossil families.
+//! craft, beastcraft or unveil needs from an item (`Require`, `PairRequire`), how it treats the
+//! metamods that protect modifiers (`Protection`), and what it does to it (`Op`, run by `apply`).
+//! A reforge is written as primitives: set the rarity, clear what can change, place the
+//! guaranteed modifier, then `Fill` with the typed mod-count table. Hand-authored methods live in
+//! `rules/v2/methods.json`; `datagen-v2` generates the bench, essence, catalyst and fossil
+//! families. `Method::validate` resolves every id a method names against the bundle, and
+//! `Data::from_bundle` runs it on every method, so a bundle with a bad method does not load.
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::{Category, Eldritch, Influence, Rarity};
+use crate::data::{Category, Data, Eldritch, Influence, Rarity};
 
 fn one() -> u8 {
     1
 }
 
+/// One crafting step. A two-input method reads `inputs` in the order the game asks for them: an
+/// Awakener's Orb takes the item whose influence it takes first and the item it reforges second;
+/// a recombinator takes its two items in either order.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Method {
@@ -25,6 +32,11 @@ pub struct Method {
     pub requires: Vec<Require>,
     #[serde(default)]
     pub pair: Vec<PairRequire>,
+    /// How the method treats the metamods that protect modifiers. Required exactly when an op
+    /// removes or changes existing explicits (`Op::changes_explicits`), or to forbid the method
+    /// on an item that carries one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protect: Option<Protection>,
     pub ops: Vec<Op>,
     #[serde(default)]
     pub claims: Vec<String>,
@@ -33,9 +45,12 @@ pub struct Method {
     /// The fixture the catalog demonstrates the method on.
     #[serde(default)]
     pub example: Option<String>,
+    /// Fossil family only: the resonator currency ids for one, two, three and four fossils.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resonators: Vec<String>,
 }
 
-/// A currency name, or `beast:<name>`; datagen resolves it to a `Cost`.
+/// A currency name, or `beast:<name>`; `apply::cost` resolves it to a `Cost`.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CostSpec {
@@ -67,6 +82,35 @@ impl Family {
         Family::Beast,
         Family::Unveil,
     ];
+}
+
+/// How a method treats one kind of protecting metamod. The values come from Craft of Exile's
+/// metamod table (https://www.craftofexile.com/metamods), checked against maxroll's
+/// metacrafting guide and vhpg's Prefixes Cannot Be Changed table.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "kebab-case")]
+pub enum Policy {
+    /// What the metamod protects stays as it is.
+    Respect,
+    /// The method changes it as if the metamod were not there.
+    Ignore,
+    /// The method cannot be used while the metamod is on the item.
+    Forbid,
+}
+
+/// A method's treatment of the protecting metamods; `apply` decides in one place, from this,
+/// whether an affix can change. Can Have Up To 3 Crafted Modifiers protects nothing and forbids
+/// nothing (owner, Q9).
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Protection {
+    /// Prefixes Cannot Be Changed and Suffixes Cannot Be Changed: respected, every modifier on
+    /// the side they lock stays.
+    pub locks: Policy,
+    /// Cannot Roll Attack Modifiers and Cannot Roll Caster Modifiers: respected, a modifier with
+    /// the tag they name is never removed or changed. Every op that adds a random modifier leaves
+    /// that tag out whatever the policy (claim `metamod.cannot-roll`).
+    pub cannot_roll: Policy,
 }
 
 /// One precondition every input must meet.
@@ -139,9 +183,6 @@ pub enum Require {
     HasModType {
         any_of: Vec<String>,
     },
-    ItemLevelAtMost {
-        n: u8,
-    },
     EssenceFits {
         essence: String,
     },
@@ -152,9 +193,12 @@ pub enum Require {
     ImplicitsChangeable,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum SideReq {
+    #[default]
     Any,
     Prefix,
     Suffix,
@@ -170,16 +214,25 @@ pub enum PairRequire {
     DifferentSingleInfluence,
 }
 
-/// One step of what a method does; `apply` runs them in order.
+/// One step of what a method does; `apply` runs them in order over a distribution of items. An
+/// op with nothing to do outside a `Chance` branch refuses the method; inside one it leaves that
+/// branch's item unchanged.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(tag = "op", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum Op {
     SetRarity {
         rarity: Rarity,
     },
-    ClearExplicits,
-    RerollMagic,
-    ClearAll,
+    /// Removes every explicit on `side` that can change under the method's protection; the
+    /// rarity stays (an Orb of Alteration, the clear before a reforge).
+    Clear {
+        #[serde(default)]
+        side: SideReq,
+    },
+    /// An Orb of Scouring: removes every explicit that can change. With nothing kept the item
+    /// turns normal; with only fractured modifiers left it turns magic (one) or rare (two or
+    /// more); a side a metamod kept leaves the rarity as it was.
+    Scour,
     AddRandom {
         pool: Pool,
         side: SideReq,
@@ -190,13 +243,19 @@ pub enum Op {
         filter: RemoveFilter,
         #[serde(default)]
         keep_last_added: bool,
+        /// With nothing it can remove, remove nothing and carry on instead of refusing the
+        /// method (the Farric beastcrafts still add, claim `beast.farric`).
         #[serde(default)]
-        respects_cannot_roll: bool,
+        optional: bool,
     },
     AddVeiled,
     Unveil,
     AddMod {
         r#mod: String,
+    },
+    /// The essence's modifier for the item's class.
+    AddEssence {
+        essence: String,
     },
     RemoveCrafted,
     SetEnchant {
@@ -212,6 +271,14 @@ pub enum Op {
     Fracture,
     AddInfluence {
         influence: Influence,
+    },
+    /// Adds every influence input `input` carries.
+    AddInfluences {
+        input: u8,
+    },
+    /// Carries on with input `input` instead of the first one.
+    TakeInput {
+        input: u8,
     },
     Corrupt,
     VaalImplicit,
@@ -231,7 +298,6 @@ pub enum Op {
     CatalystQuality {
         catalyst: String,
     },
-    Foresee,
     Imprint,
     Restore,
     LinkAll,
@@ -241,12 +307,9 @@ pub enum Op {
     Chance {
         branches: Vec<Branch>,
     },
-    Reforge {
-        spec: ReforgeSpec,
-    },
-    /// "Add the reforge's remaining random mods"; never run in this pass.
+    /// The rest of a reforge: its random modifiers. Not run in this pass; `apply` stops here.
     Fill {
-        spec: ReforgeSpec,
+        fill: Fill,
     },
     Sockets {
         change: SocketChange,
@@ -254,6 +317,24 @@ pub enum Op {
     Unmodelled {
         reason: PendingReason,
     },
+}
+
+impl Op {
+    /// Whether the op removes or changes explicits the item already has; a method with such an
+    /// op must state its `Protection`.
+    pub fn changes_explicits(&self) -> bool {
+        matches!(
+            self,
+            Op::Clear { .. }
+                | Op::Scour
+                | Op::RemoveRandom { .. }
+                | Op::RerollValues {
+                    scope: ValueScope::Explicit
+                }
+                | Op::Dominance
+                | Op::ChangeResistance { .. }
+        )
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -273,9 +354,18 @@ pub struct Branch {
 )]
 pub enum Pool {
     Natural,
-    Influence { influence: Influence },
-    Tag { tag: String },
-    Ducat { tag: String },
+    /// Natural modifiers of one influence.
+    Influence {
+        influence: Influence,
+    },
+    /// Natural modifiers of any influence the item has.
+    Influenced,
+    Tag {
+        tag: String,
+    },
+    Ducat {
+        tag: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -325,34 +415,26 @@ impl Element {
     }
 }
 
+/// The random rest of a reforge, carried for the pass that enumerates it.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ReforgeSpec {
-    pub rarity: Rarity,
-    #[serde(default)]
-    pub side: Option<SideReq>,
-    #[serde(default)]
-    pub respects_locks: bool,
-    #[serde(default)]
-    pub guarantee: Option<Guarantee>,
+pub struct Fill {
+    /// (explicit total the reforge ends with, relative weight), by total: `[[4, 8], [5, 3],
+    /// [6, 1]]`, which datagen checks against claim `chaos.count`. Which modifiers count toward
+    /// the total (kept, locked, guaranteed) is claim `reforge.counts`, an open owner question.
+    /// Empty when the count rule is not known, or when the weighting brings its own (a
+    /// recombine).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub counts: Vec<(u8, u32)>,
     #[serde(default)]
     pub weighting: Weighting,
-}
-
-/// The part of a reforge that is certain.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub enum Guarantee {
-    Essence,
-    Veiled,
-    Tag { tag: String },
-    Infamous,
-    InfluenceMod,
-    InfluenceFromEachInput,
+    /// The sides it draws on.
+    #[serde(default)]
+    pub side: SideReq,
+    /// The highest modifier level it draws: an essence's "Properties restricted to level N and
+    /// below" (claim `essence.ilvl`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mod_level_max: Option<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -360,21 +442,36 @@ pub enum Guarantee {
 pub enum Weighting {
     #[default]
     Normal,
+    /// The fossils in `apply::Params::fossils`.
     Fossils,
+    /// More likely to roll the modifiers the first input had.
     MoreLikelySame,
     LessLikelySame,
+    /// Drawn from both inputs' modifiers (the `recombine.*` claims).
     Recombine,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
+/// What a socket op does; a bench option's count and colours are part of it.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum SocketChange {
     RandomCount,
-    Count,
+    Count {
+        n: u8,
+    },
     RandomLinks,
-    Links,
+    Links {
+        n: u8,
+    },
     RandomColours,
-    Colours,
+    /// RePoE's colour spec, such as `"RRG"`.
+    Colours {
+        spec: String,
+    },
     LinkUpToFour,
     TaintedCount,
     TaintedLinks,
@@ -393,7 +490,13 @@ pub enum PendingReason {
     MultiDraw,
     Sockets,
     Unverified,
-    NeedsData { what: String },
+    NeedsData {
+        what: String,
+    },
+    /// The rule is known but not modelled yet.
+    NotModelled {
+        why: String,
+    },
     TooLarge,
 }
 
@@ -405,7 +508,253 @@ impl PendingReason {
             PendingReason::Sockets => "socket outcome table".into(),
             PendingReason::Unverified => "rule not yet confirmed".into(),
             PendingReason::NeedsData { what } => format!("needs data: {what}"),
-            PendingReason::TooLarge => "more than 100000 outcomes".into(),
+            PendingReason::NotModelled { why } => format!("not modelled yet: {why}"),
+            PendingReason::TooLarge => format!("more than {} outcomes", crate::apply::MAX_BRANCHES),
         }
+    }
+}
+
+/// Calls `f` on every op, Chance branches included, with whether more ops run after it.
+fn walk<'a>(ops: &'a [Op], followed: bool, f: &mut dyn FnMut(&'a Op, bool)) {
+    for (i, op) in ops.iter().enumerate() {
+        let after = followed || i + 1 < ops.len();
+        f(op, after);
+        if let Op::Chance { branches } = op {
+            for b in branches {
+                walk(&b.ops, after, f);
+            }
+        }
+    }
+}
+
+impl Method {
+    /// Every op, Chance branches included.
+    pub fn all_ops(&self) -> Vec<&Op> {
+        let mut out = Vec::new();
+        walk(&self.ops, false, &mut |op, _| out.push(op));
+        out
+    }
+
+    /// Whether an op removes or changes explicits the item already has.
+    pub fn changes_explicits(&self) -> bool {
+        self.all_ops().iter().any(|op| op.changes_explicits())
+    }
+
+    /// Whether an op adds past the affix limits (Merrick's Ducat); its results may hold more
+    /// prefixes or suffixes than the item's limits (`Item::validate_over_limit`).
+    pub fn ignores_limits(&self) -> bool {
+        self.all_ops().iter().any(|op| {
+            matches!(
+                op,
+                Op::AddRandom {
+                    ignore_limits: true,
+                    ..
+                }
+            )
+        })
+    }
+
+    /// Every id the method names resolves against the bundle, and its shape is one `apply` can
+    /// run: Chance masses sum to 1, Fill tables are well formed, nothing follows a Mirror or a
+    /// Destroy, input numbers exist, and the protection is stated where an op needs it.
+    pub fn validate(&self, data: &Data) -> Result<(), String> {
+        if !(1..=2).contains(&self.inputs) {
+            return Err(format!("takes {} inputs; methods take 1 or 2", self.inputs));
+        }
+        if !self.pair.is_empty() && self.inputs != 2 {
+            return Err("pair rules need two inputs".into());
+        }
+        if self.ops.is_empty() {
+            return Err("has no ops".into());
+        }
+        for c in &self.claims {
+            if data.claim(c).is_none() {
+                return Err(format!("unknown claim {c}"));
+            }
+        }
+        for c in &self.cost {
+            if c.amount.is_nan() || c.amount <= 0.0 {
+                return Err(format!("cost {:?} has amount {}", c.name, c.amount));
+            }
+            if c.name.starts_with("beast:") {
+                continue;
+            }
+            match data.currencies.iter().filter(|x| x.name == c.name).count() {
+                0 => return Err(format!("cost names unknown currency {:?}", c.name)),
+                1 => {}
+                n => {
+                    return Err(format!(
+                        "cost {:?} names {n} currencies; use one with a unique name",
+                        c.name
+                    ));
+                }
+            }
+        }
+        match (self.family == Family::Fossil, self.resonators.len()) {
+            (true, 4) | (false, 0) => {}
+            (true, _) => {
+                return Err(
+                    "a fossil method lists four resonators, for one to four fossils".into(),
+                );
+            }
+            (false, _) => return Err("only a fossil method lists resonators".into()),
+        }
+        for r in &self.resonators {
+            if data.currency_by_id(r).is_none() {
+                return Err(format!("unknown resonator currency {r}"));
+            }
+        }
+        match (self.changes_explicits(), self.protect) {
+            (true, None) => {
+                return Err("changes existing modifiers but states no protection policy".into());
+            }
+            (false, Some(p)) if p.locks != Policy::Forbid && p.cannot_roll != Policy::Forbid => {
+                return Err("states a protection policy but changes no existing modifier".into());
+            }
+            _ => {}
+        }
+        for r in &self.requires {
+            validate_require(data, r)?;
+        }
+        let mut problem = None;
+        walk(&self.ops, false, &mut |op, followed| {
+            if problem.is_none() {
+                problem = validate_op(data, self, op, followed).err();
+            }
+        });
+        problem.map_or(Ok(()), Err)
+    }
+}
+
+fn known_mod(data: &Data, id: &str) -> Result<u32, String> {
+    data.mod_by_id(id)
+        .ok_or_else(|| format!("unknown mod {id}"))
+}
+
+fn validate_require(data: &Data, r: &Require) -> Result<(), String> {
+    match r {
+        Require::Rarity { any_of } if any_of.is_empty() => Err("empty rarity list".into()),
+        Require::Category { any_of } if any_of.is_empty() => Err("empty category list".into()),
+        Require::Class { any_of } => {
+            if any_of.is_empty() {
+                return Err("empty class list".into());
+            }
+            for c in any_of {
+                if data.class_by_id(c).is_none() {
+                    return Err(format!("unknown class {c}"));
+                }
+            }
+            Ok(())
+        }
+        Require::GroupFree { r#mod } => known_mod(data, r#mod).map(|_| ()),
+        Require::HasModType { any_of } => {
+            for t in any_of {
+                if data.mod_type_by_name(t).is_none() {
+                    return Err(format!("unknown mod type {t}"));
+                }
+            }
+            Ok(())
+        }
+        Require::CatalystRoom { catalyst } if data.catalyst_by_name(catalyst).is_none() => {
+            Err(format!("unknown catalyst {catalyst}"))
+        }
+        Require::EssenceFits { essence } if data.essence_by_name(essence).is_none() => {
+            Err(format!("unknown essence {essence}"))
+        }
+        Require::Fossils { min, max } if !(1 <= *min && min <= max && *max <= 4) => {
+            Err(format!("fossil count {min} to {max} is not within 1 to 4"))
+        }
+        _ => Ok(()),
+    }
+}
+
+fn validate_op(data: &Data, m: &Method, op: &Op, followed: bool) -> Result<(), String> {
+    match op {
+        Op::Mirror | Op::Destroy if followed => {
+            Err("an op follows a Mirror or a Destroy, which end the method".into())
+        }
+        Op::AddRandom { pool, .. } => match pool {
+            Pool::Tag { tag } | Pool::Ducat { tag } if data.tag_by_name(tag).is_none() => {
+                Err(format!("unknown tag {tag}"))
+            }
+            _ => Ok(()),
+        },
+        Op::AddMod { r#mod } => {
+            let md = data.mod_at(known_mod(data, r#mod)?);
+            if md.kind.is_explicit() && md.side.is_some() {
+                Ok(())
+            } else {
+                Err(format!("{mod} is not a prefix or suffix", mod = r#mod))
+            }
+        }
+        Op::SetEnchantMod { r#mod } => {
+            if data.mod_at(known_mod(data, r#mod)?).kind.is_enchant() {
+                Ok(())
+            } else {
+                Err(format!("{mod} is not an enchantment", mod = r#mod))
+            }
+        }
+        Op::AddEssence { essence } => match data.essence_by_name(essence) {
+            Some(e) if !data.essences[e as usize].mods.is_empty() => Ok(()),
+            Some(_) => Err(format!("{essence} has no modifier for any class")),
+            None => Err(format!("unknown essence {essence}")),
+        },
+        Op::AddVeiled
+            if crate::apply::VEILED
+                .iter()
+                .any(|id| data.mod_by_id(id).is_none()) =>
+        {
+            Err("the bundle lacks a veiled placeholder modifier".into())
+        }
+        Op::CatalystQuality { catalyst } if data.catalyst_by_name(catalyst).is_none() => {
+            Err(format!("unknown catalyst {catalyst}"))
+        }
+        Op::ChangeResistance { from, to } => {
+            if from == to {
+                return Err("a resistance change needs two elements".into());
+            }
+            for t in [from.resistance_type(), to.resistance_type()] {
+                if data.mod_type_by_name(t).is_none() {
+                    return Err(format!("unknown mod type {t}"));
+                }
+            }
+            Ok(())
+        }
+        Op::AddInfluences { input } | Op::TakeInput { input } if *input >= m.inputs => Err(
+            format!("names input {input} of a method that takes {}", m.inputs),
+        ),
+        Op::Chance { branches } => {
+            if branches.is_empty() {
+                return Err("a Chance op has no branches".into());
+            }
+            if branches
+                .iter()
+                .any(|b| b.p.is_nan() || b.p <= 0.0 || b.p > 1.0)
+            {
+                return Err("a Chance branch has a probability outside (0, 1]".into());
+            }
+            let total: f64 = branches.iter().map(|b| b.p).sum();
+            if (total - 1.0).abs() > 1e-9 {
+                return Err(format!("Chance branches sum to {total}, not 1"));
+            }
+            Ok(())
+        }
+        Op::Fill { fill } => {
+            for &(n, w) in &fill.counts {
+                if !(1..=6).contains(&n) || w == 0 {
+                    return Err(format!(
+                        "Fill count {n} with weight {w}: counts run 1 to 6 and weigh more than 0"
+                    ));
+                }
+            }
+            if fill.counts.windows(2).any(|w| w[0].0 >= w[1].0) {
+                return Err("Fill counts must rise, each total once".into());
+            }
+            if fill.mod_level_max == Some(0) {
+                return Err("Fill caps modifier level at 0".into());
+            }
+            Ok(())
+        }
+        _ => Ok(()),
     }
 }

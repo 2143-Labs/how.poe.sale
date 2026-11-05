@@ -5,8 +5,9 @@
 //! the wire; `Item` is the index form the engine uses. `Item::from_spec` looks the spec up and
 //! `Item::validate` checks the whole item: what its class allows (affix counts, sockets,
 //! influence, catalyst quality) and what its modifiers keep (one group each, their base's domain,
-//! the crafted limit). `Item::canonical` puts any item in one form, rolls filled in where the mod
-//! has a single one.
+//! at most three crafted). `Item::validate_over_limit` is the same check for the result of a
+//! method that adds past the affix limits. `Item::canonical` puts any item in one form, rolls
+//! filled in where the mod has a single one.
 
 use std::collections::BTreeSet;
 
@@ -14,6 +15,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::data::{Category, ClassData, Data, ModKind};
 pub use crate::data::{Eldritch, Influence, Rarity, Side};
+
+/// The most crafted modifiers an item can hold: Can Have Up To 3 Crafted Modifiers' three.
+pub const MAX_CRAFTED: usize = 3;
 
 fn is_false(b: &bool) -> bool {
     !*b
@@ -101,7 +105,8 @@ pub struct Item {
     pub quality: u8,
     /// Index into `Bundle::catalysts`.
     pub catalyst: Option<u8>,
-    /// Display-only figures copied from a paste; `apply` clears them when the item changes.
+    /// Display-only figures copied from a paste; `apply` clears them once anything that feeds
+    /// them changes (explicits, implicits, quality, catalyst).
     pub defences: Option<[i32; 4]>,
     pub implicits: Vec<Roll>,
     pub enchants: Vec<Roll>,
@@ -174,7 +179,8 @@ impl Socket {
 }
 
 /// Bench metamods, recognised by mod group.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "kebab-case")]
 pub enum MetaMod {
     LockPrefixes,
     LockSuffixes,
@@ -185,6 +191,15 @@ pub enum MetaMod {
 }
 
 impl MetaMod {
+    pub const ALL: [MetaMod; 6] = [
+        MetaMod::LockPrefixes,
+        MetaMod::LockSuffixes,
+        MetaMod::NoAttack,
+        MetaMod::NoCaster,
+        MetaMod::MultiCraft,
+        MetaMod::Level28,
+    ];
+
     pub fn group(self) -> &'static str {
         match self {
             MetaMod::LockPrefixes => "ItemGenerationCannotChangePrefixes",
@@ -467,6 +482,17 @@ impl Item {
     /// The post-lookup checks on a whole item: the shape a class allows and the shape a mod
     /// keeps. `from_spec` runs it, and so can any item the engine produced.
     pub fn validate(&self, data: &Data) -> Result<(), ItemError> {
+        self.check(data, false)
+    }
+
+    /// `validate` for a result of a method that adds past the affix limits (Merrick's Ducat):
+    /// its prefixes and suffixes may outnumber the limits. The item carries no mark of this;
+    /// whether the count is legal depends on the step that made it, which the caller knows.
+    pub fn validate_over_limit(&self, data: &Data) -> Result<(), ItemError> {
+        self.check(data, true)
+    }
+
+    fn check(&self, data: &Data, over_limit: bool) -> Result<(), ItemError> {
         let class = self.class(data);
         let base = data.base_at(self.base);
         // Normal items hold no explicit modifiers.
@@ -477,7 +503,7 @@ impl Item {
         // Affix counts.
         let limits = self.limits(data);
         for side in Side::BOTH {
-            if self.affixes(side).len() > limits[side.index()] as usize {
+            if !over_limit && self.affixes(side).len() > limits[side.index()] as usize {
                 return Err(ItemError::TooMany {
                     sides: match side {
                         Side::Prefix => "prefixes",
@@ -497,8 +523,10 @@ impl Item {
                 }
             }
         }
-        // Crafted count.
-        if self.crafted_count(data) > self.crafted_limit(data) {
+        // Crafted count: the multi-craft metamod allows three, and an item keeps the crafted
+        // modifiers it had when that metamod goes (owner, Q5), so three is the bound whatever
+        // the item's current crafted limit.
+        if self.crafted_count(data) > MAX_CRAFTED {
             return Err(ItemError::TooManyCrafted);
         }
         // Catalyst quality is jewellery-only.
@@ -518,7 +546,8 @@ impl Item {
             return Err(ItemError::NotInfluenceable);
         }
         // A mod sits on the domain its base belongs to; bench, delve, veiled and the other
-        // source-specific domains carry no item domain of their own.
+        // source-specific domains carry no item domain of their own, and RePoE files the flask
+        // enchantments (enkindling, instilling) under `item` although they sit on flasks.
         let domain = base.domain.repoe();
         let rolls = self
             .implicits
@@ -527,6 +556,9 @@ impl Item {
             .chain(self.explicits().map(|a| &a.roll));
         for roll in rolls {
             let md = data.mod_at(roll.m);
+            if matches!(md.kind, ModKind::FlaskEnkindling | ModKind::FlaskInstilling) {
+                continue;
+            }
             let own = match md.domain.as_str() {
                 "item" | "misc" | "abyss_jewel" | "flask" | "tincture" => md.domain.as_str(),
                 _ => continue,
@@ -711,7 +743,7 @@ impl Item {
 
     pub fn crafted_limit(&self, data: &Data) -> usize {
         if self.has_meta(data, MetaMod::MultiCraft) {
-            3
+            MAX_CRAFTED
         } else {
             1
         }

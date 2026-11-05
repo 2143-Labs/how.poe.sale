@@ -1,19 +1,20 @@
 //! The generated review catalog: `catalog/methods.md` (every method's cost, game text, needs,
-//! effect, a worked example and sources; essences as one table), `catalog/bench.md` (the bench
-//! crafts that add one modifier, as one table), `catalog/questions.md` (each unconfirmed rule a
-//! method relies on, shown on a full input item with the step, the result and the diff),
-//! `catalog/items.md` (every fixture and how each pattern reads it) and `catalog/scope.md`
-//! (every currency's methods or exclusion reason). Output is deterministic.
+//! metamod policy, effect, a worked example counted in leaves, and sources; essences as one
+//! table), `catalog/bench.md` (the bench crafts that add one modifier, as one table),
+//! `catalog/questions.md` (each unconfirmed rule a method relies on, shown on a full input item
+//! with the step, the result and the diff), `catalog/items.md` (every fixture and how each
+//! pattern reads it) and `catalog/scope.md` (every currency's methods or exclusion reason).
+//! Output is deterministic.
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use crate::apply::{Outcome, Params, apply};
+use crate::apply::{Leaf, Outcome, Params, apply};
 use crate::data::{Category, Data, Scope};
 use crate::item::{Item, ItemSpec};
 use crate::method::{
-    EnchantPool, Family, Guarantee, Method, Op, PairRequire, Pool, ReforgeSpec, RemoveFilter,
-    Require, SideReq, ValueScope, Weighting,
+    EnchantPool, Family, Fill, Method, Op, PairRequire, Policy, Pool, Protection, RemoveFilter,
+    Require, SideReq, SocketChange, ValueScope, Weighting,
 };
 use crate::pattern::{Pattern, PatternSpec, evaluate};
 use crate::render::{item_block, item_diff, leaf_counts, most_likely_item, outcome};
@@ -195,7 +196,6 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
         Require::Intangible => "intangibility".into(),
         Require::HasMemoryStrands => "Memory Strands".into(),
         Require::HasModType { any_of } => format!("a {} modifier", any_of.join(" or ")),
-        Require::ItemLevelAtMost { n } => format!("item level {n} or lower"),
         Require::EssenceFits { essence } => format!("a class {essence} has a modifier for"),
         Require::Fossils { min, max } => format!("{min} to {max} fossils"),
         Require::ImplicitsChangeable => "implicit modifiers that can be changed".into(),
@@ -206,56 +206,92 @@ fn pool_phrase(p: &Pool) -> String {
     match p {
         Pool::Natural => "any".into(),
         Pool::Influence { influence } => format!("{} influence", influence.name()),
+        Pool::Influenced => "one of the item's influences".into(),
         Pool::Tag { tag } => format!("{tag} tag"),
         Pool::Ducat { tag } => format!("ducat pool {tag}"),
     }
 }
 
-fn reforge_phrase(s: &ReforgeSpec) -> String {
-    let mut out = format!("reforges the item as {}", s.rarity.name());
-    if let Some(g) = &s.guarantee {
-        out.push_str(match g {
-            Guarantee::Essence => ", guaranteeing the essence's modifier",
-            Guarantee::Veiled => ", guaranteeing a veiled modifier",
-            Guarantee::Tag { .. } => "",
-            Guarantee::Infamous => ", guaranteeing an infamous modifier",
-            Guarantee::InfluenceMod => ", guaranteeing an influenced modifier",
-            Guarantee::InfluenceFromEachInput => ", keeping one influence from each input",
-        });
-        if let Guarantee::Tag { tag } = g {
-            out.push_str(&format!(", guaranteeing a {tag} modifier"));
-        }
+fn fill_phrase(f: &Fill) -> String {
+    let mut out = "fills the rest of the reforge with random modifiers".to_string();
+    if !f.counts.is_empty() {
+        let counts: Vec<String> = f.counts.iter().map(|(n, _)| n.to_string()).collect();
+        let weights: Vec<String> = f.counts.iter().map(|(_, w)| w.to_string()).collect();
+        out.push_str(&format!(
+            " ({} modifiers at {})",
+            counts.join(" / "),
+            weights.join(":")
+        ));
     }
-    if s.respects_locks {
-        out.push_str(", keeping a side a metamod locks");
+    if f.side == SideReq::Dominant {
+        out.push_str(", on the dominant eldritch side only");
     }
-    if s.side == Some(SideReq::Dominant) {
-        out.push_str(", rerolling only the dominant eldritch side");
+    if let Some(n) = f.mod_level_max {
+        out.push_str(&format!(", modifiers of level {n} and below"));
     }
-    out.push_str(match s.weighting {
+    out.push_str(match f.weighting {
         Weighting::Normal => "",
         Weighting::Fossils => ", weighted by the fossils",
-        Weighting::MoreLikelySame => ", much more likely to give the same modifiers",
-        Weighting::LessLikelySame => ", much less likely to give the same modifiers",
+        Weighting::MoreLikelySame => ", much more likely to give the first item's modifiers",
+        Weighting::LessLikelySame => ", much less likely to give the first item's modifiers",
         Weighting::Recombine => ", recombining the two inputs",
     });
     out
+}
+
+/// What a method's protection policy means, in one sentence.
+pub fn protection_phrase(p: Protection) -> String {
+    let locks = match p.locks {
+        Policy::Respect => "keeps the side Prefixes/Suffixes Cannot Be Changed locks",
+        Policy::Ignore => "changes a side Prefixes/Suffixes Cannot Be Changed locks",
+        Policy::Forbid => "cannot be used with Prefixes/Suffixes Cannot Be Changed",
+    };
+    let cannot_roll = match p.cannot_roll {
+        Policy::Respect => {
+            "keeps the attack or caster modifiers Cannot Roll Attack/Caster Modifiers names"
+        }
+        Policy::Ignore => {
+            "removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers"
+        }
+        Policy::Forbid => "cannot be used with Cannot Roll Attack/Caster Modifiers",
+    };
+    format!("{locks}; {cannot_roll}")
+}
+
+fn socket_phrase(c: &SocketChange) -> String {
+    match c {
+        SocketChange::RandomCount => "rerolls the socket count".into(),
+        SocketChange::Count { n } => format!("sets {n} sockets"),
+        SocketChange::RandomLinks => "rerolls the links".into(),
+        SocketChange::Links { n } => format!("links {n} sockets"),
+        SocketChange::RandomColours => "rerolls the socket colours".into(),
+        SocketChange::Colours { spec } => format!("colours the sockets {spec}"),
+        SocketChange::LinkUpToFour => "links up to four sockets".into(),
+        SocketChange::TaintedCount => "adds or removes a socket (Tainted)".into(),
+        SocketChange::TaintedLinks => "adds or removes a link (Tainted)".into(),
+        SocketChange::TaintedColours => "rerolls the socket colours (Tainted)".into(),
+        SocketChange::Reforge => "rerolls the sockets, links and colours".into(),
+    }
 }
 
 /// One sentence per op.
 pub fn op_sentence(data: &Data, op: &Op) -> String {
     match op {
         Op::SetRarity { rarity } => format!("sets the rarity to {}", rarity.name()),
-        Op::ClearExplicits => "removes every modifier that can change (a side a metamod locks is kept; with nothing left the item turns normal)".into(),
-        Op::RerollMagic => "removes every modifier that is not fractured".into(),
-        Op::ClearAll => "removes every modifier and makes the item normal".into(),
+        Op::Clear { side } => match side {
+            SideReq::Any => "removes every modifier that can change".into(),
+            SideReq::Prefix => "removes every prefix that can change".into(),
+            SideReq::Suffix => "removes every suffix that can change".into(),
+            SideReq::Dominant => "removes every modifier on the dominant eldritch side that can change".into(),
+        },
+        Op::Scour => "removes every modifier that can change (nothing left: normal; only fractured left: magic for one, rare for more; a side a metamod kept leaves the rarity)".into(),
         Op::AddRandom { pool, side, ignore_limits } => format!(
             "adds one random modifier ({}, {}){}",
             pool_phrase(pool),
             side_phrase(*side),
             if *ignore_limits { ", ignoring the affix limits" } else { "" }
         ),
-        Op::RemoveRandom { filter, keep_last_added, respects_cannot_roll } => {
+        Op::RemoveRandom { filter, keep_last_added, optional } => {
             let mut s = "removes one random modifier that can change".to_string();
             match filter {
                 RemoveFilter::Any => {}
@@ -265,14 +301,15 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
             if *keep_last_added {
                 s.push_str(", never the one just added");
             }
-            if *respects_cannot_roll {
-                s.push_str(", never one Cannot Roll Attack/Caster Modifiers protects");
+            if *optional {
+                s.push_str("; with none that can change it removes nothing");
             }
             s
         }
         Op::AddVeiled => "adds a veiled modifier on a side with room (half each when both have room)".into(),
-        Op::Unveil => "reveals the veiled modifier: three weighted options, you pick one".into(),
-        Op::AddMod { r#mod } => format!("adds {} (`{mod}`)", mod_line(data, r#mod), mod = r#mod),
+        Op::Unveil => "reveals the veiled modifier: up to three weighted options, never two of one group, and you pick one".into(),
+        Op::AddMod { r#mod } => format!("adds {} (`{mod}`; a normal item turns magic)", mod_line(data, r#mod), mod = r#mod),
+        Op::AddEssence { essence } => format!("adds {essence}'s modifier for the item's class"),
         Op::RemoveCrafted => "removes every crafted modifier".into(),
         Op::SetEnchant { pool } => format!(
             "sets a random {} enchantment",
@@ -285,14 +322,16 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
         Op::SetEnchantMod { r#mod } => format!("sets the enchantment {}", mod_line(data, r#mod)),
         Op::ClearEnchants => "removes the enchantments".into(),
         Op::RerollValues { scope } => match scope {
-            ValueScope::Explicit => "rerolls the values of the modifiers that are not crafted or fractured".into(),
+            ValueScope::Explicit => "rerolls the values of the modifiers that can change and are not crafted".into(),
             ValueScope::Implicit => "rerolls the values of the implicit modifiers".into(),
             ValueScope::Defences => "rerolls the base defences".into(),
         },
-        Op::Fracture => "fractures one random modifier (not crafted or veiled)".into(),
+        Op::Fracture => "fractures one random modifier (not a veiled one)".into(),
         Op::AddInfluence { influence } => format!("adds {} influence", influence.name()),
+        Op::AddInfluences { input } => format!("adds the influences of item {}", input + 1),
+        Op::TakeInput { input } => format!("carries on with item {}", input + 1),
         Op::Corrupt => "corrupts the item".into(),
-        Op::VaalImplicit => "replaces the implicits with a random corrupted implicit (no change when the implicits cannot be changed)".into(),
+        Op::VaalImplicit => "replaces one random implicit with a random corrupted implicit (with none, adds one)".into(),
         Op::EldritchImplicit { eldritch, tier } => format!(
             "replaces the {} implicit with a random tier {tier} one",
             match eldritch {
@@ -300,7 +339,7 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
                 crate::data::Eldritch::Eater => "Eater of Worlds",
             }
         ),
-        Op::Dominance => "removes one influenced modifier and upgrades another one tier".into(),
+        Op::Dominance => "removes one influenced modifier that can change and upgrades another one tier".into(),
         Op::ChangeResistance { from, to } => format!(
             "turns a {} modifier into the {} modifier of the same rank",
             from.resistance_type(),
@@ -318,7 +357,6 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
                 .map_or(catalyst.as_str(), |c| c.label.as_str());
             format!("adds 1% {label} quality (another catalyst type is replaced and starts at 1%)")
         }
-        Op::Foresee => "makes the item foresee the result of the next currency".into(),
         Op::Imprint => "stores an imprint of the item".into(),
         Op::Restore => "restores the item to its imprint".into(),
         Op::LinkAll => "links every socket".into(),
@@ -339,15 +377,8 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
                 .collect();
             format!("by chance, one of: {}", parts.join("; "))
         }
-        Op::Reforge { spec } => reforge_phrase(spec),
-        Op::Fill { .. } => "fills the rest of the reforge".into(),
-        Op::Sockets { change } => format!(
-            "changes the sockets ({})",
-            serde_json::to_value(change)
-                .ok()
-                .and_then(|v| v.as_str().map(str::to_string))
-                .unwrap_or_default()
-        ),
+        Op::Fill { fill } => fill_phrase(fill),
+        Op::Sockets { change } => socket_phrase(change),
         Op::Unmodelled { reason } => format!("is not modelled yet ({})", reason.text()),
     }
 }
@@ -434,16 +465,17 @@ fn summary(data: &Data, m: &Method, item: &Item) -> String {
 }
 
 fn collect_reasons(o: &Outcome, out: &mut Vec<String>) {
-    match o {
-        Outcome::Pending { reason, .. } => {
-            let t = reason.text();
-            if !out.contains(&t) {
-                out.push(t);
+    for (_, leaf) in &o.leaves {
+        match leaf {
+            Leaf::Pending(p) => {
+                let t = p.reason.text();
+                if !out.contains(&t) {
+                    out.push(t);
+                }
             }
+            Leaf::Choice(options) => options.iter().for_each(|opt| collect_reasons(opt, out)),
+            _ => {}
         }
-        Outcome::Chance(c) => c.iter().for_each(|(_, o)| collect_reasons(o, out)),
-        Outcome::Choice(c) => c.iter().for_each(|o| collect_reasons(o, out)),
-        _ => {}
     }
 }
 
@@ -522,35 +554,44 @@ fn bench_md(data: &Data) -> String {
     out.join("\n")
 }
 
-const ESSENCE_CLAIMS: [&str; 3] = ["game-text", "essence.ilvl", "reforge.guarantee-first"];
+const ESSENCE_CLAIMS: [&str; 4] = [
+    "game-text",
+    "essence.ilvl",
+    "reforge.guarantee-first",
+    "reforge.counts",
+];
 
-/// A generated essence method: the rarities it takes and its item level cap.
+/// A generated essence method: the rarities it takes and the level its reforge's modifiers are
+/// capped at.
 fn standard_essence(m: &Method) -> Option<(&[crate::data::Rarity], Option<u8>)> {
-    let [Op::Reforge { spec }] = m.ops.as_slice() else {
+    let [
+        Op::SetRarity { .. },
+        Op::Clear { side: SideReq::Any },
+        Op::AddEssence { .. },
+        Op::Fill { fill },
+    ] = m.ops.as_slice()
+    else {
         return None;
     };
-    let (rarities, cap) = match m.requires.as_slice() {
-        [
-            Require::Rarity { any_of },
-            Require::EssenceFits { .. },
-            Require::NotCorrupted,
-            Require::NotMirrored,
-        ] => (any_of, None),
-        [
-            Require::Rarity { any_of },
-            Require::EssenceFits { .. },
-            Require::NotCorrupted,
-            Require::NotMirrored,
-            Require::ItemLevelAtMost { n },
-        ] => (any_of, Some(*n)),
-        _ => return None,
+    let [
+        Require::Rarity { any_of },
+        Require::EssenceFits { .. },
+        Require::NotCorrupted,
+        Require::NotMirrored,
+    ] = m.requires.as_slice()
+    else {
+        return None;
     };
     let standard = m.family == Family::Essence
-        && spec.guarantee == Some(Guarantee::Essence)
-        && spec.respects_locks
+        && m.protect
+            == Some(Protection {
+                locks: Policy::Forbid,
+                cannot_roll: Policy::Forbid,
+            })
+        && fill.weighting == Weighting::Normal
         && m.claims == ESSENCE_CLAIMS
         && m.example.is_none();
-    standard.then_some((rarities.as_slice(), cap))
+    standard.then_some((any_of.as_slice(), fill.mod_level_max))
 }
 
 fn essence_table(data: &Data, methods: &[&Method]) -> String {
@@ -561,15 +602,24 @@ fn essence_table(data: &Data, methods: &[&Method]) -> String {
         .collect();
     texts.sort_unstable();
     texts.dedup();
+    // The ops in the essence's own words, without the first essence's name or level cap.
+    let does: Vec<String> = first
+        .ops
+        .iter()
+        .map(|o| match o {
+            Op::AddEssence { .. } => "adds the essence's modifier for the item's class".to_string(),
+            Op::Fill { fill } => fill_phrase(&Fill {
+                mod_level_max: None,
+                ..fill.clone()
+            }),
+            o => op_sentence(data, o),
+        })
+        .collect();
     let mut out = vec![
         format!(
-            "Each essence in this table costs one of itself and needs: the rarity listed; a class the essence has a modifier for; not corrupted; not mirrored; and, when listed, an item level at most the cap. It {}. Game text: {}. Sources: {}.",
-            first
-                .ops
-                .iter()
-                .map(|o| op_sentence(data, o))
-                .collect::<Vec<_>>()
-                .join("; then "),
+            "Each essence in this table costs one of itself and needs: the rarity listed; a class the essence has a modifier for; not corrupted; not mirrored. It {}; where a level is listed, the random modifiers are of that level and below. Metamods: it {}. Game text: {}. Sources: {}.",
+            does.join("; then "),
+            first.protect.map(protection_phrase).unwrap_or_default(),
             texts
                 .iter()
                 .map(|t| format!("\"{}\"", t.replace('\n', " / ")))
@@ -578,7 +628,7 @@ fn essence_table(data: &Data, methods: &[&Method]) -> String {
             sources(data, first)
         ),
         String::new(),
-        "|Method|Rarity|Item level at most|".to_string(),
+        "|Method|Rarity|Modifier level at most|".to_string(),
         "|---|---|---|".to_string(),
     ];
     for m in methods {
@@ -597,7 +647,7 @@ fn essence_table(data: &Data, methods: &[&Method]) -> String {
     out.join("\n")
 }
 
-const BENCH_ADD_CLAIMS: [&str; 2] = ["bench.magic-or-rare", "metamod.slot"];
+const BENCH_ADD_CLAIMS: [&str; 2] = ["bench.normal-to-magic", "metamod.slot"];
 
 /// A generated bench craft that adds one modifier with the standard requirements: its mod id,
 /// side and classes. Those print as one table row instead of a full entry.
@@ -618,7 +668,12 @@ fn standard_bench_add(m: &Method) -> Option<(&str, SideReq, &[String])> {
         return None;
     };
     let standard = m.family == Family::Bench
-        && any_of == &[crate::data::Rarity::Magic, crate::data::Rarity::Rare]
+        && any_of
+            == &[
+                crate::data::Rarity::Normal,
+                crate::data::Rarity::Magic,
+                crate::data::Rarity::Rare,
+            ]
         && group_mod == r#mod
         && m.claims == BENCH_ADD_CLAIMS
         && m.inputs == 1
@@ -632,7 +687,7 @@ fn bench_table(data: &Data, methods: &[&Method]) -> String {
     let first = methods[0];
     let mut out = vec![
         format!(
-            "Each bench craft in this table needs: {}; not corrupted; not mirrored; one of the classes listed; an open affix on the modifier's side; {}; no modifier of the added one's group yet. It adds that modifier. Sources: {}.",
+            "Each bench craft in this table needs: {}; not corrupted; not mirrored; one of the classes listed; an open affix on the modifier's side; {}; no modifier of the added one's group yet. It adds that modifier, and a normal item turns magic. Sources: {}.",
             require_phrase(data, &first.requires[0]),
             require_phrase(data, &Require::CraftedRoom),
             sources(data, first)
@@ -684,6 +739,9 @@ fn method_entry(data: &Data, fx: &Fixtures, m: &Method) -> Vec<String> {
             needs.join("; ")
         }
     ));
+    if let Some(p) = m.protect {
+        lines.push(format!("- Metamods: it {}.", protection_phrase(p)));
+    }
     let does: Vec<String> = m.ops.iter().map(|o| op_sentence(data, o)).collect();
     lines.push(format!("- Does: {}.", does.join("; then ")));
     if let Some(ex) = &m.example {
@@ -827,10 +885,10 @@ fn items_md(data: &Data, fx: &Fixtures) -> String {
         out.push("|---|---|---|---|---|---|---|".into());
         for (pname, p) in &fx.patterns {
             for (prob, s) in evaluate(data, p, item) {
-                let classes = |list: &[u16]| {
+                let classes = |list: &[crate::pattern::AffixState]| {
                     let ids: Vec<&str> = list
                         .iter()
-                        .map(|&c| p.classes[c as usize].id.as_str())
+                        .map(|a| p.classes[a.class as usize].id.as_str())
                         .collect();
                     if ids.is_empty() {
                         "—".to_string()

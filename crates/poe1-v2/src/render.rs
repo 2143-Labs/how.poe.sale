@@ -1,12 +1,13 @@
 //! Markdown renderings the catalog is built from: an item as a fenced game-text block, a line
-//! diff between two items, and a method outcome (Chance branches with probabilities, Choices,
-//! Pending reasons) nested as blockquotes.
+//! diff between two items, and a method outcome (every leaf with its probability, choices with
+//! their options blockquoted, Pending results with what is certain or the item before the step).
+//! Every printed probability is of the whole outcome.
 
-use crate::apply::Outcome;
+use crate::apply::{Leaf, Outcome};
 use crate::data::Data;
 use crate::item::Item;
 
-/// How many Chance branches print before the rest are summarised.
+/// How many leaves print before the rest are summarised.
 pub const SHOWN_BRANCHES: usize = 5;
 
 /// The item as the game shows it, in a ```` ```text ```` fence.
@@ -71,66 +72,85 @@ fn quote(block: &str) -> String {
         .join("\n")
 }
 
-/// A method outcome in Markdown. Nested outcomes are blockquoted one level deeper.
+/// A method outcome in Markdown.
 pub fn outcome(data: &Data, o: &Outcome) -> String {
-    match o {
-        Outcome::Item(item) => item_block(data, item),
-        Outcome::Items(items) => {
-            let mut parts = vec![format!("{} items:", items.len())];
-            parts.extend(items.iter().map(|i| item_block(data, i)));
-            parts.join("\n\n")
-        }
-        Outcome::Destroyed => "the item is destroyed".into(),
-        Outcome::Chance(children) => {
-            let mut parts = Vec::new();
-            for (p, child) in children.iter().take(SHOWN_BRANCHES) {
-                parts.push(format!("p = {p:.6}"));
-                parts.push(quote(&outcome(data, child)));
-            }
-            if children.len() > SHOWN_BRANCHES {
-                let rest = &children[SHOWN_BRANCHES..];
-                let total: f64 = rest.iter().map(|(p, _)| p).sum();
-                parts.push(format!(
-                    "… {} more branches (total p = {total:.6})",
-                    rest.len()
-                ));
-            }
-            parts.join("\n\n")
-        }
-        Outcome::Choice(options) => {
-            let mut parts = vec!["you choose one of:".to_string()];
-            parts.extend(options.iter().map(|o| quote(&outcome(data, o))));
-            parts.join("\n\n")
-        }
-        Outcome::Pending { item, reason, .. } => format!(
-            "not computed in this pass: {}; the part that is certain:\n\n{}",
-            reason.text(),
-            item_block(data, item)
-        ),
-    }
+    scaled(data, o, 1.0)
 }
 
-/// The result item with the highest probability (Choice options count equally; Pending results
-/// count as their partial item). `None` when nothing survives.
+/// `o`'s leaves with each chance multiplied by `scale` (the chance of reaching `o`).
+fn scaled(data: &Data, o: &Outcome, scale: f64) -> String {
+    let mut parts = Vec::new();
+    for (p, leaf) in o.leaves.iter().take(SHOWN_BRANCHES) {
+        let p = p * scale;
+        match leaf {
+            Leaf::Item(item) => {
+                parts.push(format!("p = {p:.6}"));
+                parts.push(quote(&item_block(data, item)));
+            }
+            Leaf::Items(items) => {
+                parts.push(format!("p = {p:.6}: {} items", items.len()));
+                parts.extend(items.iter().map(|i| quote(&item_block(data, i))));
+            }
+            Leaf::Destroyed => parts.push(format!("p = {p:.6}: the item is destroyed")),
+            Leaf::Choice(options) => {
+                parts.push(format!(
+                    "p = {p:.6}: you choose one of these {} (each option's chances below are of the whole outcome, if you pick it):",
+                    options.len()
+                ));
+                parts.extend(options.iter().map(|opt| quote(&scaled(data, opt, p))));
+            }
+            Leaf::Pending(pending) => {
+                let what = if pending.certain {
+                    "the part that is certain"
+                } else {
+                    "the item before this step; nothing about the result is known"
+                };
+                parts.push(format!(
+                    "p = {p:.6}: not computed in this pass: {}; {what}:",
+                    pending.reason.text()
+                ));
+                parts.push(quote(&item_block(data, &pending.item)));
+            }
+        }
+    }
+    if o.leaves.len() > SHOWN_BRANCHES {
+        let rest = &o.leaves[SHOWN_BRANCHES..];
+        let total: f64 = rest.iter().map(|(p, _)| p * scale).sum();
+        parts.push(format!(
+            "… {} more outcomes (total p = {total:.6})",
+            rest.len()
+        ));
+    }
+    parts.join("\n\n")
+}
+
+/// The result item with the highest probability: a choice's options count equally, a Mirror
+/// counts as its first item, a reforge as its certain part; Destroyed and a Pending that stopped
+/// before its step have no result item. `None` when nothing qualifies.
 pub fn most_likely_item(o: &Outcome) -> Option<&Item> {
-    fn walk<'a>(o: &'a Outcome, p: f64, best: &mut Option<(f64, &'a Item)>) {
-        let offer = |p: f64, item: &'a Item, best: &mut Option<(f64, &'a Item)>| {
-            if best.is_none_or(|(q, _)| p > q) {
-                *best = Some((p, item));
-            }
-        };
-        match o {
-            Outcome::Item(i) | Outcome::Pending { item: i, .. } => offer(p, i, best),
-            Outcome::Items(items) => {
-                if let Some(i) = items.first() {
-                    offer(p, i, best);
+    fn offer<'a>(p: f64, item: &'a Item, best: &mut Option<(f64, &'a Item)>) {
+        if best.is_none_or(|(q, _)| p > q) {
+            *best = Some((p, item));
+        }
+    }
+    fn walk<'a>(o: &'a Outcome, scale: f64, best: &mut Option<(f64, &'a Item)>) {
+        for (p, leaf) in &o.leaves {
+            let p = p * scale;
+            match leaf {
+                Leaf::Item(i) => offer(p, i, best),
+                Leaf::Items(items) => {
+                    if let Some(i) = items.first() {
+                        offer(p, i, best);
+                    }
                 }
-            }
-            Outcome::Destroyed => {}
-            Outcome::Chance(c) => c.iter().for_each(|(q, o)| walk(o, p * q, best)),
-            Outcome::Choice(c) => {
-                let n = c.len().max(1) as f64;
-                c.iter().for_each(|o| walk(o, p / n, best));
+                Leaf::Pending(pending) if pending.certain => offer(p, &pending.item, best),
+                Leaf::Pending(_) | Leaf::Destroyed => {}
+                Leaf::Choice(options) => {
+                    let n = options.len().max(1) as f64;
+                    for opt in options {
+                        walk(opt, p / n, best);
+                    }
+                }
             }
         }
     }
@@ -139,19 +159,13 @@ pub fn most_likely_item(o: &Outcome) -> Option<&Item> {
     best.map(|(_, i)| i)
 }
 
-/// (exact leaves, pending leaves) of an outcome.
+/// (computed leaves, pending leaves) of an outcome: a choice counts once, as does a Mirror's
+/// pair of items.
 pub fn leaf_counts(o: &Outcome) -> (usize, usize) {
-    match o {
-        Outcome::Item(_) | Outcome::Destroyed => (1, 0),
-        Outcome::Items(v) => (v.len(), 0),
-        Outcome::Pending { .. } => (0, 1),
-        Outcome::Chance(c) => c.iter().fold((0, 0), |(a, b), (_, o)| {
-            let (x, y) = leaf_counts(o);
-            (a + x, b + y)
-        }),
-        Outcome::Choice(c) => c.iter().fold((0, 0), |(a, b), o| {
-            let (x, y) = leaf_counts(o);
-            (a + x, b + y)
-        }),
-    }
+    o.leaves
+        .iter()
+        .fold((0, 0), |(exact, pending), (_, leaf)| match leaf {
+            Leaf::Pending(_) => (exact, pending + 1),
+            _ => (exact + 1, pending),
+        })
 }

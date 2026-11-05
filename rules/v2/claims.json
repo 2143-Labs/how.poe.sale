@@ -55,13 +55,13 @@
       "checked": true
     },
     {
-      "id": "bench.magic-or-rare",
-      "statement": "Bench crafts need a magic or rare item",
+      "id": "bench.normal-to-magic",
+      "statement": "A bench craft that adds a modifier works on a normal, magic or rare item; a normal item turns magic.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "a bench craft on a normal item turns it magic",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "bench.reroll-unknown",
@@ -75,15 +75,6 @@
     {
       "id": "catalyst.amounts",
       "statement": "Twenty catalysts take an item from 0% to 20% catalyst quality.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
-      "patch": "3.29",
-      "checked": false
-    },
-    {
-      "id": "catalyst.consumed",
-      "statement": "Using any currency on an item removes its catalyst quality.",
       "sourceKind": "owner",
       "url": "",
       "quote": "",
@@ -114,13 +105,13 @@
       }
     },
     {
-      "id": "chaos.ignores-locks",
-      "statement": "A Chaos Orb rerolls every non-fractured explicit, metamods included",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "id": "chaos.respects-locks",
+      "statement": "A Chaos Orb and a Veiled Chaos Orb keep the modifiers on a side Prefixes/Suffixes Cannot Be Changed locks and reforge the rest; open slots on the locked side can still fill.",
+      "sourceKind": "guide",
+      "url": "https://www.vhpg.com/prefixes-cannot-be-changed/",
+      "quote": "| Chaos Orb | Yes | Preserves existing prefixes but may fill open prefix slots | … | Veiled Chaos Orb | Yes | Preserves prefixes during the reforge and adds a veiled modifier |",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "classes.affix-limits",
@@ -196,12 +187,12 @@
     },
     {
       "id": "essence.ilvl",
-      "statement": "An essence with item level restriction N works only on items of item level N or lower",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "An essence with an item level restriction N reforges with modifiers of level N and below; it can be used on an item of any item level.",
+      "sourceKind": "datamined",
+      "url": "https://poedb.tw/us/Essence",
+      "quote": "Wailing Essence of Hatred Stack Size: 1 / 10 Essence Tier: 4 Upgrades a normal item to rare with one guaranteed property Properties restricted to level 75 and below",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "exalt.both-sides",
@@ -213,8 +204,17 @@
       "checked": false
     },
     {
+      "id": "fracture.crafted",
+      "statement": "A Fracturing Orb can fracture a crafted modifier.",
+      "sourceKind": "experiment",
+      "url": "https://www.pathofexile.com/forum/view-thread/3589504",
+      "quote": "Crafted modifiers can be fractured so this would not work.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "fracture.eligible",
-      "statement": "Crafted and veiled modifiers cannot be fractured",
+      "statement": "A Fracturing Orb picks uniformly among the explicit modifiers that are not an unrevealed veiled modifier; crafted modifiers are candidates (claim fracture.crafted).",
       "sourceKind": "owner",
       "url": "",
       "quote": "",
@@ -529,6 +529,15 @@
       }
     },
     {
+      "id": "reforge.counts",
+      "statement": "A reforge's count table (4, 5 or 6 explicit modifiers at 8:3:1) gives how many modifiers it ends with; whether the modifiers it keeps (locked or fractured) and the one it guarantees count toward that total is not settled. No outcome in this pass depends on it: every reforge stops at its Fill.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "",
+      "patch": "3.29",
+      "checked": false
+    },
+    {
       "id": "reforge.guarantee-first",
       "statement": "A reforge with a guarantee clears the sides that can change, then draws its guaranteed mod first, by normal weight, from the eligible mods carrying the guarantee on sides with room; the rest of the reforge follows",
       "sourceKind": "owner",
@@ -539,12 +548,12 @@
     },
     {
       "id": "remove.cannot-roll-scope",
-      "statement": "Only Orb of Annulment's removal respects Cannot Roll Attack/Caster Modifiers; Orb of Scouring, Veiled Exalted Orb, Eldritch Orb of Annulment, Harvest add-remove and the Farric beastcrafts remove attack/caster mods regardless",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
+      "statement": "Cannot Roll Attack/Caster Modifiers keep tagged modifiers from being removed only by the Orb of Annulment, the Eldritch Orb of Annulment and the Tainted Exalted Orb; the Orb of Scouring, the reforges, the Veiled Exalted Orb, Harvest add-remove, the Farric beastcrafts and the Orb of Dominance remove or change them regardless. Every method that adds a random modifier still leaves the tag out.",
+      "sourceKind": "coe",
+      "url": "https://www.craftofexile.com/metamods",
+      "quote": "Annulment orb … Protects attack mods from removal … Protects caster mods from removal … Harvest … Augment … Does not apply to the remove part … Prefix > Suffix … Will not protects attack mods from removal",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "scour.locks",

@@ -1,15 +1,17 @@
 //! The method catalog: reads the hand-authored methods in `rules/v2/methods.json`, generates the
 //! bench, essence, catalyst and fossil families from the bundle, fills each currency method's game
-//! text, validates every reference (claims, mods, classes, tags, mod types, costs, Chance
-//! masses), and applies `rules/v2/currency-scope.json` to every currency.
+//! text, validates every method with the library's own `Method::validate` (by loading the bundle
+//! as `Data`), checks what only the authoring side knows (every Fill count table is claim
+//! `chaos.count`'s, every tag pool names a Harvest tag), and applies
+//! `rules/v2/currency-scope.json` to every currency.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use anyhow::{Context, bail};
 use poe1_v2::data::{BenchAction, Bundle, Rarity, Scope};
 use poe1_v2::method::{
-    CostSpec, Family, Guarantee, Method, Op, PendingReason, Pool, ReforgeSpec, Require, SideReq,
+    CostSpec, Family, Fill, Method, Op, PendingReason, Policy, Pool, Protection, Require, SideReq,
     SocketChange, Weighting,
 };
 use serde::Deserialize;
@@ -91,6 +93,51 @@ fn cost(name: &str, amount: f64) -> CostSpec {
     }
 }
 
+/// Claim `chaos.count`'s table: explicit totals of a reforge and their relative weights, by
+/// total.
+fn chaos_counts(b: &Bundle) -> anyhow::Result<Vec<(u8, u32)>> {
+    let claim = b
+        .claims
+        .iter()
+        .find(|c| c.id == "chaos.count")
+        .context("claim chaos.count is missing")?;
+    let value = claim
+        .value
+        .clone()
+        .context("claim chaos.count has no count table")?;
+    let table: BTreeMap<u8, u32> =
+        serde_json::from_value(value).context("claim chaos.count's value is not a count table")?;
+    Ok(table.into_iter().collect())
+}
+
+/// The stackable resonator for each fossil count (the legacy socketable ones share the names).
+fn resonators(b: &Bundle, kind: &str) -> anyhow::Result<Vec<String>> {
+    ["Primitive", "Potent", "Powerful", "Prime"]
+        .iter()
+        .map(|size| {
+            let name = format!("{size} {kind} Resonator");
+            let found: Vec<&str> = b
+                .currencies
+                .iter()
+                .filter(|c| c.name == name && c.class == "DelveStackableSocketableCurrency")
+                .map(|c| c.id.as_str())
+                .collect();
+            match found.as_slice() {
+                [id] => Ok(id.to_string()),
+                _ => bail!("{name}: {} stackable currencies", found.len()),
+            }
+        })
+        .collect()
+}
+
+/// The protection of a method metamods forbid: Craft of Exile's metamod table marks essences
+/// and fossils "Prevents usage" under all four metamods, and the owner settled that the
+/// multi-craft metamod alone does not (Q9).
+const FORBIDDEN: Protection = Protection {
+    locks: Policy::Forbid,
+    cannot_roll: Policy::Forbid,
+};
+
 /// The methods `datagen-v2` derives from bundle data.
 fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
     let currency_name = |id: &str| -> anyhow::Result<String> {
@@ -100,6 +147,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             .map(|c| c.name.clone())
             .with_context(|| format!("cost currency {id} is not a bundle currency"))
     };
+    let counts = chaos_counts(b)?;
     let mut out = Vec::new();
 
     // ---- bench
@@ -121,8 +169,9 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                     Some(poe1_v2::data::Side::Suffix) => SideReq::Suffix,
                     None => bail!("bench mod {} has no side", md.id),
                 };
+                // A craft on a normal item turns it magic (owner, Q3).
                 requires.push(Require::Rarity {
-                    any_of: vec![Rarity::Magic, Rarity::Rare],
+                    any_of: vec![Rarity::Normal, Rarity::Magic, Rarity::Rare],
                 });
                 common(&mut requires);
                 requires.push(classes);
@@ -131,7 +180,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 requires.push(Require::GroupFree {
                     r#mod: md.id.clone(),
                 });
-                claims = vec!["bench.magic-or-rare".into(), "metamod.slot".into()];
+                claims = vec!["bench.normal-to-magic".into(), "metamod.slot".into()];
                 (
                     format!("Bench: {}", md.text.lines().next().unwrap_or(&md.id)),
                     vec![Op::AddMod {
@@ -174,7 +223,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 (
                     format!("Bench: {count} sockets"),
                     vec![Op::Sockets {
-                        change: SocketChange::Count,
+                        change: SocketChange::Count { n: *count },
                     }],
                 )
             }
@@ -185,7 +234,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 (
                     format!("Bench: link {count} sockets"),
                     vec![Op::Sockets {
-                        change: SocketChange::Links,
+                        change: SocketChange::Links { n: *count },
                     }],
                 )
             }
@@ -196,7 +245,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 (
                     format!("Bench: colour sockets {spec}"),
                     vec![Op::Sockets {
-                        change: SocketChange::Colours,
+                        change: SocketChange::Colours { spec: spec.clone() },
                     }],
                 )
             }
@@ -230,10 +279,12 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 .collect::<anyhow::Result<_>>()?,
             requires,
             pair: Vec::new(),
+            protect: None,
             ops,
             claims,
             game_text: None,
             example: None,
+            resonators: Vec::new(),
         });
     }
 
@@ -252,9 +303,6 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             },
         ];
         common(&mut requires);
-        if let Some(n) = e.item_level_max {
-            requires.push(Require::ItemLevelAtMost { n });
-        }
         out.push(Method {
             id: format!("essence/{}", price_key(&e.name)),
             name: e.name.clone(),
@@ -263,22 +311,35 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             cost: vec![cost(&e.name, 1.0)],
             requires,
             pair: Vec::new(),
-            ops: vec![Op::Reforge {
-                spec: ReforgeSpec {
+            protect: Some(FORBIDDEN),
+            ops: vec![
+                Op::SetRarity {
                     rarity: Rarity::Rare,
-                    side: None,
-                    respects_locks: true,
-                    guarantee: Some(Guarantee::Essence),
-                    weighting: Weighting::Normal,
                 },
-            }],
+                Op::Clear { side: SideReq::Any },
+                Op::AddEssence {
+                    essence: e.name.clone(),
+                },
+                // "Properties restricted to level N and below" caps the reforge's modifiers, not
+                // the item (claim essence.ilvl).
+                Op::Fill {
+                    fill: Fill {
+                        counts: counts.clone(),
+                        weighting: Weighting::Normal,
+                        side: SideReq::Any,
+                        mod_level_max: e.item_level_max,
+                    },
+                },
+            ],
             claims: vec![
                 "game-text".into(),
                 "essence.ilvl".into(),
                 "reforge.guarantee-first".into(),
+                "reforge.counts".into(),
             ],
             game_text: None,
             example: None,
+            resonators: Vec::new(),
         });
     }
 
@@ -299,6 +360,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             cost: vec![cost(&c.name, 1.0)],
             requires,
             pair: Vec::new(),
+            protect: None,
             ops: vec![Op::CatalystQuality {
                 catalyst: c.name.clone(),
             }],
@@ -309,20 +371,23 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             ],
             game_text: None,
             example: None,
+            resonators: Vec::new(),
         });
     }
 
     // ---- fossils: one method per resonator kind; the resonator size follows the fossil count
-    for (id, name, rarity) in [
+    for (id, name, rarity, kind) in [
         (
             "fossil/chaotic-resonator",
             "Fossils in a Chaotic Resonator",
             Rarity::Rare,
+            "Chaotic",
         ),
         (
             "fossil/alchemical-resonator",
             "Fossils in an Alchemical Resonator",
             Rarity::Normal,
+            "Alchemical",
         ),
     ] {
         let mut requires = vec![
@@ -332,6 +397,21 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             Require::Fossils { min: 1, max: 4 },
         ];
         common(&mut requires);
+        let mut ops = vec![Op::SetRarity {
+            rarity: Rarity::Rare,
+        }];
+        // A rare loses what can change first; a normal item has nothing to lose.
+        if rarity == Rarity::Rare {
+            ops.push(Op::Clear { side: SideReq::Any });
+        }
+        ops.push(Op::Fill {
+            fill: Fill {
+                counts: counts.clone(),
+                weighting: Weighting::Fossils,
+                side: SideReq::Any,
+                mod_level_max: None,
+            },
+        });
         out.push(Method {
             id: id.into(),
             name: name.into(),
@@ -340,129 +420,42 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             cost: Vec::new(),
             requires,
             pair: Vec::new(),
-            ops: vec![Op::Reforge {
-                spec: ReforgeSpec {
-                    rarity: Rarity::Rare,
-                    side: None,
-                    respects_locks: false,
-                    guarantee: None,
-                    weighting: Weighting::Fossils,
-                },
-            }],
-            claims: vec!["game-text".into(), "chaos.count".into()],
+            protect: Some(FORBIDDEN),
+            ops,
+            claims: vec![
+                "game-text".into(),
+                "chaos.count".into(),
+                "reforge.counts".into(),
+            ],
             game_text: None,
             example: None,
+            resonators: resonators(b, kind)?,
         });
     }
     Ok(out)
 }
 
-/// Every reference a method makes must resolve against the bundle.
-fn validate(b: &Bundle, m: &Method) -> anyhow::Result<()> {
-    let ctx = || format!("method {}", m.id);
-    let claim_ids: BTreeSet<&str> = b.claims.iter().map(|c| c.id.as_str()).collect();
-    for c in &m.claims {
-        if !claim_ids.contains(c.as_str()) {
-            bail!("{}: unknown claim {c}", ctx());
-        }
-    }
-    for c in &m.cost {
-        if !c.name.starts_with("beast:") && !b.currencies.iter().any(|x| x.name == c.name) {
-            bail!("{}: cost names unknown currency {:?}", ctx(), c.name);
-        }
-    }
-    let has_mod = |id: &str| b.mods.iter().any(|x| x.id == id);
-    let has_tag = |t: &str| b.tags.iter().any(|x| x == t);
-    let has_type = |t: &str| b.mod_types.iter().any(|x| x == t);
-    for r in &m.requires {
-        match r {
-            Require::Class { any_of } => {
-                for c in any_of {
-                    if !b.classes.iter().any(|x| &x.id == c) {
-                        bail!("{}: unknown class {c}", ctx());
-                    }
-                }
-            }
-            Require::GroupFree { r#mod } if !has_mod(r#mod) => {
-                bail!("{}: unknown mod {mod}", ctx(), mod = r#mod)
-            }
-            Require::HasModType { any_of } => {
-                for t in any_of {
-                    if !has_type(t) {
-                        bail!("{}: unknown mod type {t}", ctx());
-                    }
-                }
-            }
-            Require::CatalystRoom { catalyst }
-                if !b.catalysts.iter().any(|c| &c.name == catalyst) =>
-            {
-                bail!("{}: unknown catalyst {catalyst}", ctx())
-            }
-            Require::EssenceFits { essence } if !b.essences.iter().any(|e| &e.name == essence) => {
-                bail!("{}: unknown essence {essence}", ctx())
-            }
-            _ => {}
-        }
-    }
-    fn walk(ops: &[Op], f: &mut dyn FnMut(&Op) -> anyhow::Result<()>) -> anyhow::Result<()> {
-        for op in ops {
-            f(op)?;
-            if let Op::Chance { branches } = op {
-                for br in branches {
-                    walk(&br.ops, f)?;
-                }
-            }
-        }
-        Ok(())
-    }
-    walk(&m.ops, &mut |op| {
+/// What only the authoring side checks: every Fill count table is claim `chaos.count`'s value,
+/// and every tag pool names one of the Harvest tags.
+fn authoring_checks(m: &Method, counts: &[(u8, u32)]) -> anyhow::Result<()> {
+    for op in m.all_ops() {
         match op {
-            Op::AddMod { r#mod } | Op::SetEnchantMod { r#mod } if !has_mod(r#mod) => {
-                bail!("{}: unknown mod {mod}", ctx(), mod = r#mod)
+            Op::Fill { fill } if !fill.counts.is_empty() && fill.counts != *counts => {
+                bail!(
+                    "method {}: Fill counts {:?} differ from claim chaos.count {:?}",
+                    m.id,
+                    fill.counts,
+                    counts
+                );
             }
-            Op::AddRandom { pool, .. } => match pool {
-                Pool::Tag { tag } if !HARVEST_TAGS.contains(&tag.as_str()) || !has_tag(tag) => {
-                    bail!("{}: unknown Harvest tag {tag}", ctx())
-                }
-                Pool::Ducat { tag } if !has_tag(tag) => bail!("{}: unknown tag {tag}", ctx()),
-                _ => {}
-            },
-            Op::Reforge { spec } | Op::Fill { spec } => {
-                if let Some(Guarantee::Tag { tag }) = &spec.guarantee
-                    && (!HARVEST_TAGS.contains(&tag.as_str()) || !has_tag(tag))
-                {
-                    bail!("{}: unknown Harvest tag {tag}", ctx())
-                }
-            }
-            Op::ChangeResistance { from, to } => {
-                for t in [from.resistance_type(), to.resistance_type()] {
-                    if !has_type(t) {
-                        bail!("{}: unknown mod type {t}", ctx());
-                    }
-                }
-            }
-            Op::CatalystQuality { catalyst }
-                if !b.catalysts.iter().any(|c| &c.name == catalyst) =>
-            {
-                bail!("{}: unknown catalyst {catalyst}", ctx())
-            }
-            Op::Chance { branches } => {
-                let total: f64 = branches.iter().map(|b| b.p).sum();
-                if (total - 1.0).abs() > 1e-9 {
-                    bail!("{}: Chance branches sum to {total}, not 1", ctx());
-                }
+            Op::AddRandom {
+                pool: Pool::Tag { tag },
+                ..
+            } if !HARVEST_TAGS.contains(&tag.as_str()) => {
+                bail!("method {}: {tag} is not a Harvest tag", m.id);
             }
             _ => {}
         }
-        Ok(())
-    })?;
-    if m.inputs == 0 || (m.inputs == 1 && !m.pair.is_empty()) {
-        bail!(
-            "{}: {} inputs with pair rules {:?}",
-            ctx(),
-            m.inputs,
-            m.pair
-        );
     }
     Ok(())
 }
@@ -568,10 +561,16 @@ pub fn attach(b: &mut Bundle, rules: &Path) -> anyhow::Result<()> {
         {
             m.game_text = Some(c.description.clone());
         }
-        validate(b, m)?;
+    }
+    let counts = chaos_counts(b)?;
+    for m in &methods {
+        authoring_checks(m, &counts)?;
     }
     methods.sort_by(|a, b| a.id.cmp(&b.id));
     b.methods = methods;
+    // Every method must load the way the library loads it: `Data::from_bundle` runs
+    // `Method::validate` on each.
+    poe1_v2::data::Data::from_bundle(b.clone()).context("the methods do not validate")?;
     let rules_file: ScopeFile = load_json(rules, "currency-scope.json")?;
     b.scope = scope(b, &rules_file)?;
     Ok(())

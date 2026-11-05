@@ -85,7 +85,7 @@
         {"kind": "notForeseen"}
       ],
       "ops": [
-        {"op": "foresee"}
+        {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
       ],
       "claims": ["beast.list"],
       "example": "cobalt-jewel-magic"
@@ -264,8 +264,9 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "removeRandom", "filter": {"kind": "side", "side": "prefix"}},
+        {"op": "removeRandom", "filter": {"kind": "side", "side": "prefix"}, "optional": true},
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "suffix"}
       ],
       "claims": ["beast.list", "beast.farric", "remove.cannot-roll-scope"],
@@ -339,8 +340,9 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "removeRandom", "filter": {"kind": "side", "side": "suffix"}},
+        {"op": "removeRandom", "filter": {"kind": "side", "side": "suffix"}, "optional": true},
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "prefix"}
       ],
       "claims": ["beast.list", "beast.farric", "remove.cannot-roll-scope"],
@@ -383,9 +385,10 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare"}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["game-text", "chaos.count"],
+      "claims": ["game-text", "chaos.count", "reforge.counts"],
       "example": "slink-boots-normal"
     },
     {
@@ -400,8 +403,9 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "rerollMagic"},
+        {"op": "clear"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
       "claims": ["game-text", "magic.mod-count"],
@@ -435,8 +439,9 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
-        {"op": "removeRandom", "filter": {"kind": "any"}, "respectsCannotRoll": true}
+        {"op": "removeRandom", "filter": {"kind": "any"}}
       ],
       "claims": ["game-text", "annul.locks", "annul.uniform", "fractured.kept", "metamod.cannot-roll", "veiled.placeholder-removable"],
       "example": "crown-d2-scbc"
@@ -468,7 +473,7 @@
       ],
       "pair": ["same-class"],
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "weighting": "recombine"}}
+        {"op": "fill", "fill": {"weighting": "recombine"}}
       ],
       "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
     },
@@ -527,8 +532,13 @@
         {"kind": "notMirrored"}
       ],
       "pair": ["same-class", "different-single-influence"],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "guarantee": {"kind": "influenceFromEachInput"}}}
+        {"op": "takeInput", "input": 1},
+        {"op": "addInfluences", "input": 0},
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {}}
       ],
       "claims": ["game-text"]
     },
@@ -546,10 +556,11 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare"}},
-        {"op": "sockets", "change": "link-up-to-four"}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}},
+        {"op": "sockets", "change": {"kind": "link-up-to-four"}}
       ],
-      "claims": ["game-text", "chaos.count"],
+      "claims": ["game-text", "chaos.count", "reforge.counts"],
       "example": "slink-boots-normal"
     },
     {
@@ -638,10 +649,13 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare"}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["game-text", "chaos.count", "chaos.ignores-locks"],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -657,7 +671,7 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "sockets", "change": "random-colours"}
+        {"op": "sockets", "change": {"kind": "random-colours"}}
       ],
       "claims": ["game-text"]
     },
@@ -724,8 +738,11 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "guarantee": {"kind": "infamous"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "which modifiers count as Infamous is not in the RePoE export"}}
       ],
       "claims": ["game-text"],
       "example": "crown-a"
@@ -743,6 +760,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "rerollValues", "scope": "explicit"}
       ],
@@ -799,6 +817,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
         {"op": "removeRandom", "filter": {"kind": "side", "side": "dominant"}}
       ],
@@ -817,8 +836,10 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "side": "dominant", "respectsLocks": true}}
+        {"op": "clear", "side": "dominant"},
+        {"op": "fill", "fill": {"side": "dominant"}}
       ],
       "claims": ["game-text", "eldritch.dominance-ties"],
       "example": "slink-boots-eldritch"
@@ -1020,13 +1041,15 @@
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "minExplicits", "n": 4},
         {"kind": "noFractured"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"},
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
       "ops": [
         {"op": "fracture"}
       ],
-      "claims": ["game-text", "fracture.eligible"],
+      "claims": ["game-text", "fracture.eligible", "fracture.crafted"],
       "example": "crown-actual"
     },
     {
@@ -1160,7 +1183,7 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "foresee"}
+        {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
       ],
       "claims": ["game-text"],
       "example": "crown-a"
@@ -1217,7 +1240,7 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "sockets", "change": "random-count"}
+        {"op": "sockets", "change": {"kind": "random-count"}}
       ],
       "claims": ["game-text"],
       "example": "crown-actual"
@@ -1237,7 +1260,7 @@
       ],
       "pair": ["same-class"],
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "weighting": "recombine"}}
+        {"op": "fill", "fill": {"weighting": "recombine"}}
       ],
       "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
     },
@@ -1395,6 +1418,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "dominance"}
       ],
@@ -1414,7 +1438,7 @@
         {"kind": "notMirrored"}
       ],
       "ops": [
-        {"op": "sockets", "change": "random-links"}
+        {"op": "sockets", "change": {"kind": "random-links"}}
       ],
       "claims": ["game-text"]
     },
@@ -1568,8 +1592,9 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "clearExplicits"}
+        {"op": "scour"}
       ],
       "claims": ["game-text", "scour.locks", "fractured.kept", "remove.cannot-roll-scope"],
       "example": "crown-l1"
@@ -1670,10 +1695,11 @@
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "corrupted"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "reforge", "spec": {"rarity": "rare"}}]}, {"p": 0.5, "ops": [{"op": "clearAll"}]}]}
+        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}, {"p": 0.5, "ops": [{"op": "scour"}]}]}
       ],
-      "claims": ["game-text", "tainted.odds"]
+      "claims": ["game-text", "tainted.odds", "reforge.counts"]
     },
     {
       "id": "currency/tainted-chromatic-orb",
@@ -1687,7 +1713,7 @@
         {"kind": "corrupted"}
       ],
       "ops": [
-        {"op": "sockets", "change": "tainted-colours"}
+        {"op": "sockets", "change": {"kind": "tainted-colours"}}
       ],
       "claims": ["game-text"]
     },
@@ -1718,6 +1744,7 @@
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "corrupted"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
       "ops": [
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
       ],
@@ -1735,7 +1762,7 @@
         {"kind": "corrupted"}
       ],
       "ops": [
-        {"op": "sockets", "change": "tainted-count"}
+        {"op": "sockets", "change": {"kind": "tainted-count"}}
       ],
       "claims": ["game-text"]
     },
@@ -1767,7 +1794,7 @@
         {"kind": "corrupted"}
       ],
       "ops": [
-        {"op": "sockets", "change": "tainted-links"}
+        {"op": "sockets", "change": {"kind": "tainted-links"}}
       ],
       "claims": ["game-text"]
     },
@@ -1853,11 +1880,12 @@
         {"kind": "notMirrored"},
         {"kind": "notUnique"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "corrupt"},
-        {"op": "chance", "branches": [{"p": 0.25, "ops": []}, {"p": 0.25, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.25, "ops": [{"op": "sockets", "change": "reforge"}]}, {"p": 0.25, "ops": [{"op": "reforge", "spec": {"rarity": "rare"}}]}]}
+        {"op": "chance", "branches": [{"p": 0.25, "ops": []}, {"p": 0.25, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.25, "ops": [{"op": "sockets", "change": {"kind": "reforge"}}]}, {"p": 0.25, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
       ],
-      "claims": ["game-text", "vaal.outcomes", "vaal.locked-implicits"],
+      "claims": ["game-text", "vaal.outcomes", "vaal.locked-implicits", "reforge.counts"],
       "example": "crown-actual"
     },
     {
@@ -1872,10 +1900,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "guarantee": {"kind": "veiled"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addVeiled"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["game-text", "chaos.count", "chaos.ignores-locks", "reforge.guarantee-first", "veiled-chaos.side"],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "reforge.guarantee-first", "veiled-chaos.side", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -1892,6 +1924,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "removeRandom", "filter": {"kind": "any"}},
         {"op": "addVeiled"}
@@ -1950,7 +1983,7 @@
       ],
       "pair": ["same-class"],
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "weighting": "recombine"}}
+        {"op": "fill", "fill": {"weighting": "recombine"}}
       ],
       "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
     },
@@ -1969,6 +2002,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -1991,6 +2025,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2013,6 +2048,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2035,6 +2071,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2057,6 +2094,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2079,6 +2117,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2101,6 +2140,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2123,6 +2163,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2145,6 +2186,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2167,6 +2209,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2189,6 +2232,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
@@ -2208,6 +2252,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "cold", "to": "fire"}
       ],
@@ -2225,6 +2270,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "cold", "to": "lightning"}
       ],
@@ -2242,6 +2288,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "fire", "to": "cold"}
       ],
@@ -2259,6 +2306,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "fire", "to": "lightning"}
       ],
@@ -2276,6 +2324,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "lightning", "to": "cold"}
       ],
@@ -2293,6 +2342,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "changeResistance", "from": "lightning", "to": "fire"}
       ],
@@ -2328,10 +2378,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "attack"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2346,10 +2400,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "caster"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2364,10 +2422,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "chaos"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2382,10 +2444,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "cold"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2400,10 +2466,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "critical"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2418,10 +2488,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "defences"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2436,10 +2510,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "fire"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2456,10 +2534,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "influenceMod"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "influenced"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "harvest.first-draw-influenced"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "harvest.first-draw-influenced", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2474,10 +2556,13 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "weighting": "less-likely-same"}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "weighting": "less-likely-same"}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks"]
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.counts"]
     },
     {
       "id": "harvest/reforge-life",
@@ -2491,10 +2576,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "life"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2509,10 +2598,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "lightning"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2527,10 +2620,13 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "weighting": "more-likely-same"}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "weighting": "more-likely-same"}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks"]
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.counts"]
     },
     {
       "id": "harvest/reforge-physical",
@@ -2544,10 +2640,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "physical"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2562,10 +2662,14 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"}
       ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
-        {"op": "reforge", "spec": {"rarity": "rare", "respectsLocks": true, "guarantee": {"kind": "tag", "tag": "speed"}}}
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts"],
       "example": "crown-a"
     },
     {
