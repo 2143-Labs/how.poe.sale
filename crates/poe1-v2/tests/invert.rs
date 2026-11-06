@@ -130,6 +130,29 @@ fn a_lock_narrows_the_removal() {
     );
 }
 
+/// Three removable modifiers, one branch each: with Suffixes Cannot Be Changed on a Crown whose
+/// prefix side has room, a removal can only take one of the three prefixes, a third each.
+#[test]
+fn a_locked_side_leaves_three_removals_at_a_third() {
+    let d = test_data();
+    let inversion = invert::sources(d, &pattern("crown-shaper"), &item("crown-l1"));
+    let chances = chance(&inversion, "currency/annulment");
+    assert!(
+        !chances.is_empty() && chances.iter().all(|p| (p - 1.0 / 3.0).abs() < 1e-12),
+        "{chances:?}"
+    );
+    for group in &inversion.groups {
+        for source in group
+            .sources
+            .iter()
+            .filter(|s| s.method == "currency/annulment")
+        {
+            assert_eq!(source.input.prefixes.len(), 3, "the input's prefix side");
+            assert_eq!(source.input.suffixes.len(), 3, "the input's suffix side");
+        }
+    }
+}
+
 /// The Vaal Orb's corruption is one of its four branches, so the input is the uncorrupted item at
 /// one chance in four.
 #[test]
