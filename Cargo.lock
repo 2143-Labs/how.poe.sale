@@ -154,6 +154,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "poe1",
+ "regex",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "compression-codecs"
 version = "0.4.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -188,26 +199,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f97d3416d5337d15c4b0d78c8c91df922ca143f57ec20e2d1c188333047ef04"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "datagen"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "datagen-v2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "poe1-v2",
- "regex",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -379,17 +370,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
-name = "js-sys"
-version = "0.3.106"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7883d941dae510fb2d978fc3fe018c71c9e2892fd38854de3e8b92c2e5ad9cc5"
-dependencies = [
- "cfg-if",
- "futures-util",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -500,18 +480,6 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "poe1"
-version = "0.1.0"
-dependencies = [
- "rand",
- "rand_pcg",
- "serde",
- "serde_json",
- "solver",
- "thiserror",
-]
-
-[[package]]
-name = "poe1-v2"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -1009,14 +977,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
-name = "wasm-api"
+name = "wasm"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "js-sys",
  "poe1",
  "serde_json",
- "solver",
  "wasm-bindgen",
 ]
 

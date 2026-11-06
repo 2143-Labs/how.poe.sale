@@ -9,12 +9,18 @@ function load(): Promise<Bridge> {
     const res = await fetch('/data/bundle.json')
     if (!res.ok) throw new Error(`bundle.json: HTTP ${res.status}`)
     return new Bridge(await res.text())
-  })()
+  })().catch((error: unknown) => {
+    // A failed load is not cached: the next request fetches again.
+    bridge = null
+    throw error
+  })
   return bridge
 }
 
-function parseJson<T>(text: string): T {
-  return JSON.parse(text) as T
+function errorText(error: unknown): string {
+  // A Rust panic traps the instance; nothing it answers afterwards can be trusted.
+  if (error instanceof WebAssembly.RuntimeError) return 'The solver crashed on this input; reload the page.'
+  return error instanceof Error ? error.message : String(error)
 }
 
 self.onmessage = async (event: MessageEvent) => {
@@ -24,49 +30,27 @@ self.onmessage = async (event: MessageEvent) => {
     const b = await load()
     let response: SolverResponse
     switch (message.type) {
-      case 'version':
-        response = { type: 'version', id: message.id, version: b.version() }
-        break
-      case 'solve':
-        response = { type: 'solve', id: message.id, solution: parseJson(b.solve(JSON.stringify(message.problem))) }
+      case 'start':
+        response = {
+          type: 'start',
+          id: message.id,
+          version: b.version(),
+          patterns: JSON.parse(b.patterns()),
+          examples: JSON.parse(b.examples()),
+        }
         break
       case 'parse':
-        response = { type: 'parse', id: message.id, draft: parseJson(b.parse_target(message.text)) }
+        response = { type: 'parse', id: message.id, item: JSON.parse(b.parse(message.text)) }
         break
-      case 'influenceMods':
-        response = {
-          type: 'influenceMods',
-          id: message.id,
-          mods: parseJson(b.influence_mods(message.base, message.influence)),
-        }
+      case 'target':
+        response = { type: 'target', id: message.id, pattern: JSON.parse(b.target(message.text)) }
         break
-      case 'proposeProcesses':
-        response = {
-          type: 'proposeProcesses',
-          id: message.id,
-          proposals: parseJson(b.propose_processes(JSON.stringify(message.problem), message.goodId)),
-        }
-        break
-      case 'contracts':
-        response = { type: 'contracts', id: message.id, contracts: parseJson(b.contracts()) }
-        break
-      case 'recipes':
-        response = { type: 'recipes', id: message.id, recipes: parseJson(b.recipes()) }
-        break
-      case 'modTiers':
-        response = {
-          type: 'modTiers',
-          id: message.id,
-          tiers: parseJson(b.mod_tiers(message.base, message.group, message.side)),
-        }
+      case 'solve':
+        response = { type: 'solve', id: message.id, result: JSON.parse(b.solve(message.pattern, message.item)) }
         break
     }
     self.postMessage(response)
   } catch (error) {
-    self.postMessage({
-      type: message.type,
-      id: message.id,
-      error: error instanceof Error ? error.message : String(error),
-    })
+    self.postMessage({ type: message.type, id: message.id, error: errorText(error) })
   }
 }

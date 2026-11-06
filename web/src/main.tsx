@@ -1,101 +1,92 @@
-import { StrictMode, useEffect, useMemo, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@xyflow/react/dist/style.css'
 import './styles.css'
-import { CraftList } from './components/CraftList'
-import { DemoMenu } from './components/DemoMenu'
-import { Donors } from './components/Donors'
-import { GoodPanel } from './components/GoodPanel'
-import { Market } from './components/Market'
-import { NodePanel } from './components/NodePanel'
-import { Prices } from './components/Prices'
-import { Stats } from './components/Stats'
-import { TargetEditor } from './components/TargetEditor'
-import { Tree } from './components/Tree'
-import { buildProblem, targetSignature } from './problem'
+import { ExamplesMenu } from './components/ExamplesMenu'
+import { ItemPanel } from './components/ItemPanel'
+import { NowLine } from './components/NowLine'
+import { SourcesPanel } from './components/SourcesPanel'
+import { StepsTable } from './components/StepsTable'
+import { TargetPanel } from './components/TargetPanel'
+import { UnmetList } from './components/UnmetList'
 import { buildShareUrl } from './share'
 import { solver } from './solver'
 import { useAppStore } from './store'
-import type { ContractJson } from './types'
+import type { Example, PatternSpec } from './types'
 
 function App() {
-  const goods = useAppStore((state) => state.goods)
-  const processes = useAppStore((state) => state.processes)
-  const root = useAppStore((state) => state.root)
-  const focus = useAppStore((state) => state.focus)
-  const prices = useAppStore((state) => state.prices)
-  const donors = useAppStore((state) => state.donors)
-  const authoredRecipes = useAppStore((state) => state.authoredRecipes)
-  const view = useAppStore((state) => state.view)
-  const setView = useAppStore((state) => state.setView)
-  const solution = useAppStore((state) => state.solution)
+  const patternText = useAppStore((state) => state.patternText)
+  const itemText = useAppStore((state) => state.itemText)
+  const result = useAppStore((state) => state.result)
   const busy = useAppStore((state) => state.busy)
   const error = useAppStore((state) => state.error)
   const notice = useAppStore((state) => state.notice)
   const setError = useAppStore((state) => state.setError)
-  const clearNotice = useAppStore((state) => state.clearNotice)
+  const setNotice = useAppStore((state) => state.setNotice)
 
   const [version, setVersion] = useState<string | null>(null)
-  const [contracts, setContracts] = useState<ContractJson[]>([])
+  const [patterns, setPatterns] = useState<PatternSpec[]>([])
+  const [examples, setExamples] = useState<Example[]>([])
   const [copied, setCopied] = useState(false)
-  const [selected, setSelected] = useState('goal')
 
   useEffect(() => {
     let cancelled = false
     solver
-      .version()
-      .then((value) => {
-        if (!cancelled) setVersion(value)
+      .start()
+      .then((info) => {
+        if (cancelled) return
+        setVersion(info.version)
+        setPatterns(info.patterns)
+        setExamples(info.examples)
+        const state = useAppStore.getState()
+        if (!state.patternText && !state.itemText && info.patterns[0]) {
+          state.setPatternText(JSON.stringify(info.patterns[0], null, 2))
+          state.setItemText(info.examples.find((example) => example.id === 'archdemon-crown')?.text ?? '')
+        }
       })
-      .catch(() => {
-        // the worker reports load failures through the solve error banner
-      })
-    solver
-      .contracts()
-      .then((list) => {
-        if (!cancelled) setContracts(list)
-      })
-      .catch(() => {
-        // the craft list stays empty until the bridge answers
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason))
       })
     return () => {
       cancelled = true
     }
-  }, [])
-
-  const problem = useMemo(
-    () => buildProblem({ goods, processes, root, focus, prices, donors, authoredRecipes }),
-    [goods, processes, root, focus, prices, donors, authoredRecipes],
-  )
+  }, [setError])
 
   useEffect(() => {
-    if (!problem) return
-    const timer = setTimeout(() => solver.solve(problem), 250)
+    const { setParsed, setParseError } = useAppStore.getState()
+    if (!itemText.trim()) {
+      setParsed(null)
+      setParseError(null)
+      return
+    }
+    let cancelled = false
+    const timer = setTimeout(() => {
+      solver
+        .parse(itemText)
+        .then((parsed) => {
+          if (cancelled) return
+          setParsed(parsed)
+          setParseError(null)
+        })
+        .catch((reason: unknown) => {
+          if (cancelled) return
+          setParsed(null)
+          setParseError(reason instanceof Error ? reason.message : String(reason))
+        })
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [itemText])
+
+  useEffect(() => {
+    if (!patternText.trim() || !itemText.trim()) return
+    const timer = setTimeout(() => solver.solve(patternText, itemText), 250)
     return () => clearTimeout(timer)
-  }, [problem])
-
-  // Fall back to the goal only when a fresh tree lacks the selected node; a key the user just
-  // seeded with Use is kept even if an older tree (without it) is still on screen.
-  const tree = solution?.focus ?? null
-  useEffect(() => {
-    if (!tree) return
-    const added = processes.find((process) => process.id === focus)?.added ?? []
-    setSelected((current) =>
-      current === 'goal' || tree.nodes.some((node) => node.key === current) || added.includes(current)
-        ? current
-        : 'goal',
-    )
-  }, [tree, processes, focus])
-
-  // A new root target invalidates every state key of the focus tree.
-  const rootSignature = targetSignature(problem?.goods.find((good) => good.id === problem.root)?.target ?? null)
-  useEffect(() => {
-    setSelected('goal')
-  }, [rootSignature])
+  }, [patternText, itemText])
 
   function share() {
-    if (!problem) return
-    const url = new URL(buildShareUrl(problem), window.location.origin).toString()
+    const url = new URL(buildShareUrl(patternText, itemText), window.location.origin).toString()
     window.history.replaceState(null, '', url)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 2000)
@@ -109,8 +100,8 @@ function App() {
         <span className="version">{version ? `v${version}` : 'starting…'}</span>
         {busy && <span className="busy">solving…</span>}
         <span className="spacer" />
-        <DemoMenu />
-        <button type="button" onClick={share} disabled={!problem}>
+        <ExamplesMenu examples={examples} />
+        <button type="button" onClick={share} disabled={!patternText.trim() || !itemText.trim()}>
           {copied ? 'Link copied' : 'Share link'}
         </button>
       </header>
@@ -118,7 +109,7 @@ function App() {
       {notice && (
         <div className="banner banner-notice">
           <span>{notice}</span>
-          <button type="button" onClick={clearNotice}>
+          <button type="button" onClick={() => setNotice(null)}>
             dismiss
           </button>
         </div>
@@ -132,60 +123,29 @@ function App() {
         </div>
       )}
 
-      <main>
-        <TargetEditor parse={solver.parse} modTiers={solver.modTiers} />
-
-        <div className="workspace">
-          <section className="panel graph-panel">
-            <header className="panel-header">
-              <h2>{view === 'market' ? 'Market' : 'Tree'}</h2>
-              <div className="view-tabs">
-                <button type="button" className={view === 'market' ? 'is-active' : ''} onClick={() => setView('market')}>
-                  Market
-                </button>
-                <button
-                  type="button"
-                  className={view === 'process' ? 'is-active' : ''}
-                  onClick={() => setView('process')}
-                  disabled={!solution?.focus}
-                >
-                  Process tree
-                </button>
-              </div>
-              <span className="hint">
-                {view === 'market'
-                  ? 'one node per good, one edge per input → output; the chosen process is solid'
-                  : 'craft edges are solid on the solved policy, dashed when they close a cycle'}
-              </span>
-              {solution?.error && <span className="error-inline">{solution.error.message}</span>}
-            </header>
-            {view === 'market' ? (
-              <Market />
-            ) : tree ? (
-              <Tree solution={tree} selected={selected} onSelect={setSelected} />
-            ) : (
-              <div className="graph-empty">
-                {problem ? 'Solving…' : 'Paste a target item to start. The tree grows from the goal backwards.'}
-              </div>
-            )}
-          </section>
-
-          <aside className="side">
-            {view === 'market' ? (
-              <GoodPanel proposeProcesses={solver.proposeProcesses} contracts={contracts} modTiers={solver.modTiers} />
-            ) : (
-              <NodePanel selected={selected} onSelect={setSelected} />
-            )}
-            <Stats />
-          </aside>
+      <main className="columns">
+        <div className="stack">
+          <TargetPanel patterns={patterns} target={solver.target} />
+          <ItemPanel />
         </div>
-
-        <div className="lower">
-          <Prices />
-          <CraftList contracts={contracts} />
+        <div className="stack">
+          {result ? (
+            <>
+              <NowLine now={result.now} />
+              <StepsTable title="Exact steps" note="Every outcome is computed." steps={result.exact} />
+              <StepsTable
+                title="Certain part only"
+                note="The random rest of these steps is not modelled yet, so their numbers come from what the step certainly does."
+                steps={result.certain}
+              />
+              <StepsTable title="Not computed" note="The model stops before their result." steps={result.blind} />
+              <UnmetList unmet={result.unmet} />
+              <SourcesPanel sources={result.sources} />
+            </>
+          ) : (
+            <section className="panel hint">Paste an item and choose a target.</section>
+          )}
         </div>
-
-        <Donors influenceMods={solver.influenceMods} />
       </main>
     </div>
   )

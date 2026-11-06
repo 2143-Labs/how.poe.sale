@@ -232,424 +232,46 @@ td {
   font-size: 12px;
 }
 
-.workspace {
+.columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 560px;
+  grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
-.side {
+@media (max-width: 1100px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stack {
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-width: 0;
 }
 
-.graph-canvas {
-  height: 680px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #0e0f14;
-}
-
-.graph-empty {
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-}
-
-.lower {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-}
-
-@media (max-width: 1280px) {
-  .workspace,
-  .lower {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* --- tree nodes --- */
-
-.solution-node {
-  width: 260px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-alt);
-  padding: 8px 10px;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.solution-node.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.solution-node.goal,
-.solution-node.start {
-  background: #1f2433;
-  text-align: center;
-}
-
-.node-title {
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.node-meta {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 11px;
-  margin-bottom: 6px;
-}
-
-.badge {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0 6px;
-}
-
-.badge-lock {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.badge-expanded {
-  border-color: var(--ok);
-  color: var(--ok);
-}
-
-.badge-unreachable {
-  border-color: var(--bad);
-  color: var(--bad);
-}
-
-.node-sides {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.chips {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.chips-label {
-  color: var(--muted);
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.chip {
-  border-radius: 4px;
-  padding: 1px 5px;
-  background: var(--panel);
-  border-left: 3px solid var(--border);
-}
-
-.chip-wanted {
-  border-left-color: var(--ok);
-}
-
-.chip-blocked {
-  border-left-color: var(--bad);
-  color: var(--muted);
-}
-
-.chip-other {
-  border-left-color: var(--muted);
-  color: var(--muted);
-}
-
-.chip-otherInfluenced {
-  border-left-color: var(--recovery);
-  color: var(--muted);
-}
-
-.chip-ok {
-  color: var(--text);
-}
-
-.node-value {
-  margin-top: 6px;
-  color: var(--accent);
-  font-size: 11px;
-}
-
-/* --- tree edges --- */
-
-.react-flow__edge.edge-chosen .react-flow__edge-path {
-  stroke: var(--accent);
-  stroke-width: 2;
-}
-
-.react-flow__edge.edge-faint .react-flow__edge-path {
-  stroke: #4a4f66;
-  stroke-opacity: 0.45;
-  stroke-width: 1.2;
-}
-
-.react-flow__edge.edge-recovery .react-flow__edge-path {
-  stroke-dasharray: 6 4;
-}
-
-.react-flow__edge-text {
-  fill: var(--text);
-  font-size: 10px;
-}
-
-.react-flow__edge-textbg {
-  fill: #0e0f14;
-}
-
-/* --- stats --- */
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 2px 12px;
+.item-text {
+  white-space: pre-wrap;
+  font: 12px/1.4 ui-monospace, 'SFMono-Regular', monospace;
   margin: 6px 0;
-  font-size: 13px;
 }
 
-.stats-grid dt {
+.step-does {
   color: var(--muted);
+  font-size: 12px;
 }
 
-.stats-grid dd {
-  margin: 0;
-}
-
-.price-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.price-row label {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--muted);
-}
-
-.node-panel {
-  overflow-x: auto;
-}
-
-.proposals th,
-.proposals td {
-  white-space: nowrap;
-  padding: 3px 4px;
-}
-
-.proposals td:first-child {
-  white-space: normal;
-  min-width: 120px;
-}
-
-.proposals button {
-  padding: 1px 4px;
-  font-size: 10.5px;
-}
-
-.proposals .row-actions {
-  margin: 0;
-  flex-wrap: nowrap;
-}
-
-.proposals tr.status-disabled td {
-  opacity: 0.55;
-}
-
-.proposals tr.status-needsinput td {
-  color: var(--accent);
-}
-
-.prices td:last-child,
-.donors td:last-child {
+.num {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-.state-summary {
-  margin: -2px 0 8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.pre-summary {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.3;
-  margin-top: 2px;
-}
-
-/* --- market canvas --- */
-
-.view-tabs {
-  display: flex;
-  gap: 4px;
-}
-
-.view-tabs button {
-  padding: 2px 8px;
-}
-
-.view-tabs button.is-active {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.market-view {
-  position: relative;
-}
-
-.fit {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 5;
-}
-
-.good-node {
-  width: 260px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-alt);
-  padding: 8px 10px;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.good-node.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.good-node.is-needed {
-  border-color: var(--bad);
-}
-
-.good-prices {
-  display: flex;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.react-flow__edge.edge-market-chosen .react-flow__edge-path {
-  stroke: var(--accent);
-  stroke-width: 2;
-}
-
-.react-flow__edge.edge-market-faint .react-flow__edge-path {
-  stroke: #4a4f66;
-  stroke-dasharray: 5 4;
-  stroke-opacity: 0.7;
-  stroke-width: 1.2;
-}
-
-.process-card-wrap {
-  margin-top: 12px;
-}
-
-/* --- recipe cards / good panel --- */
-
-.recipe-card {
-  border-color: rgba(240, 180, 77, 0.25);
-}
-
-.proposal-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.exits td,
-.crafts td,
-.steps td {
-  font-size: 12px;
-}
-
-.steps {
-  margin: 4px 0;
+.sources {
   padding-left: 18px;
 }
 
-.steps li {
-  margin-bottom: 6px;
-}
-
-.step-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.changes {
-  margin: 2px 0;
-  padding-left: 16px;
-  color: var(--muted);
-  font-size: 11.5px;
-}
-
-.source-badge {
-  color: var(--accent);
-  font-size: 10.5px;
-  margin-top: 2px;
-}
-
-.process-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 12px;
-}
-
-.process-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid rgba(47, 51, 69, 0.5);
-  padding: 3px 0;
-}
-
-.craft-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  max-height: 160px;
-  overflow-y: auto;
-}
-
-.badge.status-ready {
-  border-color: var(--ok);
-  color: var(--ok);
-}
-
-.badge.status-needsInput,
-.badge.status-needsinput {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.badge.status-unreachable,
-.badge.status-error {
-  border-color: var(--bad);
-  color: var(--bad);
+.sources li {
+  margin-bottom: 8px;
 }

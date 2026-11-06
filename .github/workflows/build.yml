@@ -17,8 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: nix develop -c bash scripts/fetch-data.sh
-      - run: nix develop -c cargo run -p datagen --release -- --raw data/raw --out data/bundle.json
-      - run: nix develop -c cargo run -p datagen-v2 --release -- bundle --raw data/raw --rules rules/v2 --out data/v2/bundle.json
+      - run: nix develop -c cargo run -p cli --release -- bundle --raw data/raw --rules rules --out data/bundle.json
       - run: nix develop -c cargo fmt --all -- --check
       - run: nix develop -c cargo clippy --workspace --all-targets -- -D warnings
       - run: nix develop -c cargo test --workspace --release

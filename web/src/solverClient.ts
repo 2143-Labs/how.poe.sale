@@ -1,23 +1,5 @@
-import { normalizeDraft } from './problem'
-import {
-  normalizeContracts,
-  normalizeProposalList,
-  normalizeRecipes,
-  normalizeSolutionV3,
-  normalizeTiers,
-} from './solution'
 import type { SolverRequest, SolverResponse } from './protocol'
-import type {
-  AnyProblem,
-  ContractJson,
-  InfluenceModEntry,
-  ProcessProposalJson,
-  RecipeDef,
-  Side,
-  SolutionV3,
-  TargetDraft,
-  TierJson,
-} from './types'
+import type { ItemView, PatternSpec, SolveView, StartInfo } from './types'
 
 /** The slice of `Worker` this client needs, so tests can drive a fake one. */
 export interface WorkerLike {
@@ -28,20 +10,16 @@ export interface WorkerLike {
 }
 
 export interface SolverCallbacks {
-  onSolution: (solution: SolutionV3) => void
+  onResult: (result: SolveView) => void
   onBusy: (busy: boolean) => void
   onError: (message: string | null) => void
 }
 
 export interface SolverClient {
-  solve(problem: AnyProblem): void
-  parse(text: string): Promise<TargetDraft>
-  influenceMods(base: string, influence: string): Promise<InfluenceModEntry[]>
-  proposeProcesses(problem: AnyProblem, goodId: string): Promise<ProcessProposalJson[]>
-  contracts(): Promise<ContractJson[]>
-  recipes(): Promise<RecipeDef[]>
-  modTiers(base: string, group: string, side: Side): Promise<TierJson[]>
-  version(): Promise<string>
+  start(): Promise<StartInfo>
+  parse(text: string): Promise<ItemView>
+  target(text: string): Promise<PatternSpec>
+  solve(pattern: string, item: string): void
   dispose(): void
 }
 
@@ -53,8 +31,8 @@ type Waiting = {
 /**
  * Owns the worker. Only the newest `solve` request may answer: a response whose
  * id is not `latestSolve` is dropped, so a slow solve never overwrites a newer
- * one. A failed solve keeps the previous solution on screen and reports an
- * error instead.
+ * one. A failed solve keeps the previous result on screen and reports an error
+ * instead.
  */
 export function createSolverClient(worker: WorkerLike, callbacks: SolverCallbacks): SolverClient {
   let nextId = 1
@@ -76,12 +54,12 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
     if (response.type === 'solve') {
       if (response.id !== latestSolve) return
       callbacks.onBusy(false)
-      if (response.error) {
-        callbacks.onError(response.error)
+      if (response.error || !response.result) {
+        callbacks.onError(response.error ?? 'The solver answered with nothing.')
         return
       }
       callbacks.onError(null)
-      callbacks.onSolution(normalizeSolutionV3(response.solution))
+      callbacks.onResult(response.result)
       return
     }
 
@@ -93,26 +71,18 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
       return
     }
     switch (response.type) {
-      case 'version':
-        pending.resolve(response.version ?? '')
+      case 'start':
+        pending.resolve({
+          version: response.version ?? '',
+          patterns: response.patterns ?? [],
+          examples: response.examples ?? [],
+        } satisfies StartInfo)
         return
       case 'parse':
-        pending.resolve(normalizeDraft(response.draft))
+        pending.resolve(response.item)
         return
-      case 'influenceMods':
-        pending.resolve(Array.isArray(response.mods) ? response.mods : [])
-        return
-      case 'proposeProcesses':
-        pending.resolve(normalizeProposalList(response.proposals))
-        return
-      case 'contracts':
-        pending.resolve(normalizeContracts(response.contracts))
-        return
-      case 'recipes':
-        pending.resolve(normalizeRecipes(response.recipes))
-        return
-      case 'modTiers':
-        pending.resolve(normalizeTiers(response.tiers))
+      case 'target':
+        pending.resolve(response.pattern)
         return
     }
   }
@@ -120,40 +90,24 @@ export function createSolverClient(worker: WorkerLike, callbacks: SolverCallback
   worker.addEventListener('message', onMessage)
 
   return {
-    solve(problem) {
+    start() {
+      return request<StartInfo>({ type: 'start', id: nextId++ })
+    },
+
+    parse(text) {
+      return request<ItemView>({ type: 'parse', id: nextId++, text })
+    },
+
+    target(text) {
+      return request<PatternSpec>({ type: 'target', id: nextId++, text })
+    },
+
+    solve(pattern, item) {
       const id = nextId++
       latestSolve = id
       callbacks.onError(null)
       callbacks.onBusy(true)
-      worker.postMessage({ type: 'solve', id, problem } satisfies SolverRequest)
-    },
-
-    parse(text) {
-      return request<TargetDraft>({ type: 'parse', id: nextId++, text })
-    },
-
-    influenceMods(base, influence) {
-      return request<InfluenceModEntry[]>({ type: 'influenceMods', id: nextId++, base, influence })
-    },
-
-    proposeProcesses(problem, goodId) {
-      return request<ProcessProposalJson[]>({ type: 'proposeProcesses', id: nextId++, problem, goodId })
-    },
-
-    contracts() {
-      return request<ContractJson[]>({ type: 'contracts', id: nextId++ })
-    },
-
-    recipes() {
-      return request<RecipeDef[]>({ type: 'recipes', id: nextId++ })
-    },
-
-    modTiers(base, group, side) {
-      return request<TierJson[]>({ type: 'modTiers', id: nextId++, base, group, side })
-    },
-
-    version() {
-      return request<string>({ type: 'version', id: nextId++ })
+      worker.postMessage({ type: 'solve', id, pattern, item } satisfies SolverRequest)
     },
 
     dispose() {
