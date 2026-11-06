@@ -1,0 +1,13 @@
+{
+  "base": "Cobalt Jewel",
+  "itemLevel": 84,
+  "rarity": "magic",
+  "prefixes": [
+    {
+      "id": "WandDamageJewel",
+      "values": [
+        15
+      ]
+    }
+  ]
+}

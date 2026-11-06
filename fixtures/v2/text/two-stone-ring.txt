@@ -1,0 +1,10 @@
+Item Class: Rings
+Rarity: Normal
+Two-Stone Ring
+--------
+Requirements:
+Level: 24
+--------
+Item Level: 84
+--------
++14% to Fire and Lightning Resistances

@@ -1,0 +1,82 @@
+{
+  "claims": [
+    "bases.current-league",
+    "bases.heist-experimented",
+    "bases.legacy-talismans",
+    "bases.unused-duplicate"
+  ],
+  "excluded": [
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/Bows/BowE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/Claws/ClawE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/Daggers/DaggerE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/Daggers/RuneDaggerE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/OneHandAxes/OneHandAxeE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/OneHandMaceE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/OneHandSwords/OneHandSwordE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/Staves/StaffE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/Staves/WarstaffE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/TwoHandAxes/TwoHandAxeE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/TwoHandMaces/TwoHandMaceE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/TwoHandWeapons/TwoHandSwords/TwoHandSwordE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Weapons/OneHandWeapons/Wands/WandE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Armours/Shields/ShieldDexE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Armours/Shields/ShieldIntE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Armours/Shields/ShieldStrE1",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Belts/BeltE2",
+      "reason": "heist-experimented"
+    },
+    {
+      "id": "Metadata/Items/Amulets/Talismans/Talisman4",
+      "reason": "legacy-talisman-duplicate"
+    }
+  ]
+}

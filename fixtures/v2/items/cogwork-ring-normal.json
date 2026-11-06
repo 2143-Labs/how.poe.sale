@@ -1,0 +1,10 @@
+{
+  "base": "Cogwork Ring",
+  "itemLevel": 84,
+  "rarity": "normal",
+  "implicits": [
+    {
+      "id": "MaxPrefixMaxSuffixImplicitE1__"
+    }
+  ]
+}

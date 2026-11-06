@@ -1,0 +1,10 @@
+{
+  "base": "Lapis Amulet",
+  "itemLevel": 84,
+  "rarity": "normal",
+  "implicits": [
+    {
+      "id": "IntelligenceImplicitAmulet1"
+    }
+  ]
+}

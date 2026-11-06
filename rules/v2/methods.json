@@ -1,0 +1,3852 @@
+{
+  "methods": [
+    {
+      "id": "beast/aspect-avian",
+      "name": "Beastcraft: add Aspect of the Avian",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Saqawal", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "openAffix", "side": "suffix"},
+        {"kind": "groupFree", "mod": "GrantsBirdAspectCrafted"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "addMod", "mod": "GrantsBirdAspectCrafted"}
+      ],
+      "claims": ["beast.list", "beast.aspect-level"]
+    },
+    {
+      "id": "beast/aspect-cat",
+      "name": "Beastcraft: add Aspect of the Cat",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Farrul", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "openAffix", "side": "suffix"},
+        {"kind": "groupFree", "mod": "GrantsCatAspectCrafted"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "addMod", "mod": "GrantsCatAspectCrafted"}
+      ],
+      "claims": ["beast.list", "beast.aspect-level"]
+    },
+    {
+      "id": "beast/aspect-crab",
+      "name": "Beastcraft: add Aspect of the Crab",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craiceann", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "openAffix", "side": "suffix"},
+        {"kind": "groupFree", "mod": "GrantsCrabAspectCrafted"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "addMod", "mod": "GrantsCrabAspectCrafted"}
+      ],
+      "claims": ["beast.list", "beast.aspect-level"]
+    },
+    {
+      "id": "beast/aspect-spider",
+      "name": "Beastcraft: add Aspect of the Spider",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Fenumus", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "openAffix", "side": "suffix"},
+        {"kind": "groupFree", "mod": "GrantsSpiderAspectCrafted"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "addMod", "mod": "GrantsSpiderAspectCrafted"}
+      ],
+      "claims": ["beast.list", "beast.aspect-level"]
+    },
+    {
+      "id": "beast/create-talisman",
+      "name": "Beastcraft: create a unique Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the Talisman base table is not in the RePoE export"}}
+      ],
+      "claims": ["beast.talisman-create", "beast.yellow"]
+    },
+    {
+      "id": "beast/fracture-talisman",
+      "name": "Beastcraft: fracture a modifier on a rare Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Farric Frost Hellion Alpha", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"},
+        {"kind": "minExplicits", "n": 4}
+      ],
+      "ops": [
+        {"op": "fracture"}
+      ],
+      "claims": ["beast.split-replaced", "talisman.scope", "beast.talisman-fracture-cost"]
+    },
+    {
+      "id": "beast/fracture-talisman-two",
+      "name": "Beastcraft: fracture two modifiers on a rare Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Fenumal Plagued Arachnid", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"},
+        {"kind": "minExplicits", "n": 6}
+      ],
+      "ops": [
+        {"op": "fracture"},
+        {"op": "fracture"}
+      ],
+      "claims": ["beast.split-replaced", "talisman.scope", "beast.talisman-fracture-cost"]
+    },
+    {
+      "id": "beast/hinekoras-lock",
+      "name": "Beastcraft: foresee the next result",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Croaker", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "notForeseen"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
+      ],
+      "claims": ["beast.list", "hinekoras.unmodelled"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "beast/imprint",
+      "name": "Beastcraft: imprint",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Croaker", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "noFractured"}
+      ],
+      "ops": [
+        {"op": "imprint"}
+      ],
+      "claims": ["beast.list"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "beast/imprint-talisman",
+      "name": "Beastcraft: imprint a rare Talisman",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "imprint"}
+      ],
+      "claims": ["beast.talisman", "beast.yellow"]
+    },
+    {
+      "id": "beast/influence-slam-crusader",
+      "name": "Beastcraft: add a Crusader modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Farric Goliath", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "crusader"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"]
+    },
+    {
+      "id": "beast/influence-slam-elder",
+      "name": "Beastcraft: add an Elder modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Saqawine Blood Viper", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "elder"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"]
+    },
+    {
+      "id": "beast/influence-slam-hunter",
+      "name": "Beastcraft: add a Hunter modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Craicic Watcher", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "hunter"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"]
+    },
+    {
+      "id": "beast/influence-slam-redeemer",
+      "name": "Beastcraft: add a Redeemer modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Fenumal Queen", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "redeemer"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"]
+    },
+    {
+      "id": "beast/influence-slam-shaper",
+      "name": "Beastcraft: add a Shaper modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Fenumal Devourer", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "shaper"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"],
+      "example": "crown-a-mana"
+    },
+    {
+      "id": "beast/influence-slam-warlord",
+      "name": "Beastcraft: add a Warlord modifier",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Maw", "amount": 1},
+        {"name": "beast:Fenumal Scrabbler", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence", "influence": "warlord"},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "beast.list"]
+    },
+    {
+      "id": "beast/maximum-links",
+      "name": "Beastcraft: maximum links",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Craicic Sand Spitter", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "linkAll"}
+      ],
+      "claims": ["beast.list"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "beast/prefix-to-suffix",
+      "name": "Beastcraft: remove a prefix, add a suffix",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Farric Lynx Alpha", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "suffix"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "removeRandom", "filter": {"kind": "side", "side": "prefix"}, "optional": true},
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "suffix"}
+      ],
+      "claims": ["beast.list", "beast.farric", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "beast/reroll-talisman-base",
+      "name": "Beastcraft: reroll a Talisman base type",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "baseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the Talisman base table is not in the RePoE export"}}
+      ],
+      "claims": ["beast.talisman", "beast.yellow"]
+    },
+    {
+      "id": "beast/restore-imprint",
+      "name": "Beastcraft: restore an imprint",
+      "family": "beast",
+      "requires": [
+        {"kind": "hasImprint"}
+      ],
+      "ops": [
+        {"op": "restore"}
+      ],
+      "claims": ["beast.list"]
+    },
+    {
+      "id": "beast/suffix-to-prefix",
+      "name": "Beastcraft: remove a suffix, add a prefix",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Farric Wolf Alpha", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "prefix"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "removeRandom", "filter": {"kind": "side", "side": "suffix"}, "optional": true},
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "prefix"}
+      ],
+      "claims": ["beast.list", "beast.farric", "remove.cannot-roll-scope"],
+      "example": "crown-a-mana"
+    },
+    {
+      "id": "beast/suffixes-cannot-be-changed",
+      "name": "Beastcraft: add Suffixes Cannot Be Changed",
+      "family": "beast",
+      "cost": [
+        {"name": "beast:Wild Bristle Matron", "amount": 1},
+        {"name": "beast:Yellow Beast", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]},
+        {"kind": "fullSuffixes"},
+        {"kind": "openAffix", "side": "prefix"},
+        {"kind": "craftedRoom"},
+        {"kind": "groupFree", "mod": "DexMasterItemGenerationCannotChangeSuffixes"},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "addMod", "mod": "DexMasterItemGenerationCannotChangeSuffixes"}
+      ],
+      "claims": ["beast.list", "beast.bristle-matron"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/alchemy",
+      "name": "Orb of Alchemy",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Alchemy", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
+      ],
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+      ],
+      "claims": ["game-text", "chaos.count", "reforge.counts"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/alteration",
+      "name": "Orb of Alteration",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Alteration", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "clear"},
+        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
+      ],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/ancient-orb",
+      "name": "Ancient Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Ancient Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/annulment",
+      "name": "Orb of Annulment",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Annulment", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "minExplicits", "n": 1}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "ops": [
+        {"op": "removeRandom", "filter": {"kind": "any"}}
+      ],
+      "claims": ["game-text", "annul.locks", "annul.uniform", "fractured.kept", "metamod.cannot-roll", "veiled.placeholder-removable", "multicraft.annul"],
+      "example": "crown-d2-scbc"
+    },
+    {
+      "id": "currency/anoint-amber-oil",
+      "name": "Anoint with Amber Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Amber Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-azure-oil",
+      "name": "Anoint with Azure Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Azure Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-black-oil",
+      "name": "Anoint with Black Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Black Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-clear-oil",
+      "name": "Anoint with Clear Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Clear Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-crimson-oil",
+      "name": "Anoint with Crimson Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Crimson Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-golden-oil",
+      "name": "Anoint with Golden Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Golden Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-indigo-oil",
+      "name": "Anoint with Indigo Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Indigo Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-opalescent-oil",
+      "name": "Anoint with Opalescent Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Opalescent Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-prismatic-oil",
+      "name": "Anoint an amulet with Prismatic Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Prismatic Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-reflective-oil",
+      "name": "Anoint a mirrored item with Reflective Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Reflective Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "mirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-sepia-oil",
+      "name": "Anoint with Sepia Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Sepia Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-silver-oil",
+      "name": "Anoint with Silver Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Silver Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-tainted-oil",
+      "name": "Anoint a corrupted item with Tainted Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "oil.special-types", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-teal-oil",
+      "name": "Anoint with Teal Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Teal Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-verdant-oil",
+      "name": "Anoint with Verdant Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Verdant Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/anoint-violet-oil",
+      "name": "Anoint with Violet Oil",
+      "family": "currency",
+      "cost": [
+        {"name": "Violet Oil", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "notBaseTag", "tag": "talisman"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "anointment recipes are not in the RePoE export"}}
+      ],
+      "claims": ["oil.cassia", "anoint.talismans"]
+    },
+    {
+      "id": "currency/armour-recombinator",
+      "name": "Armour Recombinator",
+      "family": "currency",
+      "inputs": 2,
+      "cost": [
+        {"name": "Armour Recombinator", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["armour"]}
+      ],
+      "pair": ["same-class"],
+      "ops": [
+        {"op": "fill", "fill": {"weighting": "recombine"}}
+      ],
+      "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
+    },
+    {
+      "id": "currency/armourers-scrap",
+      "name": "Armourer's Scrap",
+      "family": "currency",
+      "cost": [
+        {"name": "Armourer's Scrap", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]},
+        {"kind": "qualityBelow", "max": 20}
+      ],
+      "ops": [
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
+      ],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
+      "example": "slink-boots-unique",
+      "protect": null
+    },
+    {
+      "id": "currency/augmentation",
+      "name": "Orb of Augmentation",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Augmentation", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/awakeners-orb",
+      "name": "Awakener's Orb",
+      "family": "currency",
+      "inputs": 2,
+      "cost": [
+        {"name": "Awakener's Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]},
+        {"kind": "singleInfluence"},
+        {"kind": "noFractured"},
+        {"kind": "notSynthesised"}
+      ],
+      "pair": ["same-class", "different-single-influence"],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "takeInput", "input": 1},
+        {"op": "addInfluences", "input": 0},
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/binding",
+      "name": "Orb of Binding",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Binding", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
+      ],
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}},
+        {"op": "sockets", "change": {"kind": "link-up-to-four"}}
+      ],
+      "claims": ["game-text", "chaos.count", "reforge.counts"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/blacksmiths-whetstone",
+      "name": "Blacksmith's Whetstone",
+      "family": "currency",
+      "cost": [
+        {"name": "Blacksmith's Whetstone", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]},
+        {"kind": "qualityBelow", "max": 20}
+      ],
+      "ops": [
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
+      ],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
+      "protect": null
+    },
+    {
+      "id": "currency/blessed",
+      "name": "Blessed Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Blessed Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasImplicit"},
+        {"kind": "implicitsChangeable"}
+      ],
+      "ops": [
+        {"op": "rerollValues", "scope": "implicit"}
+      ],
+      "claims": ["game-text", "implicits.locked"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/brinehooks-ducat",
+      "name": "Brinehook's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Brinehook's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver"]},
+        {"kind": "openAffix", "side": "suffix"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "slink-boots-eldritch",
+      "protect": null
+    },
+    {
+      "id": "currency/chance",
+      "name": "Orb of Chance",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Chance", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/chaos",
+      "name": "Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Chaos Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+      ],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "reforge.counts"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/chromatic-orb",
+      "name": "Chromatic Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Chromatic Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "random-colours"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/coin-of-desecration",
+      "name": "Coin of Desecration",
+      "family": "currency",
+      "cost": [
+        {"name": "Coin of Desecration", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/coin-of-restoration",
+      "name": "Coin of Restoration",
+      "family": "currency",
+      "cost": [
+        {"name": "Coin of Restoration", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/crusaders-exalted",
+      "name": "Crusader's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Crusader's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "crusader"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "crusader"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/cyaxans-ducat",
+      "name": "Cyaxan's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Cyaxan's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "crown-a",
+      "protect": null
+    },
+    {
+      "id": "currency/divine",
+      "name": "Divine Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Divine Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare", "unique"]},
+        {"kind": "minExplicits", "n": 1}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "rerollValues", "scope": "explicit"}
+      ],
+      "claims": ["game-text", "fractured.kept"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/djinn-touched-vaal-orb",
+      "name": "Djinn-Touched Vaal Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Djinn-Touched Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/elders-exalted",
+      "name": "Elder's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Elder's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "elder"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "elder"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/eldritch-annulment",
+      "name": "Eldritch Orb of Annulment",
+      "family": "currency",
+      "cost": [
+        {"name": "Eldritch Orb of Annulment", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "eldritchDominant"},
+        {"kind": "minExplicits", "n": 1}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "ops": [
+        {"op": "removeRandom", "filter": {"kind": "side", "side": "dominant"}}
+      ],
+      "claims": ["game-text", "eldritch.dominance-ties", "annul.uniform", "remove.cannot-roll-scope"]
+    },
+    {
+      "id": "currency/eldritch-chaos",
+      "name": "Eldritch Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Eldritch Chaos Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "eldritchDominant"}
+      ],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "clear", "side": "dominant"},
+        {"op": "fill", "fill": {"side": "dominant"}}
+      ],
+      "claims": ["game-text", "eldritch.dominance-ties"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "currency/eldritch-exalted",
+      "name": "Eldritch Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Eldritch Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "eldritchDominant"},
+        {"kind": "openAffix", "side": "dominant"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "dominant"}
+      ],
+      "claims": ["add.side-first", "game-text", "eldritch.dominance-ties"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "currency/enkindling-orb",
+      "name": "Enkindling Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Enkindling Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["UtilityFlask"]}
+      ],
+      "ops": [
+        {"op": "setEnchant", "pool": "flask-enkindling"}
+      ],
+      "claims": ["game-text"],
+      "example": "quicksilver-normal"
+    },
+    {
+      "id": "currency/exalted",
+      "name": "Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["game-text", "add.side-first", "spawn.first-match", "metamod.cannot-roll"],
+      "example": "crown-a-mana"
+    },
+    {
+      "id": "currency/exceptional-eldritch-ember",
+      "name": "Exceptional Eldritch Ember",
+      "family": "currency",
+      "cost": [
+        {"name": "Exceptional Eldritch Ember", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/exceptional-eldritch-ichor",
+      "name": "Exceptional Eldritch Ichor",
+      "family": "currency",
+      "cost": [
+        {"name": "Exceptional Eldritch Ichor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/fading-reflecting-mist",
+      "name": "Fading Reflecting Mist",
+      "family": "currency",
+      "cost": [
+        {"name": "Fading Reflecting Mist", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noVeiled"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/foulborn-augmentation",
+      "name": "Foulborn Orb of Augmentation",
+      "family": "currency",
+      "cost": [
+        {"name": "Foulborn Orb of Augmentation", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/foulborn-exalted",
+      "name": "Foulborn Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Foulborn Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/foulborn-regal",
+      "name": "Foulborn Regal Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Foulborn Regal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/fracturing",
+      "name": "Fracturing Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Fracturing Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "minExplicits", "n": 4, "ignoreVeiled": true},
+        {"kind": "noFractured"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"}
+      ],
+      "ops": [
+        {"op": "fracture"}
+      ],
+      "claims": ["game-text", "fracture.eligible", "fracture.crafted"],
+      "example": "talisman-rare-four"
+    },
+    {
+      "id": "currency/genteels-ducat",
+      "name": "The Genteel's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "The Genteel's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["Strength", "Dexterity", "Intelligence"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
+    },
+    {
+      "id": "currency/glassblowers-bauble",
+      "name": "Glassblower's Bauble",
+      "family": "currency",
+      "cost": [
+        {"name": "Glassblower's Bauble", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["flask", "tincture"]},
+        {"kind": "qualityBelow", "max": 20}
+      ],
+      "ops": [
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
+      ],
+      "claims": ["game-text", "quality.per-level", "quality.unique"],
+      "example": "quicksilver-normal",
+      "protect": null
+    },
+    {
+      "id": "currency/grand-eldritch-ember",
+      "name": "Grand Eldritch Ember",
+      "family": "currency",
+      "cost": [
+        {"name": "Grand Eldritch Ember", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/grand-eldritch-ichor",
+      "name": "Grand Eldritch Ichor",
+      "family": "currency",
+      "cost": [
+        {"name": "Grand Eldritch Ichor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/greater-eldritch-ember",
+      "name": "Greater Eldritch Ember",
+      "family": "currency",
+      "cost": [
+        {"name": "Greater Eldritch Ember", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 5}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/greater-eldritch-ichor",
+      "name": "Greater Eldritch Ichor",
+      "family": "currency",
+      "cost": [
+        {"name": "Greater Eldritch Ichor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 5}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/hinekoras-lock",
+      "name": "Hinekora's Lock",
+      "family": "currency",
+      "cost": [
+        {"name": "Hinekora's Lock", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "notForeseen"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "notModelled", "why": "the lock lets you hover as many currencies as you want before you pick one (owner)"}}
+      ],
+      "claims": ["game-text", "hinekoras.unmodelled"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/hunters-exalted",
+      "name": "Hunter's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Hunter's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "hunter"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "hunter"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/instilling-orb",
+      "name": "Instilling Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Instilling Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["UtilityFlask"]}
+      ],
+      "ops": [
+        {"op": "setEnchant", "pool": "flask-instilling"}
+      ],
+      "claims": ["game-text"],
+      "example": "quicksilver-normal"
+    },
+    {
+      "id": "currency/jewellers-orb",
+      "name": "Jeweller's Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Jeweller's Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "canHaveSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "random-count"}}
+      ],
+      "claims": ["game-text"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/jewellery-recombinator",
+      "name": "Jewellery Recombinator",
+      "family": "currency",
+      "inputs": 2,
+      "cost": [
+        {"name": "Jewellery Recombinator", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["jewellery"]}
+      ],
+      "pair": ["same-class"],
+      "ops": [
+        {"op": "fill", "fill": {"weighting": "recombine"}}
+      ],
+      "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
+    },
+    {
+      "id": "currency/katakohis-ducat",
+      "name": "Katakohi's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Katakohi's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Gloves"]},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
+    },
+    {
+      "id": "currency/kisharas-ducat",
+      "name": "Kishara's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Kishara's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "minExplicits", "n": 2}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
+    },
+    {
+      "id": "currency/lesser-eldritch-ember",
+      "name": "Lesser Eldritch Ember",
+      "family": "currency",
+      "cost": [
+        {"name": "Lesser Eldritch Ember", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 6}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/lesser-eldritch-ichor",
+      "name": "Lesser Eldritch Ichor",
+      "family": "currency",
+      "cost": [
+        {"name": "Lesser Eldritch Ichor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "notUnique"},
+        {"kind": "noInfluence"},
+        {"kind": "implicitsChangeable"},
+        {"kind": "notSynthesised"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 6}
+      ],
+      "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/magmatic-ore",
+      "name": "Magmatic Ore",
+      "family": "currency",
+      "cost": [
+        {"name": "Magmatic Ore", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon", "armour"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "crucible passive trees are not in the item model"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/merricks-ducat",
+      "name": "Merrick's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Merrick's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["AbyssJewel"]},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
+    },
+    {
+      "id": "currency/mirror",
+      "name": "Mirror of Kalandra",
+      "family": "currency",
+      "cost": [
+        {"name": "Mirror of Kalandra", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "mirror"}
+      ],
+      "claims": ["game-text"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/oil-extractor",
+      "name": "Oil Extractor",
+      "family": "currency",
+      "cost": [
+        {"name": "Oil Extractor", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "hasEnchant"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the oils an anointment recovers are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-connections",
+      "name": "Omen of Connections",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Connections", "amount": 1},
+        {"name": "Orb of Fusing", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees maximum links"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-fortune",
+      "name": "Omen of Fortune",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Fortune", "amount": 1},
+        {"name": "Orb of Chance", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees a unique upgrade of an Orb of Chance"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-the-jeweller",
+      "name": "Omen of the Jeweller",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of the Jeweller", "amount": 1},
+        {"name": "Jeweller's Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "canHaveSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees maximum sockets"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/omen-of-trichromatism",
+      "name": "Omen of Trichromatism",
+      "family": "currency",
+      "cost": [
+        {"name": "Omen of Trichromatism", "amount": 1},
+        {"name": "Chromatic Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the omen guarantees one red, green and blue socket"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/orb-of-conflict",
+      "name": "Orb of Conflict",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Conflict", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "bothEldritch"},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "conflict"}
+      ],
+      "claims": ["game-text", "conflict.tiers"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "currency/orb-of-dominance",
+      "name": "Orb of Dominance",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Dominance", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour", "Boots", "Gloves", "Helmet"]},
+        {"kind": "minInfluencedMods", "n": 2}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "dominance"}
+      ],
+      "claims": ["game-text", "dominance.pairs"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/orb-of-fusing",
+      "name": "Orb of Fusing",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Fusing", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "random-links"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/orb-of-remembrance",
+      "name": "Orb of Remembrance",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Remembrance", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["normal"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/orb-of-unravelling",
+      "name": "Orb of Unravelling",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Unravelling", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "hasMemoryStrands"},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/redeemers-exalted",
+      "name": "Redeemer's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Redeemer's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "redeemer"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "redeemer"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/reflecting-mist",
+      "name": "Reflecting Mist",
+      "family": "currency",
+      "cost": [
+        {"name": "Reflecting Mist", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "class", "anyOf": ["Ring", "Amulet"]},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noVeiled"},
+        {"kind": "noInfluence"},
+        {"kind": "notSynthesised"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/regal",
+      "name": "Regal Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Regal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic"]},
+        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
+      ],
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/rotmothers-ducat",
+      "name": "Rotmother's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Rotmother's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Belt"]},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "protect": null
+    },
+    {
+      "id": "currency/rune-bound",
+      "name": "Bound Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Bound Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-bounty",
+      "name": "Bounty Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Bounty Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-journey",
+      "name": "Journey Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Journey Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-life",
+      "name": "Life Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Life Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-mountain",
+      "name": "Mountain Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Mountain Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-power",
+      "name": "Power Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Power Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-river",
+      "name": "River Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "River Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-sun",
+      "name": "Sun Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Sun Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-time",
+      "name": "Time Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "Time Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/rune-war",
+      "name": "War Rune",
+      "family": "currency",
+      "cost": [
+        {"name": "War Rune", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "rune effects are not in the RePoE export"}}
+      ],
+      "claims": ["rune.kingsmarch"]
+    },
+    {
+      "id": "currency/sacred",
+      "name": "Sacred Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Sacred Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]}
+      ],
+      "ops": [
+        {"op": "rerollValues", "scope": "defences"}
+      ],
+      "claims": ["game-text"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/scouring",
+      "name": "Orb of Scouring",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Scouring", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "minExplicits", "n": 1}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "scour"}
+      ],
+      "claims": ["game-text", "scour.locks", "fractured.kept", "remove.cannot-roll-scope"],
+      "example": "crown-l1"
+    },
+    {
+      "id": "currency/shapers-exalted",
+      "name": "Shaper's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Shaper's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "shaper"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "shaper"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/tailoring-orb",
+      "name": "Tailoring Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tailoring Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tainted-armourers-scrap",
+      "name": "Tainted Armourer's Scrap",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Armourer's Scrap", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["armour"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
+      ],
+      "claims": ["game-text"],
+      "protect": null
+    },
+    {
+      "id": "currency/tainted-blacksmiths-whetstone",
+      "name": "Tainted Blacksmith's Whetstone",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Blacksmith's Whetstone", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
+      ],
+      "claims": ["game-text"],
+      "protect": null
+    },
+    {
+      "id": "currency/tainted-catalyst",
+      "name": "Tainted Catalyst",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Catalyst", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Ring", "Amulet", "Belt"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the tainted quality amount is random and not modelled"}}
+      ],
+      "claims": ["game-text"],
+      "protect": null
+    },
+    {
+      "id": "currency/tainted-chaos-orb",
+      "name": "Tainted Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Chaos Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}, {"p": 0.5, "ops": [{"op": "scour"}]}]}
+      ],
+      "claims": ["game-text", "tainted.odds", "reforge.counts"]
+    },
+    {
+      "id": "currency/tainted-chromatic-orb",
+      "name": "Tainted Chromatic Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Chromatic Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "tainted-colours"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tainted-divine-teardrop",
+      "name": "Tainted Divine Teardrop",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Divine Teardrop", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tainted-exalted-orb",
+      "name": "Tainted Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "ops": [
+        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
+      ],
+      "claims": ["add.side-first", "game-text", "tainted.odds", "tainted-exalt.locks"]
+    },
+    {
+      "id": "currency/tainted-jewellers-orb",
+      "name": "Tainted Jeweller's Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Jeweller's Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "tainted-count"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tainted-mythic-orb",
+      "name": "Tainted Mythic Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Mythic Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tainted-orb-of-fusing",
+      "name": "Tainted Orb of Fusing",
+      "family": "currency",
+      "cost": [
+        {"name": "Tainted Orb of Fusing", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "corrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasSockets"}
+      ],
+      "ops": [
+        {"op": "sockets", "change": {"kind": "tainted-links"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/tempering-orb",
+      "name": "Tempering Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Tempering Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/transmutation",
+      "name": "Orb of Transmutation",
+      "family": "currency",
+      "cost": [
+        {"name": "Orb of Transmutation", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["normal"]}
+      ],
+      "ops": [
+        {"op": "setRarity", "rarity": "magic"},
+        {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
+      ],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
+      "example": "cobalt-jewel-normal"
+    },
+    {
+      "id": "currency/tzamotos-ducat",
+      "name": "Tzamoto's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Tzamoto's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "intangible"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "crown-actual",
+      "protect": null
+    },
+    {
+      "id": "currency/ukatoas-ducat",
+      "name": "Ukatoa's Ducat",
+      "family": "currency",
+      "cost": [
+        {"name": "Ukatoa's Ducat", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Amulet"]},
+        {"kind": "notUnique"},
+        {"kind": "noEldritch"},
+        {"kind": "implicitsChangeable"}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "ducats are Allflame crafting ingredients whose previews are not modelled"}}
+      ],
+      "claims": ["game-text", "ducat.allflame"],
+      "example": "lapis-amulet-normal",
+      "protect": null
+    },
+    {
+      "id": "currency/vaal",
+      "name": "Vaal Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon", "armour"]},
+        {"kind": "notUnique"}
+      ],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "chance", "branches": [{"p": 0.25, "ops": []}, {"p": 0.25, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.25, "ops": [{"op": "sockets", "change": {"kind": "dewhiten"}}]}, {"p": 0.25, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
+      ],
+      "claims": ["game-text", "vaal.outcomes", "vaal.one-implicit", "vaal.socket-outcome-329", "vaal.locked-implicits", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/vaal-flask",
+      "name": "Vaal Orb (flasks)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["flask", "tincture"]},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a flask's corruption quality change is not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.flask-outcomes"],
+      "example": "quicksilver-normal"
+    },
+    {
+      "id": "currency/vaal-jewel",
+      "name": "Vaal Orb (jewels)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["jewel", "abyss-jewel"]},
+        {"kind": "notUnique"}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a jewel's four corruption outcomes are not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.jewel-outcomes"],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/vaal-socketless",
+      "name": "Vaal Orb (jewellery and quivers)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["jewellery", "quiver"]},
+        {"kind": "notUnique"}
+      ],
+      "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "chance", "branches": [{"p": 0.3333333333333333, "ops": []}, {"p": 0.3333333333333333, "ops": [{"op": "vaalImplicit"}]}, {"p": 0.3333333333333333, "ops": [{"op": "setRarity", "rarity": "rare"}, {"op": "clear"}, {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}]}]}
+      ],
+      "claims": ["game-text", "vaal.outcomes", "vaal.one-implicit", "vaal.locked-implicits", "reforge.counts", "reforge.counts-scope"]
+    },
+    {
+      "id": "currency/vaal-unique",
+      "name": "Vaal Orb (uniques)",
+      "family": "currency",
+      "cost": [
+        {"name": "Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "corrupt"},
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "a unique item's own corruption outcomes are not modelled"}}
+      ],
+      "claims": ["game-text", "vaal.unique-outcomes"]
+    },
+    {
+      "id": "currency/veiled-chaos",
+      "name": "Veiled Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Veiled Chaos Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "oneVeiled": true}}
+      ],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "veiled-chaos.replaces-one", "reforge.counts"],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/veiled-exalted",
+      "name": "Veiled Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Veiled Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "minExplicits", "n": 1},
+        {"kind": "noVeiled"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "removeRandom", "filter": {"kind": "any"}},
+        {"op": "addVeiled"}
+      ],
+      "claims": ["game-text", "veiled.exalt", "veiled.side", "veiled.one-per-item", "annul.locks", "annul.uniform", "remove.cannot-roll-scope"],
+      "example": "crown-l1"
+    },
+    {
+      "id": "currency/volatile-vaal-orb",
+      "name": "Volatile Vaal Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Volatile Vaal Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "rarity", "anyOf": ["unique"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "unique item definitions are not in the RePoE export"}}
+      ],
+      "claims": ["game-text"]
+    },
+    {
+      "id": "currency/warlords-exalted",
+      "name": "Warlord's Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {"name": "Warlord's Exalted Orb", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "noInfluence"},
+        {"kind": "influenceable"},
+        {"kind": "openAffix", "side": "any"},
+        {"kind": "noFractured"},
+        {"kind": "noEldritch"}
+      ],
+      "ops": [
+        {"op": "addInfluence", "influence": "warlord"},
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "warlord"}, "side": "any"}
+      ],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
+    },
+    {
+      "id": "currency/weapon-recombinator",
+      "name": "Weapon Recombinator",
+      "family": "currency",
+      "inputs": 2,
+      "cost": [
+        {"name": "Weapon Recombinator", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "category", "anyOf": ["weapon", "quiver"]}
+      ],
+      "pair": ["same-class"],
+      "ops": [
+        {"op": "fill", "fill": {"weighting": "recombine"}}
+      ],
+      "claims": ["game-text", "recombine.inputs", "recombine.count_table", "recombine.count_table_alt", "recombine.one_prefix_one_suffix", "recombine.selection_alpha", "recombine.exclusive_weight", "recombine.non_native", "recombine.output_rarity", "recombine.base_properties", "recombine.cost", "recombine.base_and_item_level", "recombine.pools_and_groups"]
+    },
+    {
+      "id": "harvest/add-attack-remove-random",
+      "name": "Harvest: add a Attack modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 17500},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-caster-remove-random",
+      "name": "Harvest: add a Caster modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 17500},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-chaos-remove-random",
+      "name": "Harvest: add a Chaos modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 17500},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-cold-remove-random",
+      "name": "Harvest: add a Cold modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 15000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-critical-remove-random",
+      "name": "Harvest: add a Critical modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 20000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-defences-remove-random",
+      "name": "Harvest: add a Defence modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 17500},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-fire-remove-random",
+      "name": "Harvest: add a Fire modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 15000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-life-remove-random",
+      "name": "Harvest: add a Life modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 17500},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-lightning-remove-random",
+      "name": "Harvest: add a Lightning modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 15000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-physical-remove-random",
+      "name": "Harvest: add a Physical modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 15000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/add-speed-remove-random",
+      "name": "Harvest: add a Speed modifier, remove another",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 20000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "rarity", "anyOf": ["magic", "rare"]},
+        {"kind": "openAffix", "side": "any"}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
+        {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
+      ],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "example": "slink-boots-eldritch"
+    },
+    {
+      "id": "harvest/cold-damage-to-fire-damage",
+      "name": "Harvest: change Cold Damage to Fire Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/cold-damage-to-lightning-damage",
+      "name": "Harvest: change Cold Damage to Lightning Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/cold-to-fire",
+      "name": "Harvest: change Cold Resistance to Fire Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "cold", "to": "fire"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/cold-to-lightning",
+      "name": "Harvest: change Cold Resistance to Lightning Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["ColdResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "cold", "to": "lightning"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-cold-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Cold Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityColdResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-dexterity",
+      "name": "Harvest: enchant a Body Armour with +1 to Dexterity per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityDexterity"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-fire-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Fire Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityFireResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-intelligence",
+      "name": "Harvest: enchant a Body Armour with +1 to Intelligence per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIntelligence_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-life",
+      "name": "Harvest: enchant a Body Armour with +1 to Maximum Life per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIncreasedLife"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-lightning-resistance",
+      "name": "Harvest: enchant a Body Armour with +1% to Lightning Resistance per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityLightningResistance"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-mana",
+      "name": "Harvest: enchant a Body Armour with +1 to Maximum Mana per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityIncreasedMana"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-body-armour-strength",
+      "name": "Harvest: enchant a Body Armour with +1 to Strength per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 3250}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Body Armour"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateArmourQualityStrength"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-melee-weapon-range",
+      "name": "Harvest: enchant a Melee Weapon with +0.1 metres to Weapon Range per 10% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "class", "anyOf": ["Claw", "Dagger", "Rune Dagger", "One Hand Axe", "One Hand Mace", "One Hand Sword", "Thrusting One Hand Sword", "Sceptre", "Staff", "Warstaff", "Two Hand Axe", "Two Hand Mace", "Two Hand Sword"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalMeleeWeaponRange_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-accuracy",
+      "name": "Harvest: enchant a Weapon with 1% increased Accuracy per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityAccuracyRatingIncrease_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-area-of-effect",
+      "name": "Harvest: enchant a Weapon with 1% increased Area of Effect per 4% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityAreaOfEffect_"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-attack-speed",
+      "name": "Harvest: enchant a Weapon with 1% increased Attack Speed per 8% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalIncreasedAttackSpeed"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-critical-strike-chance",
+      "name": "Harvest: enchant a Weapon with 1% increased Critical Strike Chance per 4% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityLocalCriticalStrikeChance__"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/enchant-weapon-elemental-damage",
+      "name": "Harvest: enchant a Weapon with 1% increased Elemental Damage per 2% Quality",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 5000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "category", "anyOf": ["weapon"]}
+      ],
+      "ops": [
+        {"op": "setEnchantMod", "mod": "HarvestAlternateWeaponQualityElementalDamagePercent"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/fire-damage-to-cold-damage",
+      "name": "Harvest: change Fire Damage to Cold Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/fire-damage-to-lightning-damage",
+      "name": "Harvest: change Fire Damage to Lightning Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/fire-to-cold",
+      "name": "Harvest: change Fire Resistance to Cold Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "fire", "to": "cold"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/fire-to-lightning",
+      "name": "Harvest: change Fire Resistance to Lightning Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["FireResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "fire", "to": "lightning"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/lightning-damage-to-cold-damage",
+      "name": "Harvest: change Lightning Damage to Cold Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/lightning-damage-to-fire-damage",
+      "name": "Harvest: change Lightning Damage to Fire Damage",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningDamage"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+      ],
+      "claims": ["harvest.list", "harvest.damage-conversion"]
+    },
+    {
+      "id": "harvest/lightning-to-cold",
+      "name": "Harvest: change Lightning Resistance to Cold Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "lightning", "to": "cold"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/lightning-to-fire",
+      "name": "Harvest: change Lightning Resistance to Fire Resistance",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 500}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasModType", "anyOf": ["LightningResistance"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "changeResistance", "from": "lightning", "to": "fire"}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/randomise-influence",
+      "name": "Harvest: randomise influence types and reforge",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 1000}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "hasInfluence"},
+        {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
+      ],
+      "ops": [
+        {"op": "unmodelled", "reason": {"kind": "multiDraw"}}
+      ],
+      "claims": ["harvest.list"]
+    },
+    {
+      "id": "harvest/reforge-attack",
+      "name": "Harvest: reforge with a Attack modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 75}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "attack"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attack"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-attribute",
+      "name": "Harvest: reforge with a Attribute modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "attribute"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attribute"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-caster",
+      "name": "Harvest: reforge with a Caster modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 75}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "caster"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "caster"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-chaos",
+      "name": "Harvest: reforge with a Chaos modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 100}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "chaos"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "chaos"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-cold",
+      "name": "Harvest: reforge with a Cold modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 50}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "cold"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "cold"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-critical",
+      "name": "Harvest: reforge with a Critical modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 150}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "critical"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "critical"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-defences",
+      "name": "Harvest: reforge with a Defence modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 75}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "defences"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "defences"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-drop",
+      "name": "Harvest: reforge with a Drop modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "drop"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "drop"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-elemental",
+      "name": "Harvest: reforge with a Elemental modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "elemental"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "elemental"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-fire",
+      "name": "Harvest: reforge with a Fire modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 50}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "fire"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "fire"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-influenced",
+      "name": "Harvest: reforge with an influence modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 5000},
+        {"name": "Sacred Crystallised Lifeforce", "amount": 1}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "hasInfluence"},
+        {"kind": "canRoll", "pool": {"kind": "influenced"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "influenced"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-less-likely",
+      "name": "Harvest: reforge, less likely to keep the same modifiers",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 200}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "weighting": "less-likely-same"}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.counts"]
+    },
+    {
+      "id": "harvest/reforge-life",
+      "name": "Harvest: reforge with a Life modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 75}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "life"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "life"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-lightning",
+      "name": "Harvest: reforge with a Lightning modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 50}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "lightning"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "lightning"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-mana",
+      "name": "Harvest: reforge with a Mana modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 2}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "mana"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "mana"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-minion",
+      "name": "Harvest: reforge with a Minion modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Primal Crystallised Lifeforce", "amount": 200},
+        {"name": "Crystallised Rancour", "amount": 3}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "minion"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "minion"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-more-likely",
+      "name": "Harvest: reforge, more likely to keep the same modifiers",
+      "family": "harvest",
+      "cost": [
+        {"name": "Wild Crystallised Lifeforce", "amount": 200}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "weighting": "more-likely-same"}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.counts"]
+    },
+    {
+      "id": "harvest/reforge-physical",
+      "name": "Harvest: reforge with a Physical modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 50}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "physical"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "physical"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "harvest/reforge-speed",
+      "name": "Harvest: reforge with a Speed modifier",
+      "family": "harvest",
+      "cost": [
+        {"name": "Vivid Crystallised Lifeforce", "amount": 150}
+      ],
+      "requires": [
+        {"kind": "notCorrupted"},
+        {"kind": "notMirrored"},
+        {"kind": "rarity", "anyOf": ["rare"]},
+        {"kind": "canRoll", "pool": {"kind": "tag", "tag": "speed"}}
+      ],
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
+      "ops": [
+        {"op": "setRarity", "rarity": "rare"},
+        {"op": "clear"},
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "speed"}}}
+      ],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
+      "example": "crown-a"
+    },
+    {
+      "id": "unveil",
+      "name": "Unveil",
+      "family": "unveil",
+      "requires": [
+        {"kind": "hasVeiled"}
+      ],
+      "ops": [
+        {"op": "unveil"}
+      ],
+      "claims": ["unveil.three-options", "unveil.no-jun", "unveil.blocked-by-group", "unveil.weights", "unveil.free"],
+      "example": "crown-c2-blocked"
+    }
+  ]
+}

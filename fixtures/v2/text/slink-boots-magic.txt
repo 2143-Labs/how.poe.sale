@@ -1,0 +1,17 @@
+Item Class: Boots
+Rarity: Magic
+Slink Boots of the Cheetah
+--------
+Quality: +20% (augmented)
+Evasion Rating: 300 (augmented)
+--------
+Requirements:
+Level: 69
+Dex: 120
+--------
+Sockets: B-B-B-B
+--------
+Item Level: 84
+--------
+30% increased Movement Speed
+28% to Chaos Resistance

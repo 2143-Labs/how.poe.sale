@@ -1,0 +1,31 @@
+{
+  "base": "Archdemon Crown",
+  "itemLevel": 87,
+  "rarity": "rare",
+  "quality": 20,
+  "implicits": [
+    {
+      "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+      "values": [2, -2]
+    }
+  ],
+  "prefixes": [
+    {
+      "id": "IncreasedLife9",
+      "values": [137]
+    },
+    {
+      "id": "VeiledPrefix"
+    },
+    {
+      "id": "EinharMasterArmourPercent3_",
+      "values": [60]
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "Intelligence6",
+      "values": [35]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+Item Class: Gloves
+Rarity: Magic
+Slink Gloves of Ash
+--------
+Requirements:
+Level: 69
+Dex: 120
+--------
+Item Level: 84
+--------
+Your Warcries cover Enemies in Ash for 5 seconds
