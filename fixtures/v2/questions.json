@@ -45,15 +45,6 @@
         "shows": "The ember is refused because the crown is influenced."
       }
     ],
-    "reforge.guarantee-first": [
-      {
-        "method": "essence/deafening-essence-of-hatred",
-        "fixtures": [
-          "slink-boots-normal"
-        ],
-        "shows": "The reforge first adds the Hatred modifier that the essence guarantees for boots, and then leaves the remaining modifiers to the count table."
-      }
-    ],
     "veiled-chaos.replaces-one": [
       {
         "method": "currency/veiled-chaos",
@@ -113,6 +104,15 @@
           "crown-d2-scbc"
         ],
         "shows": "The rare crown carries Suffixes Cannot Be Changed and three suffixes, and the essence clears the suffixes anyway: the result holds only the ColdResistance modifier that the essence guarantees."
+      }
+    ],
+    "reforge.guarantee-present": [
+      {
+        "method": "essence/deafening-essence-of-hatred",
+        "fixtures": [
+          "slink-boots-normal"
+        ],
+        "shows": "The reforge first adds the Hatred modifier that the essence guarantees for boots, and then leaves the remaining modifiers to the count table."
       }
     ]
   },

@@ -388,7 +388,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 "game-text".into(),
                 "essence.ilvl".into(),
                 "essence.ignores-metamods".into(),
-                "reforge.guarantee-first".into(),
+                "reforge.guarantee-present".into(),
                 "reforge.counts".into(),
                 "metamod.multicraft-does-not-block".into(),
             ],

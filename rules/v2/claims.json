@@ -143,7 +143,7 @@
       "url": "https://vhpg.com/poe-how-do-catalysts-work/",
       "quote": "Each catalyst application adds 1% quality, so you need 20 applications to reach the maximum.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "catalyst.switch-resets",
@@ -449,7 +449,7 @@
       "url": "https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap",
       "quote": "As with other quality-increasing currency, consuming an Armourer's Scrap improves the quality of normal items by 5%, magic items by 2%, and rare and unique items by 1%.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "quality.unique",
@@ -665,13 +665,13 @@
       "checked": true
     },
     {
-      "id": "reforge.guarantee-first",
-      "statement": "A reforge with a guarantee clears the sides that can change, then draws its guaranteed mod first, by normal weight, from the eligible mods carrying the guarantee on sides with room; the rest of the reforge follows",
+      "id": "reforge.guarantee-present",
+      "statement": "A reforge that guarantees a modifier rerolls until the result holds at least one modifier carrying the guarantee; the guaranteed modifier is not placed before the others. An essence is the exception: it adds its own modifier directly.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "It can add 4, 5, or 6 prefixes. But, reroll repeatedly until we have at LEAST one life mod.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "remove.cannot-roll-scope",
@@ -841,9 +841,9 @@
       "statement": "The pinned RePoE export does not carry the 3.29 talisman enchantment modifier pool: its TalismanEnchant mods are unique-only, have no spawn weight and no base references them, so a new Talisman's real special modifier is unknown and one generic placeholder stands in for it.",
       "sourceKind": "datamined",
       "url": "https://repoe-fork.github.io/",
-      "quote": "",
+      "quote": "data/raw/mods.json: no modifier of generation_type enchantment has a positive spawn weight on any tag a talisman base carries, and every TalismanEnchant modifier has an empty spawn_weights list.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "talisman.scope",

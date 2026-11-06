@@ -3433,7 +3433,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attack"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3456,7 +3456,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attribute"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3478,7 +3478,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "caster"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3500,7 +3500,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "chaos"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3522,7 +3522,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "cold"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3544,7 +3544,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "critical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3566,7 +3566,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "defences"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3589,7 +3589,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "drop"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3612,7 +3612,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "elemental"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3634,7 +3634,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "fire"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3658,7 +3658,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "influenced"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3700,7 +3700,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "life"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3722,7 +3722,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "lightning"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3745,7 +3745,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "mana"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3768,7 +3768,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "minion"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3810,7 +3810,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "physical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3832,7 +3832,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "speed"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {

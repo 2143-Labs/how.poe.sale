@@ -780,7 +780,7 @@ const ESSENCE_CLAIMS: [&str; 6] = [
     "game-text",
     "essence.ilvl",
     "essence.ignores-metamods",
-    "reforge.guarantee-first",
+    "reforge.guarantee-present",
     "reforge.counts",
     "metamod.multicraft-does-not-block",
 ];

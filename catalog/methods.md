@@ -1356,7 +1356,7 @@ The 732 crafts that add one modifier are in [bench.md](bench.md); the others fol
 
 ## Essences (105 methods)
 
-Each essence in this table costs one of itself and needs: the rarity listed; a class the essence has a modifier for; not corrupted; not mirrored. It sets the rarity to rare; then removes every modifier that can change; then adds the essence's modifier for the item's class; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1); where a level is listed, the random modifiers are of that level and below. Metamods: it changes a side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers. Game text: "Upgrades a normal item to rare or reforges a rare item, guaranteeing one property" or "Upgrades a normal item to rare with one guaranteed property". Sources: `game-text` (checked, game-text: https://repoe-fork.github.io/); `essence.ilvl` (checked, datamined: https://poedb.tw/us/Essence); `essence.ignores-metamods` (checked, owner); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `metamod.multicraft-does-not-block` (checked, owner).
+Each essence in this table costs one of itself and needs: the rarity listed; a class the essence has a modifier for; not corrupted; not mirrored. It sets the rarity to rare; then removes every modifier that can change; then adds the essence's modifier for the item's class; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1); where a level is listed, the random modifiers are of that level and below. Metamods: it changes a side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers. Game text: "Upgrades a normal item to rare or reforges a rare item, guaranteeing one property" or "Upgrades a normal item to rare with one guaranteed property". Sources: `game-text` (checked, game-text: https://repoe-fork.github.io/); `essence.ilvl` (checked, datamined: https://poedb.tw/us/Essence); `essence.ignores-metamods` (checked, owner); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `metamod.multicraft-does-not-block` (checked, owner).
 
 |Method|Rarity|Modifier level at most|
 |---|---|---|
@@ -1885,7 +1885,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the attack tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Attribute modifier — `harvest/reforge-attribute`
 
@@ -1894,7 +1894,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the attribute tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Caster modifier — `harvest/reforge-caster`
 
@@ -1903,7 +1903,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the caster tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Chaos modifier — `harvest/reforge-chaos`
 
@@ -1912,7 +1912,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the chaos tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Cold modifier — `harvest/reforge-cold`
 
@@ -1921,7 +1921,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the cold tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Critical modifier — `harvest/reforge-critical`
 
@@ -1930,7 +1930,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the critical tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Defence modifier — `harvest/reforge-defences`
 
@@ -1939,7 +1939,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the defences tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Drop modifier — `harvest/reforge-drop`
 
@@ -1948,7 +1948,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the drop tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Elemental modifier — `harvest/reforge-elemental`
 
@@ -1957,7 +1957,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the elemental tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Fire modifier — `harvest/reforge-fire`
 
@@ -1966,7 +1966,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the fire tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with an influence modifier — `harvest/reforge-influenced`
 
@@ -1975,7 +1975,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the one of the item's influences pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge, less likely to keep the same modifiers — `harvest/reforge-less-likely`
 
@@ -1992,7 +1992,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the life tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Lightning modifier — `harvest/reforge-lightning`
 
@@ -2001,7 +2001,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the lightning tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Mana modifier — `harvest/reforge-mana`
 
@@ -2010,7 +2010,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the mana tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Minion modifier — `harvest/reforge-minion`
 
@@ -2019,7 +2019,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the minion tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge, more likely to keep the same modifiers — `harvest/reforge-more-likely`
 
@@ -2036,7 +2036,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the physical tag pool.
 - On `crown-a`: not computed: multi-draw reforge
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ### Harvest: reforge with a Speed modifier — `harvest/reforge-speed`
 
@@ -2045,7 +2045,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: sets the rarity to rare; then removes every modifier that can change; then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1), repeating until at least one modifier comes from the speed tag pool.
 - On `crown-a`: does not apply: no speed modifier can roll on this item
-- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-first` (needs the owner, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
+- Sources: `harvest.list` (checked, wiki: https://poedb.tw/us/Horticrafting); `harvest.reforge-locks` (checked, guide: https://maxroll.gg/poe/crafting/harvest-crafting-guide); `reforge.guarantee-present` (checked, owner); `reforge.counts` (checked, owner); `reforge.counts-scope` (checked, owner)
 
 ## Beastcrafting (22 methods)
 
