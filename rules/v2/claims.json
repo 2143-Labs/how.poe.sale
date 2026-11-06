@@ -208,36 +208,36 @@
       "statement": "Orb of Dominance picks the removed and the upgraded influenced modifier uniformly among ordered pairs",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "eldritch.dominance-ties",
       "statement": "With equal tiers neither eldritch implicit is dominant, and eldritch orbs cannot be used",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "eldritch.ember-tier",
-      "statement": "An ember or ichor of tier N (Lesser 1 … Exceptional 4) rolls only eldritch implicits of tier N",
+      "statement": "An eldritch ember or ichor rolls its own side's implicit at one fixed tier: Lesser is tier 6, Greater is tier 5, Grand is tier 4 and Exceptional is tier 3. Tiers 1 and 2 cannot be rolled by an orb at all; they come only from the Orb of Conflict. An orb replaces that side's implicit and leaves the other side's implicit as it was.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "t1 and t2 can only be obtained trhough orb of conflict to change implicits. t3 = Exceptional t4=grand t5=Greater t6=lesser. And using an ichor of any tier replaces that implicit. So if you have eater of worlds t4 and exarch t3, and you use the exarch \"lesser ember\", you will get eater t4 and exarch t6.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "eldritch.not-influenced",
       "statement": "Eldritch implicits cannot be added to influenced items",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "enchant.font-shape",

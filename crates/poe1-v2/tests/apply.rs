@@ -788,27 +788,65 @@ fn fossil_cost() {
     assert_eq!(chaos[0].key, "Metadata/Items/Currency/CurrencyRerollRare");
 }
 
-/// R9: embers have no item level requirement. Recount: tier 1 Searing Exarch implicits with
-/// spawn on Slink Boots: 27, weight 15400, every one of required level 75.
+/// R9: embers have no item level requirement. A Lesser orb rolls tier 6 (owner: Lesser is
+/// tier 6, Greater 5, Grand 4, Exceptional 3). Recount: tier 6 Searing Exarch implicits with
+/// spawn on Slink Boots: 81 (27 plain at 300, 27 Unique Presence at 150, 27 Pinnacle Presence
+/// at 60), weight 26180.
 #[test]
 fn eldritch_ember() {
     let d = test_data();
     for level in [84, 60] {
         let slink = edited("slink-boots-normal", |s| s.item_level = level);
         let out = run("currency/lesser-eldritch-ember", &slink);
-        assert_eq!(out.leaves.len(), 27, "item level {level}");
+        assert_eq!(out.leaves.len(), 81, "item level {level}");
         assert!(close(out.mass(), 1.0, 1e-9));
         for (_, l) in &out.leaves {
             let it = leaf_item(l);
             assert_eq!(it.implicits.len(), 1);
             let m = d.mod_at(it.implicits[0].m);
-            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(1)));
+            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(6)));
         }
     }
     assert_eq!(
         reason("currency/lesser-eldritch-ember", &item("crown-a")),
         "the item is influenced"
     );
+}
+
+/// Owner: "t3 = Exceptional t4=grand t5=Greater t6=lesser", and tiers 1 and 2 come only from
+/// the Orb of Conflict. Every ember rolls its own side only.
+#[test]
+fn eldritch_orb_tiers() {
+    let d = test_data();
+    for (id, tier) in [
+        ("currency/lesser-eldritch-ember", 6),
+        ("currency/greater-eldritch-ember", 5),
+        ("currency/grand-eldritch-ember", 4),
+        ("currency/exceptional-eldritch-ember", 3),
+    ] {
+        let out = run(id, &edited("slink-boots-normal", |s| {
+            s.implicits = vec![];
+        }));
+        for (_, l) in &out.leaves {
+            let it = leaf_item(l);
+            let m = d.mod_at(it.implicits[0].m);
+            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(tier)), "{id}");
+        }
+    }
+    // An ember replaces only its own side: Eater stays when a Searing orb is used.
+    let both = item("slink-boots-eldritch");
+    let out = run("currency/lesser-eldritch-ember", &both);
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        assert_eq!(it.implicits.len(), 2);
+        let eater = it
+            .implicits
+            .iter()
+            .map(|r| d.mod_at(r.m))
+            .find(|m| m.kind == ModKind::Eater)
+            .expect("the Eater implicit stays");
+        assert_eq!(eater.eldritch_tier, Some(1));
+    }
 }
 
 /// R5: a Vaal Orb replaces one random implicit. Recount: corrupted implicits (domain item,

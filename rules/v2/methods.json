@@ -1279,7 +1279,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1302,7 +1302,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1456,7 +1456,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1479,7 +1479,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1502,7 +1502,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 2}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 5}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1525,7 +1525,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 2}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 5}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1680,7 +1680,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 1}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 6}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1703,7 +1703,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 1}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 6}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
