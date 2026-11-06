@@ -400,7 +400,7 @@ fn fill_phrase(f: &Fill) -> String {
         let counts: Vec<String> = f.counts.iter().map(|(n, _)| n.to_string()).collect();
         let weights: Vec<String> = f.counts.iter().map(|(_, w)| w.to_string()).collect();
         out.push_str(&format!(
-            " ({} modifiers at {})",
+            " ({} explicit modifiers in total at {})",
             counts.join(" / "),
             weights.join(":")
         ));
@@ -776,9 +776,10 @@ fn bench_md(data: &Data) -> String {
     out.join("\n")
 }
 
-const ESSENCE_CLAIMS: [&str; 5] = [
+const ESSENCE_CLAIMS: [&str; 6] = [
     "game-text",
     "essence.ilvl",
+    "essence.ignores-metamods",
     "reforge.guarantee-first",
     "reforge.counts",
     "metamod.multicraft-does-not-block",
@@ -806,11 +807,7 @@ fn standard_essence(m: &Method) -> Option<(&[crate::data::Rarity], Option<u8>)> 
         return None;
     };
     let standard = m.family == Family::Essence
-        && m.protect
-            == Some(Protection {
-                locks: Policy::Forbid,
-                cannot_roll: Policy::Forbid,
-            })
+        && m.protect == Some(Protection::IGNORE_ALL)
         && fill.weighting == Weighting::Normal
         && m.claims == ESSENCE_CLAIMS
         && m.example.is_none();

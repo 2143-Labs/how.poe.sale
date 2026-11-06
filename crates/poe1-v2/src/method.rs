@@ -9,7 +9,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::{Category, Data, Eldritch, Influence, ModKind, Rarity};
+use crate::data::{Category, Data, Eldritch, Influence, ModKind, Rarity, Side};
+use crate::item::Item;
 
 fn one() -> u8 {
     1
@@ -111,6 +112,17 @@ pub struct Protection {
     /// the tag they name is never removed or changed. Every op that adds a random modifier leaves
     /// that tag out whatever the policy (claim `metamod.cannot-roll`).
     pub cannot_roll: Policy,
+}
+
+impl Protection {
+    /// Every metamod is ignored (essences, claim `essence.ignores-metamods`, owner Q2): a
+    /// locked side is cleared like any other, and Cannot Roll Attack/Caster never blocks the
+    /// essence's own modifier. This is a policy of its own, not a method that forgot to state
+    /// one.
+    pub const IGNORE_ALL: Protection = Protection {
+        locks: Policy::Ignore,
+        cannot_roll: Policy::Ignore,
+    };
 }
 
 /// One precondition every input must meet.
@@ -461,11 +473,13 @@ impl Element {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Fill {
-    /// (explicit total the reforge ends with, relative weight), by total: `[[4, 8], [5, 3],
-    /// [6, 1]]`, which datagen checks against claim `chaos.count`. The counts are what the
-    /// reforge *adds*: modifiers a metamod keeps are not part of them, and the additions are
-    /// limited by the open slots (claim `reforge.counts`, owner Q7). Empty when the count rule
-    /// is not known, or when the weighting brings its own (a recombine).
+    /// The total number of explicit modifiers the result carries, with its relative weight, by
+    /// total: `[[4, 8], [5, 3], [6, 1]]`, which datagen checks against claim `chaos.count`. The
+    /// modifiers the item keeps (metamod-locked or fractured) count toward the total, so only
+    /// the difference is added, into open slots (claim `reforge.counts`, owner Q3); when the
+    /// kept modifiers already fill a side, the additions go only to the other side, and when the
+    /// total cannot be reached the item keeps as many modifiers as fit. Empty when the count
+    /// rule is not known, or when the weighting brings its own (a recombine).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub counts: Vec<(u8, u32)>,
     #[serde(default)]
@@ -487,6 +501,29 @@ pub struct Fill {
     /// own, so no side is stated.
     #[serde(default, skip_serializing_if = "is_false")]
     pub one_veiled: bool,
+}
+
+impl Fill {
+    /// How many modifiers this fill adds to `item` for a result that is to hold `total`
+    /// explicit modifiers: the modifiers the item keeps count toward the total, each addition
+    /// needs an open slot on a side the fill draws on, and when the total is out of reach the
+    /// fill adds as many as fit (claim `reforge.counts`, owner Q3).
+    pub fn additions(&self, data: &Data, item: &Item, total: u8) -> usize {
+        let open = |side: Side| usize::from(item.open(data, side));
+        let room = match self.side {
+            SideReq::Any => open(Side::Prefix) + open(Side::Suffix),
+            SideReq::Prefix => open(Side::Prefix),
+            SideReq::Suffix => open(Side::Suffix),
+            SideReq::Dominant => match item.dominant(data) {
+                Some(Eldritch::Exarch) => open(Side::Prefix),
+                Some(Eldritch::Eater) => open(Side::Suffix),
+                None => 0,
+            },
+        };
+        usize::from(total)
+            .saturating_sub(item.explicits().count())
+            .min(room)
+    }
 }
 
 fn is_false(b: &bool) -> bool {

@@ -41,9 +41,9 @@ mod common;
 
 use common::{item, pattern, spec};
 use poe1_v2::apply::{Leaf, Outcome, Params, Pending, apply, check, cost};
-use poe1_v2::data::{Data, Influence, ModKind, Rarity};
+use poe1_v2::data::{Data, Influence, ModKind, Rarity, Side};
 use poe1_v2::item::{AffixSpec, Item, ItemSpec, ModSpec};
-use poe1_v2::method::{Method, Op, PendingReason, Pool, Require};
+use poe1_v2::method::{Fill, Method, Op, PendingReason, Pool, Require, SideReq, Weighting};
 use poe1_v2::pattern::{LiftedLeaf, lift};
 use poe1_v2::test_data;
 
@@ -488,19 +488,20 @@ fn remove_crafted() {
     assert_eq!(ids(d, &out.item().unwrap().prefixes), ["VeiledPrefix"]);
 }
 
-/// A1/E3: one item reached through different draw orders is one leaf. Recount:
+/// A1/E3: one item reached through different draw orders is one leaf; the side is picked first,
+/// then the modifier on that side by weight (claim `add.side-first`). Recount:
 ///
 /// ```python
 /// jewel = base('Cobalt Jewel'); t = tags_of(jewel)
 /// P = pool('misc', t, 84, ['prefix']); S = pool('misc', t, 84, ['suffix'])   # 47, 61
+/// WP, WS = sum(P.values()), sum(S.values())                                   # 18250, 18870
 /// pairs = [(a, s) for a in P for s in S if not groups([a]) & groups([s])]     # 2858
-/// # distinct items 47 + 61 + 2858 = 2966; a one-mod item: 0.5 · w / W, W = ΣP + ΣS
-/// W = sum(P.values()) + sum(S.values())
-/// print(0.5 * P['BlockDualWieldingJewel'] / W)                                # 0.004714439655172414
+/// # distinct items 47 + 61 + 2858 = 2966; a one-mod item: 0.5 · 0.5 · w / WP
+/// print(0.5 * 0.5 * P['BlockDualWieldingJewel'] / WP)                          # 0.004794520547945206
 /// a, s = 'WandDamageJewel', 'ProjectileDamageJewel'                           # prefix then suffix, or back
 /// Sa = sum(pool('misc', tags_of(jewel, on=[a]), 84, ['suffix'], taken=groups([a])).values())
 /// Pb = sum(pool('misc', tags_of(jewel, on=[s]), 84, ['prefix'], taken=groups([s])).values())
-/// print(0.5 * (P[a] / W * S[s] / Sa + S[s] / W * P[a] / Pb))                  # 0.0003035982305456436
+/// print(0.5 * (0.5 * P[a] / WP * S[s] / Sa + 0.5 * S[s] / WS * P[a] / Pb))    # 0.0003033810627590319
 /// ```
 #[test]
 fn transmute_distinct_items() {
@@ -511,10 +512,10 @@ fn transmute_distinct_items() {
     let one = mass(&out, |l| leaf_item(l).explicits().count() == 1);
     assert!(close(one, 0.5, 1e-12), "{one}");
     let (p, it) = find(d, &out, &["BlockDualWieldingJewel"]);
-    assert!(close(p, 0.004714439655172414, 1e-15), "{p}");
+    assert!(close(p, 0.004794520547945206, 1e-15), "{p}");
     assert_eq!(it.rarity, Rarity::Magic);
     let (p, _) = find(d, &out, &["WandDamageJewel", "ProjectileDamageJewel"]);
-    assert!(close(p, 0.0003035982305456436, 1e-15), "{p}");
+    assert!(close(p, 0.0003033810627590319, 1e-15), "{p}");
 }
 
 /// R1: an Orb of Alteration keeps the side a metamod locks. A magic Shaper Crown with Suffixes
@@ -661,6 +662,161 @@ fn pending_and_vaal() {
     });
     for got in [unchanged, implicit, sockets, reforge] {
         assert!(close(got, 0.25, 1e-12), "{got}");
+    }
+}
+
+/// Q2: an essence ignores every metamod. A normal item ends with the essence's modifier alone;
+/// on a rare item carrying Suffixes Cannot Be Changed and Cannot Roll Caster Modifiers, both
+/// crafted modifiers and both suffixes are cleared just the same, and the essence's own
+/// modifier is placed.
+#[test]
+fn essence_ignores_every_metamod() {
+    let d = test_data();
+    let essence = d
+        .essences
+        .iter()
+        .find(|e| e.name == "Deafening Essence of Hatred")
+        .unwrap();
+    let boots_mod = essence
+        .mods
+        .iter()
+        .find(|(c, _)| *c == d.base_at(item("slink-boots-normal").base).class)
+        .unwrap()
+        .1;
+
+    let out = run(
+        "essence/deafening-essence-of-hatred",
+        &item("slink-boots-normal"),
+    );
+    let p = pending(&out.leaves[0].1);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert!(p.item.prefixes.is_empty());
+    let explicits: Vec<u32> = p.item.explicits().map(|a| a.roll.m).collect();
+    assert_eq!(explicits, [boots_mod]);
+
+    let rare = boots(
+        vec![affix("DexMasterItemGenerationCannotChangeSuffixes", None)],
+        vec![
+            affix("StrDexMasterItemGenerationCannotRollCasterAffixes", None),
+            affix("ColdResist5", None),
+            affix("FireResist1", None),
+        ],
+    );
+    let out = run("essence/deafening-essence-of-hatred", &rare);
+    assert_eq!(out.leaves.len(), 1);
+    let p = pending(&out.leaves[0].1);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert!(
+        p.item.prefixes.is_empty(),
+        "the crafted metamods stay: {:?}",
+        ids(d, &p.item.prefixes)
+    );
+    assert_eq!(ids(d, &p.item.suffixes), [d.mod_at(boots_mod).id.clone()]);
+
+    // Can Have Up To 3 Crafted Modifiers alone never blocked an essence (claim
+    // `metamod.multicraft-does-not-block`).
+    let multi = edited("crown-a", |s| {
+        s.suffixes.pop();
+        s.suffixes.push(affix(
+            "StrIntMasterItemGenerationCanHaveMultipleCraftedMods",
+            None,
+        ));
+    });
+    assert!(
+        apply(
+            test_data(),
+            method("essence/deafening-essence-of-hatred"),
+            &[multi],
+            &Params::default()
+        )
+        .is_ok()
+    );
+}
+
+/// Q3: a reforge's 4, 5 or 6 is the total number of explicit modifiers the result carries, so
+/// the modifiers the item keeps count toward it and the additions go only into open slots.
+#[test]
+fn fill_additions_count_the_kept_modifiers() {
+    let d = test_data();
+    let fill = |side: SideReq| Fill {
+        counts: Vec::new(),
+        weighting: Weighting::Normal,
+        side,
+        mod_level_max: None,
+        include: None,
+        one_veiled: false,
+    };
+    // crown-l1 keeps two prefixes and three suffixes, so the suffix side is full and only the
+    // one open prefix slot can take an addition.
+    let l1 = item("crown-l1");
+    assert_eq!(l1.open(d, Side::Suffix), 0);
+    assert_eq!(fill(SideReq::Any).additions(d, &l1, 6), 1);
+    // crown-a-mana keeps one prefix and three suffixes: two open prefixes, nothing on the
+    // suffix side.
+    let mana = item("crown-a-mana");
+    assert_eq!(fill(SideReq::Any).additions(d, &mana, 6), 2);
+    assert_eq!(fill(SideReq::Prefix).additions(d, &mana, 6), 2);
+    assert_eq!(fill(SideReq::Suffix).additions(d, &mana, 6), 0);
+    // A rare jewel holds four modifiers, so a total of six cannot be reached.
+    let jewel = item("cobalt-jewel-rare-open");
+    assert_eq!(fill(SideReq::Any).additions(d, &jewel, 6), 4);
+    assert_eq!(fill(SideReq::Prefix).additions(d, &jewel, 6), 2);
+    // A total the item already reaches adds nothing, and a magic jewel holds one per side.
+    assert_eq!(fill(SideReq::Any).additions(d, &l1, 4), 0);
+    assert_eq!(
+        fill(SideReq::Any).additions(d, &item("cobalt-jewel-magic"), 4),
+        1
+    );
+}
+
+/// Q6: the 3.29 Talisman fracture beastcrafts pay their beasts, and neither works on an
+/// influenced or a fractured Talisman.
+#[test]
+fn talisman_fracture_costs_and_limits() {
+    let d = test_data();
+    let four = item("talisman-rare-four");
+    let costs = cost(d, method("beast/fracture-talisman"), &Params::default()).unwrap();
+    assert_eq!(costs.len(), 1);
+    assert_eq!(costs[0].key, "beast:Farric Frost Hellion Alpha");
+    assert_eq!(costs[0].amount, 1.0);
+    assert!(
+        apply(
+            d,
+            method("beast/fracture-talisman"),
+            std::slice::from_ref(&four),
+            &Params::default()
+        )
+        .is_ok()
+    );
+
+    let six = item("talisman-rare-six");
+    let mut keys: Vec<String> = cost(d, method("beast/fracture-talisman-two"), &Params::default())
+        .unwrap()
+        .into_iter()
+        .map(|c| c.key)
+        .collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        ["beast:Black Mórrigan", "beast:Fenumal Plagued Arachnid"]
+    );
+    assert!(
+        apply(
+            d,
+            method("beast/fracture-talisman-two"),
+            std::slice::from_ref(&six),
+            &Params::default()
+        )
+        .is_ok()
+    );
+
+    for id in ["beast/fracture-talisman", "beast/fracture-talisman-two"] {
+        let influenced = edited("talisman-rare-six", |s| {
+            s.influences = vec![Influence::Shaper]
+        });
+        assert_eq!(reason(id, &influenced), "the item is influenced");
+        let fractured = edited("talisman-rare-six", |s| s.prefixes[0].fractured = true);
+        assert_eq!(reason(id, &fractured), "the item has a fractured modifier");
     }
 }
 
@@ -1412,9 +1568,11 @@ fn farric_respects_locks_and_adds() {
 }
 
 /// keepLastAdded: the add-remove craft never removes the mod it added. Rare Slink Boots with
-/// MovementVelocity5 and ColdResist5; recount `pool('item', tags_of(boots, on=have), 84,
-/// ['prefix', 'suffix'], taken=groups(have), tag='life')`: 19 mods, weight 19000, each then
-/// followed by removing one of the two old mods with 1/2.
+/// MovementVelocity5 and ColdResist5; the side is picked first (claim `add.side-first`), so a
+/// life prefix weighs `0.5 · 1000 / 11000` and a life suffix `0.5 · 1000 / 8000`, each then
+/// followed by removing one of the two old mods with 1/2. Recount: the life pool split by side,
+/// `pool('item', tags_of(boots, on=have), 84, [side], taken=groups(have), tag='life')`: 11
+/// prefixes of weight 11000 and 8 suffixes of weight 8000 (19 mods, weight 19000 together).
 #[test]
 fn add_remove_keeps_added() {
     let d = test_data();
@@ -1433,7 +1591,12 @@ fn add_remove_keeps_added() {
         assert_eq!(kept_old, 1);
         let added = x.explicits().find(|a| !old.contains(&a.roll.m)).unwrap();
         assert!(d.mod_at(added.roll.m).tags.contains(&life));
-        assert!(close(*p, 1000.0 / 19000.0 / 2.0, 1e-12), "{p}");
+        let weight = match d.mod_at(added.roll.m).side {
+            Some(Side::Prefix) => 11000.0,
+            Some(Side::Suffix) => 8000.0,
+            None => panic!("{} has no side", d.mod_at(added.roll.m).id),
+        };
+        assert!(close(*p, 1000.0 / weight / 4.0, 1e-12), "{p}");
     }
 }
 
@@ -1779,32 +1942,6 @@ fn fracture_needs_four_real_modifiers() {
         reason("currency/fracturing", &it),
         "needs at least 4 modifiers"
     );
-}
-
-/// R1: essences and fossils are forbidden by the locks and the Cannot Roll metamods, not by
-/// the multi-craft metamod alone (owner, Q9).
-#[test]
-fn essences_forbidden_by_metamods() {
-    let hatred = "essence/deafening-essence-of-hatred";
-    assert_eq!(
-        reason(hatred, &item("crown-l1")),
-        "cannot be used on an item with \"Suffixes Cannot Be Changed\""
-    );
-    let caster = edited("crown-a", |s| {
-        s.suffixes[2] = affix("StrDexMasterItemGenerationCannotRollCasterAffixes", None)
-    });
-    assert_eq!(
-        reason(hatred, &caster),
-        "cannot be used on an item with \"Cannot roll Caster Modifiers\""
-    );
-    let multi = edited("crown-a", |s| {
-        s.suffixes.pop();
-        s.suffixes.push(affix(
-            "StrIntMasterItemGenerationCanHaveMultipleCraftedMods",
-            None,
-        ));
-    });
-    assert!(apply(test_data(), method(hatred), &[multi], &Params::default()).is_ok());
 }
 
 /// R4: an essence's level restriction caps its modifiers, not the item.
@@ -2707,11 +2844,10 @@ fn harvest_quality_enchant_and_talisman_refusal() {
 
 /// The two 3.29 Talisman fracture beastcrafts replace the old split crafts (claim
 /// `beast.split-replaced`): one fractures a single modifier on a rare Talisman with four or more
-/// modifiers, the other fractures two on one with six or more. No source states their beast cost
-/// (claim `beast.talisman-fracture-cost`), so they carry none.
+/// modifiers, the other fractures two on one with six or more. Each pays its beasts (claim
+/// `beast.talisman-fracture-cost`).
 #[test]
 fn talisman_fracture_beastcrafts() {
-    let d = test_data();
     let four = item("talisman-rare-four");
     let out = run("beast/fracture-talisman", &four);
     assert!(close(out.mass(), 1.0, 1e-12));
@@ -2728,12 +2864,6 @@ fn talisman_fracture_beastcrafts() {
     for (_, l) in &out.leaves {
         let it = leaf_item(l);
         assert_eq!(it.explicits().filter(|a| a.fractured).count(), 2);
-    }
-    for id in ["beast/fracture-talisman", "beast/fracture-talisman-two"] {
-        assert!(
-            cost(d, method(id), &Params::default()).unwrap().is_empty(),
-            "{id} states a cost no source gives"
-        );
     }
     assert_eq!(
         reason("beast/fracture-talisman", &item("lapis-amulet-a")),

@@ -398,6 +398,28 @@ fn pool_candidates(
     pool::normalise(weighted)
 }
 
+/// A random add that may place on either side picks a side with room first, uniformly among
+/// them, and then a modifier on that side by weight: the candidates' pooled weights become one
+/// share per side, split inside the side by weight (claim `add.side-first`, owner Q1). One side
+/// alone leaves the probabilities as the pooled weights.
+fn side_first(data: &Data, candidates: Vec<(u32, f64)>) -> Vec<(u32, f64)> {
+    let mut by_side: [Vec<(u32, f64)>; 2] = Default::default();
+    for (m, w) in candidates {
+        if let Some(side) = data.mod_at(m).side {
+            by_side[side.index()].push((m, w));
+        }
+    }
+    let sides = by_side.iter().filter(|side| !side.is_empty()).count() as f64;
+    let mut out = Vec::new();
+    for side in by_side {
+        let total: f64 = side.iter().map(|&(_, w)| w).sum();
+        for (m, w) in side {
+            out.push((m, w / total / sides));
+        }
+    }
+    out
+}
+
 fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(), Unmet> {
     let class = item.class(data);
     let (exarch, eater) = item.eldritch(data);
@@ -1715,7 +1737,9 @@ impl Run<'_> {
     }
 
     /// Candidate mods an AddRandom draws from, with their probabilities. Every add leaves out
-    /// the attack or caster modifiers a Cannot Roll metamod names (claim `metamod.cannot-roll`).
+    /// the attack or caster modifiers a Cannot Roll metamod names (claim `metamod.cannot-roll`),
+    /// and it picks a side first, then a modifier on that side by weight (claim
+    /// `add.side-first`, owner Q1).
     fn add_candidates(
         &self,
         item: &Item,
@@ -1723,7 +1747,10 @@ impl Run<'_> {
         side: SideReq,
         ignore_limits: bool,
     ) -> Vec<(u32, f64)> {
-        pool_candidates(self.data, item, pool, side, ignore_limits, false)
+        side_first(
+            self.data,
+            pool_candidates(self.data, item, pool, side, ignore_limits, false),
+        )
     }
 
     /// Turns the `from` resistance that can change into the `to` mod of the same rank among the

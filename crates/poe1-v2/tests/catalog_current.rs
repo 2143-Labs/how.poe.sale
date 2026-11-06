@@ -39,7 +39,7 @@ fn examples_cover_every_unconfirmed_rule() {
     validate_examples(data, &fx).expect("every unconfirmed rule a method cites has an example");
 }
 
-/// The owner deferred two rules: each is listed once, in the section at the end of
+/// The owner deferred four rules: each is listed once, in the section at the end of
 /// `questions.md`, and never as a question.
 #[test]
 fn deferred_rules_are_listed_once() {
@@ -50,7 +50,12 @@ fn deferred_rules_are_listed_once() {
         .find("## Deferred by the owner")
         .expect("the deferred section is missing");
     let (asked, deferred) = questions.split_at(at);
-    for id in ["bench.reroll-unknown", "tainted.odds"] {
+    for id in [
+        "bench.reroll-unknown",
+        "tainted.odds",
+        "generation.multiplier",
+        "metamod.level-28",
+    ] {
         let quoted = format!("`{id}`");
         assert!(
             !asked.contains(&quoted),
@@ -68,10 +73,10 @@ fn deferred_rules_are_listed_once() {
 fn a_missing_example_is_an_error() {
     let data = test_data();
     let mut fx = fixtures();
-    fx.examples.remove("beast.aspect-level");
+    fx.examples.remove("reforge.guarantee-first");
     let err = validate_examples(data, &fx).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `beast.aspect-level`"),
+        err.contains("no example for the unconfirmed rule `reforge.guarantee-first`"),
         "{err}"
     );
 }
@@ -81,7 +86,7 @@ fn an_example_must_cite_its_rule() {
     let data = test_data();
     let mut fx = fixtures();
     fx.examples
-        .get_mut("beast.aspect-level")
+        .get_mut("reforge.guarantee-first")
         .unwrap()
         .first_mut()
         .unwrap()
@@ -95,7 +100,7 @@ fn an_example_fixture_must_load() {
     let data = test_data();
     let mut fx = fixtures();
     fx.examples
-        .get_mut("beast.aspect-level")
+        .get_mut("reforge.guarantee-first")
         .unwrap()
         .first_mut()
         .unwrap()
@@ -121,7 +126,7 @@ fn render_all_rejects_a_missing_example() {
     questions["examples"]
         .as_object_mut()
         .expect("examples")
-        .remove("beast.aspect-level");
+        .remove("reforge.guarantee-first");
     fs::write(
         dir.path().join("questions.json"),
         serde_json::to_vec(&questions).expect("encode"),
@@ -129,7 +134,7 @@ fn render_all_rejects_a_missing_example() {
     .expect("write questions");
     let err = render_all(test_data(), dir.path()).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `beast.aspect-level`"),
+        err.contains("no example for the unconfirmed rule `reforge.guarantee-first`"),
         "{err}"
     );
 }

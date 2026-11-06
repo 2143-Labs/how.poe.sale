@@ -86,9 +86,9 @@
       "statement": "Aspect beastcrafts add the Level 20 aspect mods (Grants*AspectCrafted, not …Crafted30)",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Level 20",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "beast.bristle-matron",
@@ -259,6 +259,15 @@
       "checked": true
     },
     {
+      "id": "essence.ignores-metamods",
+      "statement": "An essence ignores every metamod: its reforge clears a side that Prefixes or Suffixes Cannot Be Changed locks as if the metamod were not there, and Cannot Roll Attack/Caster never blocks the essence's own modifier. This is a rule about essences alone.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Essense are special: they ALWAYS ignore ALL metamods. This is a nerf specifically to disallow target essence crafting.",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "essence.ilvl",
       "statement": "An essence with an item level restriction N reforges with modifiers of level N and below; it can be used on an item of any item level.",
       "sourceKind": "datamined",
@@ -277,13 +286,13 @@
       "checked": true
     },
     {
-      "id": "exalt.both-sides",
-      "statement": "An Exalted Orb draws from the eligible prefixes and suffixes together, by weight.",
-      "sourceKind": "wiki",
-      "url": "https://pathofexile.fandom.com/wiki/Exalted_Orb",
-      "quote": "",
+      "id": "add.side-first",
+      "statement": "Every currency that adds one random modifier picks a side that has room first, uniformly among the sides that have room, and then a modifier on that side by weight. An item with room on both sides therefore gives each side one half of the probability.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Side first, then weight. All of them pick the side first.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "fracture.crafted",
@@ -332,12 +341,12 @@
     },
     {
       "id": "harvest.damage-conversion",
-      "statement": "The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as \"a modifier that grants Cold, Lightning or Fire Damage\": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. No source states which modifier types the craft accepts, so these six pairs are the model's assumption and the conversion itself is not computed.",
+      "statement": "The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as \"a modifier that grants Cold, Lightning or Fire Damage\": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. The conversion itself is not computed.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Only those three types",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "harvest.list",
@@ -648,7 +657,7 @@
     },
     {
       "id": "reforge.counts",
-      "statement": "A reforge adds 4, 5 or 6 modifiers; a reforge with a tag repeats until the result holds at least one modifier carrying the tag, rather than guaranteeing the first draw.",
+      "statement": "A reforge ends with 4, 5 or 6 explicit modifiers in total: the modifiers the item keeps count toward that total and the reforge adds only the difference, into open slots. A reforge with a tag repeats until the result holds at least one modifier carrying the tag, rather than guaranteeing the first draw.",
       "sourceKind": "owner",
       "url": "",
       "quote": "It can add 4, 5, or 6 prefixes. But, reroll repeatedly until we have at LEAST one life mod.",
@@ -911,11 +920,12 @@
     {
       "id": "generation.multiplier",
       "statement": "A mod's generation weights are percentage multipliers on its spawn weight, found by the first generation entry whose tag the item has.",
-      "sourceKind": "datamined",
-      "url": "https://github.com/repoe-fork/RePoE/blob/master/RePoE/docs/mods.md",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "metamod.crafted-room",
@@ -929,11 +939,12 @@
     {
       "id": "metamod.level-28",
       "statement": "The MaxModRequiredLevelOverride metamod caps the required level of modifiers at 28, not the modifier level; a modifier's required level is about 80% of its level.",
-      "sourceKind": "datamined",
-      "url": "https://repoe-fork.github.io/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "metamod.multicraft-does-not-block",
@@ -982,12 +993,12 @@
     },
     {
       "id": "reforge.counts-scope",
-      "statement": "The 4/5/6 count is the modifiers the reforge adds: modifiers a metamod keeps are not part of it, and the additions are limited by the open slots.",
+      "statement": "The 4, 5 or 6 of a reforge is the total number of explicit modifiers the result carries: a rare item holds at most 3 prefixes and 3 suffixes, a magic item 1 prefix and 1 suffix, and a normal item no modifiers. So the modifiers the item keeps count toward the total and the reforge adds only the difference, into open slots; when the kept modifiers already fill one side the additions go only to the other side, and when the total cannot be reached the item keeps as many modifiers as fit. A reforge that keeps a side is the Harvest and metamod case; an essence clears both sides whatever metamods are present.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Wrong.... an item in poe has these rules:\n\nRares may have 3 prefixes and 3 suffixes\nMagic may have 1 prefix and 1 suffix\nNormal may not have mods.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "vaal.jewel-outcomes",
@@ -1081,12 +1092,12 @@
     },
     {
       "id": "beast.talisman-fracture-cost",
-      "statement": "No published source states the beast cost of the 3.29 Talisman fracture beastcrafts: the patch notes describe only the effect, Maxroll's Beastcrafting guide still describes the old split crafts, and the pinned RePoE export has no beast recipes, so both methods carry no cost until the owner supplies one.",
+      "statement": "The 3.29 Talisman fracture beastcrafts cost 1 Farric Frost Hellion Alpha for one modifier and 1 Fenumal Plagued Arachnid plus 1 Black Mórrigan for two. Neither craft works on an influenced or a fractured item, the one-modifier craft needs a rare Talisman with at least 4 modifiers, and the two-modifier craft needs a rare Talisman with at least 6.",
       "sourceKind": "owner",
-      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
-      "quote": "",
+      "url": "",
+      "quote": "The costs is some red beast, and then that same red beast + black morrigan. you can literally web search it in seconds no?\n\nFracture a Modifer   On a Rare Talisman with at least 4 modifiers   Does not work on Influenced or Fractured items   1x Farric Frost Hellion Alpha\nFracture two Modifers   On a Rare Talisman with at least 6 modifiers   Does not work on Influenced or Fractured items   1x Fenumal Plagued Arachnid\n1x Black Mórrigan",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "beast.yellow",

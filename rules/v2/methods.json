@@ -101,9 +101,14 @@
       "id": "beast/fracture-talisman",
       "name": "Beastcraft: fracture a modifier on a rare Talisman",
       "family": "beast",
+      "cost": [
+        {"name": "beast:Farric Frost Hellion Alpha", "amount": 1}
+      ],
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "baseTag", "tag": "talisman"},
         {"kind": "minExplicits", "n": 4}
@@ -117,9 +122,15 @@
       "id": "beast/fracture-talisman-two",
       "name": "Beastcraft: fracture two modifiers on a rare Talisman",
       "family": "beast",
+      "cost": [
+        {"name": "beast:Fenumal Plagued Arachnid", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1}
+      ],
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "baseTag", "tag": "talisman"},
         {"kind": "minExplicits", "n": 6}
@@ -204,7 +215,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-elder",
@@ -225,7 +236,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-hunter",
@@ -246,7 +257,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-redeemer",
@@ -267,7 +278,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-shaper",
@@ -288,7 +299,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"],
+      "claims": ["add.side-first", "beast.list"],
       "example": "crown-a-mana"
     },
     {
@@ -310,7 +321,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/maximum-links",
@@ -467,7 +478,7 @@
         {"op": "clear"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -849,7 +860,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -1066,7 +1077,7 @@
         {"op": "addInfluence", "influence": "crusader"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "crusader"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/cyaxans-ducat",
@@ -1143,7 +1154,7 @@
         {"op": "addInfluence", "influence": "elder"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "elder"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/eldritch-annulment",
@@ -1203,7 +1214,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "dominant"}
       ],
-      "claims": ["game-text", "eldritch.dominance-ties"],
+      "claims": ["add.side-first", "game-text", "eldritch.dominance-ties"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -1240,7 +1251,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "exalt.both-sides", "spawn.first-match", "metamod.cannot-roll"],
+      "claims": ["game-text", "add.side-first", "spawn.first-match", "metamod.cannot-roll"],
       "example": "crown-a-mana"
     },
     {
@@ -1552,7 +1563,7 @@
         {"op": "addInfluence", "influence": "hunter"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "hunter"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/instilling-orb",
@@ -1941,7 +1952,7 @@
         {"op": "addInfluence", "influence": "redeemer"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "redeemer"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/reflecting-mist",
@@ -1979,7 +1990,7 @@
         {"op": "setRarity", "rarity": "rare"},
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -2211,7 +2222,7 @@
         {"op": "addInfluence", "influence": "shaper"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "shaper"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/tailoring-orb",
@@ -2351,7 +2362,7 @@
       "ops": [
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
       ],
-      "claims": ["game-text", "tainted.odds", "tainted-exalt.locks"]
+      "claims": ["add.side-first", "game-text", "tainted.odds", "tainted-exalt.locks"]
     },
     {
       "id": "currency/tainted-jewellers-orb",
@@ -2436,7 +2447,7 @@
         {"op": "setRarity", "rarity": "magic"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-normal"
     },
     {
@@ -2656,7 +2667,7 @@
         {"op": "addInfluence", "influence": "warlord"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "warlord"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/weapon-recombinator",
@@ -2698,7 +2709,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2721,7 +2732,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2744,7 +2755,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2767,7 +2778,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2790,7 +2801,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2813,7 +2824,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2836,7 +2847,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2859,7 +2870,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2882,7 +2893,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2905,7 +2916,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2928,7 +2939,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {

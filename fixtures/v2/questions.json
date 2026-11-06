@@ -45,15 +45,6 @@
         "shows": "The ember is refused because the crown is influenced."
       }
     ],
-    "exalt.both-sides": [
-      {
-        "method": "currency/exalted",
-        "fixtures": [
-          "cobalt-jewel-rare-open"
-        ],
-        "shows": "The rare jewel has eligible modifiers on both sides, so some exalted orb outcomes add a prefix and others add a suffix."
-      }
-    ],
     "recombine.inputs": [
       {
         "method": "currency/jewellery-recombinator",
@@ -198,7 +189,7 @@
         "fixtures": [
           "crown-l1"
         ],
-        "shows": "Suffixes Cannot Be Changed keeps the three suffixes while the reforge clears the prefixes and adds its life-tagged modifiers, so the kept suffixes are not part of the four, five or six additions."
+        "shows": "Suffixes Cannot Be Changed keeps the three suffixes, and those three count toward the reforge's total of four, five or six explicit modifiers, so the reforge adds only the one, two or three prefixes that fit in the open prefix slots."
       }
     ],
     "harvest.damage-conversion": [
@@ -216,14 +207,32 @@
         "fixtures": [
           "talisman-rare-four"
         ],
-        "shows": "The rare Talisman has four modifiers, so the craft is offered; the beast cost is not stated by any available source, so the method shows no cost."
+        "shows": "The rare Talisman has four modifiers, so the one-modifier fracture is offered, and it costs one Farric Frost Hellion Alpha."
       },
       {
         "method": "beast/fracture-talisman-two",
         "fixtures": [
           "talisman-rare-six"
         ],
-        "shows": "The rare Talisman has six modifiers, so the two-modifier fracture is offered; the beast cost is not stated by any available source, so the method shows no cost."
+        "shows": "The rare Talisman has six modifiers, so the two-modifier fracture is offered, and it costs one Fenumal Plagued Arachnid and one Black Mórrigan."
+      }
+    ],
+    "add.side-first": [
+      {
+        "method": "currency/exalted",
+        "fixtures": [
+          "cobalt-jewel-rare-open"
+        ],
+        "shows": "The rare jewel has room on both sides, so the exalted orb picks a side first, one half of the probability for each, and then a modifier on that side by weight."
+      }
+    ],
+    "essence.ignores-metamods": [
+      {
+        "method": "essence/deafening-essence-of-hatred",
+        "fixtures": [
+          "crown-d2-scbc"
+        ],
+        "shows": "The rare crown carries Suffixes Cannot Be Changed and three suffixes, and the essence clears the suffixes anyway: the result holds only the ColdResistance modifier that the essence guarantees."
       }
     ]
   },
@@ -234,16 +243,6 @@
       ],
       "users": "`rules/v2/item-classes.json`, which gives the Tincture class its affix limits",
       "shows": "A magic tincture holds one prefix and one suffix, while the class allows no rare tincture at all, so a rare tincture has zero prefix slots and zero suffix slots."
-    },
-    "generation.multiplier": {
-      "fixtures": [],
-      "users": "`crates/poe1-v2/src/pool.rs`, the weight calculation that multiplies a spawn weight by the first generation weight its tag matches",
-      "shows": "No item fixture exercises this rule, because it is an engine rule for computing modifier weights rather than a step on an item."
-    },
-    "metamod.level-28": {
-      "fixtures": [],
-      "users": "`crates/poe1-v2/src/apply.rs`, which recognises the MaxModRequiredLevelOverride modifier and caps the added modifier level at 28",
-      "shows": "No item fixture exercises this rule, because it is an engine rule about the metamod cap rather than a step on an item."
     },
     "quality.amounts": {
       "fixtures": [],

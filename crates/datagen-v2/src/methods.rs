@@ -132,9 +132,10 @@ fn resonators(b: &Bundle, kind: &str) -> anyhow::Result<Vec<String>> {
         .collect()
 }
 
-/// The protection of a method metamods forbid: Craft of Exile's metamod table marks essences
-/// and fossils "Prevents usage" under all four metamods, and the owner settled that the
-/// multi-craft metamod alone does not (Q9).
+/// The protection of a method metamods forbid: Craft of Exile's metamod table marks fossils
+/// "Prevents usage" under all four metamods, and the owner settled that the multi-craft metamod
+/// alone does not (Q9). Essences are the exception: they ignore every metamod
+/// (`Protection::IGNORE_ALL`, claim `essence.ignores-metamods`, owner Q2).
 const FORBIDDEN: Protection = Protection {
     locks: Policy::Forbid,
     cannot_roll: Policy::Forbid,
@@ -361,7 +362,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             cost: vec![cost(&e.name, 1.0)],
             requires,
             pair: Vec::new(),
-            protect: Some(FORBIDDEN),
+            protect: Some(Protection::IGNORE_ALL),
             ops: vec![
                 Op::SetRarity {
                     rarity: Rarity::Rare,
@@ -386,6 +387,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
             claims: vec![
                 "game-text".into(),
                 "essence.ilvl".into(),
+                "essence.ignores-metamods".into(),
                 "reforge.guarantee-first".into(),
                 "reforge.counts".into(),
                 "metamod.multicraft-does-not-block".into(),

@@ -178,11 +178,8 @@ fn protection_policies_follow_the_sources() {
     for m in d.methods.iter().filter(|m| m.family == Family::Essence) {
         assert_eq!(
             m.protect,
-            Some(Protection {
-                locks: Forbid,
-                cannot_roll: Forbid
-            }),
-            "{}",
+            Some(Protection::IGNORE_ALL),
+            "{} does not ignore every metamod",
             m.id
         );
     }
@@ -375,6 +372,12 @@ fn owner_decisions_are_claims() {
         "vaal.locked-implicits",
         "bench.corrupted-sockets",
         "magic.count-weights",
+        "add.side-first",
+        "essence.ignores-metamods",
+        "reforge.counts-scope",
+        "harvest.damage-conversion",
+        "beast.aspect-level",
+        "beast.talisman-fracture-cost",
     ] {
         let c = d.claim(id).unwrap_or_else(|| panic!("{id} missing"));
         assert_eq!(c.source_kind, poe1_v2::data::SourceKind::Owner, "{id}");
