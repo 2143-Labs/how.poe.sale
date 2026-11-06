@@ -385,8 +385,7 @@ fn undo_add_random(
             if !allowed.contains(&s) {
                 continue;
             }
-            let candidates =
-                apply::pool_candidates(data, &before, pool, side, ignore_limits, false);
+            let candidates = apply::add_candidates(data, &before, pool, side, ignore_limits);
             let added = affixes(target, s)[index].roll.m;
             if let Some((_, p)) = candidates.iter().find(|(m, _)| *m == added) {
                 out.push((before, *p, None));

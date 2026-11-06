@@ -335,9 +335,8 @@ fn pool_empty_text(pool: &Pool) -> String {
 /// caster mods a Cannot Roll metamod bars left out (claim `metamod.cannot-roll`). `ignore_limits`
 /// keeps a mod whose side has no room, and `ignore_groups` keeps a mod whose group the item
 /// already holds: a requirement asks whether the modifier can roll on the item at all, before the
-/// reforge clears it, while an add must respect both.
-/// The scored candidate list an `AddRandom` draws from (see `add_pool`); the inverse solver walks
-/// the same list to price what a preimage would have added.
+/// reforge clears it, while an add must respect both. An add draws from this list after
+/// `add_candidates` picks the side.
 pub fn pool_candidates(
     data: &Data,
     item: &Item,
@@ -401,10 +400,24 @@ pub fn pool_candidates(
     pool::normalise(weighted)
 }
 
-/// A random add that may place on either side picks a side with room first, uniformly among
-/// them, and then a modifier on that side by weight: the candidates' pooled weights become one
-/// share per side, split inside the side by weight (claim `add.side-first`, owner Q1). One side
-/// alone leaves the probabilities as the pooled weights.
+/// The candidates an `AddRandom` draws from, with their probabilities: the pool's mods, a side
+/// with room picked first, uniformly among them, and then a modifier on that side by weight
+/// (claim `add.side-first`, owner Q1). One side alone leaves the probabilities as the pooled
+/// weights. The inverse solver prices what a preimage would have added from the same list.
+pub fn add_candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+) -> Vec<(u32, f64)> {
+    side_first(
+        data,
+        pool_candidates(data, item, pool, side, ignore_limits, false),
+    )
+}
+
+/// The pooled weights as one share per side, split inside the side by weight.
 fn side_first(data: &Data, candidates: Vec<(u32, f64)>) -> Vec<(u32, f64)> {
     let mut by_side: [Vec<(u32, f64)>; 2] = Default::default();
     for (m, w) in candidates {
@@ -1752,10 +1765,7 @@ impl Run<'_> {
         side: SideReq,
         ignore_limits: bool,
     ) -> Vec<(u32, f64)> {
-        side_first(
-            self.data,
-            pool_candidates(self.data, item, pool, side, ignore_limits, false),
-        )
+        add_candidates(self.data, item, pool, side, ignore_limits)
     }
 
     /// Turns the `from` resistance that can change into the `to` mod of the same rank among the
