@@ -1494,45 +1494,61 @@ fn sources_md(
         return out;
     }
     out.push(String::new());
-    let mut seen: Vec<String> = Vec::new();
-    for group in inversion.groups.iter() {
-        if seen.len() == 4 {
-            break;
-        }
+    // Two states can read the same in this one line while differing in something the pattern does
+    // not show; one line, with the sources of both, says more than two lines that look the same.
+    let mut order: Vec<String> = Vec::new();
+    let mut merged: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for group in &inversion.groups {
         let state = &group.state;
-        let best: Vec<String> = group
-            .sources
-            .iter()
-            .take(2)
-            .map(|s| {
-                format!(
-                    "`{}` at {:.4}{}",
-                    s.method,
-                    s.p,
-                    s.note
-                        .as_ref()
-                        .map(|n| format!(" ({n})"))
-                        .unwrap_or_default()
-                )
-            })
-            .collect();
-        let line = format!(
-            "- prefixes [{}], suffixes [{}], {} / {}, {} it wants still missing — {}",
+        let head = format!(
+            "prefixes [{}], suffixes [{}], {} / {}, {} it wants still missing",
             state_classes(pattern, &state.prefixes),
             state_classes(pattern, &state.suffixes),
             open_phrase(state.open[0], "prefix", "prefixes"),
             open_phrase(state.open[1], "suffix", "suffixes"),
-            missing_phrase(state.missing[0].len() + state.missing[1].len()),
-            best.join(", ")
+            missing_phrase(state.missing[0].len() + state.missing[1].len())
         );
-        // Two states can read the same in this one line while differing in something the pattern
-        // does not show; one line is enough.
-        if !seen.contains(&line) {
-            seen.push(line.clone());
-            out.push(line);
+        let entry = match merged.get_mut(&head) {
+            Some(entry) => entry,
+            None => {
+                order.push(head.clone());
+                merged.entry(head.clone()).or_default()
+            }
+        };
+        for source in group.sources.iter().take(2) {
+            let text = format!(
+                "`{}` at {:.4}{}",
+                source.method,
+                source.p,
+                source
+                    .note
+                    .as_ref()
+                    .map(|n| format!(" ({n})"))
+                    .unwrap_or_default()
+            );
+            if !entry.contains(&text) {
+                entry.push(text);
+            }
         }
     }
-    let _ = (data, item_name);
+    for head in order.iter().take(4) {
+        let sources = &merged[head];
+        let shown: Vec<&String> = sources.iter().take(3).collect();
+        let rest = sources.len().saturating_sub(shown.len());
+        out.push(format!(
+            "- {head} — {}{}",
+            shown
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", "),
+            if rest > 0 {
+                format!(" and {rest} more")
+            } else {
+                String::new()
+            }
+        ));
+    }
     if !inversion.skipped.is_empty() {
         let shown: Vec<String> = inversion
             .skipped
@@ -1569,10 +1585,16 @@ pub fn next_steps_section(
             report.now.progress, report.now.matches, report.now.blocked
         ),
         String::new(),
+    ];
+    // What the item could have come from is about the item as it stands, so it sits with "Now".
+    let inversion = crate::invert::sources(data, pattern, item);
+    out.extend(sources_md(data, pattern, item_name, &inversion));
+    out.extend([
+        String::new(),
         "**Exact steps:** every outcome is computed.".into(),
         String::new(),
         step_table(data, &report.exact, 6),
-    ];
+    ]);
     if !report.exact.is_empty() {
         out.push(String::new());
         out.push("What those steps do:".into());
@@ -1630,9 +1652,6 @@ pub fn next_steps_section(
         out.push(String::new());
         out.push(ties);
     }
-    let inversion = crate::invert::sources(data, pattern, item);
-    out.push(String::new());
-    out.extend(sources_md(data, pattern, item_name, &inversion));
     if let Some(best) = report.exact.first()
         && best.weighed.results <= 12
         && let Some(method) = data.method(&best.method)
