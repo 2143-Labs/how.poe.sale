@@ -37,11 +37,16 @@ nix develop -c cargo run -q -p datagen-v2 --release -- bundle --raw data/raw --r
 nix develop -c cargo run -q -p datagen-v2 --release -- catalog --bundle data/v2/bundle.json --fixtures fixtures/v2 --out catalog
 ```
 
-The solver runs on the generated bundle and takes a fixture and a pattern by name:
+The solver runs on the generated bundle and takes a pattern by name plus either a fixture or a
+pasted item:
 
 ```
-nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --item crown-actual --pattern crown-shaper
+nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --item crown-actual
+nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --paste my-crown.txt
 ```
+
+`--paste` reads a copied item the way the game copies it (`text::parse`) and prints its reading
+warnings first, so an item on the clipboard needs no fixture.
 
 `data/` is gitignored, so `data/v2/bundle.json` is generated rather than committed: the command above, and the same command in the CI test job before the tests run. `catalog/` is committed and a test fails when it is stale, so a change to a method, a claim or a fixture shows up as a reviewable diff. Tests read the bundle from `$HOW_V2_BUNDLE` when it is set, else `data/v2/bundle.json`; the tests' own inputs live in `fixtures/v2/items` (`ItemSpec` files), `fixtures/v2/patterns` (`PatternSpec` files) and `fixtures/v2/text` (pasted item text).
 

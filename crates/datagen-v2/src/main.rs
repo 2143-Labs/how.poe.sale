@@ -10,10 +10,13 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>\n       datagen-v2 catalog --bundle <file> --fixtures <dir> --out <dir>\n       datagen-v2 solve --bundle <file> --fixtures <dir> --item <fixture> --pattern <pattern>";
+const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>\n       datagen-v2 catalog --bundle <file> --fixtures <dir> --out <dir>\n       datagen-v2 solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)";
 
-/// Parses `--flag value` pairs and returns the named ones in order; any other flag is an error.
-fn flags(args: impl Iterator<Item = String>, names: &[&str]) -> anyhow::Result<Vec<PathBuf>> {
+/// Parses `--flag value` pairs; any flag not in `names` is an error.
+fn flag_map(
+    args: impl Iterator<Item = String>,
+    names: &[&str],
+) -> anyhow::Result<BTreeMap<String, PathBuf>> {
     let mut given = BTreeMap::new();
     let mut args = args;
     while let Some(flag) = args.next() {
@@ -25,6 +28,12 @@ fn flags(args: impl Iterator<Item = String>, names: &[&str]) -> anyhow::Result<V
         }
         given.insert(flag, PathBuf::from(value));
     }
+    Ok(given)
+}
+
+/// Parses `--flag value` pairs and returns the named ones in order, every one required.
+fn flags(args: impl Iterator<Item = String>, names: &[&str]) -> anyhow::Result<Vec<PathBuf>> {
+    let mut given = flag_map(args, names)?;
     names
         .iter()
         .map(|n| {
@@ -89,9 +98,20 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
         "solve" => {
-            let flags = flags(args, &["--bundle", "--fixtures", "--item", "--pattern"])?;
-            let [bundle, fixtures, item, pattern] =
-                <[PathBuf; 4]>::try_from(flags).expect("four flags");
+            let mut given = flag_map(
+                args,
+                &["--bundle", "--fixtures", "--pattern", "--item", "--paste"],
+            )?;
+            let required = |given: &mut BTreeMap<String, PathBuf>, name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let bundle = required(&mut given, "--bundle")?;
+            let fixtures = required(&mut given, "--fixtures")?;
+            let pattern = required(&mut given, "--pattern")?;
+            let item = given.remove("--item");
+            let paste = given.remove("--paste");
             let text = std::fs::read_to_string(&bundle)
                 .with_context(|| format!("reading {}", bundle.display()))?;
             let data = poe1_v2::data::Data::from_json(&text)
@@ -102,19 +122,49 @@ fn main() -> anyhow::Result<()> {
                     .map(str::to_string)
                     .with_context(|| format!("{} is not a name", p.display()))
             };
-            let (item_name, pattern_name) = (name(&item)?, name(&pattern)?);
-            let (_, item) = fx
-                .items
-                .get(&item_name)
-                .with_context(|| format!("no item fixture {item_name}"))?;
+            let pattern_name = name(&pattern)?;
             let pattern = fx
                 .patterns
                 .get(&pattern_name)
                 .with_context(|| format!("no pattern {pattern_name}"))?;
+            let (item_name, item) = match (item, paste) {
+                (Some(name), None) => {
+                    let item_name = name
+                        .file_stem()
+                        .and_then(|n| n.to_str())
+                        .with_context(|| format!("{} is not a fixture name", name.display()))?
+                        .to_string();
+                    let item = fx
+                        .items
+                        .get(&item_name)
+                        .map(|(_, item)| item.clone())
+                        .with_context(|| format!("no item fixture {item_name}"))?;
+                    (item_name, item)
+                }
+                (None, Some(path)) => {
+                    let text = std::fs::read_to_string(&path)
+                        .with_context(|| format!("reading {}", path.display()))?;
+                    let parsed = poe1_v2::text::parse(&data, &text)
+                        .with_context(|| format!("reading the paste {}", path.display()))?;
+                    for warning in &parsed.warnings {
+                        eprintln!("note: {warning}");
+                    }
+                    let item = poe1_v2::item::Item::from_spec(&data, &parsed.spec)
+                        .with_context(|| format!("the paste {}", path.display()))?;
+                    let item_name = path
+                        .file_stem()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("pasted item")
+                        .to_string();
+                    (item_name, item)
+                }
+                (Some(_), Some(_)) => bail!("give --item or --paste, not both; {USAGE}"),
+                (None, None) => bail!("missing --item or --paste; {USAGE}"),
+            };
             let lines = poe1_v2::catalog::next_steps_section(
                 &data,
                 &item_name,
-                item,
+                &item,
                 &pattern_name,
                 pattern,
             );
