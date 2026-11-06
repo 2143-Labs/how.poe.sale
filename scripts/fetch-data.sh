@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Downloads the pinned repoe-fork export (3.29.3.3) into data/raw/ and checks each file's SRI hash.
-# The eight top-level files are the ones flake.nix pins too; keep the commit and their hashes in
-# sync with it. `stat_translations/tincture.json` is v2-only: tincture mod lines live in their own
-# file upstream, datagen-v2 reads it beside stat_translations.json, and flake.nix does not need it.
+# The nine files are the ones flake.nix pins too; keep the commit and their hashes in sync with it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
