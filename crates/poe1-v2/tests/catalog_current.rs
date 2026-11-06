@@ -39,14 +39,39 @@ fn examples_cover_every_unconfirmed_rule() {
     validate_examples(data, &fx).expect("every unconfirmed rule a method cites has an example");
 }
 
+/// The owner deferred two rules: each is listed once, in the section at the end of
+/// `questions.md`, and never as a question.
+#[test]
+fn deferred_rules_are_listed_once() {
+    let root = common::root();
+    let md = render_all(test_data(), &root.join("fixtures/v2")).expect(STALE);
+    let questions = md.get("questions.md").expect("questions.md");
+    let at = questions
+        .find("## Deferred by the owner")
+        .expect("the deferred section is missing");
+    let (asked, deferred) = questions.split_at(at);
+    for id in ["bench.reroll-unknown", "tainted.odds"] {
+        let quoted = format!("`{id}`");
+        assert!(
+            !asked.contains(&quoted),
+            "{id} is still listed as a question"
+        );
+        assert_eq!(
+            deferred.matches(&quoted).count(),
+            1,
+            "{id} is not listed exactly once as deferred"
+        );
+    }
+}
+
 #[test]
 fn a_missing_example_is_an_error() {
     let data = test_data();
     let mut fx = fixtures();
-    fx.examples.remove("magic.count-weights");
+    fx.examples.remove("beast.aspect-level");
     let err = validate_examples(data, &fx).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `magic.count-weights`"),
+        err.contains("no example for the unconfirmed rule `beast.aspect-level`"),
         "{err}"
     );
 }
@@ -56,7 +81,7 @@ fn an_example_must_cite_its_rule() {
     let data = test_data();
     let mut fx = fixtures();
     fx.examples
-        .get_mut("magic.count-weights")
+        .get_mut("beast.aspect-level")
         .unwrap()
         .first_mut()
         .unwrap()
@@ -70,7 +95,7 @@ fn an_example_fixture_must_load() {
     let data = test_data();
     let mut fx = fixtures();
     fx.examples
-        .get_mut("magic.count-weights")
+        .get_mut("beast.aspect-level")
         .unwrap()
         .first_mut()
         .unwrap()
@@ -96,7 +121,7 @@ fn render_all_rejects_a_missing_example() {
     questions["examples"]
         .as_object_mut()
         .expect("examples")
-        .remove("magic.count-weights");
+        .remove("beast.aspect-level");
     fs::write(
         dir.path().join("questions.json"),
         serde_json::to_vec(&questions).expect("encode"),
@@ -104,7 +129,7 @@ fn render_all_rejects_a_missing_example() {
     .expect("write questions");
     let err = render_all(test_data(), dir.path()).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `magic.count-weights`"),
+        err.contains("no example for the unconfirmed rule `beast.aspect-level`"),
         "{err}"
     );
 }

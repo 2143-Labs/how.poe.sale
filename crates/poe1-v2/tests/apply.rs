@@ -1587,12 +1587,17 @@ fn reroll_values() {
     );
 }
 
-/// R3: since 3.25 the quality a scrap adds depends on item level, so the op is not modelled; a
-/// unique item is a legal target too, and only the amount it receives is unknown (claim
-/// `quality.unique`).
+/// The owner's answer on uniques (claim `quality.unique`): a unique item gains exactly 1% per
+/// use, while the amount a non-unique item gains depends on its item level and is not known, so
+/// those outcomes stop at NeedsData.
 #[test]
 fn add_quality() {
-    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare, Rarity::Unique] {
+    let unique = run("currency/armourers-scrap", &item("slink-boots-unique"))
+        .item()
+        .unwrap()
+        .clone();
+    assert_eq!(unique.quality, 1);
+    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
         let it = edited("slink-boots-normal", |s| s.rarity = rarity);
         let out = run("currency/armourers-scrap", &it);
         let [(p, l)] = out.leaves.as_slice() else {
@@ -1604,11 +1609,26 @@ fn add_quality() {
         assert_eq!(pend.item, it);
     }
     // A 20%-quality unique is still refused: the cap is refused by `qualityBelow`.
-    let unique = edited("slink-boots-unique", |s| s.quality = 20);
+    let full = edited("slink-boots-unique", |s| s.quality = 20);
     assert_eq!(
-        reason("currency/armourers-scrap", &unique),
+        reason("currency/armourers-scrap", &full),
         "quality is already 20%"
     );
+    // Six uses reach 6%: each use adds one and the cap is a cap, not a jump.
+    let mut it = item("slink-boots-unique");
+    for _ in 0..6 {
+        it = apply(
+            test_data(),
+            method("currency/armourers-scrap"),
+            std::slice::from_ref(&it),
+            &Params::default(),
+        )
+        .unwrap()
+        .item()
+        .unwrap()
+        .clone();
+    }
+    assert_eq!(it.quality, 6);
 }
 
 /// R3: the catalyst amount depends on item level since 3.25, so the op is NeedsData; the
@@ -1637,19 +1657,28 @@ fn catalyst_quality() {
     );
 }
 
-/// Recount for the Labyrinth enchant on crown-a: enchantment mods (domain item) with spawn on
-/// its tags, level ≤ 87: 1338, weight 129659.
+/// The bench's flask instilling crafts still place their own enchantment and the bench removes
+/// it, while no method draws a Labyrinth enchantment any more (claim `enchant.font-removed`):
+/// the enchant-kind mods stay in the bundle, so a pasted Standard item still reads.
 #[test]
 fn enchant_ops() {
     let d = test_data();
-    let out = run("currency/enchant", &item("crown-a"));
-    assert_eq!(out.leaves.len(), 1338);
-    assert!(close(out.mass(), 1.0, 1e-9));
     assert!(
-        out.leaves
-            .iter()
-            .all(|(_, l)| leaf_item(l).enchants.len() == 1)
+        !d.mods_of_kind(ModKind::Enchant).is_empty(),
+        "the enchant-kind mods must stay in the bundle"
     );
+    for m in &d.methods {
+        for op in &m.ops {
+            if let Op::SetEnchant { pool } = op {
+                assert_ne!(
+                    pool.kind(),
+                    ModKind::Enchant,
+                    "{} draws an enchantment from the removed Divine Font",
+                    m.id
+                );
+            }
+        }
+    }
     let flask = item("quicksilver-normal");
     let injector = d
         .methods
@@ -1737,6 +1766,18 @@ fn fracture_takes_crafted() {
     assert_eq!(
         reason("currency/fracturing", &item("crown-actual")),
         "the item is influenced"
+    );
+}
+
+/// Owner Q5: the orb needs four explicit modifiers that are not an unrevealed veil, so an item
+/// with three real modifiers and a veil is refused (claim `fracture.eligible`).
+#[test]
+fn fracture_needs_four_real_modifiers() {
+    let it = item("crown-uninfluenced-fracture");
+    assert_eq!(it.explicits().count(), 4);
+    assert_eq!(
+        reason("currency/fracturing", &it),
+        "needs at least 4 modifiers"
     );
 }
 

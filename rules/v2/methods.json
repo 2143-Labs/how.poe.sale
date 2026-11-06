@@ -827,10 +827,10 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
-      "example": "slink-boots-normal",
+      "example": "slink-boots-unique",
       "protect": null
     },
     {
@@ -914,7 +914,7 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
       "protect": null
@@ -1207,24 +1207,6 @@
       "example": "slink-boots-eldritch"
     },
     {
-      "id": "currency/enchant",
-      "name": "Enchant",
-      "family": "currency",
-      "cost": [
-        {"name": "Enchant", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Belt", "Helmet", "Gloves", "Boots"]}
-      ],
-      "ops": [
-        {"op": "setEnchant", "pool": "lab"}
-      ],
-      "claims": ["game-text", "enchant.lab-tiers", "enchant.font-shape"],
-      "example": "crown-a"
-    },
-    {
       "id": "currency/enkindling-orb",
       "name": "Enkindling Orb",
       "family": "currency",
@@ -1391,7 +1373,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "minExplicits", "n": 4},
+        {"kind": "minExplicits", "n": 4, "ignoreVeiled": true},
         {"kind": "noFractured"},
         {"kind": "noInfluence"},
         {"kind": "notSynthesised"}
@@ -1399,7 +1381,8 @@
       "ops": [
         {"op": "fracture"}
       ],
-      "claims": ["game-text", "fracture.eligible", "fracture.crafted"]
+      "claims": ["game-text", "fracture.eligible", "fracture.crafted"],
+      "example": "talisman-rare-four"
     },
     {
       "id": "currency/genteels-ducat",
@@ -1432,7 +1415,7 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
       "example": "quicksilver-normal",
@@ -2281,23 +2264,6 @@
       ],
       "claims": ["game-text"],
       "protect": null
-    },
-    {
-      "id": "currency/tainted-blessing",
-      "name": "Tainted Blessing",
-      "family": "currency",
-      "cost": [
-        {"name": "Tainted Blessing", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "corrupted"},
-        {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Gloves", "Boots", "Helmet", "Belt"]}
-      ],
-      "ops": [
-        {"op": "setEnchant", "pool": "lab"}
-      ],
-      "claims": ["game-text", "enchant.lab-tiers"]
     },
     {
       "id": "currency/tainted-catalyst",

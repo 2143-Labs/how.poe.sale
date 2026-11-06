@@ -432,9 +432,8 @@
       "names": [
         "Enchant"
       ],
-      "methods": [
-        "currency/enchant"
-      ]
+      "excluded": "not-used-on-items",
+      "note": "The Labyrinth's Divine Font no longer exists (claim enchant.font-removed), so no method offers a Labyrinth enchantment."
     },
     {
       "names": [
@@ -704,9 +703,8 @@
       "names": [
         "Tainted Blessing"
       ],
-      "methods": [
-        "currency/tainted-blessing"
-      ]
+      "excluded": "not-used-on-items",
+      "note": "A Tainted Blessing applied a Labyrinth enchantment, and those enchantments no longer exist (claim enchant.font-removed)."
     },
     {
       "names": [
@@ -1020,7 +1018,7 @@
         "Igneous Geode"
       ],
       "excluded": "not-used-on-items",
-      "note": "Tainted Blessing and Oil Extractor have their own methods."
+      "note": "Oil Extractor has its own method."
     },
     {
       "names": [

@@ -9,7 +9,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::data::{Category, Data, Eldritch, Influence, Rarity};
+use crate::data::{Category, Data, Eldritch, Influence, ModKind, Rarity};
 
 fn one() -> u8 {
     1
@@ -154,6 +154,10 @@ pub enum Require {
     FullSuffixes,
     MinExplicits {
         n: u8,
+        /// Skip an unrevealed veiled modifier when counting: it is not a modifier the item yet
+        /// has (owner, Q5).
+        #[serde(default)]
+        ignore_veiled: bool,
     },
     MinInfluencedMods {
         n: u8,
@@ -319,7 +323,8 @@ pub enum Op {
         to: Element,
     },
     AddQuality {
-        by_rarity: [u8; 4],
+        /// The amount each rarity gains; `None` where the amount is not known.
+        by_rarity: [Option<u8>; 4],
         max: u8,
     },
     CatalystQuality {
@@ -410,9 +415,19 @@ pub enum RemoveFilter {
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum EnchantPool {
-    Lab,
     FlaskEnkindling,
     FlaskInstilling,
+}
+
+impl EnchantPool {
+    /// The kind of modifier the pool draws. The Labyrinth's enchantments no longer exist
+    /// (claim `enchant.font-removed`), so no pool draws `ModKind::Enchant`.
+    pub fn kind(self) -> ModKind {
+        match self {
+            EnchantPool::FlaskEnkindling => ModKind::FlaskEnkindling,
+            EnchantPool::FlaskInstilling => ModKind::FlaskInstilling,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]

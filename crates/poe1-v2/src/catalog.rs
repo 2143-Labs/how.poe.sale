@@ -3,10 +3,11 @@
 //! essences as one table), `catalog/bench.md` (the bench crafts that add one modifier, as one
 //! table), `catalog/questions.md` (each unconfirmed rule a method relies on, shown on the item
 //! inputs that exercise it with the step, the result and the diff; rules no method cites listed
-//! with what uses them), `catalog/items.md` (every fixture and how each pattern reads it) and
-//! `catalog/scope.md` (every currency's methods or exclusion reason). The question examples come
-//! from `fixtures/v2/questions.json`, and generation fails when an unconfirmed rule that a
-//! method cites has no example. Output is deterministic.
+//! with what uses them; rules the owner deferred listed by name and statement at the end),
+//! `catalog/items.md` (every fixture and how each pattern reads it) and `catalog/scope.md`
+//! (every currency's methods or exclusion reason). The question examples come from
+//! `fixtures/v2/questions.json`, and generation fails when an unconfirmed rule that a method
+//! cites and the owner did not defer has no example. Output is deterministic.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -182,7 +183,11 @@ pub fn validate_examples(data: &Data, fx: &Fixtures) -> Result<(), CatalogError>
             let Some(claim) = data.claim(id) else {
                 continue;
             };
-            if !claim.checked && !fx.examples.contains_key(id) && !missing.contains(id) {
+            if !claim.checked
+                && !claim.deferred
+                && !fx.examples.contains_key(id)
+                && !missing.contains(id)
+            {
                 missing.push(id.clone());
                 errors.push(format!(
                     "no example for the unconfirmed rule `{id}`, which `{}` cites (add one to fixtures/v2/questions.json)",
@@ -320,7 +325,13 @@ pub fn require_phrase(data: &Data, r: &Require) -> String {
             SideReq::Dominant => "an open affix on the dominant eldritch side".into(),
         },
         Require::FullSuffixes => "full suffixes".into(),
-        Require::MinExplicits { n } => format!("at least {n} modifiers"),
+        Require::MinExplicits { n, ignore_veiled } => {
+            if *ignore_veiled {
+                format!("at least {n} modifiers, not counting an unrevealed veiled modifier")
+            } else {
+                format!("at least {n} modifiers")
+            }
+        }
         Require::MinInfluencedMods { n } => format!("at least {n} influenced modifiers"),
         Require::HasImplicit => "an implicit modifier".into(),
         Require::HasCrafted => "a crafted modifier".into(),
@@ -497,7 +508,6 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
         Op::SetEnchant { pool } => format!(
             "sets a random {} enchantment",
             match pool {
-                EnchantPool::Lab => "Labyrinth",
                 EnchantPool::FlaskEnkindling => "enkindling",
                 EnchantPool::FlaskInstilling => "instilling",
             }
@@ -529,10 +539,36 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
             from.resistance_type(),
             to.resistance_type()
         ),
-        Op::AddQuality { by_rarity, max } => format!(
-            "adds {}% / {}% / {}% / {}% quality to a normal / magic / rare / unique item, up to {max}%",
-            by_rarity[0], by_rarity[1], by_rarity[2], by_rarity[3]
-        ),
+        Op::AddQuality { by_rarity, max } => {
+            let rarities = [
+                crate::data::Rarity::Normal,
+                crate::data::Rarity::Magic,
+                crate::data::Rarity::Rare,
+                crate::data::Rarity::Unique,
+            ];
+            let mut parts: Vec<String> = Vec::new();
+            for (i, rarity) in rarities.iter().enumerate() {
+                if let Some(n) = by_rarity[i] {
+                    parts.push(format!("{n}% to a {} item", rarity.name()));
+                }
+            }
+            let unknown: Vec<&str> = rarities
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| by_rarity[*i].is_none())
+                .map(|(_, r)| r.name())
+                .collect();
+            if !unknown.is_empty() {
+                parts.push(format!(
+                    "an amount that depends on the item's item level to a {} item",
+                    unknown.join(" or ")
+                ));
+            }
+            format!(
+                "adds quality up to {max}%, adding {}",
+                parts.join(" and ")
+            )
+        }
         Op::CatalystQuality { catalyst } => {
             let label = data
                 .catalysts
@@ -610,6 +646,8 @@ fn sources(data: &Data, m: &Method) -> String {
             Some(c) => {
                 let status = if c.checked {
                     "checked"
+                } else if c.deferred {
+                    "deferred by the owner"
                 } else {
                     "needs the owner"
                 };
@@ -1135,7 +1173,7 @@ fn questions_md(data: &Data, fx: &Fixtures) -> Result<String, CatalogError> {
         String::new(),
         "Generated by `datagen-v2 catalog`; do not edit. Each section is one rule that a method relies on and that no published source confirmed. The section shows a full item input, the step, the result and the difference between the input and the most likely result, so the rule can be checked without opening any other file. Confirm or correct each proposed rule.".into(),
     ];
-    for claim in data.claims.iter().filter(|c| !c.checked) {
+    for claim in data.claims.iter().filter(|c| !c.checked && !c.deferred) {
         let users: Vec<&Method> = data
             .methods
             .iter()
@@ -1220,6 +1258,34 @@ fn questions_md(data: &Data, fx: &Fixtures) -> Result<String, CatalogError> {
         for note in &p.notes {
             out.push(String::new());
             out.push(format!("- `{name}`: {note}"));
+        }
+    }
+    let deferred: Vec<&crate::data::Claim> = data.claims.iter().filter(|c| c.deferred).collect();
+    if !deferred.is_empty() {
+        out.push(String::new());
+        out.push("## Deferred by the owner".into());
+        out.push(String::new());
+        out.push("The owner deferred these rules. Each one stays unconfirmed, so the model does not compute a result that depends on it.".into());
+        for claim in deferred {
+            let users: Vec<String> = data
+                .methods
+                .iter()
+                .filter(|m| m.claims.contains(&claim.id))
+                .map(|m| format!("`{}`", m.id))
+                .collect();
+            out.push(String::new());
+            out.push(format!("### `{}`", claim.id));
+            out.push(String::new());
+            out.push(format!("**Rule:** {}", claim.statement));
+            out.push(String::new());
+            out.push(format!(
+                "**Used by:** {}",
+                if users.is_empty() {
+                    "no method in this bundle".to_string()
+                } else {
+                    users.join(", ")
+                }
+            ));
         }
     }
     out.push(String::new());

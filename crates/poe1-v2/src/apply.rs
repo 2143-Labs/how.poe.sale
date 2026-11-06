@@ -15,8 +15,8 @@ use std::collections::BTreeMap;
 use crate::data::{Category, Cost, Data, Eldritch, ModData, ModKind, Rarity, Side};
 use crate::item::{Affix, Item, MetaMod, Roll};
 use crate::method::{
-    Element, EnchantPool, Family, Method, Op, PairRequire, PendingReason, Policy, Pool,
-    RemoveFilter, Require, SideReq, ValueScope, Weighting,
+    Element, Family, Method, Op, PairRequire, PendingReason, Policy, Pool, RemoveFilter, Require,
+    SideReq, ValueScope, Weighting,
 };
 use crate::pool;
 
@@ -400,7 +400,6 @@ fn pool_candidates(
 
 fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(), Unmet> {
     let class = item.class(data);
-    let explicit_count = item.prefixes.len() + item.suffixes.len();
     let (exarch, eater) = item.eldritch(data);
     match r {
         Require::Rarity { any_of } => {
@@ -478,8 +477,17 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
         Require::FullSuffixes if item.open(data, Side::Suffix) > 0 => {
             return unmet("needs full suffixes");
         }
-        Require::MinExplicits { n } if explicit_count < *n as usize => {
-            return unmet(format!("needs at least {n} modifiers"));
+        Require::MinExplicits { n, ignore_veiled } => {
+            let count = if *ignore_veiled {
+                item.explicits()
+                    .filter(|a| data.mod_at(a.roll.m).kind != ModKind::Veiled)
+                    .count()
+            } else {
+                item.prefixes.len() + item.suffixes.len()
+            };
+            if count < *n as usize {
+                return unmet(format!("needs at least {n} modifiers"));
+            }
         }
         Require::MinInfluencedMods { n } if item.influenced_explicits(data) < *n as usize => {
             return unmet(format!("needs at least {n} influenced modifiers"));
@@ -1133,6 +1141,19 @@ impl Run<'_> {
             Op::Unmodelled { reason } => {
                 return Ok(self.pending(state.item, false, here(), reason.clone()));
             }
+            Op::AddQuality { by_rarity, .. } if by_rarity[state.item.rarity as usize].is_none() => {
+                let rarity = state.item.rarity.name();
+                return Ok(self.pending(
+                    state.item,
+                    false,
+                    here(),
+                    PendingReason::NeedsData {
+                        what: format!(
+                            "the amount of quality a {rarity} item gains is not known and depends on the item's item level"
+                        ),
+                    },
+                ));
+            }
             Op::Unveil => return self.unveil(state, rest, conditional),
             Op::TakeInput { input } => {
                 let item = self.inputs[*input as usize].clone();
@@ -1353,11 +1374,7 @@ impl Run<'_> {
                 one(it)
             }
             Op::SetEnchant { pool: which } => {
-                let kind = match which {
-                    EnchantPool::Lab => ModKind::Enchant,
-                    EnchantPool::FlaskEnkindling => ModKind::FlaskEnkindling,
-                    EnchantPool::FlaskInstilling => ModKind::FlaskInstilling,
-                };
+                let kind = which.kind();
                 let candidates = self.kind_pool(item, kind, true, |_| true);
                 if candidates.is_empty() {
                     return Err("no enchantment can roll on this item".into());
@@ -1587,8 +1604,13 @@ impl Run<'_> {
                 if item.quality >= *max {
                     return Err(format!("quality is already {max}%"));
                 }
+                let Some(add) = by_rarity[item.rarity as usize] else {
+                    return Err(format!(
+                        "the amount of quality a {} item gains is not known",
+                        item.rarity.name()
+                    ));
+                };
                 let mut it = item.clone();
-                let add = by_rarity[item.rarity as usize];
                 it.quality = (*max).min(item.quality.saturating_add(add));
                 one(it)
             }
