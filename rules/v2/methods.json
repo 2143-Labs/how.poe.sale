@@ -202,7 +202,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "crusader"}, "side": "any"}
       ],
       "claims": ["beast.list"]
     },
@@ -223,7 +223,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "elder"}, "side": "any"}
       ],
       "claims": ["beast.list"]
     },
@@ -244,7 +244,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "hunter"}, "side": "any"}
       ],
       "claims": ["beast.list"]
     },
@@ -265,7 +265,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "redeemer"}, "side": "any"}
       ],
       "claims": ["beast.list"]
     },
@@ -286,7 +286,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "shaper"}, "side": "any"}
       ],
       "claims": ["beast.list"],
       "example": "crown-a-mana"
@@ -308,7 +308,7 @@
         {"kind": "openAffix", "side": "any"}
       ],
       "ops": [
-        {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
+        {"op": "addRandom", "pool": {"kind": "influence", "influence": "warlord"}, "side": "any"}
       ],
       "claims": ["beast.list"]
     },

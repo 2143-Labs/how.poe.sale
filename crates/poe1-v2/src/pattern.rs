@@ -696,6 +696,25 @@ type Assignment = ((usize, usize), Vec<Option<usize>>);
 /// fill the most slots, the first one that leaves the slots accepting the most classes unfilled
 /// wins (they are the easiest to fill later). Returns (missing slots, unused affix count).
 fn assign(slots: &[Vec<u16>], classes: &[u16], affixes: usize) -> (Vec<u8>, u8) {
+    let map = best_map(slots, classes);
+    let missing = map
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| a.is_none())
+        .map(|(s, _)| s as u8)
+        .collect();
+    let used = map.iter().flatten().count();
+    (missing, affixes.saturating_sub(used) as u8)
+}
+
+/// Which affix fills each slot of one side, by the rule `assign` uses: the map that fills the
+/// most slots, then leaves the most flexible slots unfilled. `Some(i)` is an index into
+/// `classes`, which the caller builds side by side in pattern order.
+pub fn placement(pattern: &Pattern, side: Side, classes: &[u16]) -> Vec<Option<usize>> {
+    best_map(&pattern.slots[side.index()], classes)
+}
+
+fn best_map(slots: &[Vec<u16>], classes: &[u16]) -> Vec<Option<usize>> {
     let n = classes.len();
     let mut best: Option<Assignment> = None;
     fn walk(
@@ -732,15 +751,7 @@ fn assign(slots: &[Vec<u16>], classes: &[u16], affixes: usize) -> (Vec<u8>, u8) 
         current.pop();
     }
     walk(slots, classes, n, &mut Vec::new(), &mut best);
-    let map = best.map(|(_, m)| m).unwrap_or_default();
-    let missing = map
-        .iter()
-        .enumerate()
-        .filter(|(_, a)| a.is_none())
-        .map(|(s, _)| s as u8)
-        .collect();
-    let used = map.iter().flatten().count();
-    (missing, affixes.saturating_sub(used) as u8)
+    best.map(|(_, m)| m).unwrap_or_default()
 }
 
 /// One affix with its side and the classes it can fall into.

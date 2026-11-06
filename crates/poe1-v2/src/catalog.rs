@@ -3,8 +3,9 @@
 //! essences as one table), `catalog/bench.md` (the bench crafts that add one modifier, as one
 //! table), `catalog/questions.md` (each unconfirmed rule a method relies on, shown on the item
 //! inputs that exercise it with the step, the result and the diff; rules no method cites listed
-//! with what uses them), `catalog/items.md` (every fixture and how each pattern reads it) and
-//! `catalog/scope.md` (every currency's methods or exclusion reason). The question examples come
+//! with what uses them), `catalog/items.md` (every fixture and how each pattern reads it),
+//! `catalog/scope.md` (every currency's methods or exclusion reason) and `catalog/next-steps.md`
+//! (the reverse solver's ranking of every step the fixture allows, against each pattern it fits). The question examples come
 //! from `fixtures/v2/questions.json`, and generation fails when an unconfirmed rule that a
 //! method cites has no example. Output is deterministic.
 
@@ -14,7 +15,7 @@ use std::path::Path;
 use serde::Deserialize;
 
 use crate::apply::{Leaf, Outcome, Params, apply};
-use crate::data::{Category, Data, Scope};
+use crate::data::{Category, Cost, Data, Scope};
 use crate::item::{Item, ItemSpec};
 use crate::method::{
     EnchantPool, Family, Fill, Method, Op, PairRequire, Policy, Pool, Protection, RemoveFilter,
@@ -1318,6 +1319,260 @@ fn scope_md(data: &Data) -> String {
     out.join("\n")
 }
 
+/// A resolved cost: `1 × Chaos Orb`, or a beast by name.
+fn paid_cost(data: &Data, cost: &[Cost]) -> String {
+    if cost.is_empty() {
+        return "none".into();
+    }
+    cost.iter()
+        .map(|c| {
+            let name = c.key.strip_prefix("beast:").map_or_else(
+                || {
+                    data.currency_by_id(&c.key)
+                        .map_or_else(|| c.key.clone(), |x| x.name.clone())
+                },
+                |b| format!("{b} (beast)"),
+            );
+            format!("{} × {name}", c.amount)
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// What a step can do, in a table cell.
+fn stands_word(s: crate::solve::Stands) -> &'static str {
+    match s {
+        crate::solve::Stands::Finishes => "finishes",
+        crate::solve::Stands::Advances => "advances",
+        crate::solve::Stands::Unblocks => "unblocks",
+        crate::solve::Stands::Holds => "holds",
+        crate::solve::Stands::SetsBack => "sets back",
+    }
+}
+
+/// A step table: one row per distinct outcome, with the number of steps that reach it. A step
+/// that does exactly as much as the row above it is counted there rather than repeated, because
+/// the ranking's only say between them is their id.
+fn step_table(data: &Data, group: &[crate::solve::Assessment], rows: usize) -> String {
+    let mut lines = vec![
+        "|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|".to_string(),
+        "|---|---|---|---|---|---|---|---|---|".to_string(),
+    ];
+    let mut shown = 0;
+    let mut i = 0;
+    while i < group.len() && shown < rows {
+        let mut j = i + 1;
+        while j < group.len() && group[i].tied(&group[j]) {
+            j += 1;
+        }
+        let first = &group[i];
+        let w = &first.weighed;
+        let n = j - i;
+        let same_cost = group[i..j].iter().all(|a| a.cost == first.cost);
+        let what = match n {
+            1 => format!("{} — `{}`", first.name.replace('|', "\\|"), first.method),
+            _ => format!(
+                "{n} steps, e.g. {} — `{}`",
+                first.name.replace('|', "\\|"),
+                first.method
+            ),
+        };
+        let cost = if same_cost {
+            paid_cost(data, &first.cost)
+        } else {
+            format!(
+                "{} (and {} others in this row differ in cost)",
+                paid_cost(data, &first.cost),
+                n - 1
+            )
+        };
+        lines.push(format!(
+            "|{n}|{}|{what}|{cost}|{:.3}|{:.3}|{:.3}|{:.3}|{:.3}|",
+            stands_word(first.stands()),
+            w.finish,
+            w.goal,
+            w.better,
+            w.worse,
+            w.blocked,
+            n = shown + 1
+        ));
+        i = j;
+        shown += 1;
+    }
+    if i < group.len() {
+        let rest = group.len() - i;
+        lines.push(format!(
+            "|…||{rest} more steps, in further outcomes of their own|||||"
+        ));
+    }
+    lines.join("\n")
+}
+
+/// What the steps a table shows do, one line each, for the first step of every distinct outcome.
+fn effect_lines(data: &Data, group: &[crate::solve::Assessment], rows: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut shown = 0;
+    let mut i = 0;
+    while i < group.len() && shown < rows {
+        let mut j = i + 1;
+        while j < group.len() && group[i].tied(&group[j]) {
+            j += 1;
+        }
+        let a = &group[i];
+        if let Some(m) = data.method(&a.method) {
+            let does: Vec<String> = m.ops.iter().map(|op| op_sentence(data, op)).collect();
+            out.push(format!(
+                "- **{}** (`{}`): {}.",
+                a.name.replace('|', "\\|"),
+                a.method,
+                does.join("; ")
+            ));
+        }
+        i = j;
+        shown += 1;
+    }
+    out
+}
+
+/// The step that `step_table` shows first, with the alternatives in its row named.
+fn tie_examples(group: &[crate::solve::Assessment], n: usize) -> String {
+    let first = match group.first() {
+        Some(f) => f,
+        None => return String::new(),
+    };
+    let mut names: Vec<String> = Vec::new();
+    for a in group.iter().skip(1).take_while(|a| first.tied(a)).take(n) {
+        names.push(format!("{} — `{}`", a.name.replace('|', "\\|"), a.method));
+    }
+    if names.is_empty() {
+        String::new()
+    } else {
+        format!("Others that do exactly the same: {}.", names.join("; "))
+    }
+}
+
+/// One item weighed against one pattern: where it stands, every step in its group, and the best
+/// exact step's outcome in full.
+pub fn next_steps_section(
+    data: &Data,
+    item_name: &str,
+    item: &Item,
+    pattern_name: &str,
+    pattern: &Pattern,
+) -> Vec<String> {
+    let report = crate::solve::next_steps(data, pattern, item);
+    let mut out = vec![
+        format!("## `{item_name}` → `{pattern_name}`"),
+        String::new(),
+        format!(
+            "**Now:** {:.3} of the goal; {:.3} chance it is finished; {:.3} chance a side is full \
+             with a slot the pattern wants still empty.",
+            report.now.progress, report.now.matches, report.now.blocked
+        ),
+        String::new(),
+        "**Exact steps:** every outcome is computed.".into(),
+        String::new(),
+        step_table(data, &report.exact, 6),
+    ];
+    if !report.exact.is_empty() {
+        out.push(String::new());
+        out.push("What those steps do:".into());
+        out.push(String::new());
+        out.extend(effect_lines(data, &report.exact, 6));
+    }
+    if !report.certain.is_empty() {
+        out.push(String::new());
+        out.push(
+            "**Certain part only:** the random rest of these steps is not modelled yet, so their \
+             numbers come from what the step certainly does."
+                .into(),
+        );
+        out.push(String::new());
+        out.push(step_table(data, &report.certain, 6));
+        out.push(String::new());
+        out.push("What those steps do:".into());
+        out.push(String::new());
+        out.extend(effect_lines(data, &report.certain, 6));
+    }
+    if !report.blind.is_empty() {
+        out.push(String::new());
+        let ids: Vec<String> = report
+            .blind
+            .iter()
+            .take(8)
+            .map(|a| format!("`{}`", a.method))
+            .collect();
+        out.push(format!(
+            "**Not computed:** {} (the model stops before their result).",
+            ids.join(", ")
+        ));
+    }
+    if !report.unmet.is_empty() {
+        let mut reasons: BTreeMap<&str, usize> = BTreeMap::new();
+        for (_, reason) in &report.unmet {
+            *reasons.entry(reason.as_str()).or_default() += 1;
+        }
+        let mut top: Vec<(&str, usize)> = reasons.into_iter().collect();
+        top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        let shown: Vec<String> = top
+            .iter()
+            .take(3)
+            .map(|(r, n)| format!("`{r}` ×{n}"))
+            .collect();
+        out.push(String::new());
+        out.push(format!(
+            "**Does not apply:** {} methods ({})",
+            report.unmet.len(),
+            shown.join(", ")
+        ));
+    }
+    let ties = tie_examples(&report.exact, 3);
+    if !ties.is_empty() {
+        out.push(String::new());
+        out.push(ties);
+    }
+    if let Some(best) = report.exact.first()
+        && best.weighed.results <= 12
+        && let Some(method) = data.method(&best.method)
+        && let Ok(result) = apply(data, method, std::slice::from_ref(item), &Params::default())
+    {
+        out.push(String::new());
+        out.push(format!(
+            "**Best exact step:** {} — `{}`",
+            best.name, best.method
+        ));
+        out.push(String::new());
+        out.push(crate::render::outcome(data, &result));
+    }
+    out
+}
+
+/// The reverse solver's report for every pattern and every fixture the pattern accepts.
+fn next_steps_md(data: &Data, fx: &Fixtures) -> String {
+    let mut out = vec![
+        "# Next steps".to_string(),
+        String::new(),
+        "Generated by `datagen-v2 catalog`; do not edit. For every item fixture and every pattern it \
+         fits: how far the item already is toward the pattern, each single crafting step it allows \
+         with what that step does to the goal and what it risks, and the best exact step in full. \
+         The score, the three groups and the ranking are documented in `crates/poe1-v2/src/solve.rs`."
+            .to_string(),
+    ];
+    for (pname, pattern) in &fx.patterns {
+        for (iname, (_, item)) in &fx.items {
+            if !evaluate(data, pattern, item)
+                .iter()
+                .any(|(p, s)| *p > 0.0 && s.item_ok)
+            {
+                continue;
+            }
+            out.push(String::new());
+            out.extend(next_steps_section(data, iname, item, pname, pattern));
+        }
+    }
+    out.join("\n")
+}
+
 /// Every catalog file name and its content.
 pub fn render_all(data: &Data, fixtures: &Path) -> Result<BTreeMap<String, String>, CatalogError> {
     let fx = Fixtures::load(data, fixtures);
@@ -1326,6 +1581,7 @@ pub fn render_all(data: &Data, fixtures: &Path) -> Result<BTreeMap<String, Strin
     out.insert("bench.md".to_string(), bench_md(data));
     out.insert("questions.md".to_string(), questions_md(data, &fx)?);
     out.insert("items.md".to_string(), items_md(data, &fx));
+    out.insert("next-steps.md".to_string(), next_steps_md(data, &fx));
     out.insert("scope.md".to_string(), scope_md(data));
     Ok(out)
 }

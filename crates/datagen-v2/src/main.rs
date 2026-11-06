@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>\n       datagen-v2 catalog --bundle <file> --fixtures <dir> --out <dir>";
+const USAGE: &str = "usage: datagen-v2 bundle --raw <dir> --rules <dir> --out <file>\n       datagen-v2 catalog --bundle <file> --fixtures <dir> --out <dir>\n       datagen-v2 solve --bundle <file> --fixtures <dir> --item <fixture> --pattern <pattern>";
 
 /// Parses `--flag value` pairs and returns the named ones in order; any other flag is an error.
 fn flags(args: impl Iterator<Item = String>, names: &[&str]) -> anyhow::Result<Vec<PathBuf>> {
@@ -86,6 +86,39 @@ fn main() -> anyhow::Result<()> {
             for (name, content) in files {
                 write(&out.join(name), content.as_bytes())?;
             }
+            Ok(())
+        }
+        "solve" => {
+            let flags = flags(args, &["--bundle", "--fixtures", "--item", "--pattern"])?;
+            let [bundle, fixtures, item, pattern] =
+                <[PathBuf; 4]>::try_from(flags).expect("four flags");
+            let text = std::fs::read_to_string(&bundle)
+                .with_context(|| format!("reading {}", bundle.display()))?;
+            let data = poe1_v2::data::Data::from_json(&text)
+                .with_context(|| format!("loading {}", bundle.display()))?;
+            let fx = poe1_v2::catalog::Fixtures::load(&data, &fixtures);
+            let name = |p: &PathBuf| -> anyhow::Result<String> {
+                p.to_str()
+                    .map(str::to_string)
+                    .with_context(|| format!("{} is not a name", p.display()))
+            };
+            let (item_name, pattern_name) = (name(&item)?, name(&pattern)?);
+            let (_, item) = fx
+                .items
+                .get(&item_name)
+                .with_context(|| format!("no item fixture {item_name}"))?;
+            let pattern = fx
+                .patterns
+                .get(&pattern_name)
+                .with_context(|| format!("no pattern {pattern_name}"))?;
+            let lines = poe1_v2::catalog::next_steps_section(
+                &data,
+                &item_name,
+                item,
+                &pattern_name,
+                pattern,
+            );
+            println!("{}", lines.join("\n"));
             Ok(())
         }
         other => bail!("unknown command {other}; {USAGE}"),
