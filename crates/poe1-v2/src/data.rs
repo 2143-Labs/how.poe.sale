@@ -510,6 +510,10 @@ pub struct Claim {
     pub quote: String,
     pub patch: String,
     pub checked: bool,
+    /// The owner declined to answer: the rule stays unconfirmed and is listed on its own at the
+    /// end of `questions.md` instead of as a question.
+    #[serde(default)]
+    pub deferred: bool,
     /// Numeric payloads (count tables, ratios) copied as-is.
     #[serde(default)]
     pub value: Option<serde_json::Value>,

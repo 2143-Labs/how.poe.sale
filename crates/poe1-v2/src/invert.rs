@@ -285,6 +285,7 @@ fn undo(data: &Data, target: &Item, op: &Op) -> Result<Vec<(Item, f64, Option<St
         | Op::VaalImplicit
         | Op::EldritchImplicit { .. }
         | Op::Dominance
+        | Op::Conflict
         | Op::ChangeResistance { .. }
         | Op::Imprint
         | Op::Restore
@@ -325,6 +326,7 @@ fn op_name(op: &Op) -> &'static str {
         Op::VaalImplicit => "vaalImplicit",
         Op::EldritchImplicit { .. } => "eldritchImplicit",
         Op::Dominance => "dominance",
+        Op::Conflict => "conflict",
         Op::ChangeResistance { .. } => "changeResistance",
         Op::AddQuality { .. } => "addQuality",
         Op::CatalystQuality { .. } => "catalystQuality",
@@ -669,7 +671,11 @@ fn undo_fracture(data: &Data, target: &Item) -> Vec<(Item, f64, Option<String>)>
 }
 
 /// A quality step: the target with less quality.
-fn undo_quality(target: &Item, by_rarity: [u8; 4], max: u8) -> Vec<(Item, f64, Option<String>)> {
+fn undo_quality(
+    target: &Item,
+    by_rarity: [Option<u8>; 4],
+    max: u8,
+) -> Vec<(Item, f64, Option<String>)> {
     if target.quality == 0 {
         return Vec::new();
     }
@@ -679,7 +685,12 @@ fn undo_quality(target: &Item, by_rarity: [u8; 4], max: u8) -> Vec<(Item, f64, O
         Rarity::Rare => 2,
         Rarity::Unique => 3,
     };
-    let step = by_rarity[index].max(1);
+    // An unknown amount leaves the forward step Pending, so there is no computed item to walk
+    // back from.
+    let Some(step) = by_rarity[index] else {
+        return Vec::new();
+    };
+    let step = step.max(1);
     let mut before = target.clone();
     let note = if target.quality >= max {
         before.quality = max.saturating_sub(step);

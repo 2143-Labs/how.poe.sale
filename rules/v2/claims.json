@@ -86,9 +86,9 @@
       "statement": "Aspect beastcrafts add the Level 20 aspect mods (Grants*AspectCrafted, not …Crafted30)",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Level 20",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "beast.bristle-matron",
@@ -128,12 +128,13 @@
     },
     {
       "id": "bench.reroll-unknown",
-      "statement": "The bench actions reroll_rarity, and the two reroll_rare_mods options added in 3.29 (Reroll 3 Modifiers on a Rare Item and Reroll a Modifier on a Rare Item), exist in game data; whether they reroll the numeric values of existing modifiers or replace those modifiers with new random ones is not stated by any source, so their results are not computed.",
+      "statement": "The bench actions that reroll rarity, and the two 3.29 options that reroll three modifiers or one modifier on a rare item, exist in game data, but no source states whether they reroll the numeric values of the existing modifiers or replace those modifiers with new random ones, so their results are not computed.",
       "sourceKind": "owner",
-      "url": "https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes",
-      "quote": "Added 2 new crafting bench options, unlocked by default. Reroll 3 Modifiers on a Rare Item for a cost of 3 Chaos Orbs, and Reroll a Modifier on a Rare Item for a cost of 8 Chaos Orbs.",
+      "url": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "catalyst.amounts",
@@ -142,7 +143,7 @@
       "url": "https://vhpg.com/poe-how-do-catalysts-work/",
       "quote": "Each catalyst application adds 1% quality, so you need 20 applications to reach the maximum.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "catalyst.switch-resets",
@@ -204,6 +205,15 @@
       "checked": true
     },
     {
+      "id": "conflict.tiers",
+      "statement": "The Orb of Conflict raises one eldritch implicit by one tier and lowers the other by one tier, the two assignments being equally likely, and a lowered Lesser (tier 6) implicit is removed instead; repeated use walks a tier from 6 up to 1. Raising or lowering replaces the implicit with the mod of the same kind and mod type at the next tier that can spawn on the item, and a move with no such tier leaves that implicit unchanged.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Uniform, either way round",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "dominance.pairs",
       "statement": "Orb of Dominance picks the removed and the upgraded influenced modifier uniformly among ordered pairs",
       "sourceKind": "owner",
@@ -240,13 +250,22 @@
       "checked": true
     },
     {
-      "id": "enchant.font-shape",
-      "statement": "It is not known whether the Labyrinth's Divine Font offers a choice among a few enchantments or applies one random enchantment, so the model draws one enchantment uniformly from every enchantment the item's tags allow.",
+      "id": "enchant.font-removed",
+      "statement": "The Labyrinth's Divine Font and the helmet, glove, boot and belt enchantments it offered no longer exist outside Standard, so no method offers or applies them.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "They have removed helmet enchants. remove the \"divine font\" from crafting.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
+    },
+    {
+      "id": "essence.ignores-metamods",
+      "statement": "An essence ignores every metamod: its reforge clears a side that Prefixes or Suffixes Cannot Be Changed locks as if the metamod were not there, and Cannot Roll Attack/Caster never blocks the essence's own modifier. This is a rule about essences alone.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Essense are special: they ALWAYS ignore ALL metamods. This is a nerf specifically to disallow target essence crafting.",
+      "patch": "3.29",
+      "checked": true
     },
     {
       "id": "essence.ilvl",
@@ -267,13 +286,13 @@
       "checked": true
     },
     {
-      "id": "exalt.both-sides",
-      "statement": "An Exalted Orb draws from the eligible prefixes and suffixes together, by weight.",
-      "sourceKind": "wiki",
-      "url": "https://pathofexile.fandom.com/wiki/Exalted_Orb",
-      "quote": "",
+      "id": "add.side-first",
+      "statement": "Every currency that adds one random modifier picks a side that has room first, uniformly among the sides that have room, and then a modifier on that side by weight. An item with room on both sides therefore gives each side one half of the probability.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Side first, then weight. All of them pick the side first.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "fracture.crafted",
@@ -286,12 +305,12 @@
     },
     {
       "id": "fracture.eligible",
-      "statement": "A Fracturing Orb picks uniformly among the explicit modifiers that are not an unrevealed veiled modifier; crafted modifiers are candidates (claim fracture.crafted).",
+      "statement": "A Fracturing Orb needs at least four explicit modifiers that are not an unrevealed veiled modifier, because an item with only three modifiers that can change cannot be fractured and a veiled item is never fractured; crafted modifiers are candidates (claim fracture.crafted), and the orb picks uniformly among the candidates.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "it wouldn't be fracturable because its only 3 \"free\" mods. we would never fracture a veiled item anywa",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "fractured.kept",
@@ -322,12 +341,12 @@
     },
     {
       "id": "harvest.damage-conversion",
-      "statement": "The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as \"a modifier that grants Cold, Lightning or Fire Damage\": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. No source states which modifier types the craft accepts, so these six pairs are the model's assumption and the conversion itself is not computed.",
+      "statement": "The Harvest damage conversions change a modifier whose RePoE mod type is ColdDamage, LightningDamage or FireDamage, which is read as \"a modifier that grants Cold, Lightning or Fire Damage\": Cold Damage to Fire Damage, Lightning Damage to Fire Damage, Fire Damage to Cold Damage, Lightning Damage to Cold Damage, Fire Damage to Lightning Damage and Cold Damage to Lightning Damage. The conversion itself is not computed.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Only those three types",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "harvest.list",
@@ -430,43 +449,43 @@
       "url": "https://pathofexile.fandom.com/wiki/Armourer%27s_Scrap",
       "quote": "As with other quality-increasing currency, consuming an Armourer's Scrap improves the quality of normal items by 5%, magic items by 2%, and rare and unique items by 1%.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "quality.unique",
-      "statement": "It is not known how much quality one Armourer's Scrap, Blacksmith's Whetstone or Glassblower's Bauble adds to a unique item in 3.29, because the 3.25 item-level rule applies only to non-unique items and no source states the unique amount.",
+      "statement": "A unique item gains 1% quality per use of an Armourer's Scrap, Blacksmith's Whetstone or Glassblower's Bauble, up to the 20% cap.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "One percent per use",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.base_and_item_level",
       "statement": "A recombine's result takes the base of either input with chance 1/2, and its item level is the lower of the higher input's item level and the inputs' average plus 2.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.base_properties",
       "statement": "The result takes the chosen base's influences and catalyst quality along with its base type; the other input's are lost.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Base_creation",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.cost",
       "statement": "Each recombine costs about 100,000 Thaumaturgic Dust and 12,000 Gold, and half as much again when an input is influenced.",
-      "sourceKind": "experiment",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.26",
-      "checked": false,
+      "checked": true,
       "value": {
         "dust": 100000,
         "gold": 12000,
@@ -476,11 +495,11 @@
     {
       "id": "recombine.count_table",
       "statement": "How many mods a recombine keeps on one side depends on how many that side pooled from both inputs: each row (1 to 6 or more pooled) gives the chances of keeping 0, 1, 2 or 3, from the guide's Table 1 of 217 to 424 recombines per row. Rows 3 and 4 sum to 101 as published and are normalised.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.25",
-      "checked": false,
+      "checked": true,
       "value": [
         [
           41,
@@ -523,11 +542,11 @@
     {
       "id": "recombine.count_table_alt",
       "statement": "The wiki's rounded version of the kept-count table, kept as the alternative reading the answer's range re-solves with. Row 2 reads 66.7/33.3 in the source and is stored as 2:1.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Determining_the_number_of_modifier_affixes",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false,
+      "checked": true,
       "value": [
         [
           41,
@@ -570,66 +589,66 @@
     {
       "id": "recombine.exclusive_weight",
       "statement": "A pooled mod the chosen base can carry but that has no spawn weight there (an essence or bench mod) is drawn as if its weight were 1000.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.26",
-      "checked": false,
+      "checked": true,
       "value": 1000
     },
     {
       "id": "recombine.inputs",
       "statement": "The Recombinator takes two magic or rare items of the same item class.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.non_native",
       "statement": "A pooled mod the chosen base cannot roll, and that no essence or bench craft can place on it, still counts toward the pooled count but is never kept.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.one_prefix_one_suffix",
       "statement": "When the two inputs pool exactly one prefix and one suffix between them, the result keeps the prefix alone, the suffix alone, or both, one third each; it is never empty. Every other pooling uses the count table.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.25",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.output_rarity",
       "statement": "The result is normal with no mods, magic with at most one prefix and one suffix, and rare otherwise, whatever the inputs' rarities.",
-      "sourceKind": "coe",
-      "url": "https://www.craftofexile.com/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.pools_and_groups",
       "statement": "Each side pools the explicit mods of both inputs, so a mod on both counts twice; the kept mods are drawn one at a time, and a drawn mod makes every pooled mod of its group ineligible.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.selection_alpha",
       "statement": "The kept mods are drawn one at a time among the eligible pooled mods, each with chance proportional to its spawn weight on the chosen base raised to a power alpha, so rare high tiers are kept less often than common ones.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Modifier_Selection",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false,
+      "checked": true,
       "value": {
         "plan": 1.0,
         "low": 0.4,
@@ -638,7 +657,7 @@
     },
     {
       "id": "reforge.counts",
-      "statement": "A reforge adds 4, 5 or 6 modifiers; a reforge with a tag repeats until the result holds at least one modifier carrying the tag, rather than guaranteeing the first draw.",
+      "statement": "A reforge ends with 4, 5 or 6 explicit modifiers in total: the modifiers the item keeps count toward that total and the reforge adds only the difference, into open slots. A reforge with a tag repeats until the result holds at least one modifier carrying the tag, rather than guaranteeing the first draw.",
       "sourceKind": "owner",
       "url": "",
       "quote": "It can add 4, 5, or 6 prefixes. But, reroll repeatedly until we have at LEAST one life mod.",
@@ -646,13 +665,13 @@
       "checked": true
     },
     {
-      "id": "reforge.guarantee-first",
-      "statement": "A reforge with a guarantee clears the sides that can change, then draws its guaranteed mod first, by normal weight, from the eligible mods carrying the guarantee on sides with room; the rest of the reforge follows",
+      "id": "reforge.guarantee-present",
+      "statement": "A reforge that guarantees a modifier rerolls until the result holds at least one modifier carrying the guarantee; the guaranteed modifier is not placed before the others. An essence is the exception: it adds its own modifier directly.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "It can add 4, 5, or 6 prefixes. But, reroll repeatedly until we have at LEAST one life mod.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "remove.cannot-roll-scope",
@@ -692,21 +711,22 @@
     },
     {
       "id": "tainted-exalt.locks",
-      "statement": "It is not known whether the Tainted Exalted Orb's removal respects Prefixes Cannot Be Changed and Suffixes Cannot Be Changed: Craft of Exile records it as not interacting with either lock, while the model treats the locks as respected.",
-      "sourceKind": "coe",
-      "url": "https://www.craftofexile.com/metamods",
-      "quote": "Tainted exalted | na | na | yes | yes",
+      "statement": "The Tainted Exalted Orb's removal respects Prefixes Cannot Be Changed and Suffixes Cannot Be Changed, so it never removes a modifier on a side the item locks.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "It respects the locks",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "tainted.odds",
-      "statement": "Tainted currencies' two outcomes are equally likely",
+      "statement": "Each tainted currency's two outcomes are equally likely, so the model gives each branch one half of the probability.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "unveil.blocked-by-group",
@@ -722,9 +742,9 @@
       "statement": "Unveiling costs nothing",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "unveil.no-jun",
@@ -755,12 +775,12 @@
     },
     {
       "id": "vaal.locked-implicits",
-      "statement": "A Vaal Orb still corrupts an item whose implicits cannot be changed; its corrupted-implicit outcome then leaves the implicits as they are",
+      "statement": "A Vaal Orb still corrupts an item whose implicits cannot be changed, and its corrupted-implicit outcome then leaves those implicits as they are.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct, you would never really vaal a simplex because there is no upside",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "vaal.minimum-power-charges",
@@ -781,13 +801,13 @@
       "checked": true
     },
     {
-      "id": "veiled-chaos.side",
-      "statement": "A Veiled Chaos Orb's veiled modifier is a prefix or a suffix with equal chance",
+      "id": "veiled-chaos.replaces-one",
+      "statement": "A Veiled Chaos Orb is an ordinary Chaos Orb reforge, after which one of the resulting modifiers becomes veiled, on that modifier's own side; a metamod that keeps a side keeps it, and the veil is added only among the modifiers the reforge adds.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "its a chaos orb like normal, and one mod is replaced with a veiled after. Unless oyu have a metamod (suffixes cant change prefixes cant change) then its that",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "veiled.exalt",
@@ -803,27 +823,27 @@
       "statement": "A Veiled Exalted Orb cannot be used on an item that already has a veiled modifier",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "veiled.placeholder-removable",
       "statement": "An unrevealed veiled modifier can be removed by annulment-type effects",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "talisman.pool-missing",
       "statement": "The pinned RePoE export does not carry the 3.29 talisman enchantment modifier pool: its TalismanEnchant mods are unique-only, have no spawn weight and no base references them, so a new Talisman's real special modifier is unknown and one generic placeholder stands in for it.",
       "sourceKind": "datamined",
       "url": "https://repoe-fork.github.io/",
-      "quote": "",
+      "quote": "data/raw/mods.json: no modifier of generation_type enchantment has a positive spawn weight on any tag a talisman base carries, and every TalismanEnchant modifier has an empty spawn_weights list.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "talisman.scope",
@@ -845,12 +865,12 @@
     },
     {
       "id": "bench.corrupted-sockets",
-      "statement": "The bench's socket, link and colour crafts can be used on a corrupted item, at the cost of additional Vaal Orbs on top of the usual Orbs of Fusing; the number of extra Vaal Orbs is not stated by the sources.",
-      "sourceKind": "guide",
-      "url": "https://maxroll.gg/poe/resources/corruption",
-      "quote": "One exception to that rule, is that you can still change sockets and links using your crafting bench at the cost of additional Vaal Orbs on top of the usual Orbs of Fusing.",
+      "statement": "The bench's socket, link and colour crafts can be used on a corrupted item and cost additional Vaal Orbs on top of the usual payment; the number of extra Vaal Orbs is not stated by any source, and the outcome itself is not modelled.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Yes, with extra Vaal Orbs",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "bench.reroll-mods",
@@ -880,15 +900,6 @@
       "checked": true
     },
     {
-      "id": "enchant.lab-tiers",
-      "statement": "The Enchant currency offers the enchantments its item level unlocks, so the possible enchantments depend on the item's item level.",
-      "sourceKind": "owner",
-      "url": "",
-      "quote": "",
-      "patch": "3.29",
-      "checked": false
-    },
-    {
       "id": "empty.refused",
       "statement": "Using a currency on an item it has nothing to change is refused; the currency is not consumed.",
       "sourceKind": "owner",
@@ -909,11 +920,12 @@
     {
       "id": "generation.multiplier",
       "statement": "A mod's generation weights are percentage multipliers on its spawn weight, found by the first generation entry whose tag the item has.",
-      "sourceKind": "datamined",
-      "url": "https://github.com/repoe-fork/RePoE/blob/master/RePoE/docs/mods.md",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "metamod.crafted-room",
@@ -927,11 +939,12 @@
     {
       "id": "metamod.level-28",
       "statement": "The MaxModRequiredLevelOverride metamod caps the required level of modifiers at 28, not the modifier level; a modifier's required level is about 80% of its level.",
-      "sourceKind": "datamined",
-      "url": "https://repoe-fork.github.io/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Defer",
       "patch": "3.29",
-      "checked": false
+      "checked": false,
+      "deferred": true
     },
     {
       "id": "metamod.multicraft-does-not-block",
@@ -965,9 +978,9 @@
       "statement": "A magic item roll gives one modifier or two with equal chance.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "quality.per-level",
@@ -980,12 +993,12 @@
     },
     {
       "id": "reforge.counts-scope",
-      "statement": "The 4/5/6 count is the modifiers the reforge adds: modifiers a metamod keeps are not part of it, and the additions are limited by the open slots.",
+      "statement": "The 4, 5 or 6 of a reforge is the total number of explicit modifiers the result carries: a rare item holds at most 3 prefixes and 3 suffixes, a magic item 1 prefix and 1 suffix, and a normal item no modifiers. So the modifiers the item keeps count toward the total and the reforge adds only the difference, into open slots; when the kept modifiers already fill one side the additions go only to the other side, and when the total cannot be reached the item keeps as many modifiers as fit. A reforge that keeps a side is the Harvest and metamod case; an essence clears both sides whatever metamods are present.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Wrong.... an item in poe has these rules:\n\nRares may have 3 prefixes and 3 suffixes\nMagic may have 1 prefix and 1 suffix\nNormal may not have mods.",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "vaal.jewel-outcomes",
@@ -1079,12 +1092,12 @@
     },
     {
       "id": "beast.talisman-fracture-cost",
-      "statement": "No published source states the beast cost of the 3.29 Talisman fracture beastcrafts: the patch notes describe only the effect, Maxroll's Beastcrafting guide still describes the old split crafts, and the pinned RePoE export has no beast recipes, so both methods carry no cost until the owner supplies one.",
+      "statement": "The 3.29 Talisman fracture beastcrafts cost 1 Farric Frost Hellion Alpha for one modifier and 1 Fenumal Plagued Arachnid plus 1 Black Mórrigan for two. Neither craft works on an influenced or a fractured item, the one-modifier craft needs a rare Talisman with at least 4 modifiers, and the two-modifier craft needs a rare Talisman with at least 6.",
       "sourceKind": "owner",
-      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
-      "quote": "",
+      "url": "",
+      "quote": "The costs is some red beast, and then that same red beast + black morrigan. you can literally web search it in seconds no?\n\nFracture a Modifer   On a Rare Talisman with at least 4 modifiers   Does not work on Influenced or Fractured items   1x Farric Frost Hellion Alpha\nFracture two Modifers   On a Rare Talisman with at least 6 modifiers   Does not work on Influenced or Fractured items   1x Fenumal Plagued Arachnid\n1x Black Mórrigan",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "beast.yellow",

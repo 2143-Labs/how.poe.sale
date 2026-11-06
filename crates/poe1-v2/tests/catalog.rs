@@ -178,11 +178,8 @@ fn protection_policies_follow_the_sources() {
     for m in d.methods.iter().filter(|m| m.family == Family::Essence) {
         assert_eq!(
             m.protect,
-            Some(Protection {
-                locks: Forbid,
-                cannot_roll: Forbid
-            }),
-            "{}",
+            Some(Protection::IGNORE_ALL),
+            "{} does not ignore every metamod",
             m.id
         );
     }
@@ -368,6 +365,19 @@ fn owner_decisions_are_claims() {
         "reforge.counts",
         "pattern.crown-ideal-finished",
         "metamod.multicraft-does-not-block",
+        "enchant.font-removed",
+        "fracture.eligible",
+        "quality.unique",
+        "tainted-exalt.locks",
+        "vaal.locked-implicits",
+        "bench.corrupted-sockets",
+        "magic.count-weights",
+        "add.side-first",
+        "essence.ignores-metamods",
+        "reforge.counts-scope",
+        "harvest.damage-conversion",
+        "beast.aspect-level",
+        "beast.talisman-fracture-cost",
     ] {
         let c = d.claim(id).unwrap_or_else(|| panic!("{id} missing"));
         assert_eq!(c.source_kind, poe1_v2::data::SourceKind::Owner, "{id}");
@@ -380,14 +390,59 @@ fn owner_decisions_are_claims() {
     );
 }
 
+/// The owner confirmed all twelve recombine rules, and each recombinator still cites them.
+#[test]
+fn recombine_rules_are_owner_claims() {
+    let d = test_data();
+    let mut ids: Vec<&str> = d
+        .claims
+        .iter()
+        .map(|c| c.id.as_str())
+        .filter(|id| id.starts_with("recombine."))
+        .collect();
+    ids.sort_unstable();
+    assert_eq!(ids.len(), 12, "the recombine family is twelve rules");
+    for id in &ids {
+        let c = d.claim(id).unwrap_or_else(|| panic!("{id} missing"));
+        assert_eq!(c.source_kind, poe1_v2::data::SourceKind::Owner, "{id}");
+        assert!(c.checked, "{id} is not checked");
+        assert_eq!(c.quote, "All twelve are right", "{id}");
+    }
+    let cited: BTreeSet<&str> = ids.iter().copied().collect();
+    for id in [
+        "currency/armour-recombinator",
+        "currency/jewellery-recombinator",
+        "currency/weapon-recombinator",
+    ] {
+        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+        for claim in &cited {
+            assert!(
+                m.claims.iter().any(|c| c.as_str() == *claim),
+                "{id} no longer cites {claim}"
+            );
+        }
+    }
+}
+
 /// The 3.29 removals and the claim they displace are gone, and the new family is scoped.
 #[test]
 fn removed_and_new_methods() {
     let d = test_data();
-    for id in ["harvest/synthesise", "beast/split", "beast/split-three"] {
+    for id in [
+        "harvest/synthesise",
+        "beast/split",
+        "beast/split-three",
+        "currency/enchant",
+        "currency/tainted-blessing",
+    ] {
         assert!(d.method(id).is_none(), "{id} still exists");
     }
-    for id in ["harvest.first-draw-influenced", "ducat.odds"] {
+    for id in [
+        "harvest.first-draw-influenced",
+        "ducat.odds",
+        "enchant.font-shape",
+        "enchant.lab-tiers",
+    ] {
         assert!(d.claim(id).is_none(), "{id} still exists");
     }
     let vaal = d.currencies.iter().find(|c| c.name == "Vaal Orb").unwrap();
@@ -405,7 +460,6 @@ fn removed_and_new_methods() {
     }
     for name in [
         "Oil Extractor",
-        "Tainted Blessing",
         "Omen of Fortune",
         "Omen of Trichromatism",
         "Omen of Connections",
@@ -418,6 +472,17 @@ fn removed_and_new_methods() {
                 Scope::Methods { .. }
             ),
             "{name} is not scoped to a method"
+        );
+    }
+    // The Divine Font is gone (claim enchant.font-removed): its two currencies carry no method.
+    for name in ["Enchant", "Tainted Blessing"] {
+        let c = d.currencies.iter().find(|c| c.name == name).unwrap();
+        assert!(
+            matches!(
+                d.scope.iter().find(|(k, _)| *k == c.id).unwrap().1,
+                Scope::Excluded { ref reason } if reason == "not-used-on-items"
+            ),
+            "{name} is not excluded as not used on items"
         );
     }
 }

@@ -212,4 +212,4 @@ The Allflame Crafting Bench aboard The Sovereign is left out entirely (claim `al
 
 ## Open questions
 
-`catalog/questions.md` is the review list: every claim a method uses that is not yet checked, each with the claim, a worked input, step, result and diff where the method has a fixture, and the proposed rule; a `## Pattern notes` section follows it with each pattern's own notes.
+`catalog/questions.md` is the review list: every claim a method uses that is not yet checked and that the owner did not defer, each with the claim, a worked input, step, result and diff where the method has a fixture, and the proposed rule; a `## Pattern notes` section follows it with each pattern's own notes, and a `## Deferred by the owner` section ends the file with each deferred rule, its statement and the methods that cite it, with no worked example.
