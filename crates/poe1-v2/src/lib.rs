@@ -7,6 +7,7 @@ use std::sync::LazyLock;
 pub mod apply;
 pub mod catalog;
 pub mod data;
+pub mod invert;
 pub mod item;
 pub mod method;
 pub mod pattern;

@@ -1451,6 +1451,105 @@ fn tie_examples(group: &[crate::solve::Assessment], n: usize) -> String {
     }
 }
 
+/// The class ids of one side of a pattern state, for a compact description.
+fn state_classes(pattern: &Pattern, list: &[crate::pattern::AffixState]) -> String {
+    if list.is_empty() {
+        return "none".into();
+    }
+    list.iter()
+        .map(|a| pattern.classes[a.class as usize].id.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// `2 open prefixes`, `1 open suffix`, `none open`.
+fn open_phrase(n: u8, one: &str, many: &str) -> String {
+    match n {
+        0 => "none open".to_string(),
+        1 => format!("1 open {one}"),
+        n => format!("{n} open {many}"),
+    }
+}
+
+/// `3 slots`, `1 slot`, `no slot`.
+fn missing_phrase(n: usize) -> String {
+    match n {
+        0 => "no slot".to_string(),
+        1 => "1 slot".to_string(),
+        n => format!("{n} slots"),
+    }
+}
+
+/// What the inverse solver found: the inputs that could have produced the item, best first, and
+/// the methods it could not walk backwards.
+fn sources_md(
+    data: &Data,
+    pattern: &Pattern,
+    item_name: &str,
+    inversion: &crate::invert::Inversion,
+) -> Vec<String> {
+    let mut out = vec!["**Could have come from:** the inputs one step short of this item.".into()];
+    if inversion.groups.is_empty() {
+        out.push("None found.".into());
+        return out;
+    }
+    out.push(String::new());
+    let mut seen: Vec<String> = Vec::new();
+    for group in inversion.groups.iter() {
+        if seen.len() == 4 {
+            break;
+        }
+        let state = &group.state;
+        let best: Vec<String> = group
+            .sources
+            .iter()
+            .take(2)
+            .map(|s| {
+                format!(
+                    "`{}` at {:.4}{}",
+                    s.method,
+                    s.p,
+                    s.note
+                        .as_ref()
+                        .map(|n| format!(" ({n})"))
+                        .unwrap_or_default()
+                )
+            })
+            .collect();
+        let line = format!(
+            "- prefixes [{}], suffixes [{}], {} / {}, {} it wants still missing — {}",
+            state_classes(pattern, &state.prefixes),
+            state_classes(pattern, &state.suffixes),
+            open_phrase(state.open[0], "prefix", "prefixes"),
+            open_phrase(state.open[1], "suffix", "suffixes"),
+            missing_phrase(state.missing[0].len() + state.missing[1].len()),
+            best.join(", ")
+        );
+        // Two states can read the same in this one line while differing in something the pattern
+        // does not show; one line is enough.
+        if !seen.contains(&line) {
+            seen.push(line.clone());
+            out.push(line);
+        }
+    }
+    let _ = (data, item_name);
+    if !inversion.skipped.is_empty() {
+        let shown: Vec<String> = inversion
+            .skipped
+            .iter()
+            .take(3)
+            .map(|(id, why)| format!("`{id}` ({why})"))
+            .collect();
+        out.push(String::new());
+        out.push(format!(
+            "{} methods cannot be walked backwards in this pass, e.g. {}.",
+            inversion.skipped.len(),
+            shown.join(", ")
+        ));
+    }
+    out
+}
+
 /// One item weighed against one pattern: where it stands, every step in its group, and the best
 /// exact step's outcome in full.
 pub fn next_steps_section(
@@ -1531,6 +1630,9 @@ pub fn next_steps_section(
         out.push(String::new());
         out.push(ties);
     }
+    let inversion = crate::invert::sources(data, pattern, item);
+    out.push(String::new());
+    out.extend(sources_md(data, pattern, item_name, &inversion));
     if let Some(best) = report.exact.first()
         && best.weighed.results <= 12
         && let Some(method) = data.method(&best.method)
@@ -1545,6 +1647,24 @@ pub fn next_steps_section(
         out.push(crate::render::outcome(data, &result));
     }
     out
+}
+
+/// The inverse solver's report for one item: the heading, where it stands, and the inputs one step
+/// short of it.
+pub fn sources_report(
+    data: &Data,
+    pattern: &Pattern,
+    item_name: &str,
+    pattern_name: &str,
+    inversion: &crate::invert::Inversion,
+) -> String {
+    let mut out = vec![
+        format!("## `{item_name}` → `{pattern_name}`"),
+        String::new(),
+    ];
+    out.extend(sources_md(data, pattern, item_name, inversion));
+    out.push(String::new());
+    out.join("\n")
 }
 
 /// The reverse solver's report for every pattern and every fixture the pattern accepts.

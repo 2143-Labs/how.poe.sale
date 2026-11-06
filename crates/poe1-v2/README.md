@@ -43,7 +43,11 @@ pasted item:
 ```
 nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --item crown-actual
 nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --paste my-crown.txt
+nix develop -c cargo run -q -p datagen-v2 --release -- sources --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --item crown-a-mana
 ```
+
+`solve` lists the steps that could come next; `sources` lists the inputs that could have produced the
+item. Both take `--item` (a fixture name) or `--paste`. 
 
 `--paste` reads a copied item the way the game copies it (`text::parse`) and prints its reading
 warnings first, so an item on the clipboard needs no fixture.
@@ -58,7 +62,7 @@ Every reforge applies its certain part exactly before it stops: the rarity, the 
 
 ## One step back
 
-`src/solve.rs` is one step of lookahead, not a route planner. Given a concrete item and a compiled
+`src/solve.rs` and `src/invert.rs` are one step, forwards and backwards: not a route planner. Given a concrete item and a compiled
 pattern it applies every single-input method the item allows, reads each outcome at the pattern's
 level of detail (`lift`), and ranks the steps. It answers "what should I do next", not "what is the
 cheapest path to a finished item".
@@ -99,6 +103,25 @@ a Chaos Orb needs a price table the bundle does not have), the chance of finishi
 score, the chance of gaining and of losing ground, the chance of ending with a side full and a slot
 still missing, and how much of the outcome is not computed. Methods that do not apply are counted
 with their reasons.
+
+**The other direction** (`src/invert.rs`) answers "what could have produced this item": it walks a
+method's ops backwards one at a time. Undoing an op gives the items it could have started from, each
+with the chance the op turns it into the item asked about — for an add, the chance the pool draws the
+modifier that was added; for a removal, one over the number of modifiers that removal could have
+taken from that input, which a metamod narrows to the side it lets through; for a fracture, one over
+the candidates; for a corruption, the branch's chance. Multiplying down the op list gives the
+whole step's chance, and `check` rejects an input the method would not accept, so a preimage the
+answering engine would refuse never appears. Two filters keep the answers honest: an item already at
+its affix limit cannot have lost a modifier of that side, and a step that leaves the item exactly as
+it is (a value reroll on an item whose values are unknown) is not reported, because the input and
+the result are the same state.
+
+The answers are grouped by what the *input* looked like to the pattern, so hundreds of concrete
+inputs collapse into the handful of states the question is asked in. A method whose ops throw
+information away (a clearance could have started from anything) or whose result the model does not
+compute (a reforge's fill, a socket table) is reported as not invertible with the op that stopped it,
+never guessed at. `catalog/next-steps.md` prints the top few groups under each item, and
+`datagen-v2 sources` prints one item's.
 
 **What it cannot do yet, and why that is next.** A reforge's random rest — the 4/5/6 modifier draw
 and its weighted, group-exclusive picks — is the missing piece, and it is what turns "a Chaos Orb

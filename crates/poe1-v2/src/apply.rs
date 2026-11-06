@@ -214,7 +214,8 @@ fn dominant_side(data: &Data, item: &Item) -> Option<Side> {
 }
 
 /// The sides a `SideReq` allows on this item.
-fn sides(data: &Data, item: &Item, req: SideReq) -> Vec<Side> {
+/// The sides a `SideReq` allows on this item.
+pub fn sides(data: &Data, item: &Item, req: SideReq) -> Vec<Side> {
     match req {
         SideReq::Any => Side::BOTH.to_vec(),
         SideReq::Prefix => vec![Side::Prefix],
@@ -285,7 +286,9 @@ fn pool_empty_text(pool: &Pool) -> String {
 /// keeps a mod whose side has no room, and `ignore_groups` keeps a mod whose group the item
 /// already holds: a requirement asks whether the modifier can roll on the item at all, before the
 /// reforge clears it, while an add must respect both.
-fn pool_candidates(
+/// The scored candidate list an `AddRandom` draws from (see `add_pool`); the inverse solver walks
+/// the same list to price what a preimage would have added.
+pub fn pool_candidates(
     data: &Data,
     item: &Item,
     pool: &Pool,
@@ -928,7 +931,9 @@ fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
 
 /// The room on `side` for an added explicit: a normal item turns magic when it gains one, so
 /// it has a magic item's room.
-fn room(data: &Data, item: &Item, side: Side) -> u8 {
+/// The room a side has for an add: a normal item is counted as magic, because one add makes it
+/// magic (owner, "Turns it magic").
+pub fn room(data: &Data, item: &Item, side: Side) -> u8 {
     if item.rarity == Rarity::Normal {
         let mut magic = item.clone();
         magic.rarity = Rarity::Magic;

@@ -824,13 +824,20 @@ fn eldritch_orb_tiers() {
         ("currency/grand-eldritch-ember", 4),
         ("currency/exceptional-eldritch-ember", 3),
     ] {
-        let out = run(id, &edited("slink-boots-normal", |s| {
-            s.implicits = vec![];
-        }));
+        let out = run(
+            id,
+            &edited("slink-boots-normal", |s| {
+                s.implicits = vec![];
+            }),
+        );
         for (_, l) in &out.leaves {
             let it = leaf_item(l);
             let m = d.mod_at(it.implicits[0].m);
-            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(tier)), "{id}");
+            assert_eq!(
+                (m.kind, m.eldritch_tier),
+                (ModKind::Exarch, Some(tier)),
+                "{id}"
+            );
         }
     }
     // An ember replaces only its own side: Eater stays when a Searing orb is used.

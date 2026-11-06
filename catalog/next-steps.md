@@ -47,6 +47,15 @@ What those steps do:
 
 Others that do exactly the same: Bench: Suffixes Cannot Be Changed — `bench/add/DexMasterItemGenerationCannotChangeSuffixes`; Bench: (26-35)% increased Armour and Energy Shield — `bench/add/EinharMasterArmourAndEnergyShieldPercent1`; Bench: (41-50)% increased Armour and Energy Shield — `bench/add/EinharMasterArmourAndEnergyShieldPercent2`.
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 0.2500, `currency/annulment` at 0.2500
+- prefixes [ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 0.2500, `currency/annulment` at 0.2500
+- prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `currency/annulment` at 0.2500, `currency/annulment` at 0.2500
+- prefixes [none], suffixes [essence-elemental, spell-crit], 3 open prefixes / 1 open suffix, 4 slots it wants still missing — `currency/shapers-exalted` at 0.0516
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 **Best exact step:** Beastcraft: add Suffixes Cannot Be Changed — `beast/suffixes-cannot-be-changed`
 
 p = 1.000000
@@ -114,6 +123,15 @@ What those steps do:
 **Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (the model stops before their result).
 
 **Does not apply:** 969 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72)
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [none], suffixes [hypothermia, essence-elemental, spell-crit], 3 open prefixes / none open, 3 slots it wants still missing — `bench/add/EinharMasterIncreasedMana2` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/annulment` at 0.2000, `currency/annulment` at 0.2000
+- prefixes [ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/annulment` at 0.2000, `currency/annulment` at 0.2000
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/annulment` at 0.2000, `currency/annulment` at 0.2000
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 **Best exact step:** Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`
 
@@ -281,6 +299,15 @@ What those steps do:
 **Not computed:** `beast/create-talisman`, `bench/colours/NN`, `bench/colours/NNN`, `bench/colours/NNNN`, `bench/links/2`, `bench/links/3`, `bench/links/4`, `bench/reroll-rare-mods/1` (the model stops before their result).
 
 **Does not apply:** 963 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73)
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [desired-veiled, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/shapers-exalted` at 0.1429
+- prefixes [desired-veiled, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.1429, `currency/exalted` at 0.0165
+- prefixes [desired-veiled, ok-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0808
+- prefixes [desired-veiled, ok-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 **Best exact step:** Orb of Annulment — `currency/annulment`
 
@@ -468,6 +495,15 @@ What those steps do:
 
 **Does not apply:** 905 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `only works on: Two Hand Axes, Two Hand Maces, Two Hand Swords, Staves, Warstaves` ×68)
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.2000, `currency/veiled-exalted` at 0.2000
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.2000, `currency/veiled-exalted` at 0.2000
+- prefixes [good-prefix, ok-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/annulment` at 0.2000, `currency/annulment` at 0.2000
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/annulment` at 0.2000, `currency/annulment` at 0.2000
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 ## `crown-c2` → `crown-shaper`
 
 **Now:** 0.583 of the goal; 0.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
@@ -507,6 +543,15 @@ What those steps do:
 **Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (the model stops before their result).
 
 **Does not apply:** 1035 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72)
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.5000, `currency/veiled-exalted` at 0.5000
+- prefixes [ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.5000, `currency/veiled-exalted` at 0.5000
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000, `currency/veiled-exalted` at 0.5000
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 ## `crown-c2-blocked` → `crown-shaper`
 
@@ -551,6 +596,15 @@ What those steps do:
 
 **Does not apply:** 969 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72)
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `bench/add/JunMaster2MaximumZombieAndSkeleton1_` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.2000, `currency/veiled-exalted` at 0.2000
+- prefixes [ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.2000, `currency/veiled-exalted` at 0.2000
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.2000, `currency/veiled-exalted` at 0.2000
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 ## `crown-d2-scbc` → `crown-shaper`
 
 **Now:** 0.750 of the goal; 0.000 chance it is finished; 1.000 chance a side is full with a slot the pattern wants still empty.
@@ -588,6 +642,15 @@ What those steps do:
 **Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (the model stops before their result).
 
 **Does not apply:** 1039 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73)
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0808
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0635
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 **Best exact step:** Orb of Annulment — `currency/annulment`
 
@@ -699,6 +762,15 @@ What those steps do:
 
 **Does not apply:** 1039 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73)
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/regal` at 0.0181 (the item was magic before the step set its rarity)
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 **Best exact step:** Orb of Annulment — `currency/annulment`
 
 p = 0.500000
@@ -795,6 +867,15 @@ What those steps do:
 
 Others that do exactly the same: Mirror of Kalandra — `currency/mirror`; Sacred Orb — `currency/sacred`; Enchant — `currency/enchant`.
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [desired-veiled, ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `bench/add/EinharMasterIncreasedLife4` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/shapers-exalted` at 0.1429
+- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `beast/influence-slam-shaper` at 0.1429, `currency/exalted` at 0.0176
+- prefixes [desired-veiled, ok-prefix, any-crafted-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 1 slot it wants still missing — `currency/shapers-exalted` at 0.0808
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 **Best exact step:** Divine Orb — `currency/divine`
 
 p = 1.000000
@@ -863,6 +944,15 @@ What those steps do:
 **Does not apply:** 1035 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72)
 
 Others that do exactly the same: Divine Orb — `currency/divine`; Mirror of Kalandra — `currency/mirror`; Sacred Orb — `currency/sacred`.
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 1 slot it wants still missing — `currency/annulment` at 0.3333, `currency/annulment` at 0.3333
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 1 slot it wants still missing — `currency/annulment` at 0.3333, `currency/annulment` at 0.3333
+- prefixes [good-prefix, any-crafted-prefix], suffixes [essence-elemental, spell-crit], 1 open prefix / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0516
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 **Best exact step:** Enchant — `currency/enchant`
 
@@ -1036,6 +1126,15 @@ What those steps do:
 
 **Does not apply:** 1039 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73)
 
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0808
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0635
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
 **Best exact step:** Orb of Annulment — `currency/annulment`
 
 p = 0.333333
@@ -1153,6 +1252,15 @@ What those steps do:
 **Does not apply:** 973 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73)
 
 Others that do exactly the same: Mirror of Kalandra — `currency/mirror`; Sacred Orb — `currency/sacred`; Enchant — `currency/enchant`.
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [desired-veiled, very-good-prefix], suffixes [hypothermia, essence-elemental, good-spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `bench/add/EinharMasterIncreasedLife4` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [desired-veiled, very-good-prefix, any-crafted-prefix], suffixes [essence-elemental, good-spell-crit], none open / 1 open suffix, 1 slot it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0088
+- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, good-spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `beast/influence-slam-elder` at 0.0645, `currency/exalted` at 0.0138
+- prefixes [desired-veiled, very-good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 1 slot it wants still missing — `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0048
+
+303 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
 **Best exact step:** Divine Orb — `currency/divine`
 
