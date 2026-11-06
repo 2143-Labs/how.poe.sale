@@ -3,8 +3,8 @@
 mod common;
 
 use common::{item, pattern};
-use poe1_v2::apply::Params;
-use poe1_v2::pattern::{self, Lifted, LiftedLeaf};
+use poe1_v2::apply::{self, Leaf, Params};
+use poe1_v2::pattern::{self, Lifted, LiftedLeaf, PatternState};
 use poe1_v2::solve::{self, Model};
 use poe1_v2::test_data;
 
@@ -276,4 +276,313 @@ fn assessment_keeps_its_params() {
     assert_eq!(a.params, Params::default());
     assert_eq!(a.cost.len(), 1);
     assert_eq!(a.name, "Exalted Orb");
+}
+
+/// The score is the share of the goal's slot value the item already holds: of `crown-shaper`'s
+/// twelve twelfths (3 + 2 + 1 on the prefix side, 2 + 2 + 2 on the suffix side), read off each
+/// fixture's modifiers, not off the catalog.
+#[test]
+fn progress_is_the_grade_weighted_share() {
+    let data = test_data();
+    let shaper = pattern("crown-shaper");
+    // A Crafted modifier fills `any-crafted-prefix` (1); a Veiled placeholder fills
+    // `desired-veiled` (3) while it stands and is worth nothing once unveiled into a modifier the
+    // pattern does not list; a natural modifier the pattern does not list fills no slot.
+    let expected = [
+        ("crown-a", 6.0 / 12.0),          // three good suffixes
+        ("crown-a-mana", 7.0 / 12.0),     // crafted mana + three good suffixes
+        ("crown-actual", 10.0 / 12.0),    // veiled AoE (3) + its natural tier (1) + suffixes
+        ("crown-c1", 8.0 / 12.0),         // T1 life (2) + three suffixes
+        ("crown-c2", 7.0 / 12.0),         // crafted metamod (1) + three suffixes
+        ("crown-c2-blocked", 7.0 / 12.0), // crafted metamod (1) + three suffixes
+        ("crown-d2-scbc", 9.0 / 12.0),    // T1 life (2) + crafted metamod (1) + suffixes
+        ("crown-d2-scbc-fractured", 9.0 / 12.0),
+        // It matches, so it is finished however much of the goal its modifiers happen to hold.
+        ("crown-ideal", 1.0),
+        ("crown-l1", 9.0 / 12.0),
+        ("crown-l2", 9.0 / 12.0),
+    ];
+    for (name, want) in expected {
+        let got = solve::item_progress(data, &shaper, &item(name));
+        assert!((got - want).abs() < 1e-12, "{name}: {got}, expected {want}");
+    }
+    // A corrupted Crown fails the pattern's filter, so nothing it holds counts.
+    assert_eq!(
+        solve::item_progress(data, &shaper, &item("crown-a-corrupted")),
+        0.0
+    );
+}
+
+/// Some items are stuck: a side is full while a slot the pattern wants is empty.
+#[test]
+fn blocked_is_a_full_side_with_an_empty_slot() {
+    let data = test_data();
+    let shaper = pattern("crown-shaper");
+    let read = |name: &str| {
+        pattern::evaluate(data, &shaper, &item(name))
+            .into_iter()
+            .find(|(p, s)| *p > 0.0 && s.item_ok)
+            .map(|(_, s)| s)
+            .unwrap_or_else(|| panic!("{name}: no accepted state"))
+    };
+    for name in [
+        "crown-actual",
+        "crown-d2-scbc",
+        "crown-d2-scbc-fractured",
+        "crown-l2",
+    ] {
+        assert!(solve::blocked(&read(name)), "{name} should be stuck");
+    }
+    for name in [
+        "crown-a",
+        "crown-a-mana",
+        "crown-c1",
+        "crown-c2",
+        "crown-c2-blocked",
+        "crown-ideal",
+        "crown-l1",
+    ] {
+        assert!(!solve::blocked(&read(name)), "{name} should be open");
+    }
+}
+
+/// The headline numbers, recomputed from the pools rather than read back from the engine: the
+/// Exalted Orb's accepted weight, the annulment's average loss, and the unveil's chance of a
+/// modifier the pattern accepts.
+#[test]
+fn numbers_match_an_independent_recount() {
+    let data = test_data();
+    let shaper = pattern("crown-shaper");
+    let weigh = |fixture: &str, method: &str| {
+        solve::assess(
+            data,
+            &shaper,
+            &item(fixture),
+            data.method(method).unwrap_or_else(|| panic!("{method}")),
+            &Params::default(),
+        )
+        .unwrap_or_else(|e| panic!("{fixture} + {method}: {e}"))
+        .weighed
+    };
+
+    // The Crown's Shaper prefix pool at item level 87 is 67 modifiers weighing 55375 in all.
+    // `IncreasedLife8` and `IncreasedLife9` weigh 1000 each and fill `good-prefix` (2), the three
+    // `AreaOfEffectSupportedUber` tiers weigh 800 each and fill `ok-prefix` (1); every other
+    // prefix fills no slot, so the step leaves the item at 6/12.
+    let exalt = weigh("crown-a", "currency/exalted");
+    assert!(
+        (exalt.better - 4400.0 / 55375.0).abs() < 1e-12,
+        "{}",
+        exalt.better
+    );
+    let want = 0.5 + 2000.0 / 55375.0 * (2.0 / 12.0) + 2400.0 / 55375.0 * (1.0 / 12.0);
+    assert!((exalt.goal - want).abs() < 1e-12, "{}", exalt.goal);
+    assert_eq!(exalt.finish, 0.0);
+    assert_eq!(exalt.worse, 0.0);
+
+    // Six explicit modifiers, one removal each: five of the six lose ground (the armour prefix
+    // leaves the item where it was but frees the side). Summing the six results in twelfths,
+    // (7 + 9 + 10 + 8 + 8 + 8) / 6 / 12 = 50/72; half the removals leave the prefix side full
+    // with the crafted slot still missing.
+    let annul = weigh("crown-actual", "currency/annulment");
+    assert!((annul.worse - 5.0 / 6.0).abs() < 1e-12, "{}", annul.worse);
+    assert_eq!(annul.better, 0.0);
+    assert!((annul.blocked - 0.5).abs() < 1e-12, "{}", annul.blocked);
+    assert!((annul.goal - 50.0 / 72.0).abs() < 1e-12, "{}", annul.goal);
+
+    // The unveil's pool is 9 veiled prefixes weighing 12000; the two the `desired-veiled` class
+    // accepts weigh 1500 each. Enumerating every three-set as ordered draws without replacement
+    // gives 0.637176497393216 of the draws at least one of them. The player keeps the best
+    // option, so that is `better`, and `goal` is 7/12 without a good mod and 10/12 with one.
+    let unveil = weigh("crown-c2", "unveil");
+    let p = 0.637_176_497_393_216;
+    assert!((unveil.better - p).abs() < 1e-12, "{}", unveil.better);
+    let want = 7.0 / 12.0 * (1.0 - p) + 10.0 / 12.0 * p;
+    assert!((unveil.goal - want).abs() < 1e-12, "{}", unveil.goal);
+}
+
+/// A hand sum of one method's leaves, in the same units `Weighed` reports: mass, goal, and the
+/// better/worse split around the item's current progress.
+#[derive(Default)]
+struct Hand {
+    mass: f64,
+    uncomputed: f64,
+    finish: f64,
+    goal: f64,
+    better: f64,
+    worse: f64,
+    blocked: f64,
+}
+
+impl Hand {
+    fn state(&mut self, pattern: &poe1_v2::pattern::Pattern, p: f64, s: &PatternState, base: f64) {
+        let v = solve::state_progress(pattern, s);
+        self.mass += p;
+        self.goal += p * v;
+        if solve::blocked(s) {
+            self.blocked += p;
+        }
+        if s.matches {
+            self.finish += p;
+        }
+        // `solve`'s own epsilon; a step that leaves the item where it was is neither better nor
+        // worse.
+        if v > base + 1e-9 {
+            self.better += p;
+        } else if v < base - 1e-9 {
+            self.worse += p;
+        }
+    }
+
+    fn item(
+        &mut self,
+        data: &poe1_v2::data::Data,
+        pattern: &poe1_v2::pattern::Pattern,
+        p: f64,
+        it: &poe1_v2::item::Item,
+        base: f64,
+    ) {
+        for (q, s) in pattern::evaluate(data, pattern, it) {
+            self.state(pattern, p * q, &s, base);
+        }
+    }
+}
+
+/// The engine's weighing agrees with a sum taken straight from the method's own results: every
+/// item result is re-read with `evaluate`, independent of how `lift` merges states.
+#[test]
+fn weighing_matches_a_brute_force_over_the_outcome() {
+    let data = test_data();
+    let mut compared = 0;
+    for (pname, name) in common::pairs() {
+        let pat = pattern(&pname);
+        let target = item(&name);
+        let now = solve::Now::of(data, &pat, &target);
+        for method in data.methods.iter().filter(|m| m.inputs == 1) {
+            let outcome = match apply::apply(
+                data,
+                method,
+                std::slice::from_ref(&target),
+                &Params::default(),
+            ) {
+                Ok(outcome) => outcome,
+                Err(_) => continue,
+            };
+            // The choice rule (the player keeps the best option) is pinned by
+            // `choice_is_read_by_its_best_option` and by the unveil recount.
+            if outcome
+                .leaves
+                .iter()
+                .any(|(_, leaf)| matches!(leaf, Leaf::Choice(_)))
+            {
+                continue;
+            }
+            let mut hand = Hand::default();
+            for (p, leaf) in &outcome.leaves {
+                match leaf {
+                    Leaf::Item(it) => hand.item(data, &pat, *p, it, now.progress),
+                    // A Mirror keeps both items and the goal is the crafted one.
+                    Leaf::Items(items) => match items.first() {
+                        Some(first) => hand.item(data, &pat, *p, first, now.progress),
+                        None => hand.mass += p,
+                    },
+                    // An item that no longer exists scores nothing.
+                    Leaf::Destroyed => {
+                        hand.mass += p;
+                        hand.worse += p;
+                    }
+                    Leaf::Pending(pending) if pending.certain => {
+                        hand.item(data, &pat, *p, &pending.item, now.progress)
+                    }
+                    Leaf::Pending(_) => hand.uncomputed += p,
+                    Leaf::Choice(_) => unreachable!("choices were skipped"),
+                }
+            }
+            let weighed = solve::weigh(&pat, &pattern::lift(data, &pat, &outcome), &now);
+            let goal = if hand.mass > 0.0 {
+                hand.goal / hand.mass
+            } else {
+                0.0
+            };
+            let at = |a: f64, b: f64| (a - b).abs() < 1e-12;
+            assert!(
+                at(weighed.computed, hand.mass)
+                    && at(weighed.uncomputed, hand.uncomputed)
+                    && at(weighed.finish, hand.finish)
+                    && at(weighed.goal, goal)
+                    && at(weighed.better, hand.better)
+                    && at(weighed.worse, hand.worse)
+                    && at(weighed.blocked, hand.blocked),
+                "{pname} / {name} / {}: engine {weighed:?}, hand {:.9}/{:.9}/{:.9}/{}",
+                method.id,
+                hand.mass,
+                hand.uncomputed,
+                hand.finish,
+                goal
+            );
+            compared += 1;
+        }
+    }
+    assert!(compared > 100, "only {compared} comparisons");
+}
+
+/// Every method is reported once, the three groups never overlap, the probabilities of each
+/// step are probabilities of the part of it that is computed, and the order is the documented
+/// one.
+#[test]
+fn every_step_conserves_its_mass() {
+    let data = test_data();
+    let singles = data.methods.iter().filter(|m| m.inputs == 1).count();
+    for (pname, name) in common::pairs() {
+        let pat = pattern(&pname);
+        let target = item(&name);
+        let report = solve::next_steps(data, &pat, &target);
+        let counted =
+            report.exact.len() + report.certain.len() + report.blind.len() + report.unmet.len();
+        assert_eq!(counted, singles, "{pname} / {name}");
+        for group in [&report.exact, &report.certain, &report.blind] {
+            for a in group {
+                let w = &a.weighed;
+                let at = format!("{pname} / {name} / {}", a.method);
+                assert!(
+                    (w.computed + w.uncomputed - 1.0).abs() < 1e-9,
+                    "{at}: {} + {}",
+                    w.computed,
+                    w.uncomputed
+                );
+                assert!(w.finish <= w.computed + 1e-9, "{at}: finish");
+                assert!(
+                    w.better + w.worse <= w.computed + 1e-9,
+                    "{at}: better/worse"
+                );
+                assert!(w.blocked <= w.computed + 1e-9, "{at}: blocked");
+                assert!((0.0..=1.0).contains(&w.goal), "{at}: goal {}", w.goal);
+                assert!(w.results >= 1, "{at}: no results");
+            }
+            for pair in group.windows(2) {
+                assert_ne!(
+                    pair[0].rank(&pair[1]),
+                    std::cmp::Ordering::Greater,
+                    "{pname} / {name}: {} before {}",
+                    pair[0].method,
+                    pair[1].method
+                );
+            }
+        }
+        for a in &report.exact {
+            assert_eq!(a.weighed.model, Model::Exact, "{}", a.method);
+            assert_eq!(a.weighed.uncomputed, 0.0, "{}", a.method);
+        }
+        for a in &report.certain {
+            assert_eq!(a.weighed.model, Model::CertainPart, "{}", a.method);
+        }
+        for a in &report.blind {
+            assert_eq!(a.weighed.model, Model::Blind, "{}", a.method);
+            assert_eq!(a.weighed.computed, 0.0, "{}", a.method);
+            assert!(a.weighed.uncomputed > 0.0, "{}", a.method);
+        }
+        for (id, why) in &report.unmet {
+            assert!(!why.is_empty(), "{pname} / {name} / {id}: empty reason");
+        }
+    }
 }

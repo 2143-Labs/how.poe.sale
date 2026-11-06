@@ -373,6 +373,10 @@ fn undo_add_random(
     let mut out = Vec::new();
     for s in Side::BOTH {
         for index in 0..affixes(target, s).len() {
+            // An add places an unfractured modifier: a fractured one was made fractured later.
+            if affixes(target, s)[index].fractured {
+                continue;
+            }
             let mut before = without(target, s, index);
             before.canonical(data);
             let allowed = apply::sides(data, &before, side);
@@ -400,7 +404,7 @@ fn undo_add_mod(data: &Data, target: &Item, id: &str) -> Vec<(Item, f64, Option<
     };
     let mut out = Vec::new();
     for index in 0..affixes(target, side).len() {
-        if affixes(target, side)[index].roll.m != m {
+        if affixes(target, side)[index].roll.m != m || affixes(target, side)[index].fractured {
             continue;
         }
         let mut before = without(target, side, index);
@@ -419,7 +423,9 @@ fn undo_add_veiled(data: &Data, target: &Item) -> Vec<(Item, f64, Option<String>
     for side in Side::BOTH {
         for index in 0..affixes(target, side).len() {
             let m = affixes(target, side)[index].roll.m;
-            if !apply::VEILED.contains(&data.mod_at(m).id.as_str()) {
+            if affixes(target, side)[index].fractured
+                || !apply::VEILED.contains(&data.mod_at(m).id.as_str())
+            {
                 continue;
             }
             let mut before = without(target, side, index);
@@ -487,6 +493,11 @@ fn undo_removal(
     for m in eligible(data, target) {
         let md = data.mod_at(m);
         let Some(side) = md.side else { continue };
+        // A filtered removal can only have taken the modifiers it accepts: adding back anything
+        // else would invent an input the method cannot turn into the target.
+        if !takes(data, filter, side, m) {
+            continue;
+        }
         // The input held one more modifier than the result, so the result must have had room for
         // it: an item already at its affix limit cannot have lost a modifier of that side.
         if apply::room(data, target, side) == 0 {
@@ -514,25 +525,31 @@ fn undo_removal(
     out
 }
 
-/// How many explicits a removal could take from this item: not fractured, not a veiled
-/// placeholder, not on a side a metamod locks, and matching the op's filter.
+/// How many explicits a removal could take from this item: not fractured, not on a side a
+/// metamod locks, and matching the op's filter. An unrevealed veiled modifier is an explicit like
+/// any other, so it counts (claim `veiled.placeholder-removable`).
 fn removable_count(data: &Data, item: &Item, filter: &crate::method::RemoveFilter) -> usize {
-    use crate::method::{RemoveFilter, SideReq};
     Side::BOTH
         .into_iter()
         .filter(|side| !item.locked(data, *side))
         .flat_map(|side| affixes(item, side).iter().map(move |a| (side, a)))
-        .filter(|(_, a)| !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled)
-        .filter(|(side, a)| match *filter {
-            RemoveFilter::Any => true,
-            RemoveFilter::Side { side: want } => match want {
-                SideReq::Any | SideReq::Dominant => true,
-                SideReq::Prefix => *side == Side::Prefix,
-                SideReq::Suffix => *side == Side::Suffix,
-            },
-            RemoveFilter::Influenced => data.mod_at(a.roll.m).influence.is_some(),
-        })
+        .filter(|(_, a)| !a.fractured)
+        .filter(|(side, a)| takes(data, filter, *side, a.roll.m))
         .count()
+}
+
+/// Whether a removal with this filter could take the modifier `m` on `side`.
+fn takes(data: &Data, filter: &crate::method::RemoveFilter, side: Side, m: u32) -> bool {
+    use crate::method::{RemoveFilter, SideReq};
+    match *filter {
+        RemoveFilter::Any => true,
+        RemoveFilter::Side { side: want } => match want {
+            SideReq::Any | SideReq::Dominant => true,
+            SideReq::Prefix => side == Side::Prefix,
+            SideReq::Suffix => side == Side::Suffix,
+        },
+        RemoveFilter::Influenced => data.mod_at(m).influence.is_some(),
+    }
 }
 
 /// A rarity set: the same item at any other rarity. Nothing in the model says which one it was, so

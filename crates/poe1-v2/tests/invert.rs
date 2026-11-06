@@ -145,27 +145,29 @@ fn corruption_is_one_branch_of_the_vaal_orb() {
 }
 
 /// Everything the inverse says is true forwards: running the method on the input it found gives
-/// the item back, with the chance it claimed.
+/// the item back, with the chance it claimed, for every item and pattern the catalog covers.
 #[test]
 fn every_source_is_a_real_source() {
     let d = test_data();
-    let shaper = pattern("crown-shaper");
-    for name in ["crown-a-mana", "crown-l1", "crown-actual"] {
-        let target = item(name);
-        let inversion = invert::sources(d, &shaper, &target);
-        assert!(inversion.found > 0, "{name}: nothing found");
+    let mut checked = 0;
+    for (pname, name) in common::pairs() {
+        let pat = pattern(&pname);
+        let target = item(&name);
+        let inversion = invert::sources(d, &pat, &target);
+        assert!(inversion.found > 0, "{pname} / {name}: nothing found");
         for group in &inversion.groups {
             for source in &group.sources {
+                let at = format!("{pname} / {name} / {}", source.method);
                 let method = d
                     .method(&source.method)
-                    .unwrap_or_else(|| panic!("{} missing", source.method));
+                    .unwrap_or_else(|| panic!("{at}: missing"));
                 let outcome = apply(
                     d,
                     method,
                     std::slice::from_ref(&source.input),
                     &Params::default(),
                 )
-                .unwrap_or_else(|e| panic!("{name}: {} on its own input: {e}", source.method));
+                .unwrap_or_else(|e| panic!("{at} on its own input: {e}"));
                 // The model's outcomes leave values unrolled, so a source is compared on the
                 // modifiers it holds, not on the numbers the target happens to show.
                 let found = outcome
@@ -176,10 +178,49 @@ fn every_source_is_a_real_source() {
                     .sum::<f64>();
                 assert!(
                     (found - source.p).abs() < 1e-12,
-                    "{name}: {} claims {:.6}, the forward run gives {:.6}",
-                    source.method,
+                    "{at} claims {:.6}, the forward run gives {:.6}",
                     source.p,
                     found
+                );
+                checked += 1;
+            }
+        }
+    }
+    assert!(checked > 100, "only {checked} sources checked");
+}
+
+/// Every claimed source is a probability of a method that really applies, the group's best is
+/// the best in it, and the sources are ordered so the report reads best first.
+#[test]
+fn sources_are_probabilities_of_methods_that_apply() {
+    let d = test_data();
+    for (pname, name) in common::pairs() {
+        let inversion = invert::sources(d, &pattern(&pname), &item(&name));
+        for group in &inversion.groups {
+            let at = format!("{pname} / {name}");
+            let best = group.sources.iter().map(|s| s.p).fold(0.0f64, f64::max);
+            assert!((group.best - best).abs() < 1e-12, "{at}: group best");
+            for pair in group.sources.windows(2) {
+                let (a, b) = (&pair[0], &pair[1]);
+                assert!(
+                    a.p > b.p || (a.p == b.p && a.method <= b.method),
+                    "{at}: {} at {} before {} at {}",
+                    a.method,
+                    a.p,
+                    b.method,
+                    b.p
+                );
+            }
+            for source in &group.sources {
+                let at = format!("{at} / {}", source.method);
+                assert!(source.p > 0.0 && source.p <= 1.0, "{at}: p {}", source.p);
+                let method = d
+                    .method(&source.method)
+                    .unwrap_or_else(|| panic!("{at}: missing"));
+                assert_eq!(method.inputs, 1, "{at}: not a single-input method");
+                assert!(
+                    !inversion.skipped.iter().any(|(id, _)| id == &source.method),
+                    "{at}: claimed and skipped at once"
                 );
             }
         }
