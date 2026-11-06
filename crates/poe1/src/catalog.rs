@@ -22,7 +22,7 @@ use crate::method::{
     EnchantPool, Family, Fill, Method, Op, PairRequire, Policy, Pool, Protection, RemoveFilter,
     Require, SideReq, SocketChange, ValueScope, Weighting,
 };
-use crate::pattern::{Pattern, PatternSpec, evaluate};
+use crate::pattern::{Pattern, PatternSpec, PatternState, evaluate};
 use crate::render::{item_block, item_diff, leaf_counts, most_likely_item, outcome};
 
 /// The fixtures the catalog demonstrates on.
@@ -1389,7 +1389,7 @@ fn scope_md(data: &Data) -> String {
 }
 
 /// A resolved cost: `1 × Chaos Orb`, or a beast by name.
-fn paid_cost(data: &Data, cost: &[Cost]) -> String {
+pub(crate) fn paid_cost(data: &Data, cost: &[Cost]) -> String {
     if cost.is_empty() {
         return "none".into();
     }
@@ -1409,7 +1409,7 @@ fn paid_cost(data: &Data, cost: &[Cost]) -> String {
 }
 
 /// What a step can do, in a table cell.
-fn stands_word(s: crate::solve::Stands) -> &'static str {
+pub(crate) fn stands_word(s: crate::solve::Stands) -> &'static str {
     match s {
         crate::solve::Stands::Finishes => "finishes",
         crate::solve::Stands::Advances => "advances",
@@ -1549,6 +1549,19 @@ fn missing_phrase(n: usize) -> String {
     }
 }
 
+/// A pattern state in one line: the classes on each side, the open slots and how many slots the
+/// pattern wants still missing.
+pub(crate) fn state_phrase(pattern: &Pattern, state: &PatternState) -> String {
+    format!(
+        "prefixes [{}], suffixes [{}], {} / {}, {} it wants still missing",
+        state_classes(pattern, &state.prefixes),
+        state_classes(pattern, &state.suffixes),
+        open_phrase(state.open[0], "prefix", "prefixes"),
+        open_phrase(state.open[1], "suffix", "suffixes"),
+        missing_phrase(state.missing[0].len() + state.missing[1].len())
+    )
+}
+
 /// What the inverse solver found: the inputs that could have produced the item, best first, and
 /// the methods it could not walk backwards.
 fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<String> {
@@ -1563,15 +1576,7 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<St
     let mut order: Vec<String> = Vec::new();
     let mut merged: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for group in &inversion.groups {
-        let state = &group.state;
-        let head = format!(
-            "prefixes [{}], suffixes [{}], {} / {}, {} it wants still missing",
-            state_classes(pattern, &state.prefixes),
-            state_classes(pattern, &state.suffixes),
-            open_phrase(state.open[0], "prefix", "prefixes"),
-            open_phrase(state.open[1], "suffix", "suffixes"),
-            missing_phrase(state.missing[0].len() + state.missing[1].len())
-        );
+        let head = state_phrase(pattern, &group.state);
         let entry = match merged.get_mut(&head) {
             Some(entry) => entry,
             None => {

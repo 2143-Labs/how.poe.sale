@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
+pub mod api;
 pub mod apply;
 pub mod catalog;
 pub mod data;

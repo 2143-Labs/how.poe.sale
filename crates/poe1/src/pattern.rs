@@ -408,6 +408,71 @@ impl Pattern {
     }
 }
 
+/// A pattern that asks for a pasted item exactly: its base, item level, rarity, influences and
+/// corruption as the filter, and one desired class and one slot per explicit modifier, so the
+/// item scores as finished against its own pattern. A veiled placeholder is left out: it stands
+/// for a modifier not yet chosen, which the item cannot be aiming at. Each side also gets a bad
+/// catch-all class, which every pattern needs and which takes any other modifier.
+pub fn from_item(data: &Data, target: &Item) -> PatternSpec {
+    let base = data.base_at(target.base);
+    let mut classes = Vec::new();
+    let mut slots: [Vec<Vec<String>>; 2] = Default::default();
+    for side in Side::BOTH {
+        let (affixes, word, other) = match side {
+            Side::Prefix => (&target.prefixes, "prefix", "Any Other Prefix"),
+            Side::Suffix => (&target.suffixes, "suffix", "Any Other Suffix"),
+        };
+        for affix in affixes {
+            let m = data.mod_at(affix.roll.m);
+            if m.kind == ModKind::Veiled {
+                continue;
+            }
+            let id = format!("{word}-{}", slots[side.index()].len() + 1);
+            let mut label = m.text.lines().collect::<Vec<_>>().join(" / ");
+            if label.is_empty() {
+                label = m.id.clone();
+            }
+            if m.kind == ModKind::Crafted {
+                label.push_str(" (crafted)");
+            }
+            classes.push(ClassSpec {
+                id: id.clone(),
+                label,
+                side,
+                grade: Grade::Desired,
+                matchers: vec![MatcherSpec::Mod {
+                    r#mod: m.id.clone(),
+                    min: None,
+                }],
+            });
+            slots[side.index()].push(vec![id]);
+        }
+        classes.push(ClassSpec {
+            id: format!("other-{word}"),
+            label: other.to_string(),
+            side,
+            grade: Grade::Bad,
+            matchers: vec![MatcherSpec::Any { any: true }],
+        });
+    }
+    let [prefixes, suffixes] = slots;
+    PatternSpec {
+        name: format!("{} target", base.name),
+        item: ItemFilterSpec {
+            bases: vec![base.name.clone()],
+            item_level_min: target.item_level,
+            rarity: target.rarity,
+            influences: target.to_spec(data).influences,
+            corrupted: Some(target.corrupted),
+        },
+        implicits: Vec::new(),
+        classes,
+        prefixes,
+        suffixes,
+        notes: Vec::new(),
+    }
+}
+
 /// The factor a stat is shown with: the translation slot factor of the slot that carries it.
 /// A stat with no translation entry, or whose slots disagree, is shown unchanged (factor 1).
 fn shown_factor(data: &Data, stat: u16) -> f64 {
