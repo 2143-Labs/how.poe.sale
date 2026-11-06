@@ -463,29 +463,29 @@
     {
       "id": "recombine.base_and_item_level",
       "statement": "A recombine's result takes the base of either input with chance 1/2, and its item level is the lower of the higher input's item level and the inputs' average plus 2.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.base_properties",
       "statement": "The result takes the chosen base's influences and catalyst quality along with its base type; the other input's are lost.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Base_creation",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.cost",
       "statement": "Each recombine costs about 100,000 Thaumaturgic Dust and 12,000 Gold, and half as much again when an input is influenced.",
-      "sourceKind": "experiment",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.26",
-      "checked": false,
+      "checked": true,
       "value": {
         "dust": 100000,
         "gold": 12000,
@@ -495,11 +495,11 @@
     {
       "id": "recombine.count_table",
       "statement": "How many mods a recombine keeps on one side depends on how many that side pooled from both inputs: each row (1 to 6 or more pooled) gives the chances of keeping 0, 1, 2 or 3, from the guide's Table 1 of 217 to 424 recombines per row. Rows 3 and 4 sum to 101 as published and are normalised.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.25",
-      "checked": false,
+      "checked": true,
       "value": [
         [
           41,
@@ -542,11 +542,11 @@
     {
       "id": "recombine.count_table_alt",
       "statement": "The wiki's rounded version of the kept-count table, kept as the alternative reading the answer's range re-solves with. Row 2 reads 66.7/33.3 in the source and is stored as 2:1.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Determining_the_number_of_modifier_affixes",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false,
+      "checked": true,
       "value": [
         [
           41,
@@ -589,66 +589,66 @@
     {
       "id": "recombine.exclusive_weight",
       "statement": "A pooled mod the chosen base can carry but that has no spawn weight there (an essence or bench mod) is drawn as if its weight were 1000.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.26",
-      "checked": false,
+      "checked": true,
       "value": 1000
     },
     {
       "id": "recombine.inputs",
       "statement": "The Recombinator takes two magic or rare items of the same item class.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.non_native",
       "statement": "A pooled mod the chosen base cannot roll, and that no essence or bench craft can place on it, still counts toward the pooled count but is never kept.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.one_prefix_one_suffix",
       "statement": "When the two inputs pool exactly one prefix and one suffix between them, the result keeps the prefix alone, the suffix alone, or both, one third each; it is never empty. Every other pooling uses the count table.",
-      "sourceKind": "guide",
-      "url": "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.25",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.output_rarity",
       "statement": "The result is normal with no mods, magic with at most one prefix and one suffix, and rare otherwise, whatever the inputs' rarities.",
-      "sourceKind": "coe",
-      "url": "https://www.craftofexile.com/",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.pools_and_groups",
       "statement": "Each side pools the explicit mods of both inputs, so a mod on both counts twice; the kept mods are drawn one at a time, and a drawn mod makes every pooled mod of its group ineligible.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "recombine.selection_alpha",
       "statement": "The kept mods are drawn one at a time among the eligible pooled mods, each with chance proportional to its spawn weight on the chosen base raised to a power alpha, so rare high tiers are kept less often than common ones.",
-      "sourceKind": "wiki",
-      "url": "https://www.poewiki.net/wiki/Recombinator#Modifier_Selection",
-      "quote": "",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "All twelve are right",
       "patch": "3.29",
-      "checked": false,
+      "checked": true,
       "value": {
         "plan": 1.0,
         "low": 0.4,
