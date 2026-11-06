@@ -9,9 +9,9 @@ rm -rf src/wasm/pkg/*
 if [ -n "${WASM_PKG:-}" ]; then
   cp -r "$WASM_PKG"/. src/wasm/pkg/ && chmod -R u+w src/wasm/pkg
 else
-  (cd .. && cargo build -p wasm-api --release --target wasm32-unknown-unknown)
-  wasm-bindgen --target web --out-name solver --out-dir src/wasm/pkg ../target/wasm32-unknown-unknown/release/wasm_api.wasm
+  (cd .. && cargo build -p wasm --release --target wasm32-unknown-unknown \
+    && wasm-bindgen --target web --out-name solver --out-dir web/src/wasm/pkg "${CARGO_TARGET_DIR:-target}/wasm32-unknown-unknown/release/wasm.wasm")
 fi
 if [ -n "${BUNDLE:-}" ]; then cp "$BUNDLE" public/data/bundle.json
 elif [ -f ../data/bundle.json ]; then cp ../data/bundle.json public/data/bundle.json
-else echo "missing data/bundle.json: run scripts/fetch-data.sh, then cargo run -p datagen --release -- --raw data/raw --out data/bundle.json" >&2; exit 1; fi
+else echo "missing data/bundle.json: run scripts/fetch-data.sh, then cargo run -p cli --release -- bundle --raw data/raw --rules rules --out data/bundle.json" >&2; exit 1; fi

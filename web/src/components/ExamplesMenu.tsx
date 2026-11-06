@@ -1,23 +1,23 @@
-import { DEMO_ITEMS } from '../demo'
 import { useAppStore } from '../store'
+import type { Example } from '../types'
 
-/** A collapsed header menu of example items; picking one pastes and parses it in the Target panel. */
-export function DemoMenu() {
-  const requestPaste = useAppStore((state) => state.requestPaste)
+/** A collapsed header menu of example pastes; picking one puts it in Your item. */
+export function ExamplesMenu({ examples }: { examples: Example[] }) {
+  const setItemText = useAppStore((state) => state.setItemText)
   return (
     <details className="demo-menu">
       <summary>Examples</summary>
       <div className="demo-menu-list">
-        {DEMO_ITEMS.map((item) => (
+        {examples.map((example) => (
           <button
-            key={item.id}
+            key={example.id}
             type="button"
             onClick={(event) => {
-              requestPaste(item.text)
+              setItemText(example.text)
               event.currentTarget.closest('details')?.removeAttribute('open')
             }}
           >
-            {item.label}
+            {example.label}
           </button>
         ))}
       </div>

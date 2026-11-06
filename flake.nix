@@ -34,6 +34,7 @@
           { name = "essences"; hash = "sha256-AcatVYZt9nPdJamwhXfuIoAq07jwZxsBnLTPUjub1wA="; }
           { name = "fossils"; hash = "sha256-4XHBGfh0tPK+Kpg2avYcWiCRyib1CLL1uda1Ubud8YE="; }
           { name = "tags"; hash = "sha256-Jd+ROr1Fm+3T3BtknjRLNT4nHtCjIWLxFtZgNKMmm1A="; }
+          { name = "stat_translations/tincture"; hash = "sha256-pjF2ryLKOiZJMJvyKiz78onAcyP0APkX+ylGUTZog1w="; }
         ];
         repoeRaw = pkgs.linkFarm "repoe-raw-3.29.3.3" (map
           (f: {
@@ -51,21 +52,21 @@
           src = ./.;
           cargoBuildOptions = x: x ++ [ "-p" name ];
         };
-        datagen = crate "datagen";
+        cli = crate "cli";
         server = crate "server";
 
         bundle = pkgs.runCommand "how-poe-sale-bundle" { } ''
           mkdir -p $out
-          ${datagen}/bin/datagen --raw ${repoeRaw} --out $out/bundle.json
+          ${cli}/bin/cli bundle --raw ${repoeRaw} --rules ${./rules} --out $out/bundle.json
         '';
 
         wasmRaw = naersk-lib.buildPackage {
-          name = "how-poe-sale-wasm-api";
+          name = "how-poe-sale-wasm-raw";
           version = "0.1.0";
           src = ./.;
           copyLibs = true;
           CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
-          cargoBuildOptions = x: x ++ [ "-p" "wasm-api" ];
+          cargoBuildOptions = x: x ++ [ "-p" "wasm" ];
         };
         wasm = pkgs.stdenv.mkDerivation {
           name = "how-poe-sale-wasm";
@@ -117,7 +118,7 @@
       in
       {
         packages = {
-          inherit datagen server bundle wasmRaw wasm frontend webRoot container;
+          inherit cli server bundle wasmRaw wasm frontend webRoot container;
           default = container;
         };
 
