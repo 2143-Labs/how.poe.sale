@@ -406,6 +406,11 @@ fn fill_phrase(f: &Fill) -> String {
             pool_phrase(include)
         ));
     }
+    if f.one_veiled {
+        out.push_str(
+            ", the veiled modifier replacing one of the reforge's modifiers and taking that modifier's side",
+        );
+    }
     out.push_str(match f.weighting {
         Weighting::Normal => "",
         Weighting::Fossils => ", weighted by the fossils",
@@ -517,6 +522,7 @@ pub fn op_sentence(data: &Data, op: &Op) -> String {
                 crate::data::Eldritch::Eater => "Eater of Worlds",
             }
         ),
+        Op::Conflict => "raises one eldritch implicit one tier and lowers the other one tier, the two assignments being equally likely, and a lowered Lesser (tier 6) implicit is removed instead".into(),
         Op::Dominance => "removes one influenced modifier that can change and upgrades another one tier".into(),
         Op::ChangeResistance { from, to } => format!(
             "turns a {} modifier into the {} modifier of the same rank",

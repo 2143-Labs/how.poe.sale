@@ -1863,9 +1863,9 @@
         {"kind": "notUnique"}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "conflict"}
       ],
-      "claims": ["game-text"],
+      "claims": ["game-text", "conflict.tiers"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2627,10 +2627,9 @@
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addVeiled"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "oneVeiled": true}}
       ],
-      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "reforge.guarantee-first", "veiled-chaos.side", "reforge.counts"],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "veiled-chaos.replaces-one", "reforge.counts"],
       "example": "crown-a"
     },
     {

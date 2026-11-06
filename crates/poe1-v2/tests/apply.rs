@@ -589,41 +589,39 @@ fn pending_and_vaal() {
     assert_eq!(explicits, [boots_mod]);
     assert!(matches!(p.ops[0], Op::Fill { .. }));
 
+    // The veil is one of the reforge's own modifiers, not a draw before it: one Pending, its
+    // fill flagged, and the certain part is the cleared item with no side chosen.
     let out = run("currency/veiled-chaos", &crown_a);
-    assert_eq!(out.leaves.len(), 2);
-    let mut placeholders = Vec::new();
-    for (p, l) in &out.leaves {
-        assert_eq!(*p, 0.5);
-        let it = &pending(l).item;
-        assert_eq!(it.rarity, Rarity::Rare);
-        let explicits: Vec<&str> = it
-            .explicits()
-            .map(|a| d.mod_at(a.roll.m).id.as_str())
-            .collect();
-        assert_eq!(explicits.len(), 1);
-        placeholders.push(explicits[0].to_string());
-    }
-    placeholders.sort();
-    assert_eq!(placeholders, ["VeiledPrefix", "VeiledSuffix"]);
+    let [(one, Leaf::Pending(p))] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*one, 1.0);
+    assert!(p.certain);
+    assert_eq!(p.reason, PendingReason::MultiDrawVeiled);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert_eq!(p.item.explicits().count(), 0);
+    let Op::Fill { fill } = &p.ops[0] else {
+        panic!("{:?}", p.ops);
+    };
+    assert!(fill.one_veiled);
     let p = pattern("crown-shaper");
-    let mut open: Vec<[u8; 2]> = lift(d, &p, &out)
-        .leaves
-        .iter()
-        .map(|(_, l)| match l {
-            LiftedLeaf::Pending { known: Some(s), .. } => s.open,
-            other => panic!("{other:?}"),
-        })
-        .collect();
-    open.sort();
-    assert_eq!(open, [[2, 3], [3, 2]]);
-    // R1 example: on crown-l1 the three locked suffixes stay, so the veiled mod is a prefix.
+    let lifted = lift(d, &p, &out);
+    let [(_, LiftedLeaf::Pending { known: Some(s), .. })] = lifted.leaves.as_slice() else {
+        panic!("{lifted:?}")
+    };
+    assert_eq!(s.open, [3, 3]);
+    // R1 example: on crown-l1 the three locked suffixes stay, and the veil stays with the fill.
     let out = run("currency/veiled-chaos", &l1);
     let [(one, Leaf::Pending(p))] = out.leaves.as_slice() else {
         panic!("{out:?}")
     };
     assert_eq!(*one, 1.0);
-    assert_eq!(ids(d, &p.item.prefixes), ["VeiledPrefix"]);
+    assert!(p.item.prefixes.is_empty());
     assert_eq!(p.item.suffixes, l1.suffixes);
+    let Op::Fill { fill } = &p.ops[0] else {
+        panic!("{:?}", p.ops);
+    };
+    assert!(fill.one_veiled);
 
     // Q7: the tag reforge clears what can change (SCBC itself is a prefix) and fills until at
     // least one life modifier is drawn, so no prefix is placed before the Fill.
@@ -824,13 +822,20 @@ fn eldritch_orb_tiers() {
         ("currency/grand-eldritch-ember", 4),
         ("currency/exceptional-eldritch-ember", 3),
     ] {
-        let out = run(id, &edited("slink-boots-normal", |s| {
-            s.implicits = vec![];
-        }));
+        let out = run(
+            id,
+            &edited("slink-boots-normal", |s| {
+                s.implicits = vec![];
+            }),
+        );
         for (_, l) in &out.leaves {
             let it = leaf_item(l);
             let m = d.mod_at(it.implicits[0].m);
-            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(tier)), "{id}");
+            assert_eq!(
+                (m.kind, m.eldritch_tier),
+                (ModKind::Exarch, Some(tier)),
+                "{id}"
+            );
         }
     }
     // An ember replaces only its own side: Eater stays when a Searing orb is used.
@@ -847,6 +852,116 @@ fn eldritch_orb_tiers() {
             .expect("the Eater implicit stays");
         assert_eq!(eater.eldritch_tier, Some(1));
     }
+}
+
+/// The Orb of Conflict (claim `conflict.tiers`): both assignments are equally likely. On
+/// slink-boots-eldritch the Exarch implicit is tier 2 and the Eater tier 1, so raising the
+/// Exarch gives Exarch 1 with Eater 2, while raising the Eater has no stronger tier (1 is the
+/// strongest) and leaves it at 1, so the other branch lowers the Exarch to 3.
+#[test]
+fn orb_of_conflict_moves_one_tier_each_way() {
+    let d = test_data();
+    let boots = item("slink-boots-eldritch");
+    let out = run("currency/orb-of-conflict", &boots);
+    assert_eq!(out.leaves.len(), 2);
+    assert!(close(out.mass(), 1.0, 1e-12));
+    let mut got: Vec<(f64, Vec<(ModKind, u8)>)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            let mut tiers: Vec<(ModKind, u8)> = it
+                .implicits
+                .iter()
+                .map(|r| {
+                    let m = d.mod_at(r.m);
+                    (m.kind, m.eldritch_tier.expect("eldritch tier"))
+                })
+                .collect();
+            tiers.sort();
+            (*p, tiers)
+        })
+        .collect();
+    got.sort_by(|a, b| a.1.cmp(&b.1));
+    assert_eq!(
+        got,
+        [
+            (0.5, vec![(ModKind::Exarch, 1), (ModKind::Eater, 2)]),
+            (0.5, vec![(ModKind::Exarch, 3), (ModKind::Eater, 1)]),
+        ]
+    );
+}
+
+/// A lowered Lesser (tier 6) implicit is removed instead of moving to tier 7, and with both
+/// implicits at tier 6 each branch keeps only the one it raised (claim `conflict.tiers`).
+#[test]
+fn orb_of_conflict_removes_a_lowered_lesser() {
+    let d = test_data();
+    let pair = |exarch: &str, eater: &str| {
+        edited("slink-boots-normal", |s| {
+            s.implicits = vec![
+                ModSpec {
+                    id: exarch.into(),
+                    values: None,
+                },
+                ModSpec {
+                    id: eater.into(),
+                    values: None,
+                },
+            ];
+        })
+    };
+    let one_lesser = pair(
+        "MovementVelocityEldritchImplicit6",
+        "LifeRegenerationRateEldritchImplicit3",
+    );
+    let out = run("currency/orb-of-conflict", &one_lesser);
+    assert_eq!(out.leaves.len(), 2);
+    let mut sizes: Vec<(f64, Vec<ModKind>)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            let mut kinds: Vec<ModKind> = it.implicits.iter().map(|r| d.mod_at(r.m).kind).collect();
+            kinds.sort();
+            (*p, kinds)
+        })
+        .collect();
+    sizes.sort_by(|a, b| a.1.cmp(&b.1));
+    assert_eq!(
+        sizes,
+        [
+            (0.5, vec![ModKind::Exarch, ModKind::Eater]),
+            (0.5, vec![ModKind::Eater]),
+        ]
+    );
+    // The branch with one implicit kept the Eater one, at the tier it was raised to.
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        if it.implicits.len() == 1 {
+            let m = d.mod_at(it.implicits[0].m);
+            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Eater, Some(2)));
+        }
+    }
+
+    let both_lesser = pair(
+        "MovementVelocityEldritchImplicit6",
+        "LifeRegenerationRateEldritchImplicit6",
+    );
+    let out = run("currency/orb-of-conflict", &both_lesser);
+    assert_eq!(out.leaves.len(), 2);
+    let mut kinds: Vec<(f64, ModKind, u8)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            assert_eq!(it.implicits.len(), 1, "the lowered implicit is removed");
+            let m = d.mod_at(it.implicits[0].m);
+            (*p, m.kind, m.eldritch_tier.unwrap())
+        })
+        .collect();
+    kinds.sort_by_key(|(_, kind, _)| *kind);
+    assert_eq!(kinds, [(0.5, ModKind::Exarch, 5), (0.5, ModKind::Eater, 5)]);
 }
 
 /// R5: a Vaal Orb replaces one random implicit. Recount: corrupted implicits (domain item,

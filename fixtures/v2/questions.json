@@ -210,15 +210,6 @@
         "shows": "The corrupted crown is either reforged or scoured, and both results have the same chance."
       }
     ],
-    "unveil.free": [
-      {
-        "method": "unveil",
-        "fixtures": [
-          "crown-c2-blocked"
-        ],
-        "shows": "The unveiling step costs nothing, and its result offers three weighted options from which the player picks one."
-      }
-    ],
     "vaal.locked-implicits": [
       {
         "method": "currency/vaal-socketless",
@@ -228,31 +219,13 @@
         "shows": "The Vaal Orb corrupts the amulet, and its corrupted-implicit outcome leaves the locked implicit unchanged, so that outcome merges with the outcome that changes nothing."
       }
     ],
-    "veiled-chaos.side": [
+    "veiled-chaos.replaces-one": [
       {
         "method": "currency/veiled-chaos",
         "fixtures": [
           "crown-a"
         ],
-        "shows": "The reforge leaves a veiled modifier on a prefix or on a suffix, and both sides have the same chance."
-      }
-    ],
-    "veiled.one-per-item": [
-      {
-        "method": "currency/veiled-exalted",
-        "fixtures": [
-          "crown-c1"
-        ],
-        "shows": "The Veiled Exalted Orb is refused because the crown already has an unrevealed veiled prefix."
-      }
-    ],
-    "veiled.placeholder-removable": [
-      {
-        "method": "currency/annulment",
-        "fixtures": [
-          "crown-c1"
-        ],
-        "shows": "One of the five equally likely annulment results removes the unrevealed veiled prefix from the crown."
+        "shows": "The reforge keeps the prefixes, clears the suffixes, and leaves the veil to the pending fill, where it replaces one of the reforge's modifiers on that modifier's side."
       }
     ],
     "bench.corrupted-sockets": [

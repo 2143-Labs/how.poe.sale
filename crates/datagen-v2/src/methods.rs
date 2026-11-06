@@ -379,6 +379,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                         side: SideReq::Any,
                         mod_level_max: e.item_level_max,
                         include: None,
+                        one_veiled: false,
                     },
                 },
             ],
@@ -482,6 +483,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 side: SideReq::Any,
                 mod_level_max: None,
                 include: None,
+                one_veiled: false,
             },
         });
         out.push(Method {

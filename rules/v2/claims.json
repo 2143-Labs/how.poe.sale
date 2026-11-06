@@ -204,6 +204,15 @@
       "checked": true
     },
     {
+      "id": "conflict.tiers",
+      "statement": "The Orb of Conflict raises one eldritch implicit by one tier and lowers the other by one tier, the two assignments being equally likely, and a lowered Lesser (tier 6) implicit is removed instead; repeated use walks a tier from 6 up to 1. Raising or lowering replaces the implicit with the mod of the same kind and mod type at the next tier that can spawn on the item, and a move with no such tier leaves that implicit unchanged.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Uniform, either way round",
+      "patch": "3.29",
+      "checked": true
+    },
+    {
       "id": "dominance.pairs",
       "statement": "Orb of Dominance picks the removed and the upgraded influenced modifier uniformly among ordered pairs",
       "sourceKind": "owner",
@@ -722,9 +731,9 @@
       "statement": "Unveiling costs nothing",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "unveil.no-jun",
@@ -781,13 +790,13 @@
       "checked": true
     },
     {
-      "id": "veiled-chaos.side",
-      "statement": "A Veiled Chaos Orb's veiled modifier is a prefix or a suffix with equal chance",
+      "id": "veiled-chaos.replaces-one",
+      "statement": "A Veiled Chaos Orb is an ordinary Chaos Orb reforge, after which one of the resulting modifiers becomes veiled, on that modifier's own side; a metamod that keeps a side keeps it, and the veil is added only among the modifiers the reforge adds.",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "its a chaos orb like normal, and one mod is replaced with a veiled after. Unless oyu have a metamod (suffixes cant change prefixes cant change) then its that",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "veiled.exalt",
@@ -803,18 +812,18 @@
       "statement": "A Veiled Exalted Orb cannot be used on an item that already has a veiled modifier",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "veiled.placeholder-removable",
       "statement": "An unrevealed veiled modifier can be removed by annulment-type effects",
       "sourceKind": "owner",
       "url": "",
-      "quote": "",
+      "quote": "Correct as stated",
       "patch": "3.29",
-      "checked": false
+      "checked": true
     },
     {
       "id": "talisman.pool-missing",

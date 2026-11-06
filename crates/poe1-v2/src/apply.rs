@@ -12,7 +12,7 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
-use crate::data::{Category, Cost, Data, Eldritch, ModKind, Rarity, Side};
+use crate::data::{Category, Cost, Data, Eldritch, ModData, ModKind, Rarity, Side};
 use crate::item::{Affix, Item, MetaMod, Roll};
 use crate::method::{
     Element, EnchantPool, Family, Method, Op, PairRequire, PendingReason, Policy, Pool,
@@ -221,6 +221,56 @@ fn sides(data: &Data, item: &Item, req: SideReq) -> Vec<Side> {
         SideReq::Suffix => vec![Side::Suffix],
         SideReq::Dominant => dominant_side(data, item).into_iter().collect(),
     }
+}
+
+/// The mods of the first Searing Exarch and first Eater of Worlds implicit.
+fn conflict_pair(data: &Data, item: &Item) -> Option<(u32, u32)> {
+    let find = |kind| {
+        item.implicits
+            .iter()
+            .map(|r| r.m)
+            .find(|&m| data.mod_at(m).kind == kind)
+    };
+    Some((find(ModKind::Exarch)?, find(ModKind::Eater)?))
+}
+
+/// The item's implicits after the Orb of Conflict: `raised` loses a tier and `lowered` gains
+/// one, a lowered Lesser (tier 6) implicit being removed instead; a move with no such mod
+/// leaves its implicit unchanged (claim `conflict.tiers`).
+fn conflict_implicits(data: &Data, item: &Item, raised: u32, lowered: u32) -> Vec<Roll> {
+    let tags = item.tags(data);
+    item.implicits
+        .iter()
+        .filter_map(|roll| {
+            let m = data.mod_at(roll.m);
+            let next = if roll.m == raised {
+                eldritch_neighbour(data, &tags, m, -1)
+            } else if roll.m == lowered {
+                if m.eldritch_tier == Some(6) {
+                    return None;
+                }
+                eldritch_neighbour(data, &tags, m, 1)
+            } else {
+                None
+            };
+            Some(next.map_or_else(|| roll.clone(), |m| Roll { m, values: None }))
+        })
+        .collect()
+}
+
+/// The eldritch mod one tier stronger (`step` -1) or weaker (+1) with the same kind, mod type
+/// and spawn on the item's tags; `None` when there is no such tier.
+fn eldritch_neighbour(data: &Data, tags: &[u16], m: &ModData, step: i8) -> Option<u32> {
+    let target = i16::from(m.eldritch_tier?) + i16::from(step);
+    if !(1..=6).contains(&target) {
+        return None;
+    }
+    data.mods_of_kind(m.kind).iter().copied().find(|&i| {
+        let n = data.mod_at(i);
+        n.mod_type == m.mod_type
+            && n.eldritch_tier == Some(target as u8)
+            && pool::weight(n, tags) > 0.0
+    })
 }
 
 fn open_text(side: Option<Side>) -> &'static str {
@@ -1070,7 +1120,12 @@ impl Run<'_> {
             Op::Destroy => return Ok(Step::End(vec![(1.0, Leaf::Destroyed)])),
             Op::Fill { fill } => {
                 let certain = fill.weighting != Weighting::Recombine;
-                return Ok(self.pending(state.item, certain, here(), PendingReason::MultiDraw));
+                let reason = if fill.one_veiled {
+                    PendingReason::MultiDrawVeiled
+                } else {
+                    PendingReason::MultiDraw
+                };
+                return Ok(self.pending(state.item, certain, here(), reason));
             }
             Op::Sockets { .. } => {
                 return Ok(self.pending(state.item, false, here(), PendingReason::Sockets));
@@ -1465,6 +1520,19 @@ impl Run<'_> {
                         it.implicits.retain(|r| data.mod_at(r.m).kind == other);
                         it.implicits.push(Roll { m, values: None });
                         (p, it, None)
+                    })
+                    .collect())
+            }
+            Op::Conflict => {
+                let Some((exarch, eater)) = conflict_pair(data, item) else {
+                    return Err("needs a Searing Exarch and an Eater of Worlds implicit".into());
+                };
+                Ok([(exarch, eater), (eater, exarch)]
+                    .into_iter()
+                    .map(|(raised, lowered)| {
+                        let mut it = item.clone();
+                        it.implicits = conflict_implicits(data, item, raised, lowered);
+                        (0.5, it, None)
                     })
                     .collect())
             }

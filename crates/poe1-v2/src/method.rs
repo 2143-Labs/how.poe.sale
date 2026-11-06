@@ -309,6 +309,10 @@ pub enum Op {
         eldritch: Eldritch,
         tier: u8,
     },
+    /// The Orb of Conflict: raises one eldritch implicit a tier and lowers the other, the two
+    /// assignments being equally likely; a lowered Lesser (tier 6) implicit is removed instead
+    /// (claim `conflict.tiers`).
+    Conflict,
     Dominance,
     ChangeResistance {
         from: Element,
@@ -463,6 +467,15 @@ pub struct Fill {
     /// `reforge.counts`, owner Q7). Not a guaranteed first draw, and no fixed placement.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include: Option<Pool>,
+    /// After the fill, one of the added modifiers becomes veiled, on that modifier's own side
+    /// (the Veiled Chaos Orb, claim `veiled-chaos.replaces-one`). The veil is not a draw of its
+    /// own, so no side is stated.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub one_veiled: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -521,6 +534,9 @@ pub enum SocketChange {
 )]
 pub enum PendingReason {
     MultiDraw,
+    /// A reforge that stops at its fill, one of whose added modifiers becomes veiled (the Veiled
+    /// Chaos Orb, claim `veiled-chaos.replaces-one`).
+    MultiDrawVeiled,
     Sockets,
     Unverified,
     NeedsData {
@@ -538,6 +554,9 @@ impl PendingReason {
     pub fn text(&self) -> String {
         match self {
             PendingReason::MultiDraw => "multi-draw reforge".into(),
+            PendingReason::MultiDrawVeiled => {
+                "multi-draw reforge, one of whose modifiers becomes veiled".into()
+            }
             PendingReason::Sockets => "socket outcome table".into(),
             PendingReason::Unverified => "rule not yet confirmed".into(),
             PendingReason::NeedsData { what } => format!("needs data: {what}"),
