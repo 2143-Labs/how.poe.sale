@@ -2680,6 +2680,54 @@ fn beast_costs_include_yellow_beasts() {
     }
 }
 
+/// A beastcraft that adds "a Shaper modifier" adds a modifier of that influence, not any natural
+/// modifier: the pool is the influence's, so a Crown whose prefix pool holds the good and ok
+/// classes but whose Shaper pool does not can never gain one from the slam.
+#[test]
+fn influence_slam_adds_an_influenced_modifier() {
+    let d = test_data();
+    for (id, influence, input) in [
+        (
+            "beast/influence-slam-shaper",
+            Influence::Shaper,
+            item("crown-a-mana"),
+        ),
+        (
+            "beast/influence-slam-hunter",
+            Influence::Hunter,
+            edited("crown-a-mana", |s| s.influences = vec![Influence::Hunter]),
+        ),
+    ] {
+        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+        let out = apply(d, m, std::slice::from_ref(&input), &Params::default()).expect("applies");
+        let mut children = 0;
+        for (_, leaf) in &out.leaves {
+            for it in leaf.items() {
+                children += 1;
+                assert_eq!(
+                    it.prefixes.len() + it.suffixes.len(),
+                    (input.prefixes.len() + input.suffixes.len()) + 1,
+                    "{id}"
+                );
+                let added = it
+                    .prefixes
+                    .iter()
+                    .chain(&it.suffixes)
+                    .find(|a| {
+                        !input
+                            .prefixes
+                            .iter()
+                            .chain(&input.suffixes)
+                            .any(|b| b.roll.m == a.roll.m)
+                    })
+                    .unwrap_or_else(|| panic!("{id}: no added modifier"));
+                assert_eq!(d.mod_at(added.roll.m).influence, Some(influence), "{id}");
+            }
+        }
+        assert!(children > 1, "{id}: one child means the pool was empty");
+    }
+}
+
 /// Q2: a metamod craft needs the crafted slot free, so the player removes the old craft first.
 #[test]
 fn metamod_craft_needs_room() {

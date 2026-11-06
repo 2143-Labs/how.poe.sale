@@ -7,11 +7,13 @@ use std::sync::LazyLock;
 pub mod apply;
 pub mod catalog;
 pub mod data;
+pub mod invert;
 pub mod item;
 pub mod method;
 pub mod pattern;
 pub mod pool;
 pub mod render;
+pub mod solve;
 pub mod text;
 
 static DATA: LazyLock<data::Data> = LazyLock::new(load_data);

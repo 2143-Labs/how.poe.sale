@@ -18,7 +18,9 @@ The v2 model of Path of Exile 1 (3.29) item crafting: a concrete item, abstract 
 
 **Game text** (`src/text.rs`) prints and reads items the way the game shows them. `render` writes the item block, and `parse` reads a pasted copy back into an `ItemSpec` with a list of warnings; both use `stat_lines`, which walks the bundle's stat translations in file order — the order the game prints them.
 
-**The catalog** (`src/render.rs`, `src/catalog.rs`) renders `catalog/*.md` from the bundle and `fixtures/v2`: `render::outcome` prints an outcome, `render::diff` prints a line diff between two items, and `render_all` returns the whole file map that the `catalog` subcommand writes.
+**One step back** (`src/solve.rs`) asks the question the model exists for: given this item and this pattern, which single craft moves it closest to the goal, and what does that craft risk? See [One step back](#one-step-back).
+
+**The catalog** (`src/render.rs`, `src/catalog.rs`) renders `catalog/*.md` from the bundle and `fixtures/v2`: `render::outcome` prints an outcome, `render::diff` prints a line diff between two items, and `render_all` returns the whole file map that the `catalog` subcommand writes. `catalog/next-steps.md` is the reverse solver's report: every fixture against every pattern it fits.
 
 ## Data flow
 
@@ -35,6 +37,21 @@ nix develop -c cargo run -q -p datagen-v2 --release -- bundle --raw data/raw --r
 nix develop -c cargo run -q -p datagen-v2 --release -- catalog --bundle data/v2/bundle.json --fixtures fixtures/v2 --out catalog
 ```
 
+The solver runs on the generated bundle and takes a pattern by name plus either a fixture or a
+pasted item:
+
+```
+nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --item crown-actual
+nix develop -c cargo run -q -p datagen-v2 --release -- solve --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --paste my-crown.txt
+nix develop -c cargo run -q -p datagen-v2 --release -- sources --bundle data/v2/bundle.json --fixtures fixtures/v2 --pattern crown-shaper --item crown-a-mana
+```
+
+`solve` lists the steps that could come next; `sources` lists the inputs that could have produced the
+item. Both take `--item` (a fixture name) or `--paste`. 
+
+`--paste` reads a copied item the way the game copies it (`text::parse`) and prints its reading
+warnings first, so an item on the clipboard needs no fixture.
+
 `data/` is gitignored, so `data/v2/bundle.json` is generated rather than committed: the command above, and the same command in the CI test job before the tests run. `catalog/` is committed and a test fails when it is stale, so a change to a method, a claim or a fixture shows up as a reviewable diff. Tests read the bundle from `$HOW_V2_BUNDLE` when it is set, else `data/v2/bundle.json`; the tests' own inputs live in `fixtures/v2/items` (`ItemSpec` files), `fixtures/v2/patterns` (`PatternSpec` files) and `fixtures/v2/text` (pasted item text).
 
 ## Exact and Pending
@@ -42,6 +59,75 @@ nix develop -c cargo run -q -p datagen-v2 --release -- catalog --bundle data/v2/
 Every method has a contract. Exact outcome tables in this pass cover the single-draw methods: Transmutation, Alteration, Augmentation, Regal (its mod add), Exalted and the influence exalts, Annulment, Scouring, Divine, Blessed and Sacred (values unrolled), the Veiled Exalted Orb, unveil, every bench craft, catalysts and the quality currencies, eldritch embers, ichors, exalt and annul, Dominance, Fracturing, the resistance changes, Harvest add-remove, the Farric and metamod beastcrafts, imprint and restore, and the Mirror.
 
 Every reforge applies its certain part exactly before it stops: the rarity, the clear under its protection policy (what a respected lock keeps and fractured modifiers stay), and its guaranteed modifier — the essence mod, the Veiled Chaos placeholder, or the Harvest reforge's tag or influence mod. Its remaining random mods stay `Pending { reason: MultiDraw }` with that certain part as the item. A recombine keeps nothing certain, so its Pending holds both inputs and the item before the step. Socket outcomes and the rules not modelled yet (Hinekora's Lock among them, owner Q6) stop at the item before their step. The rules behind the rest are recorded as claims. The rare-reforge distribution (a mod count of 4, 5 or 6 at 8:3:1, then weighted group-exclusive draws) and the recombine distribution are the next pass.
+
+## One step back
+
+`src/solve.rs` and `src/invert.rs` are one step, forwards and backwards: not a route planner. Given a concrete item and a compiled
+pattern it applies every single-input method the item allows, reads each outcome at the pattern's
+level of detail (`lift`), and ranks the steps. It answers "what should I do next", not "what is the
+cheapest path to a finished item".
+
+**The score.** A pattern state is a number in `[0, 1]`: `1` when it matches (every finished item is
+equally finished), otherwise the share of the pattern's slot value the item holds. A slot's value is
+the grade of the class that fills it — a desired class is worth three, good two, middling and neutral
+one, bad nothing — so landing the veiled prefix counts for more than landing the crafted slot the
+pattern asks for, and a bad class in the third prefix slot is not counted at all. An item that fails
+the pattern's filter (base, item level, rarity, influences, corruption, implicits) scores `0`,
+which is why a Vaal Orb on a Crown the pattern wants uncorrupted scores nothing however much of the
+item it keeps. The assignment of affixes to slots is the one `pattern::placement` already uses, so
+the score agrees with `matches`.
+
+**Three groups, never mixed.** A number computed from part of an outcome is not comparable with a
+number computed from all of it, so the report keeps them apart:
+
+- **exact** — every outcome is computed: single draws, unveil, bench crafts, the eldritch and Vaal
+  orbs' exact branches;
+- **certain part** — the random rest of the step is not modelled yet (a reforge's `Fill`, which is
+  the next pass), so the numbers come from what the step certainly does: its rarity, its clear, its
+  guaranteed modifier, the empty item the fill would add to. A Chaos Orb therefore reads as "a rare
+  item with no modifiers", which is true of every result and says nothing about the 4–6 modifiers
+  still to come;
+- **blind** — nothing about the result is known (the socket tables, rules still being confirmed).
+  These steps are listed with the reason and not ranked.
+
+**What a step can do.** Each step is placed in one bucket, in this order: `finishes` (it can complete
+the pattern), `advances` (it can bring the item further along), `unblocks` (it cannot, but it can free
+a side that is full while a slot is still missing), `holds` (it leaves the goal where it is), and
+`sets back` (all it can do is lose ground). Inside a bucket the order is: the chance of finishing,
+the expected score, the least chance of losing ground, the least chance of ending blocked, then the
+method id, so a report is reproducible. A step that does exactly as much as another (`Assessment::tied`)
+shows once with the count, because the ranking's only say between them is the id.
+
+**What it reports per step.** The cost as a list of currencies (not compared: an Exalted Orb against
+a Chaos Orb needs a price table the bundle does not have), the chance of finishing, the expected
+score, the chance of gaining and of losing ground, the chance of ending with a side full and a slot
+still missing, and how much of the outcome is not computed. Methods that do not apply are counted
+with their reasons.
+
+**The other direction** (`src/invert.rs`) answers "what could have produced this item": it walks a
+method's ops backwards one at a time. Undoing an op gives the items it could have started from, each
+with the chance the op turns it into the item asked about — for an add, the chance the pool draws the
+modifier that was added; for a removal, one over the number of modifiers that removal could have
+taken from that input, which a metamod narrows to the side it lets through; for a fracture, one over
+the candidates; for a corruption, the branch's chance. Multiplying down the op list gives the
+whole step's chance, and `check` rejects an input the method would not accept, so a preimage the
+answering engine would refuse never appears. Two filters keep the answers honest: an item already at
+its affix limit cannot have lost a modifier of that side, and a step that leaves the item exactly as
+it is (a value reroll on an item whose values are unknown) is not reported, because the input and
+the result are the same state.
+
+The answers are grouped by what the *input* looked like to the pattern, so hundreds of concrete
+inputs collapse into the handful of states the question is asked in. A method whose ops throw
+information away (a clearance could have started from anything) or whose result the model does not
+compute (a reforge's fill, a socket table) is reported as not invertible with the op that stopped it,
+never guessed at. `catalog/next-steps.md` prints the top few groups under each item, and
+`datagen-v2 sources` prints one item's.
+
+**What it cannot do yet, and why that is next.** A reforge's random rest — the 4/5/6 modifier draw
+and its weighted, group-exclusive picks — is the missing piece, and it is what turns "a Chaos Orb
+leaves an empty rare" into a real distribution; until then, reforge-heavy paths are ranked only from
+their certain part. Prices are the other gap: without them the solver ranks outcomes, not value for
+money. Chaining steps (a full route with cycles and cost-optimality) is a later phase.
 
 ## From v1 to v2
 

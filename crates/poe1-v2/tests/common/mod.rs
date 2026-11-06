@@ -42,3 +42,30 @@ pub fn pattern(name: &str) -> poe1_v2::pattern::Pattern {
     poe1_v2::pattern::Pattern::compile(test_data(), &pattern_spec(name))
         .unwrap_or_else(|e| panic!("{name}: {e}"))
 }
+
+/// Every (pattern, fixture) the pattern accepts: the pairs the catalog reports.
+pub fn pairs() -> Vec<(String, String)> {
+    let data = test_data();
+    let mut patterns: Vec<String> = std::fs::read_dir(root().join("fixtures/v2/patterns"))
+        .expect("fixtures/v2/patterns")
+        .filter_map(|e| {
+            let name = e.ok()?.file_name().into_string().ok()?;
+            name.strip_suffix(".json").map(str::to_string)
+        })
+        .collect();
+    patterns.sort();
+    let mut out = Vec::new();
+    for pname in patterns {
+        let pat = pattern(&pname);
+        for name in fixture_names() {
+            let it = item(&name);
+            if poe1_v2::pattern::evaluate(data, &pat, &it)
+                .iter()
+                .any(|(p, s)| *p > 0.0 && s.item_ok)
+            {
+                out.push((pname.clone(), name));
+            }
+        }
+    }
+    out
+}

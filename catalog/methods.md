@@ -2125,43 +2125,43 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 - Cost: 1 × Craicic Maw (beast), 1 × Farric Goliath (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Crusader influence; an open affix
-- Does: adds one random modifier (any, either side).
+- Does: adds one random modifier (Crusader influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: add an Elder modifier — `beast/influence-slam-elder`
 
 - Cost: 1 × Craicic Maw (beast), 1 × Saqawine Blood Viper (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Elder influence; an open affix
-- Does: adds one random modifier (any, either side).
+- Does: adds one random modifier (Elder influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: add a Hunter modifier — `beast/influence-slam-hunter`
 
 - Cost: 1 × Craicic Maw (beast), 1 × Craicic Watcher (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Hunter influence; an open affix
-- Does: adds one random modifier (any, either side).
+- Does: adds one random modifier (Hunter influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: add a Redeemer modifier — `beast/influence-slam-redeemer`
 
 - Cost: 1 × Craicic Maw (beast), 1 × Fenumal Queen (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Redeemer influence; an open affix
-- Does: adds one random modifier (any, either side).
+- Does: adds one random modifier (Redeemer influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`
 
 - Cost: 1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Shaper influence; an open affix
-- Does: adds one random modifier (any, either side).
-- On `crown-a-mana`: 55 exact outcomes
+- Does: adds one random modifier (Shaper influence, either side).
+- On `crown-a-mana`: 11 exact outcomes
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: add a Warlord modifier — `beast/influence-slam-warlord`
 
 - Cost: 1 × Craicic Maw (beast), 1 × Fenumal Scrabbler (beast), 2 × Yellow Beast (beast)
 - Needs: not corrupted; not mirrored; a rare item; Warlord influence; an open affix
-- Does: adds one random modifier (any, either side).
+- Does: adds one random modifier (Warlord influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
 
 ### Beastcraft: maximum links — `beast/maximum-links`
