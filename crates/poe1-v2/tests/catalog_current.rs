@@ -39,43 +39,89 @@ fn examples_cover_every_unconfirmed_rule() {
     validate_examples(data, &fx).expect("every unconfirmed rule a method cites has an example");
 }
 
+/// The owner deferred four rules: each is listed once, in the section at the end of
+/// `questions.md`, and never as a question.
+#[test]
+fn deferred_rules_are_listed_once() {
+    let root = common::root();
+    let md = render_all(test_data(), &root.join("fixtures/v2")).expect(STALE);
+    let questions = md.get("questions.md").expect("questions.md");
+    let at = questions
+        .find("## Deferred by the owner")
+        .expect("the deferred section is missing");
+    let (asked, deferred) = questions.split_at(at);
+    for id in [
+        "bench.reroll-unknown",
+        "tainted.odds",
+        "generation.multiplier",
+        "metamod.level-28",
+    ] {
+        let quoted = format!("`{id}`");
+        assert!(
+            !asked.contains(&quoted),
+            "{id} is still listed as a question"
+        );
+        assert_eq!(
+            deferred.matches(&quoted).count(),
+            1,
+            "{id} is not listed exactly once as deferred"
+        );
+    }
+}
+
+/// The bundle with one claim forced back to "not confirmed and not deferred", so the error
+/// paths that need an unconfirmed rule still have one now that every rule is confirmed.
+fn data_with_unchecked(id: &str) -> poe1_v2::data::Data {
+    let root = common::root();
+    let text = fs::read_to_string(root.join("data/v2/bundle.json")).expect("bundle");
+    let mut bundle: serde_json::Value = serde_json::from_str(&text).expect("bundle json");
+    for claim in bundle["claims"].as_array_mut().expect("claims") {
+        if claim["id"] == id {
+            claim["checked"] = serde_json::Value::Bool(false);
+            claim["deferred"] = serde_json::Value::Bool(false);
+        }
+    }
+    poe1_v2::data::Data::from_json(&serde_json::to_string(&bundle).expect("encode"))
+        .expect("bundle")
+}
+
 #[test]
 fn a_missing_example_is_an_error() {
-    let data = test_data();
+    let data = data_with_unchecked("reforge.guarantee-present");
     let mut fx = fixtures();
-    fx.examples.remove("magic.count-weights");
-    let err = validate_examples(data, &fx).unwrap_err().to_string();
+    fx.examples.remove("reforge.guarantee-present");
+    let err = validate_examples(&data, &fx).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `magic.count-weights`"),
+        err.contains("no example for the unconfirmed rule `reforge.guarantee-present`"),
         "{err}"
     );
 }
 
 #[test]
 fn an_example_must_cite_its_rule() {
-    let data = test_data();
+    let data = data_with_unchecked("reforge.guarantee-present");
     let mut fx = fixtures();
     fx.examples
-        .get_mut("magic.count-weights")
+        .get_mut("reforge.guarantee-present")
         .unwrap()
         .first_mut()
         .unwrap()
         .method = "currency/fracturing".into();
-    let err = validate_examples(data, &fx).unwrap_err().to_string();
+    let err = validate_examples(&data, &fx).unwrap_err().to_string();
     assert!(err.contains("does not cite it"), "{err}");
 }
 
 #[test]
 fn an_example_fixture_must_load() {
-    let data = test_data();
+    let data = data_with_unchecked("reforge.guarantee-present");
     let mut fx = fixtures();
     fx.examples
-        .get_mut("magic.count-weights")
+        .get_mut("reforge.guarantee-present")
         .unwrap()
         .first_mut()
         .unwrap()
         .fixtures = vec!["not-a-fixture".into()];
-    let err = validate_examples(data, &fx).unwrap_err().to_string();
+    let err = validate_examples(&data, &fx).unwrap_err().to_string();
     assert!(err.contains("unknown fixture `not-a-fixture`"), "{err}");
 }
 
@@ -96,15 +142,16 @@ fn render_all_rejects_a_missing_example() {
     questions["examples"]
         .as_object_mut()
         .expect("examples")
-        .remove("magic.count-weights");
+        .remove("reforge.guarantee-present");
     fs::write(
         dir.path().join("questions.json"),
         serde_json::to_vec(&questions).expect("encode"),
     )
     .expect("write questions");
-    let err = render_all(test_data(), dir.path()).unwrap_err().to_string();
+    let data = data_with_unchecked("reforge.guarantee-present");
+    let err = render_all(&data, dir.path()).unwrap_err().to_string();
     assert!(
-        err.contains("no example for the unconfirmed rule `magic.count-weights`"),
+        err.contains("no example for the unconfirmed rule `reforge.guarantee-present`"),
         "{err}"
     );
 }

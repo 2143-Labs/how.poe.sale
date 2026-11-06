@@ -12,11 +12,11 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
-use crate::data::{Category, Cost, Data, Eldritch, ModKind, Rarity, Side};
+use crate::data::{Category, Cost, Data, Eldritch, ModData, ModKind, Rarity, Side};
 use crate::item::{Affix, Item, MetaMod, Roll};
 use crate::method::{
-    Element, EnchantPool, Family, Method, Op, PairRequire, PendingReason, Policy, Pool,
-    RemoveFilter, Require, SideReq, ValueScope, Weighting,
+    Element, Family, Method, Op, PairRequire, PendingReason, Policy, Pool, RemoveFilter, Require,
+    SideReq, ValueScope, Weighting,
 };
 use crate::pool;
 
@@ -223,6 +223,56 @@ fn sides(data: &Data, item: &Item, req: SideReq) -> Vec<Side> {
     }
 }
 
+/// The mods of the first Searing Exarch and first Eater of Worlds implicit.
+fn conflict_pair(data: &Data, item: &Item) -> Option<(u32, u32)> {
+    let find = |kind| {
+        item.implicits
+            .iter()
+            .map(|r| r.m)
+            .find(|&m| data.mod_at(m).kind == kind)
+    };
+    Some((find(ModKind::Exarch)?, find(ModKind::Eater)?))
+}
+
+/// The item's implicits after the Orb of Conflict: `raised` loses a tier and `lowered` gains
+/// one, a lowered Lesser (tier 6) implicit being removed instead; a move with no such mod
+/// leaves its implicit unchanged (claim `conflict.tiers`).
+fn conflict_implicits(data: &Data, item: &Item, raised: u32, lowered: u32) -> Vec<Roll> {
+    let tags = item.tags(data);
+    item.implicits
+        .iter()
+        .filter_map(|roll| {
+            let m = data.mod_at(roll.m);
+            let next = if roll.m == raised {
+                eldritch_neighbour(data, &tags, m, -1)
+            } else if roll.m == lowered {
+                if m.eldritch_tier == Some(6) {
+                    return None;
+                }
+                eldritch_neighbour(data, &tags, m, 1)
+            } else {
+                None
+            };
+            Some(next.map_or_else(|| roll.clone(), |m| Roll { m, values: None }))
+        })
+        .collect()
+}
+
+/// The eldritch mod one tier stronger (`step` -1) or weaker (+1) with the same kind, mod type
+/// and spawn on the item's tags; `None` when there is no such tier.
+fn eldritch_neighbour(data: &Data, tags: &[u16], m: &ModData, step: i8) -> Option<u32> {
+    let target = i16::from(m.eldritch_tier?) + i16::from(step);
+    if !(1..=6).contains(&target) {
+        return None;
+    }
+    data.mods_of_kind(m.kind).iter().copied().find(|&i| {
+        let n = data.mod_at(i);
+        n.mod_type == m.mod_type
+            && n.eldritch_tier == Some(target as u8)
+            && pool::weight(n, tags) > 0.0
+    })
+}
+
 fn open_text(side: Option<Side>) -> &'static str {
     match side {
         Some(Side::Prefix) => "needs an open prefix",
@@ -348,9 +398,30 @@ fn pool_candidates(
     pool::normalise(weighted)
 }
 
+/// A random add that may place on either side picks a side with room first, uniformly among
+/// them, and then a modifier on that side by weight: the candidates' pooled weights become one
+/// share per side, split inside the side by weight (claim `add.side-first`, owner Q1). One side
+/// alone leaves the probabilities as the pooled weights.
+fn side_first(data: &Data, candidates: Vec<(u32, f64)>) -> Vec<(u32, f64)> {
+    let mut by_side: [Vec<(u32, f64)>; 2] = Default::default();
+    for (m, w) in candidates {
+        if let Some(side) = data.mod_at(m).side {
+            by_side[side.index()].push((m, w));
+        }
+    }
+    let sides = by_side.iter().filter(|side| !side.is_empty()).count() as f64;
+    let mut out = Vec::new();
+    for side in by_side {
+        let total: f64 = side.iter().map(|&(_, w)| w).sum();
+        for (m, w) in side {
+            out.push((m, w / total / sides));
+        }
+    }
+    out
+}
+
 fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(), Unmet> {
     let class = item.class(data);
-    let explicit_count = item.prefixes.len() + item.suffixes.len();
     let (exarch, eater) = item.eldritch(data);
     match r {
         Require::Rarity { any_of } => {
@@ -428,8 +499,17 @@ fn check_one(data: &Data, r: &Require, item: &Item, params: &Params) -> Result<(
         Require::FullSuffixes if item.open(data, Side::Suffix) > 0 => {
             return unmet("needs full suffixes");
         }
-        Require::MinExplicits { n } if explicit_count < *n as usize => {
-            return unmet(format!("needs at least {n} modifiers"));
+        Require::MinExplicits { n, ignore_veiled } => {
+            let count = if *ignore_veiled {
+                item.explicits()
+                    .filter(|a| data.mod_at(a.roll.m).kind != ModKind::Veiled)
+                    .count()
+            } else {
+                item.prefixes.len() + item.suffixes.len()
+            };
+            if count < *n as usize {
+                return unmet(format!("needs at least {n} modifiers"));
+            }
         }
         Require::MinInfluencedMods { n } if item.influenced_explicits(data) < *n as usize => {
             return unmet(format!("needs at least {n} influenced modifiers"));
@@ -1070,13 +1150,31 @@ impl Run<'_> {
             Op::Destroy => return Ok(Step::End(vec![(1.0, Leaf::Destroyed)])),
             Op::Fill { fill } => {
                 let certain = fill.weighting != Weighting::Recombine;
-                return Ok(self.pending(state.item, certain, here(), PendingReason::MultiDraw));
+                let reason = if fill.one_veiled {
+                    PendingReason::MultiDrawVeiled
+                } else {
+                    PendingReason::MultiDraw
+                };
+                return Ok(self.pending(state.item, certain, here(), reason));
             }
             Op::Sockets { .. } => {
                 return Ok(self.pending(state.item, false, here(), PendingReason::Sockets));
             }
             Op::Unmodelled { reason } => {
                 return Ok(self.pending(state.item, false, here(), reason.clone()));
+            }
+            Op::AddQuality { by_rarity, .. } if by_rarity[state.item.rarity as usize].is_none() => {
+                let rarity = state.item.rarity.name();
+                return Ok(self.pending(
+                    state.item,
+                    false,
+                    here(),
+                    PendingReason::NeedsData {
+                        what: format!(
+                            "the amount of quality a {rarity} item gains is not known and depends on the item's item level"
+                        ),
+                    },
+                ));
             }
             Op::Unveil => return self.unveil(state, rest, conditional),
             Op::TakeInput { input } => {
@@ -1298,11 +1396,7 @@ impl Run<'_> {
                 one(it)
             }
             Op::SetEnchant { pool: which } => {
-                let kind = match which {
-                    EnchantPool::Lab => ModKind::Enchant,
-                    EnchantPool::FlaskEnkindling => ModKind::FlaskEnkindling,
-                    EnchantPool::FlaskInstilling => ModKind::FlaskInstilling,
-                };
+                let kind = which.kind();
                 let candidates = self.kind_pool(item, kind, true, |_| true);
                 if candidates.is_empty() {
                     return Err("no enchantment can roll on this item".into());
@@ -1468,6 +1562,19 @@ impl Run<'_> {
                     })
                     .collect())
             }
+            Op::Conflict => {
+                let Some((exarch, eater)) = conflict_pair(data, item) else {
+                    return Err("needs a Searing Exarch and an Eater of Worlds implicit".into());
+                };
+                Ok([(exarch, eater), (eater, exarch)]
+                    .into_iter()
+                    .map(|(raised, lowered)| {
+                        let mut it = item.clone();
+                        it.implicits = conflict_implicits(data, item, raised, lowered);
+                        (0.5, it, None)
+                    })
+                    .collect())
+            }
             Op::Dominance => {
                 let guard = self.guard(item);
                 let influenced: Vec<(Side, usize)> = Side::BOTH
@@ -1519,8 +1626,13 @@ impl Run<'_> {
                 if item.quality >= *max {
                     return Err(format!("quality is already {max}%"));
                 }
+                let Some(add) = by_rarity[item.rarity as usize] else {
+                    return Err(format!(
+                        "the amount of quality a {} item gains is not known",
+                        item.rarity.name()
+                    ));
+                };
                 let mut it = item.clone();
-                let add = by_rarity[item.rarity as usize];
                 it.quality = (*max).min(item.quality.saturating_add(add));
                 one(it)
             }
@@ -1625,7 +1737,9 @@ impl Run<'_> {
     }
 
     /// Candidate mods an AddRandom draws from, with their probabilities. Every add leaves out
-    /// the attack or caster modifiers a Cannot Roll metamod names (claim `metamod.cannot-roll`).
+    /// the attack or caster modifiers a Cannot Roll metamod names (claim `metamod.cannot-roll`),
+    /// and it picks a side first, then a modifier on that side by weight (claim
+    /// `add.side-first`, owner Q1).
     fn add_candidates(
         &self,
         item: &Item,
@@ -1633,7 +1747,10 @@ impl Run<'_> {
         side: SideReq,
         ignore_limits: bool,
     ) -> Vec<(u32, f64)> {
-        pool_candidates(self.data, item, pool, side, ignore_limits, false)
+        side_first(
+            self.data,
+            pool_candidates(self.data, item, pool, side, ignore_limits, false),
+        )
     }
 
     /// Turns the `from` resistance that can change into the `to` mod of the same rank among the

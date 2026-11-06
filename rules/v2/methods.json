@@ -101,9 +101,14 @@
       "id": "beast/fracture-talisman",
       "name": "Beastcraft: fracture a modifier on a rare Talisman",
       "family": "beast",
+      "cost": [
+        {"name": "beast:Farric Frost Hellion Alpha", "amount": 1}
+      ],
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "baseTag", "tag": "talisman"},
         {"kind": "minExplicits", "n": 4}
@@ -117,9 +122,15 @@
       "id": "beast/fracture-talisman-two",
       "name": "Beastcraft: fracture two modifiers on a rare Talisman",
       "family": "beast",
+      "cost": [
+        {"name": "beast:Fenumal Plagued Arachnid", "amount": 1},
+        {"name": "beast:Black Mórrigan", "amount": 1}
+      ],
       "requires": [
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
+        {"kind": "noInfluence"},
+        {"kind": "noFractured"},
         {"kind": "rarity", "anyOf": ["rare"]},
         {"kind": "baseTag", "tag": "talisman"},
         {"kind": "minExplicits", "n": 6}
@@ -204,7 +215,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-elder",
@@ -225,7 +236,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-hunter",
@@ -246,7 +257,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-redeemer",
@@ -267,7 +278,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/influence-slam-shaper",
@@ -288,7 +299,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"],
+      "claims": ["add.side-first", "beast.list"],
       "example": "crown-a-mana"
     },
     {
@@ -310,7 +321,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["beast.list"]
+      "claims": ["add.side-first", "beast.list"]
     },
     {
       "id": "beast/maximum-links",
@@ -467,7 +478,7 @@
         {"op": "clear"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -827,10 +838,10 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
-      "example": "slink-boots-normal",
+      "example": "slink-boots-unique",
       "protect": null
     },
     {
@@ -849,7 +860,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -914,7 +925,7 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
       "protect": null
@@ -1066,7 +1077,7 @@
         {"op": "addInfluence", "influence": "crusader"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "crusader"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/cyaxans-ducat",
@@ -1143,7 +1154,7 @@
         {"op": "addInfluence", "influence": "elder"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "elder"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/eldritch-annulment",
@@ -1203,26 +1214,8 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "dominant"}
       ],
-      "claims": ["game-text", "eldritch.dominance-ties"],
+      "claims": ["add.side-first", "game-text", "eldritch.dominance-ties"],
       "example": "slink-boots-eldritch"
-    },
-    {
-      "id": "currency/enchant",
-      "name": "Enchant",
-      "family": "currency",
-      "cost": [
-        {"name": "Enchant", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Belt", "Helmet", "Gloves", "Boots"]}
-      ],
-      "ops": [
-        {"op": "setEnchant", "pool": "lab"}
-      ],
-      "claims": ["game-text", "enchant.lab-tiers", "enchant.font-shape"],
-      "example": "crown-a"
     },
     {
       "id": "currency/enkindling-orb",
@@ -1258,7 +1251,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "exalt.both-sides", "spawn.first-match", "metamod.cannot-roll"],
+      "claims": ["game-text", "add.side-first", "spawn.first-match", "metamod.cannot-roll"],
       "example": "crown-a-mana"
     },
     {
@@ -1279,7 +1272,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1302,7 +1295,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1391,7 +1384,7 @@
         {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]},
-        {"kind": "minExplicits", "n": 4},
+        {"kind": "minExplicits", "n": 4, "ignoreVeiled": true},
         {"kind": "noFractured"},
         {"kind": "noInfluence"},
         {"kind": "notSynthesised"}
@@ -1399,7 +1392,8 @@
       "ops": [
         {"op": "fracture"}
       ],
-      "claims": ["game-text", "fracture.eligible", "fracture.crafted"]
+      "claims": ["game-text", "fracture.eligible", "fracture.crafted"],
+      "example": "talisman-rare-four"
     },
     {
       "id": "currency/genteels-ducat",
@@ -1432,7 +1426,7 @@
         {"kind": "qualityBelow", "max": 20}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "needsData", "what": "the quality a quality currency adds depends on the item's item level since 3.25, and the amount a unique item receives is not known"}}
+        {"op": "addQuality", "byRarity": [null, null, null, 1], "max": 20}
       ],
       "claims": ["game-text", "quality.per-level", "quality.unique"],
       "example": "quicksilver-normal",
@@ -1456,7 +1450,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 3}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 4}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1479,7 +1473,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 3}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 4}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1502,7 +1496,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 2}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 5}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1525,7 +1519,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 2}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 5}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1569,7 +1563,7 @@
         {"op": "addInfluence", "influence": "hunter"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "hunter"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/instilling-orb",
@@ -1680,7 +1674,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 1}
+        {"op": "eldritchImplicit", "eldritch": "exarch", "tier": 6}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1703,7 +1697,7 @@
         {"kind": "rarity", "anyOf": ["normal", "magic", "rare"]}
       ],
       "ops": [
-        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 1}
+        {"op": "eldritchImplicit", "eldritch": "eater", "tier": 6}
       ],
       "claims": ["game-text", "eldritch.ember-tier", "eldritch.not-influenced", "implicits.locked"],
       "example": "slink-boots-normal"
@@ -1863,9 +1857,9 @@
         {"kind": "notUnique"}
       ],
       "ops": [
-        {"op": "unmodelled", "reason": {"kind": "unverified"}}
+        {"op": "conflict"}
       ],
-      "claims": ["game-text"],
+      "claims": ["game-text", "conflict.tiers"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -1958,7 +1952,7 @@
         {"op": "addInfluence", "influence": "redeemer"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "redeemer"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/reflecting-mist",
@@ -1996,7 +1990,7 @@
         {"op": "setRarity", "rarity": "rare"},
         {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"],
+      "claims": ["add.side-first", "game-text", "spawn.first-match"],
       "example": "cobalt-jewel-magic"
     },
     {
@@ -2228,7 +2222,7 @@
         {"op": "addInfluence", "influence": "shaper"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "shaper"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/tailoring-orb",
@@ -2281,23 +2275,6 @@
       ],
       "claims": ["game-text"],
       "protect": null
-    },
-    {
-      "id": "currency/tainted-blessing",
-      "name": "Tainted Blessing",
-      "family": "currency",
-      "cost": [
-        {"name": "Tainted Blessing", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "corrupted"},
-        {"kind": "notMirrored"},
-        {"kind": "class", "anyOf": ["Gloves", "Boots", "Helmet", "Belt"]}
-      ],
-      "ops": [
-        {"op": "setEnchant", "pool": "lab"}
-      ],
-      "claims": ["game-text", "enchant.lab-tiers"]
     },
     {
       "id": "currency/tainted-catalyst",
@@ -2385,7 +2362,7 @@
       "ops": [
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
       ],
-      "claims": ["game-text", "tainted.odds", "tainted-exalt.locks"]
+      "claims": ["add.side-first", "game-text", "tainted.odds", "tainted-exalt.locks"]
     },
     {
       "id": "currency/tainted-jewellers-orb",
@@ -2470,7 +2447,7 @@
         {"op": "setRarity", "rarity": "magic"},
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}, {"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}]}
       ],
-      "claims": ["game-text", "magic.mod-count", "magic.count-weights"],
+      "claims": ["add.side-first", "game-text", "magic.mod-count", "magic.count-weights"],
       "example": "cobalt-jewel-normal"
     },
     {
@@ -2627,10 +2604,9 @@
       "ops": [
         {"op": "setRarity", "rarity": "rare"},
         {"op": "clear"},
-        {"op": "addVeiled"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}}
+        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "oneVeiled": true}}
       ],
-      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "reforge.guarantee-first", "veiled-chaos.side", "reforge.counts"],
+      "claims": ["game-text", "chaos.count", "chaos.respects-locks", "veiled-chaos.replaces-one", "reforge.counts"],
       "example": "crown-a"
     },
     {
@@ -2691,7 +2667,7 @@
         {"op": "addInfluence", "influence": "warlord"},
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "warlord"}, "side": "any"}
       ],
-      "claims": ["game-text", "spawn.first-match"]
+      "claims": ["add.side-first", "game-text", "spawn.first-match"]
     },
     {
       "id": "currency/weapon-recombinator",
@@ -2733,7 +2709,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "attack"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2756,7 +2732,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "caster"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2779,7 +2755,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "chaos"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2802,7 +2778,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "cold"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2825,7 +2801,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "critical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2848,7 +2824,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "defences"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2871,7 +2847,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "fire"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2894,7 +2870,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "life"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2917,7 +2893,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "lightning"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2940,7 +2916,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "physical"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -2963,7 +2939,7 @@
         {"op": "addRandom", "pool": {"kind": "tag", "tag": "speed"}, "side": "any"},
         {"op": "removeRandom", "filter": {"kind": "any"}, "keepLastAdded": true}
       ],
-      "claims": ["harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
+      "claims": ["add.side-first", "harvest.list", "harvest.add-remove", "harvest.locks", "remove.cannot-roll-scope"],
       "example": "slink-boots-eldritch"
     },
     {
@@ -3457,7 +3433,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attack"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3480,7 +3456,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "attribute"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3502,7 +3478,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "caster"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3524,7 +3500,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "chaos"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3546,7 +3522,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "cold"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3568,7 +3544,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "critical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3590,7 +3566,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "defences"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3613,7 +3589,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "drop"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3636,7 +3612,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "elemental"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3658,7 +3634,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "fire"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3682,7 +3658,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "influenced"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3724,7 +3700,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "life"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3746,7 +3722,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "lightning"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3769,7 +3745,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "mana"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3792,7 +3768,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "minion"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3834,7 +3810,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "physical"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {
@@ -3856,7 +3832,7 @@
         {"op": "clear"},
         {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]], "include": {"kind": "tag", "tag": "speed"}}}
       ],
-      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-first", "reforge.counts", "reforge.counts-scope"],
+      "claims": ["harvest.list", "harvest.reforge-locks", "reforge.guarantee-present", "reforge.counts", "reforge.counts-scope"],
       "example": "crown-a"
     },
     {

@@ -41,9 +41,9 @@ mod common;
 
 use common::{item, pattern, spec};
 use poe1_v2::apply::{Leaf, Outcome, Params, Pending, apply, check, cost};
-use poe1_v2::data::{Data, Influence, ModKind, Rarity};
+use poe1_v2::data::{Data, Influence, ModKind, Rarity, Side};
 use poe1_v2::item::{AffixSpec, Item, ItemSpec, ModSpec};
-use poe1_v2::method::{Method, Op, PendingReason, Pool, Require};
+use poe1_v2::method::{Fill, Method, Op, PendingReason, Pool, Require, SideReq, Weighting};
 use poe1_v2::pattern::{LiftedLeaf, lift};
 use poe1_v2::test_data;
 
@@ -488,19 +488,20 @@ fn remove_crafted() {
     assert_eq!(ids(d, &out.item().unwrap().prefixes), ["VeiledPrefix"]);
 }
 
-/// A1/E3: one item reached through different draw orders is one leaf. Recount:
+/// A1/E3: one item reached through different draw orders is one leaf; the side is picked first,
+/// then the modifier on that side by weight (claim `add.side-first`). Recount:
 ///
 /// ```python
 /// jewel = base('Cobalt Jewel'); t = tags_of(jewel)
 /// P = pool('misc', t, 84, ['prefix']); S = pool('misc', t, 84, ['suffix'])   # 47, 61
+/// WP, WS = sum(P.values()), sum(S.values())                                   # 18250, 18870
 /// pairs = [(a, s) for a in P for s in S if not groups([a]) & groups([s])]     # 2858
-/// # distinct items 47 + 61 + 2858 = 2966; a one-mod item: 0.5 · w / W, W = ΣP + ΣS
-/// W = sum(P.values()) + sum(S.values())
-/// print(0.5 * P['BlockDualWieldingJewel'] / W)                                # 0.004714439655172414
+/// # distinct items 47 + 61 + 2858 = 2966; a one-mod item: 0.5 · 0.5 · w / WP
+/// print(0.5 * 0.5 * P['BlockDualWieldingJewel'] / WP)                          # 0.004794520547945206
 /// a, s = 'WandDamageJewel', 'ProjectileDamageJewel'                           # prefix then suffix, or back
 /// Sa = sum(pool('misc', tags_of(jewel, on=[a]), 84, ['suffix'], taken=groups([a])).values())
 /// Pb = sum(pool('misc', tags_of(jewel, on=[s]), 84, ['prefix'], taken=groups([s])).values())
-/// print(0.5 * (P[a] / W * S[s] / Sa + S[s] / W * P[a] / Pb))                  # 0.0003035982305456436
+/// print(0.5 * (0.5 * P[a] / WP * S[s] / Sa + 0.5 * S[s] / WS * P[a] / Pb))    # 0.0003033810627590319
 /// ```
 #[test]
 fn transmute_distinct_items() {
@@ -511,10 +512,10 @@ fn transmute_distinct_items() {
     let one = mass(&out, |l| leaf_item(l).explicits().count() == 1);
     assert!(close(one, 0.5, 1e-12), "{one}");
     let (p, it) = find(d, &out, &["BlockDualWieldingJewel"]);
-    assert!(close(p, 0.004714439655172414, 1e-15), "{p}");
+    assert!(close(p, 0.004794520547945206, 1e-15), "{p}");
     assert_eq!(it.rarity, Rarity::Magic);
     let (p, _) = find(d, &out, &["WandDamageJewel", "ProjectileDamageJewel"]);
-    assert!(close(p, 0.0003035982305456436, 1e-15), "{p}");
+    assert!(close(p, 0.0003033810627590319, 1e-15), "{p}");
 }
 
 /// R1: an Orb of Alteration keeps the side a metamod locks. A magic Shaper Crown with Suffixes
@@ -589,41 +590,39 @@ fn pending_and_vaal() {
     assert_eq!(explicits, [boots_mod]);
     assert!(matches!(p.ops[0], Op::Fill { .. }));
 
+    // The veil is one of the reforge's own modifiers, not a draw before it: one Pending, its
+    // fill flagged, and the certain part is the cleared item with no side chosen.
     let out = run("currency/veiled-chaos", &crown_a);
-    assert_eq!(out.leaves.len(), 2);
-    let mut placeholders = Vec::new();
-    for (p, l) in &out.leaves {
-        assert_eq!(*p, 0.5);
-        let it = &pending(l).item;
-        assert_eq!(it.rarity, Rarity::Rare);
-        let explicits: Vec<&str> = it
-            .explicits()
-            .map(|a| d.mod_at(a.roll.m).id.as_str())
-            .collect();
-        assert_eq!(explicits.len(), 1);
-        placeholders.push(explicits[0].to_string());
-    }
-    placeholders.sort();
-    assert_eq!(placeholders, ["VeiledPrefix", "VeiledSuffix"]);
+    let [(one, Leaf::Pending(p))] = out.leaves.as_slice() else {
+        panic!("{out:?}")
+    };
+    assert_eq!(*one, 1.0);
+    assert!(p.certain);
+    assert_eq!(p.reason, PendingReason::MultiDrawVeiled);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert_eq!(p.item.explicits().count(), 0);
+    let Op::Fill { fill } = &p.ops[0] else {
+        panic!("{:?}", p.ops);
+    };
+    assert!(fill.one_veiled);
     let p = pattern("crown-shaper");
-    let mut open: Vec<[u8; 2]> = lift(d, &p, &out)
-        .leaves
-        .iter()
-        .map(|(_, l)| match l {
-            LiftedLeaf::Pending { known: Some(s), .. } => s.open,
-            other => panic!("{other:?}"),
-        })
-        .collect();
-    open.sort();
-    assert_eq!(open, [[2, 3], [3, 2]]);
-    // R1 example: on crown-l1 the three locked suffixes stay, so the veiled mod is a prefix.
+    let lifted = lift(d, &p, &out);
+    let [(_, LiftedLeaf::Pending { known: Some(s), .. })] = lifted.leaves.as_slice() else {
+        panic!("{lifted:?}")
+    };
+    assert_eq!(s.open, [3, 3]);
+    // R1 example: on crown-l1 the three locked suffixes stay, and the veil stays with the fill.
     let out = run("currency/veiled-chaos", &l1);
     let [(one, Leaf::Pending(p))] = out.leaves.as_slice() else {
         panic!("{out:?}")
     };
     assert_eq!(*one, 1.0);
-    assert_eq!(ids(d, &p.item.prefixes), ["VeiledPrefix"]);
+    assert!(p.item.prefixes.is_empty());
     assert_eq!(p.item.suffixes, l1.suffixes);
+    let Op::Fill { fill } = &p.ops[0] else {
+        panic!("{:?}", p.ops);
+    };
+    assert!(fill.one_veiled);
 
     // Q7: the tag reforge clears what can change (SCBC itself is a prefix) and fills until at
     // least one life modifier is drawn, so no prefix is placed before the Fill.
@@ -663,6 +662,161 @@ fn pending_and_vaal() {
     });
     for got in [unchanged, implicit, sockets, reforge] {
         assert!(close(got, 0.25, 1e-12), "{got}");
+    }
+}
+
+/// Q2: an essence ignores every metamod. A normal item ends with the essence's modifier alone;
+/// on a rare item carrying Suffixes Cannot Be Changed and Cannot Roll Caster Modifiers, both
+/// crafted modifiers and both suffixes are cleared just the same, and the essence's own
+/// modifier is placed.
+#[test]
+fn essence_ignores_every_metamod() {
+    let d = test_data();
+    let essence = d
+        .essences
+        .iter()
+        .find(|e| e.name == "Deafening Essence of Hatred")
+        .unwrap();
+    let boots_mod = essence
+        .mods
+        .iter()
+        .find(|(c, _)| *c == d.base_at(item("slink-boots-normal").base).class)
+        .unwrap()
+        .1;
+
+    let out = run(
+        "essence/deafening-essence-of-hatred",
+        &item("slink-boots-normal"),
+    );
+    let p = pending(&out.leaves[0].1);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert!(p.item.prefixes.is_empty());
+    let explicits: Vec<u32> = p.item.explicits().map(|a| a.roll.m).collect();
+    assert_eq!(explicits, [boots_mod]);
+
+    let rare = boots(
+        vec![affix("DexMasterItemGenerationCannotChangeSuffixes", None)],
+        vec![
+            affix("StrDexMasterItemGenerationCannotRollCasterAffixes", None),
+            affix("ColdResist5", None),
+            affix("FireResist1", None),
+        ],
+    );
+    let out = run("essence/deafening-essence-of-hatred", &rare);
+    assert_eq!(out.leaves.len(), 1);
+    let p = pending(&out.leaves[0].1);
+    assert_eq!(p.item.rarity, Rarity::Rare);
+    assert!(
+        p.item.prefixes.is_empty(),
+        "the crafted metamods stay: {:?}",
+        ids(d, &p.item.prefixes)
+    );
+    assert_eq!(ids(d, &p.item.suffixes), [d.mod_at(boots_mod).id.clone()]);
+
+    // Can Have Up To 3 Crafted Modifiers alone never blocked an essence (claim
+    // `metamod.multicraft-does-not-block`).
+    let multi = edited("crown-a", |s| {
+        s.suffixes.pop();
+        s.suffixes.push(affix(
+            "StrIntMasterItemGenerationCanHaveMultipleCraftedMods",
+            None,
+        ));
+    });
+    assert!(
+        apply(
+            test_data(),
+            method("essence/deafening-essence-of-hatred"),
+            &[multi],
+            &Params::default()
+        )
+        .is_ok()
+    );
+}
+
+/// Q3: a reforge's 4, 5 or 6 is the total number of explicit modifiers the result carries, so
+/// the modifiers the item keeps count toward it and the additions go only into open slots.
+#[test]
+fn fill_additions_count_the_kept_modifiers() {
+    let d = test_data();
+    let fill = |side: SideReq| Fill {
+        counts: Vec::new(),
+        weighting: Weighting::Normal,
+        side,
+        mod_level_max: None,
+        include: None,
+        one_veiled: false,
+    };
+    // crown-l1 keeps two prefixes and three suffixes, so the suffix side is full and only the
+    // one open prefix slot can take an addition.
+    let l1 = item("crown-l1");
+    assert_eq!(l1.open(d, Side::Suffix), 0);
+    assert_eq!(fill(SideReq::Any).additions(d, &l1, 6), 1);
+    // crown-a-mana keeps one prefix and three suffixes: two open prefixes, nothing on the
+    // suffix side.
+    let mana = item("crown-a-mana");
+    assert_eq!(fill(SideReq::Any).additions(d, &mana, 6), 2);
+    assert_eq!(fill(SideReq::Prefix).additions(d, &mana, 6), 2);
+    assert_eq!(fill(SideReq::Suffix).additions(d, &mana, 6), 0);
+    // A rare jewel holds four modifiers, so a total of six cannot be reached.
+    let jewel = item("cobalt-jewel-rare-open");
+    assert_eq!(fill(SideReq::Any).additions(d, &jewel, 6), 4);
+    assert_eq!(fill(SideReq::Prefix).additions(d, &jewel, 6), 2);
+    // A total the item already reaches adds nothing, and a magic jewel holds one per side.
+    assert_eq!(fill(SideReq::Any).additions(d, &l1, 4), 0);
+    assert_eq!(
+        fill(SideReq::Any).additions(d, &item("cobalt-jewel-magic"), 4),
+        1
+    );
+}
+
+/// Q6: the 3.29 Talisman fracture beastcrafts pay their beasts, and neither works on an
+/// influenced or a fractured Talisman.
+#[test]
+fn talisman_fracture_costs_and_limits() {
+    let d = test_data();
+    let four = item("talisman-rare-four");
+    let costs = cost(d, method("beast/fracture-talisman"), &Params::default()).unwrap();
+    assert_eq!(costs.len(), 1);
+    assert_eq!(costs[0].key, "beast:Farric Frost Hellion Alpha");
+    assert_eq!(costs[0].amount, 1.0);
+    assert!(
+        apply(
+            d,
+            method("beast/fracture-talisman"),
+            std::slice::from_ref(&four),
+            &Params::default()
+        )
+        .is_ok()
+    );
+
+    let six = item("talisman-rare-six");
+    let mut keys: Vec<String> = cost(d, method("beast/fracture-talisman-two"), &Params::default())
+        .unwrap()
+        .into_iter()
+        .map(|c| c.key)
+        .collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        ["beast:Black Mórrigan", "beast:Fenumal Plagued Arachnid"]
+    );
+    assert!(
+        apply(
+            d,
+            method("beast/fracture-talisman-two"),
+            std::slice::from_ref(&six),
+            &Params::default()
+        )
+        .is_ok()
+    );
+
+    for id in ["beast/fracture-talisman", "beast/fracture-talisman-two"] {
+        let influenced = edited("talisman-rare-six", |s| {
+            s.influences = vec![Influence::Shaper]
+        });
+        assert_eq!(reason(id, &influenced), "the item is influenced");
+        let fractured = edited("talisman-rare-six", |s| s.prefixes[0].fractured = true);
+        assert_eq!(reason(id, &fractured), "the item has a fractured modifier");
     }
 }
 
@@ -788,27 +942,182 @@ fn fossil_cost() {
     assert_eq!(chaos[0].key, "Metadata/Items/Currency/CurrencyRerollRare");
 }
 
-/// R9: embers have no item level requirement. Recount: tier 1 Searing Exarch implicits with
-/// spawn on Slink Boots: 27, weight 15400, every one of required level 75.
+/// R9: embers have no item level requirement. A Lesser orb rolls tier 6 (owner: Lesser is
+/// tier 6, Greater 5, Grand 4, Exceptional 3). Recount: tier 6 Searing Exarch implicits with
+/// spawn on Slink Boots: 81 (27 plain at 300, 27 Unique Presence at 150, 27 Pinnacle Presence
+/// at 60), weight 26180.
 #[test]
 fn eldritch_ember() {
     let d = test_data();
     for level in [84, 60] {
         let slink = edited("slink-boots-normal", |s| s.item_level = level);
         let out = run("currency/lesser-eldritch-ember", &slink);
-        assert_eq!(out.leaves.len(), 27, "item level {level}");
+        assert_eq!(out.leaves.len(), 81, "item level {level}");
         assert!(close(out.mass(), 1.0, 1e-9));
         for (_, l) in &out.leaves {
             let it = leaf_item(l);
             assert_eq!(it.implicits.len(), 1);
             let m = d.mod_at(it.implicits[0].m);
-            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(1)));
+            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Exarch, Some(6)));
         }
     }
     assert_eq!(
         reason("currency/lesser-eldritch-ember", &item("crown-a")),
         "the item is influenced"
     );
+}
+
+/// Owner: "t3 = Exceptional t4=grand t5=Greater t6=lesser", and tiers 1 and 2 come only from
+/// the Orb of Conflict. Every ember rolls its own side only.
+#[test]
+fn eldritch_orb_tiers() {
+    let d = test_data();
+    for (id, tier) in [
+        ("currency/lesser-eldritch-ember", 6),
+        ("currency/greater-eldritch-ember", 5),
+        ("currency/grand-eldritch-ember", 4),
+        ("currency/exceptional-eldritch-ember", 3),
+    ] {
+        let out = run(
+            id,
+            &edited("slink-boots-normal", |s| {
+                s.implicits = vec![];
+            }),
+        );
+        for (_, l) in &out.leaves {
+            let it = leaf_item(l);
+            let m = d.mod_at(it.implicits[0].m);
+            assert_eq!(
+                (m.kind, m.eldritch_tier),
+                (ModKind::Exarch, Some(tier)),
+                "{id}"
+            );
+        }
+    }
+    // An ember replaces only its own side: Eater stays when a Searing orb is used.
+    let both = item("slink-boots-eldritch");
+    let out = run("currency/lesser-eldritch-ember", &both);
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        assert_eq!(it.implicits.len(), 2);
+        let eater = it
+            .implicits
+            .iter()
+            .map(|r| d.mod_at(r.m))
+            .find(|m| m.kind == ModKind::Eater)
+            .expect("the Eater implicit stays");
+        assert_eq!(eater.eldritch_tier, Some(1));
+    }
+}
+
+/// The Orb of Conflict (claim `conflict.tiers`): both assignments are equally likely. On
+/// slink-boots-eldritch the Exarch implicit is tier 2 and the Eater tier 1, so raising the
+/// Exarch gives Exarch 1 with Eater 2, while raising the Eater has no stronger tier (1 is the
+/// strongest) and leaves it at 1, so the other branch lowers the Exarch to 3.
+#[test]
+fn orb_of_conflict_moves_one_tier_each_way() {
+    let d = test_data();
+    let boots = item("slink-boots-eldritch");
+    let out = run("currency/orb-of-conflict", &boots);
+    assert_eq!(out.leaves.len(), 2);
+    assert!(close(out.mass(), 1.0, 1e-12));
+    let mut got: Vec<(f64, Vec<(ModKind, u8)>)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            let mut tiers: Vec<(ModKind, u8)> = it
+                .implicits
+                .iter()
+                .map(|r| {
+                    let m = d.mod_at(r.m);
+                    (m.kind, m.eldritch_tier.expect("eldritch tier"))
+                })
+                .collect();
+            tiers.sort();
+            (*p, tiers)
+        })
+        .collect();
+    got.sort_by(|a, b| a.1.cmp(&b.1));
+    assert_eq!(
+        got,
+        [
+            (0.5, vec![(ModKind::Exarch, 1), (ModKind::Eater, 2)]),
+            (0.5, vec![(ModKind::Exarch, 3), (ModKind::Eater, 1)]),
+        ]
+    );
+}
+
+/// A lowered Lesser (tier 6) implicit is removed instead of moving to tier 7, and with both
+/// implicits at tier 6 each branch keeps only the one it raised (claim `conflict.tiers`).
+#[test]
+fn orb_of_conflict_removes_a_lowered_lesser() {
+    let d = test_data();
+    let pair = |exarch: &str, eater: &str| {
+        edited("slink-boots-normal", |s| {
+            s.implicits = vec![
+                ModSpec {
+                    id: exarch.into(),
+                    values: None,
+                },
+                ModSpec {
+                    id: eater.into(),
+                    values: None,
+                },
+            ];
+        })
+    };
+    let one_lesser = pair(
+        "MovementVelocityEldritchImplicit6",
+        "LifeRegenerationRateEldritchImplicit3",
+    );
+    let out = run("currency/orb-of-conflict", &one_lesser);
+    assert_eq!(out.leaves.len(), 2);
+    let mut sizes: Vec<(f64, Vec<ModKind>)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            let mut kinds: Vec<ModKind> = it.implicits.iter().map(|r| d.mod_at(r.m).kind).collect();
+            kinds.sort();
+            (*p, kinds)
+        })
+        .collect();
+    sizes.sort_by(|a, b| a.1.cmp(&b.1));
+    assert_eq!(
+        sizes,
+        [
+            (0.5, vec![ModKind::Exarch, ModKind::Eater]),
+            (0.5, vec![ModKind::Eater]),
+        ]
+    );
+    // The branch with one implicit kept the Eater one, at the tier it was raised to.
+    for (_, l) in &out.leaves {
+        let it = leaf_item(l);
+        if it.implicits.len() == 1 {
+            let m = d.mod_at(it.implicits[0].m);
+            assert_eq!((m.kind, m.eldritch_tier), (ModKind::Eater, Some(2)));
+        }
+    }
+
+    let both_lesser = pair(
+        "MovementVelocityEldritchImplicit6",
+        "LifeRegenerationRateEldritchImplicit6",
+    );
+    let out = run("currency/orb-of-conflict", &both_lesser);
+    assert_eq!(out.leaves.len(), 2);
+    let mut kinds: Vec<(f64, ModKind, u8)> = out
+        .leaves
+        .iter()
+        .map(|(p, l)| {
+            let it = leaf_item(l);
+            assert_eq!(it.implicits.len(), 1, "the lowered implicit is removed");
+            let m = d.mod_at(it.implicits[0].m);
+            (*p, m.kind, m.eldritch_tier.unwrap())
+        })
+        .collect();
+    kinds.sort_by_key(|(_, kind, _)| *kind);
+    assert_eq!(kinds, [(0.5, ModKind::Exarch, 5), (0.5, ModKind::Eater, 5)]);
 }
 
 /// R5: a Vaal Orb replaces one random implicit. Recount: corrupted implicits (domain item,
@@ -1259,9 +1568,11 @@ fn farric_respects_locks_and_adds() {
 }
 
 /// keepLastAdded: the add-remove craft never removes the mod it added. Rare Slink Boots with
-/// MovementVelocity5 and ColdResist5; recount `pool('item', tags_of(boots, on=have), 84,
-/// ['prefix', 'suffix'], taken=groups(have), tag='life')`: 19 mods, weight 19000, each then
-/// followed by removing one of the two old mods with 1/2.
+/// MovementVelocity5 and ColdResist5; the side is picked first (claim `add.side-first`), so a
+/// life prefix weighs `0.5 · 1000 / 11000` and a life suffix `0.5 · 1000 / 8000`, each then
+/// followed by removing one of the two old mods with 1/2. Recount: the life pool split by side,
+/// `pool('item', tags_of(boots, on=have), 84, [side], taken=groups(have), tag='life')`: 11
+/// prefixes of weight 11000 and 8 suffixes of weight 8000 (19 mods, weight 19000 together).
 #[test]
 fn add_remove_keeps_added() {
     let d = test_data();
@@ -1280,7 +1591,12 @@ fn add_remove_keeps_added() {
         assert_eq!(kept_old, 1);
         let added = x.explicits().find(|a| !old.contains(&a.roll.m)).unwrap();
         assert!(d.mod_at(added.roll.m).tags.contains(&life));
-        assert!(close(*p, 1000.0 / 19000.0 / 2.0, 1e-12), "{p}");
+        let weight = match d.mod_at(added.roll.m).side {
+            Some(Side::Prefix) => 11000.0,
+            Some(Side::Suffix) => 8000.0,
+            None => panic!("{} has no side", d.mod_at(added.roll.m).id),
+        };
+        assert!(close(*p, 1000.0 / weight / 4.0, 1e-12), "{p}");
     }
 }
 
@@ -1434,12 +1750,17 @@ fn reroll_values() {
     );
 }
 
-/// R3: since 3.25 the quality a scrap adds depends on item level, so the op is not modelled; a
-/// unique item is a legal target too, and only the amount it receives is unknown (claim
-/// `quality.unique`).
+/// The owner's answer on uniques (claim `quality.unique`): a unique item gains exactly 1% per
+/// use, while the amount a non-unique item gains depends on its item level and is not known, so
+/// those outcomes stop at NeedsData.
 #[test]
 fn add_quality() {
-    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare, Rarity::Unique] {
+    let unique = run("currency/armourers-scrap", &item("slink-boots-unique"))
+        .item()
+        .unwrap()
+        .clone();
+    assert_eq!(unique.quality, 1);
+    for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
         let it = edited("slink-boots-normal", |s| s.rarity = rarity);
         let out = run("currency/armourers-scrap", &it);
         let [(p, l)] = out.leaves.as_slice() else {
@@ -1451,11 +1772,26 @@ fn add_quality() {
         assert_eq!(pend.item, it);
     }
     // A 20%-quality unique is still refused: the cap is refused by `qualityBelow`.
-    let unique = edited("slink-boots-unique", |s| s.quality = 20);
+    let full = edited("slink-boots-unique", |s| s.quality = 20);
     assert_eq!(
-        reason("currency/armourers-scrap", &unique),
+        reason("currency/armourers-scrap", &full),
         "quality is already 20%"
     );
+    // Six uses reach 6%: each use adds one and the cap is a cap, not a jump.
+    let mut it = item("slink-boots-unique");
+    for _ in 0..6 {
+        it = apply(
+            test_data(),
+            method("currency/armourers-scrap"),
+            std::slice::from_ref(&it),
+            &Params::default(),
+        )
+        .unwrap()
+        .item()
+        .unwrap()
+        .clone();
+    }
+    assert_eq!(it.quality, 6);
 }
 
 /// R3: the catalyst amount depends on item level since 3.25, so the op is NeedsData; the
@@ -1484,19 +1820,28 @@ fn catalyst_quality() {
     );
 }
 
-/// Recount for the Labyrinth enchant on crown-a: enchantment mods (domain item) with spawn on
-/// its tags, level ≤ 87: 1338, weight 129659.
+/// The bench's flask instilling crafts still place their own enchantment and the bench removes
+/// it, while no method draws a Labyrinth enchantment any more (claim `enchant.font-removed`):
+/// the enchant-kind mods stay in the bundle, so a pasted Standard item still reads.
 #[test]
 fn enchant_ops() {
     let d = test_data();
-    let out = run("currency/enchant", &item("crown-a"));
-    assert_eq!(out.leaves.len(), 1338);
-    assert!(close(out.mass(), 1.0, 1e-9));
     assert!(
-        out.leaves
-            .iter()
-            .all(|(_, l)| leaf_item(l).enchants.len() == 1)
+        !d.mods_of_kind(ModKind::Enchant).is_empty(),
+        "the enchant-kind mods must stay in the bundle"
     );
+    for m in &d.methods {
+        for op in &m.ops {
+            if let Op::SetEnchant { pool } = op {
+                assert_ne!(
+                    pool.kind(),
+                    ModKind::Enchant,
+                    "{} draws an enchantment from the removed Divine Font",
+                    m.id
+                );
+            }
+        }
+    }
     let flask = item("quicksilver-normal");
     let injector = d
         .methods
@@ -1587,30 +1932,16 @@ fn fracture_takes_crafted() {
     );
 }
 
-/// R1: essences and fossils are forbidden by the locks and the Cannot Roll metamods, not by
-/// the multi-craft metamod alone (owner, Q9).
+/// Owner Q5: the orb needs four explicit modifiers that are not an unrevealed veil, so an item
+/// with three real modifiers and a veil is refused (claim `fracture.eligible`).
 #[test]
-fn essences_forbidden_by_metamods() {
-    let hatred = "essence/deafening-essence-of-hatred";
+fn fracture_needs_four_real_modifiers() {
+    let it = item("crown-uninfluenced-fracture");
+    assert_eq!(it.explicits().count(), 4);
     assert_eq!(
-        reason(hatred, &item("crown-l1")),
-        "cannot be used on an item with \"Suffixes Cannot Be Changed\""
+        reason("currency/fracturing", &it),
+        "needs at least 4 modifiers"
     );
-    let caster = edited("crown-a", |s| {
-        s.suffixes[2] = affix("StrDexMasterItemGenerationCannotRollCasterAffixes", None)
-    });
-    assert_eq!(
-        reason(hatred, &caster),
-        "cannot be used on an item with \"Cannot roll Caster Modifiers\""
-    );
-    let multi = edited("crown-a", |s| {
-        s.suffixes.pop();
-        s.suffixes.push(affix(
-            "StrIntMasterItemGenerationCanHaveMultipleCraftedMods",
-            None,
-        ));
-    });
-    assert!(apply(test_data(), method(hatred), &[multi], &Params::default()).is_ok());
 }
 
 /// R4: an essence's level restriction caps its modifiers, not the item.
@@ -2513,11 +2844,10 @@ fn harvest_quality_enchant_and_talisman_refusal() {
 
 /// The two 3.29 Talisman fracture beastcrafts replace the old split crafts (claim
 /// `beast.split-replaced`): one fractures a single modifier on a rare Talisman with four or more
-/// modifiers, the other fractures two on one with six or more. No source states their beast cost
-/// (claim `beast.talisman-fracture-cost`), so they carry none.
+/// modifiers, the other fractures two on one with six or more. Each pays its beasts (claim
+/// `beast.talisman-fracture-cost`).
 #[test]
 fn talisman_fracture_beastcrafts() {
-    let d = test_data();
     let four = item("talisman-rare-four");
     let out = run("beast/fracture-talisman", &four);
     assert!(close(out.mass(), 1.0, 1e-12));
@@ -2534,12 +2864,6 @@ fn talisman_fracture_beastcrafts() {
     for (_, l) in &out.leaves {
         let it = leaf_item(l);
         assert_eq!(it.explicits().filter(|a| a.fractured).count(), 2);
-    }
-    for id in ["beast/fracture-talisman", "beast/fracture-talisman-two"] {
-        assert!(
-            cost(d, method(id), &Params::default()).unwrap().is_empty(),
-            "{id} states a cost no source gives"
-        );
     }
     assert_eq!(
         reason("beast/fracture-talisman", &item("lapis-amulet-a")),
