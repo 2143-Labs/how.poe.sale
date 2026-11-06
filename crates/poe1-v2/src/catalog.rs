@@ -1482,12 +1482,7 @@ fn missing_phrase(n: usize) -> String {
 
 /// What the inverse solver found: the inputs that could have produced the item, best first, and
 /// the methods it could not walk backwards.
-fn sources_md(
-    data: &Data,
-    pattern: &Pattern,
-    item_name: &str,
-    inversion: &crate::invert::Inversion,
-) -> Vec<String> {
+fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<String> {
     let mut out = vec!["**Could have come from:** the inputs one step short of this item.".into()];
     if inversion.groups.is_empty() {
         out.push("None found.".into());
@@ -1588,7 +1583,7 @@ pub fn next_steps_section(
     ];
     // What the item could have come from is about the item as it stands, so it sits with "Now".
     let inversion = crate::invert::sources(data, pattern, item);
-    out.extend(sources_md(data, pattern, item_name, &inversion));
+    out.extend(sources_md(pattern, &inversion));
     out.extend([
         String::new(),
         "**Exact steps:** every outcome is computed.".into(),
@@ -1671,7 +1666,6 @@ pub fn next_steps_section(
 /// The inverse solver's report for one item: the heading, where it stands, and the inputs one step
 /// short of it.
 pub fn sources_report(
-    data: &Data,
     pattern: &Pattern,
     item_name: &str,
     pattern_name: &str,
@@ -1681,7 +1675,7 @@ pub fn sources_report(
         format!("## `{item_name}` → `{pattern_name}`"),
         String::new(),
     ];
-    out.extend(sources_md(data, pattern, item_name, inversion));
+    out.extend(sources_md(pattern, inversion));
     out.push(String::new());
     out.join("\n")
 }

@@ -197,7 +197,6 @@ fn main() -> anyhow::Result<()> {
             print!(
                 "{}",
                 poe1_v2::catalog::sources_report(
-                    &loaded.data,
                     pattern,
                     &loaded.item_name,
                     &loaded.pattern_name,
