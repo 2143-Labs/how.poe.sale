@@ -1,109 +1,106 @@
-//! The browser's views: a target from a paste, and the one-step report as JSON.
+//! The browser's views: a pasted item, the steps that could have produced an abstract item, and
+//! the modifiers a target can name, as JSON.
 
 mod common;
 
-use common::{item, root};
+use common::root;
 use poe1::api;
-use poe1::pattern::{self, Pattern};
-use poe1::solve;
 use poe1::test_data;
+
+const METHODS: [&str; 5] = [
+    "currency/exalted",
+    "currency/annulment",
+    "bench/add/StrMasterItemGenerationCannotChangePrefixes",
+    "bench/add/DexMasterItemGenerationCannotChangeSuffixes",
+    "essence/essence-of-horror",
+];
 
 fn text(name: &str) -> String {
     let path = root().join(format!("fixtures/text/{name}.txt"));
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
 
-fn pattern_json(name: &str) -> String {
-    let path = root().join(format!("fixtures/patterns/{name}.json"));
-    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+fn methods() -> Vec<String> {
+    METHODS.iter().map(|m| m.to_string()).collect()
 }
 
-/// The Archdemon Crown paste has three prefixes and three suffixes and no veiled one, so its own
-/// pattern has six desired classes, two catch-alls, and one slot per modifier; the paste then
-/// matches it.
+/// The essence outcome with two untracked prefixes and two untracked suffixes beside the
+/// essence's suffix: every method answers, with the input's spec ready to ask about in turn.
 #[test]
-fn a_pasted_target_is_its_own_goal() {
+fn preimages_answer_in_json() {
     let d = test_data();
-    let crown = text("archdemon-crown");
-    let spec = api::target(d, &crown).expect("a target");
-    assert_eq!(spec.classes.len(), 8);
-    assert_eq!(spec.prefixes.len(), 3);
-    assert_eq!(spec.suffixes.len(), 3);
-    let json = serde_json::to_string(&spec).unwrap();
-    let report = api::solve(d, &json, &crown).expect("a report");
-    assert_eq!(report.now.progress, 1.0);
-    assert_eq!(report.now.matches, 1.0);
-}
-
-/// crown-c1's veiled prefix stands for a modifier not chosen yet, so it gets no class or slot.
-#[test]
-fn a_target_leaves_out_a_veiled_placeholder() {
-    let d = test_data();
-    let spec = pattern::from_item(d, &item("crown-c1"));
-    let ids: Vec<&str> = spec.classes.iter().map(|c| c.id.as_str()).collect();
-    assert_eq!(
-        ids,
-        [
-            "prefix-1",
-            "other-prefix",
-            "suffix-1",
-            "suffix-2",
-            "suffix-3",
-            "other-suffix"
-        ]
-    );
-    Pattern::compile(d, &spec).expect("compiles");
-}
-
-/// crown-l1 has five modifiers that are not veiled placeholders: five desired slots worth three
-/// each. crown-a holds the same three suffixes and no prefix, so it holds 9 of the 15.
-#[test]
-fn a_target_scores_by_its_own_slots() {
-    let d = test_data();
-    let spec = pattern::from_item(d, &item("crown-l1"));
-    assert_eq!(spec.prefixes.len() + spec.suffixes.len(), 5);
-    let pat = Pattern::compile(d, &spec).expect("compiles");
-    let progress = solve::item_progress(d, &pat, &item("crown-a"));
-    assert!((progress - 9.0 / 15.0).abs() < 1e-12, "{progress}");
-}
-
-#[test]
-fn the_report_accounts_for_every_method() {
-    let d = test_data();
-    let report =
-        api::solve(d, &pattern_json("crown-shaper"), &text("archdemon-crown")).expect("a report");
+    let target = serde_json::json!({
+        "base": "Archdemon Crown",
+        "itemLevel": 87,
+        "rarity": "rare",
+        "suffixes": [{ "id": "SocketedGemsDealMoreElementalDamageEssence1" }],
+        "anyPrefixes": 2,
+        "anySuffixes": 2,
+    });
+    let view = api::preimages(d, &target.to_string(), &methods()).expect("a view");
+    let json = serde_json::to_value(&view).unwrap();
     assert!(
-        (report.now.progress - 10.0 / 12.0).abs() < 1e-12,
-        "{}",
-        report.now.progress
+        json["steps"][0]["input"].get("anyPrefixes").is_some(),
+        "{json}"
     );
-    let single = d.methods.iter().filter(|m| m.inputs == 1).count();
+    assert_eq!(json["target"]["anySuffixes"], 2);
     assert_eq!(
-        report.exact.len() + report.certain.len() + report.blind.len() + report.unmet.len(),
-        single
+        json["target"]["suffixes"][0],
+        "Socketed Gems deal 30% more Elemental Damage"
     );
-    assert!(!report.exact[0].tied);
-    assert!(!report.sources.groups.is_empty());
-    let value = serde_json::to_value(&report).unwrap();
-    assert!(
-        value["exact"][0]["method"].is_string(),
-        "{}",
-        value["exact"][0]
+    let essence = view
+        .steps
+        .iter()
+        .find(|s| s.method == "essence/essence-of-horror")
+        .expect("the essence step");
+    assert!((essence.p - 11.0 / 64.0).abs() < 1e-12, "{}", essence.p);
+    assert_eq!(essence.input_spec.rarity, poe1::item::Rarity::Normal);
+    assert_eq!(essence.cost, "1 × Essence of Horror");
+    for m in METHODS {
+        let shown =
+            view.steps.iter().any(|s| s.method == m) || view.skipped.iter().any(|s| s.method == m);
+        assert!(shown, "{m}");
+    }
+
+    let err = api::preimages(d, "{", &methods()).unwrap_err();
+    assert!(err.starts_with("target: "), "{err}");
+    let mut wide = target.clone();
+    wide["anyPrefixes"] = 4.into();
+    assert_eq!(
+        api::preimages(d, &wide.to_string(), &methods()).unwrap_err(),
+        "target: the item prefixes: 4 modifiers, the rarity holds 3"
     );
 }
 
 #[test]
-fn errors_name_what_failed() {
+fn mods_list_the_natural_and_essence_modifiers() {
     let d = test_data();
-    let crown = text("archdemon-crown");
-    let err = api::solve(d, "{", &crown).unwrap_err();
-    assert!(err.starts_with("pattern: "), "{err}");
-    let err = api::solve(d, &pattern_json("crown-shaper"), "hello").unwrap_err();
-    assert_eq!(err, "item: no known base item in the pasted text");
-    let mut spec: serde_json::Value = serde_json::from_str(&pattern_json("crown-shaper")).unwrap();
-    spec["item"]["bases"] = serde_json::json!(["Nope"]);
-    let err = api::solve(d, &spec.to_string(), &crown).unwrap_err();
-    assert!(err.contains("unknown base \"Nope\""), "{err}");
+    let list = api::mods(d, "Archdemon Crown", 87, &[]).expect("a list");
+    let life = list
+        .iter()
+        .find(|m| m.id == "IncreasedLife9")
+        .expect("IncreasedLife9");
+    assert_eq!(
+        (life.side.as_str(), life.source.as_str()),
+        ("prefix", "natural")
+    );
+    let horror = list
+        .iter()
+        .find(|m| m.id == "SocketedGemsDealMoreElementalDamageEssence1")
+        .expect("Essence of Horror's modifier");
+    assert_eq!(horror.side, "suffix");
+    assert_eq!(horror.source, "Essence of Horror");
+    let first_suffix = list
+        .iter()
+        .position(|m| m.side == "suffix")
+        .expect("suffixes");
+    assert!(list[..first_suffix].iter().all(|m| m.side == "prefix"));
+    assert!(list[first_suffix..].iter().all(|m| m.side == "suffix"));
+    assert_eq!(
+        api::mods(d, "Nope", 87, &[]).unwrap_err(),
+        "mods: unknown base \"Nope\""
+    );
+    assert!(api::bases(d).iter().any(|b| b == "Archdemon Crown"));
 }
 
 #[test]
@@ -117,25 +114,4 @@ fn read_item_reports_its_warnings() {
         "{:?}",
         view.warnings
     );
-}
-
-#[test]
-fn a_target_needs_a_modifier() {
-    let d = test_data();
-    assert_eq!(
-        api::target_of(d, &item("cobalt-jewel-normal")),
-        Err("target: the pasted item has no explicit modifier to aim for".to_string())
-    );
-}
-
-/// The Simplex Amulet is not an Archdemon Crown: no step can move it toward the crown pattern.
-#[test]
-fn an_item_outside_the_filter_does_not_fit() {
-    let d = test_data();
-    let crown = pattern_json("crown-shaper");
-    let amulet = api::solve(d, &crown, &text("simplex-amulet")).expect("a report");
-    assert!(!amulet.now.fits);
-    assert_eq!(amulet.now.progress, 0.0);
-    let report = api::solve(d, &crown, &text("archdemon-crown")).expect("a report");
-    assert!(report.now.fits);
 }

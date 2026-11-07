@@ -777,12 +777,13 @@ fn bench_md(data: &Data) -> String {
     out.join("\n")
 }
 
-const ESSENCE_CLAIMS: [&str; 6] = [
+const ESSENCE_CLAIMS: [&str; 7] = [
     "game-text",
     "essence.ilvl",
     "essence.ignores-metamods",
     "reforge.guarantee-present",
     "reforge.counts",
+    "reforge.side-first",
     "metamod.multicraft-does-not-block",
 ];
 

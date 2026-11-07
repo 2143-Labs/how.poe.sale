@@ -418,7 +418,7 @@ pub fn add_candidates(
 }
 
 /// The pooled weights as one share per side, split inside the side by weight.
-fn side_first(data: &Data, candidates: Vec<(u32, f64)>) -> Vec<(u32, f64)> {
+pub(crate) fn side_first(data: &Data, candidates: Vec<(u32, f64)>) -> Vec<(u32, f64)> {
     let mut by_side: [Vec<(u32, f64)>; 2] = Default::default();
     for (m, w) in candidates {
         if let Some(side) = data.mod_at(m).side {

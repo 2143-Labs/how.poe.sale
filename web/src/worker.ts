@@ -35,18 +35,26 @@ self.onmessage = async (event: MessageEvent) => {
           type: 'start',
           id: message.id,
           version: b.version(),
-          patterns: JSON.parse(b.patterns()),
           examples: JSON.parse(b.examples()),
+          bases: JSON.parse(b.bases()),
         }
         break
       case 'parse':
         response = { type: 'parse', id: message.id, item: JSON.parse(b.parse(message.text)) }
         break
-      case 'target':
-        response = { type: 'target', id: message.id, pattern: JSON.parse(b.target(message.text)) }
+      case 'mods':
+        response = {
+          type: 'mods',
+          id: message.id,
+          mods: JSON.parse(b.mods(message.base, message.itemLevel, message.influences.join(','))),
+        }
         break
-      case 'solve':
-        response = { type: 'solve', id: message.id, result: JSON.parse(b.solve(message.pattern, message.item)) }
+      case 'preimages':
+        response = {
+          type: 'preimages',
+          id: message.id,
+          result: JSON.parse(b.preimages(message.target, message.methods.join(','))),
+        }
         break
     }
     self.postMessage(response)

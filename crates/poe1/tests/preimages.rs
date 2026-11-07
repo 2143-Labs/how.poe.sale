@@ -1,0 +1,250 @@
+//! The steps that could have produced an abstract item: an Archdemon Crown at item level 87 with
+//! no influence, whose untracked modifiers are counted rather than named.
+
+use poe1::item::{AbsSpec, ModSpec, Rarity};
+use poe1::preimages::{AbsItem, Preimages, preimages};
+use poe1::test_data;
+
+const ESSENCE: &str = "essence/essence-of-horror";
+const EXALT: &str = "currency/exalted";
+const ANNUL: &str = "currency/annulment";
+const LOCK_SUFFIXES: &str = "bench/add/DexMasterItemGenerationCannotChangeSuffixes";
+/// Essence of Horror's helmet modifier, a suffix.
+const HORROR: &str = "SocketedGemsDealMoreElementalDamageEssence1";
+
+fn spec(prefixes: &[&str], suffixes: &[&str], any: [u8; 2]) -> AbsSpec {
+    let mods = |ids: &[&str]| -> Vec<ModSpec> {
+        ids.iter()
+            .map(|id| ModSpec {
+                id: id.to_string(),
+                values: None,
+            })
+            .collect()
+    };
+    AbsSpec {
+        base: "Archdemon Crown".into(),
+        item_level: 87,
+        rarity: Rarity::Rare,
+        influences: Vec::new(),
+        prefixes: mods(prefixes),
+        suffixes: mods(suffixes),
+        any_prefixes: any[0],
+        any_suffixes: any[1],
+    }
+}
+
+fn crown(prefixes: &[&str], suffixes: &[&str], any: [u8; 2]) -> AbsItem {
+    let item = AbsItem::from_spec(test_data(), &spec(prefixes, suffixes, any)).expect("a crown");
+    item.validate(test_data()).expect("a valid crown");
+    item
+}
+
+fn run(target: &AbsItem, methods: &[&str]) -> Preimages {
+    preimages(test_data(), target, methods)
+}
+
+fn reason<'a>(found: &'a Preimages, method: &str) -> Option<&'a str> {
+    found
+        .skipped
+        .iter()
+        .find(|(m, _)| m == method)
+        .map(|(_, why)| why.as_str())
+}
+
+/// Essence of Horror places its suffix, then draws the rest side first: 4, 5 or 6 modifiers at
+/// 8:3:1. Recounted by hand in exact fractions.
+#[test]
+fn the_essence_leaves_the_six_compositions() {
+    let cases: [([u8; 2], f64); 6] = [
+        ([3, 0], 1.0 / 12.0),
+        ([2, 1], 1.0 / 4.0),
+        ([1, 2], 1.0 / 3.0),
+        ([3, 1], 5.0 / 64.0),
+        ([2, 2], 11.0 / 64.0),
+        ([3, 2], 1.0 / 12.0),
+    ];
+    for (any, want) in cases {
+        let target = crown(&[], &[HORROR], any);
+        let found = run(&target, &[ESSENCE]);
+        assert_eq!(found.steps.len(), 1, "{any:?}: {:?}", found.skipped);
+        let step = &found.steps[0];
+        assert!(
+            (step.p - want).abs() < 1e-12,
+            "{any:?}: {} != {want}",
+            step.p
+        );
+        let input = &step.input;
+        assert_eq!(input.item.rarity, Rarity::Normal);
+        assert!(input.item.prefixes.is_empty() && input.item.suffixes.is_empty());
+        assert_eq!(input.any, [0, 0]);
+        assert_eq!(input.item.base, target.item.base);
+        assert_eq!(input.item.item_level, 87);
+        assert_eq!(input.item.influences, target.item.influences);
+        assert!(step.note.is_some());
+    }
+}
+
+/// Both sides open: one half for the prefix side, then IncreasedLife9's 1000 of the crown's
+/// 49775 prefix weight.
+#[test]
+fn an_exalt_prices_the_modifier_it_added() {
+    let found = run(&crown(&["IncreasedLife9"], &[], [0, 0]), &[EXALT]);
+    assert_eq!(found.steps.len(), 1, "{:?}", found.skipped);
+    let step = &found.steps[0];
+    assert!((step.p - 0.010045203415369162).abs() < 1e-12, "{}", step.p);
+    assert!(step.input.item.prefixes.is_empty() && step.input.item.suffixes.is_empty());
+    assert_eq!(step.input.any, [0, 0]);
+}
+
+#[test]
+fn an_exalt_on_an_untracked_slot_costs_half() {
+    let found = run(&crown(&[], &[], [1, 0]), &[EXALT]);
+    assert_eq!(found.steps.len(), 1, "{:?}", found.skipped);
+    let step = &found.steps[0];
+    assert_eq!(step.p, 0.5);
+    assert!(step.input.item.prefixes.is_empty() && step.input.item.suffixes.is_empty());
+    assert_eq!(step.input.any, [0, 0]);
+}
+
+/// A side that untracked slots fill is closed to the orb, so the other side is certain.
+#[test]
+fn an_exalt_skips_a_side_untracked_slots_fill() {
+    let found = run(&crown(&[], &[], [1, 3]), &[EXALT]);
+    let prefix = found
+        .steps
+        .iter()
+        .find(|s| s.input.any == [0, 3])
+        .expect("the prefix bucket");
+    assert_eq!(prefix.p, 1.0);
+}
+
+#[test]
+fn an_annul_gives_a_bucket_per_side() {
+    let target = crown(&["IncreasedLife9"], &["FireResist8"], [0, 0]);
+    let found = run(&target, &[ANNUL]);
+    assert_eq!(found.steps.len(), 2, "{:?}", found.skipped);
+    let mut anys: Vec<[u8; 2]> = found.steps.iter().map(|s| s.input.any).collect();
+    anys.sort();
+    assert_eq!(anys, [[0, 1], [1, 0]]);
+    for step in &found.steps {
+        assert_eq!(step.input.item, target.item);
+    }
+    let total: f64 = found.steps.iter().map(|s| s.p).sum();
+    assert!((total - 1.0).abs() < 1e-12, "{total}");
+}
+
+/// "Suffixes Cannot Be Changed" is a prefix craft.
+#[test]
+fn a_bench_lock_costs_nothing() {
+    let target = crown(
+        &["DexMasterItemGenerationCannotChangeSuffixes"],
+        &[],
+        [0, 0],
+    );
+    let found = run(&target, &[LOCK_SUFFIXES]);
+    assert_eq!(found.steps.len(), 1, "{:?}", found.skipped);
+    let step = &found.steps[0];
+    assert_eq!(step.p, 1.0);
+    assert!(step.input.item.prefixes.is_empty());
+    assert_eq!(step.input.any, [0, 0]);
+}
+
+/// A full item cannot have lost a modifier, but an Exalted Orb could have filled its last slot:
+/// one step per modifier, each from the side left open.
+#[test]
+fn a_full_item_shows_why_no_annulment_came_before_it() {
+    let target = crown(
+        &[
+            "IncreasedLife9",
+            "IncreasedMana12",
+            "LocalIncreasedArmourAndEnergyShield1",
+        ],
+        &["FireResist8", "ColdResist8", "LightningResist8"],
+        [0, 0],
+    );
+    let found = run(&target, &[EXALT, ANNUL]);
+    assert_eq!(
+        reason(&found, ANNUL),
+        Some(
+            "the item already holds every modifier it can, so nothing could have been removed from it"
+        )
+    );
+    assert_eq!(reason(&found, EXALT), None);
+    assert_eq!(found.steps.len(), 6);
+    assert!(found.steps.iter().all(|s| s.method == EXALT));
+}
+
+/// A normal item holds no explicit modifier, so neither orb could have touched it.
+#[test]
+fn a_normal_item_shows_why_nothing_came_before_it() {
+    let mut normal = spec(&[], &[], [0, 0]);
+    normal.rarity = Rarity::Normal;
+    let target = AbsItem::from_spec(test_data(), &normal).expect("a normal crown");
+    let found = run(&target, &[EXALT, ANNUL, LOCK_SUFFIXES, ESSENCE]);
+    assert!(found.steps.is_empty());
+    for method in [EXALT, ANNUL] {
+        assert_eq!(
+            reason(&found, method),
+            Some("a normal item holds no explicit modifiers")
+        );
+    }
+    assert_eq!(
+        reason(&found, LOCK_SUFFIXES),
+        Some("the item does not hold Suffixes Cannot Be Changed")
+    );
+    assert_eq!(
+        reason(&found, ESSENCE),
+        Some("an essence leaves a rare item")
+    );
+}
+
+#[test]
+fn a_tracked_fill_modifier_is_not_computed() {
+    let found = run(&crown(&["IncreasedLife9"], &[HORROR], [1, 1]), &[ESSENCE]);
+    assert!(found.steps.is_empty());
+    assert_eq!(
+        reason(&found, ESSENCE),
+        Some(
+            "the item's other modifiers are tracked, so the reforge's random modifiers are not computed"
+        )
+    );
+}
+
+#[test]
+fn more_untracked_slots_than_the_rarity_holds_is_refused() {
+    let item = AbsItem::from_spec(test_data(), &spec(&[], &[], [4, 0])).expect("the spec resolves");
+    assert_eq!(
+        item.validate(test_data()),
+        Err("prefixes: 4 modifiers, the rarity holds 3".to_string())
+    );
+}
+
+#[test]
+fn a_method_outside_the_page_is_named() {
+    let found = run(
+        &crown(&["IncreasedLife9"], &[], [0, 0]),
+        &["currency/chaos", "currency/nope"],
+    );
+    assert!(found.steps.is_empty());
+    assert_eq!(
+        reason(&found, "currency/chaos"),
+        Some("this page does not model it yet")
+    );
+    assert_eq!(
+        reason(&found, "currency/nope"),
+        Some("this method is not in the bundle")
+    );
+}
+
+/// The spec comes back with the fixed roll filled in, and reads as the same item.
+#[test]
+fn an_abstract_item_round_trips_its_spec() {
+    let d = test_data();
+    let item =
+        AbsItem::from_spec(d, &spec(&["IncreasedLife9"], &[HORROR], [1, 2])).expect("a crown");
+    let back = item.to_spec(d);
+    assert_eq!(back.suffixes[0].values, Some(vec![30]));
+    assert_eq!((back.any_prefixes, back.any_suffixes), (1, 2));
+    assert_eq!(AbsItem::from_spec(d, &back).expect("again"), item);
+    assert_eq!(item.mods(), 5);
+}

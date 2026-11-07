@@ -1,16 +1,10 @@
 //! The wasm-bindgen bridge the Web Worker talks to: it holds the bundle and answers with the
-//! JSON views of `poe1::api`. The built-in patterns and the example pastes are the repository's
-//! own fixtures, compiled in.
+//! JSON views of `poe1::api`. The example pastes are the repository's own fixtures, compiled in.
 
 use poe1::api;
 use poe1::data::Data;
+use poe1::item::Influence;
 use wasm_bindgen::prelude::*;
-
-/// The built-in targets, in menu order.
-const PATTERNS: [&str; 2] = [
-    include_str!("../../../fixtures/patterns/crown-shaper.json"),
-    include_str!("../../../fixtures/patterns/crown-shaper-elder.json"),
-];
 
 /// Every paste in `fixtures/text`, by file stem, sorted.
 const EXAMPLES: [(&str, &str); 13] = [
@@ -85,6 +79,23 @@ fn js_error(e: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&e.to_string())
 }
 
+/// A comma-joined list, without empty entries.
+fn list(joined: &str) -> impl Iterator<Item = &str> {
+    joined.split(',').map(str::trim).filter(|s| !s.is_empty())
+}
+
+/// Influence names, either case: `shaper,elder`.
+fn influences(joined: &str) -> Result<Vec<Influence>, String> {
+    list(joined)
+        .map(|name| {
+            Influence::ALL
+                .into_iter()
+                .find(|i| i.name().eq_ignore_ascii_case(name))
+                .ok_or_else(|| format!("mods: unknown influence \"{name}\""))
+        })
+        .collect()
+}
+
 #[wasm_bindgen]
 pub struct Bridge {
     data: Data,
@@ -107,11 +118,6 @@ impl Bridge {
         )
     }
 
-    /// The built-in patterns, as a JSON array of pattern documents.
-    pub fn patterns(&self) -> String {
-        format!("[{}]", PATTERNS.join(","))
-    }
-
     /// The example pastes: JSON `[{"id", "label", "text"}]`.
     pub fn examples(&self) -> String {
         let list: Vec<serde_json::Value> = EXAMPLES
@@ -127,16 +133,25 @@ impl Bridge {
         serde_json::to_string(&view).map_err(js_error)
     }
 
-    /// The pattern that asks for a pasted item exactly: `PatternSpec` JSON.
-    pub fn target(&self, text: &str) -> Result<String, JsValue> {
-        let spec = api::target(&self.data, text).map_err(js_error)?;
-        serde_json::to_string(&spec).map_err(js_error)
+    /// Every modifier a rare `base` at `item_level` can name: `ModOptionView[]` JSON.
+    /// `influences` is a comma-joined list of influence names, empty for none.
+    pub fn mods(&self, base: &str, item_level: u8, influences: &str) -> Result<String, JsValue> {
+        let influences = self::influences(influences).map_err(js_error)?;
+        let view = api::mods(&self.data, base, item_level, &influences).map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
     }
 
-    /// The one-step report for a pattern (JSON) and a pasted item: `SolveView` JSON.
-    pub fn solve(&self, pattern_json: &str, item_text: &str) -> Result<String, JsValue> {
-        let view = api::solve(&self.data, pattern_json, item_text).map_err(js_error)?;
+    /// The steps that could have produced a target (`AbsSpec` JSON) over the comma-joined
+    /// method ids: `PreimagesView` JSON.
+    pub fn preimages(&self, target: &str, methods: &str) -> Result<String, JsValue> {
+        let methods: Vec<String> = list(methods).map(str::to_string).collect();
+        let view = api::preimages(&self.data, target, &methods).map_err(js_error)?;
         serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// Every base a target can name: a JSON array of strings.
+    pub fn bases(&self) -> String {
+        serde_json::Value::from(api::bases(&self.data)).to_string()
     }
 }
 
@@ -145,7 +160,6 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use super::*;
-    use poe1::pattern::{Pattern, PatternSpec};
 
     fn dir(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../fixtures/{name}"))
@@ -171,17 +185,5 @@ mod tests {
             api::read_item(poe1::test_data(), text).unwrap_or_else(|e| panic!("{id}: {e}"));
         }
         assert_eq!(label("archdemon-crown-blocked"), "Archdemon Crown Blocked");
-    }
-
-    #[test]
-    fn every_pattern_fixture_is_built_in() {
-        assert_eq!(stems("patterns", ".json").len(), PATTERNS.len());
-        for text in PATTERNS {
-            let spec: PatternSpec = serde_json::from_str(text).expect("a pattern");
-            Pattern::compile(poe1::test_data(), &spec).expect("compiles");
-        }
-        let all: Vec<serde_json::Value> =
-            serde_json::from_str(&format!("[{}]", PATTERNS.join(","))).expect("one JSON array");
-        assert_eq!(all[0]["name"], "crown-shaper");
     }
 }

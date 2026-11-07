@@ -13,6 +13,7 @@ pub mod item;
 pub mod method;
 pub mod pattern;
 pub mod pool;
+pub mod preimages;
 pub mod render;
 pub mod solve;
 pub mod text;

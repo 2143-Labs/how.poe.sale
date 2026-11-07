@@ -692,3 +692,35 @@ fn talisman_placeholder_is_a_mod_matcher() {
     let states = evaluate(d, &pattern, &bare);
     assert!(states.iter().all(|(_, s)| !s.item_ok));
 }
+
+/// crown-c1's veiled prefix stands for a modifier not chosen yet, so it gets no class or slot.
+#[test]
+fn a_target_leaves_out_a_veiled_placeholder() {
+    let d = test_data();
+    let spec = poe1::pattern::from_item(d, &item("crown-c1"));
+    let ids: Vec<&str> = spec.classes.iter().map(|c| c.id.as_str()).collect();
+    assert_eq!(
+        ids,
+        [
+            "prefix-1",
+            "other-prefix",
+            "suffix-1",
+            "suffix-2",
+            "suffix-3",
+            "other-suffix"
+        ]
+    );
+    Pattern::compile(d, &spec).expect("compiles");
+}
+
+/// crown-l1 has five modifiers that are not veiled placeholders: five desired slots worth three
+/// each. crown-a holds the same three suffixes and no prefix, so it holds 9 of the 15.
+#[test]
+fn a_target_scores_by_its_own_slots() {
+    let d = test_data();
+    let spec = poe1::pattern::from_item(d, &item("crown-l1"));
+    assert_eq!(spec.prefixes.len() + spec.suffixes.len(), 5);
+    let pat = Pattern::compile(d, &spec).expect("compiles");
+    let progress = poe1::solve::item_progress(d, &pat, &item("crown-a"));
+    assert!((progress - 9.0 / 15.0).abs() < 1e-12, "{progress}");
+}
