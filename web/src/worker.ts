@@ -49,11 +49,46 @@ self.onmessage = async (event: MessageEvent) => {
           mods: JSON.parse(b.mods(message.base, message.itemLevel, message.influences.join(','))),
         }
         break
-      case 'preimages':
+      case 'chartStart':
         response = {
-          type: 'preimages',
+          type: 'chartStart',
           id: message.id,
-          result: JSON.parse(b.preimages(message.target, message.methods.join(','))),
+          node: JSON.parse(b.chart_start(message.root, message.watch)),
+        }
+        break
+      case 'chartMethods':
+        response = {
+          type: 'chartMethods',
+          id: message.id,
+          methods: JSON.parse(b.chart_methods(message.node)),
+        }
+        break
+      case 'chartForward':
+        response = {
+          type: 'chartForward',
+          id: message.id,
+          applied: JSON.parse(b.chart_forward(message.node, message.method)),
+        }
+        break
+      case 'chartMadeBy':
+        response = {
+          type: 'chartMadeBy',
+          id: message.id,
+          madeBy: JSON.parse(b.chart_made_by(message.node, message.methods.join(','))),
+        }
+        break
+      case 'chartPinForward':
+        response = {
+          type: 'chartPinForward',
+          id: message.id,
+          pinned: JSON.parse(b.chart_pin_forward(message.node, message.method, message.key)),
+        }
+        break
+      case 'chartPinBackward':
+        response = {
+          type: 'chartPinBackward',
+          id: message.id,
+          pinned: JSON.parse(b.chart_pin_backward(message.node, message.method, message.key)),
         }
         break
     }

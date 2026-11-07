@@ -58,7 +58,7 @@ pub struct NodeView {
     pub id: String,
     pub spec: AbsSpec,
     pub view: ClassView,
-    /// The class holds every modifier the root asks for.
+    /// This is the root's class: the chart has come back to where it started.
     pub goal: bool,
     /// The items the node stands for, when it has any of its own.
     pub members: Option<usize>,
@@ -206,12 +206,24 @@ const BACKWARD: [&str; 4] = [
     "bench/add/DexMasterItemGenerationCannotChangeSuffixes",
 ];
 
+/// The order the page lists method families in: the ones a crafter reaches for first, then the
+/// long tables of bench crafts and unveils.
+fn family_rank(family: &str) -> usize {
+    const ORDER: [&str; 8] = [
+        "currency", "essence", "harvest", "fossil", "catalyst", "beast", "bench", "unveil",
+    ];
+    ORDER
+        .iter()
+        .position(|f| *f == family)
+        .unwrap_or(ORDER.len())
+}
+
 /// One chart: a root class, the modifiers it tracks, and every class reachable from the root in
 /// either direction. A node's id is its class, so a forward step and a backward step that reach
 /// the same class are one node.
 pub struct Chart {
-    /// The root's own slots, which make a class the goal.
-    wanted: Vec<u32>,
+    /// The root's class: reaching it again is what the page calls the goal.
+    root: String,
     tracked: Vec<Slot>,
     nodes: BTreeMap<String, (AbsItem, Option<forward::Node>)>,
     last: Option<(String, String, forward::Applied)>,
@@ -237,16 +249,10 @@ impl Chart {
             members: vec![(target.item.clone(), 1.0)],
             approx: false,
         });
-        let wanted: Vec<u32> = spec
-            .prefixes
-            .iter()
-            .chain(&spec.suffixes)
-            .filter_map(|s| data.mod_by_id(&s.id))
-            .collect();
         let mut nodes = BTreeMap::new();
         nodes.insert(id.clone(), (target, members));
         let chart = Chart {
-            wanted,
+            root: id.clone(),
             tracked,
             nodes,
             last: None,
@@ -300,7 +306,7 @@ impl Chart {
                 ),
             })
             .collect();
-        out.sort_by(|a, b| (&a.family, &a.name, &a.id).cmp(&(&b.family, &b.name, &b.id)));
+        out.sort_by_cached_key(|m| (family_rank(&m.family), m.name.clone(), m.id.clone()));
         Ok(out)
     }
 
@@ -416,15 +422,11 @@ impl Chart {
             .nodes
             .get(id)
             .ok_or_else(|| format!("chart: no node \"{id}\""))?;
-        let held: Vec<u32> = Side::BOTH
-            .into_iter()
-            .flat_map(|side| class.item.affixes(side).iter().map(|a| a.roll.m))
-            .collect();
         Ok(NodeView {
             id: id.to_string(),
             spec: class.to_spec(data),
             view: class_view(data, &self.tracked, class),
-            goal: !self.wanted.is_empty() && self.wanted.iter().all(|m| held.contains(m)),
+            goal: id == self.root,
             members: members.as_ref().map(|n| n.members.len()),
             approx: members.as_ref().is_some_and(|n| n.approx),
         })
@@ -530,16 +532,13 @@ impl Chart {
                 .map(|group| {
                     let (kind, view, reason, goal) = match &group.kind {
                         Kind::Item(class) => {
-                            let held: Vec<u32> = Side::BOTH
-                                .into_iter()
-                                .flat_map(|side| class.item.affixes(side).iter().map(|a| a.roll.m))
-                                .collect();
+                            let id = preimages::abs_key(data, class);
+                            let goal = id == self.root;
                             (
                                 "item",
                                 Some(class_view(data, &self.tracked, class)),
                                 None,
-                                !self.wanted.is_empty()
-                                    && self.wanted.iter().all(|m| held.contains(m)),
+                                goal,
                             )
                         }
                         Kind::Destroyed => ("destroyed", None, None, false),

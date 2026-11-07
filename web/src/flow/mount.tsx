@@ -6,7 +6,7 @@ import { createClient } from '../client'
 import { App } from './App'
 import { FlowContext } from './context'
 import type { Scope } from './scope'
-import { createFlowStore } from './store'
+import { createFlowStore, type FlowStore } from './store'
 
 function storage(): Storage | null {
   try {
@@ -16,15 +16,17 @@ function storage(): Storage | null {
   }
 }
 
-/** Starts a flowchart page: its state, its worker, and the app in `#root`. */
+/** Starts a chart page: its worker, its state, and the app in `#root`. */
 export function mount(scope: Scope): void {
-  const store = createFlowStore(scope, {
+  let store: FlowStore | null = null
+  const client = createClient(new Worker(new URL('../worker.ts', import.meta.url), { type: 'module' }), {
+    onBusy: (busy) => store?.getState().setBusy(busy),
+  })
+  store = createFlowStore(scope, {
+    client,
     hash: window.location.hash,
     storage: storage(),
     dropHash: () => window.history.replaceState(null, '', window.location.pathname + window.location.search),
-  })
-  const client = createClient(new Worker(new URL('../worker.ts', import.meta.url), { type: 'module' }), {
-    onBusy: (busy) => store.getState().setBusy(busy),
   })
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
