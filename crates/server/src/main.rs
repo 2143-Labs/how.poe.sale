@@ -28,11 +28,14 @@ async fn main() {
     let cache = |v: &'static str| {
         SetResponseHeaderLayer::overriding(header::CACHE_CONTROL, HeaderValue::from_static(v))
     };
-    // Vite's content-hashed files never change. The bundle and index.html are unhashed, and their
-    // validators come from the Nix store (mtime 1, so only the size differs between builds): a
-    // same-size index.html after a deploy would be answered 304 with the old asset names. They
-    // are therefore always sent in full.
-    // A missing file under /assets or /data is a real 404; only unmatched paths get the SPA shell.
+    // Vite's content-hashed files never change. The bundle and the pages' index.html files are
+    // unhashed, and their validators come from the Nix store (mtime 1, so only the size differs
+    // between builds): a same-size index.html after a deploy would be answered 304 with the old
+    // asset names. They are therefore always sent in full.
+    // A missing file under /assets or /data is a real 404. Every other path is a page directory:
+    // `/poe1/` answers with `poe1/index.html`, `/poe1` redirects to `/poe1/`, and a path that
+    // matches nothing gets the chooser with 200 (`fallback`, not `not_found_service`, which would
+    // force 404).
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
         // The link-preview image is a real file, not the SPA shell: Discord and the
@@ -63,7 +66,7 @@ async fn main() {
                 .layer(cache("no-cache"))
                 .layer(map_request(strip_conditions))
                 .layer(map_response(strip_validators))
-                .service(ServeFile::new(dir.join("index.html"))),
+                .service(ServeDir::new(&dir).fallback(ServeFile::new(dir.join("index.html")))),
         )
         .layer(CompressionLayer::new());
 
