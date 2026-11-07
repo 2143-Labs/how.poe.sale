@@ -1,5 +1,16 @@
 import type { SolverRequest, SolverResponse } from './protocol'
-import type { AbsSpec, ItemView, ModOption, PreimagesView, StartInfo } from './types'
+import type {
+  AbsSpec,
+  AppliedView,
+  ItemView,
+  MadeByView,
+  MethodOption,
+  ModOption,
+  NodeView,
+  PinnedView,
+  SlotSpec,
+  StartInfo,
+} from './types'
 
 /** The slice of `Worker` this client needs, so tests can drive a fake one. */
 export interface WorkerLike {
@@ -10,7 +21,7 @@ export interface WorkerLike {
 }
 
 export interface ClientCallbacks {
-  /** Whether a `preimages` request is waiting for its answer. */
+  /** Whether a chart forward or backward answer is still being computed. */
   onBusy: (busy: boolean) => void
 }
 
@@ -18,12 +29,15 @@ export interface Client {
   start(): Promise<StartInfo>
   parse(text: string): Promise<ItemView>
   mods(base: string, itemLevel: number, influences: string[]): Promise<ModOption[]>
-  /**
-   * The steps that could have produced `target`. Only the newest call settles: an older one
-   * whose answer arrives later never resolves or rejects, so a slow answer cannot overwrite a
-   * newer one.
-   */
-  preimages(target: AbsSpec, methods: string[]): Promise<PreimagesView>
+  /** Starts a chart whose root is `root` and which also tracks `watch`. */
+  chartStart(root: AbsSpec, watch: SlotSpec[]): Promise<NodeView>
+  chartMethods(node: string): Promise<MethodOption[]>
+  /** `method`'s outcomes from `node`. Only the newest call settles. */
+  chartForward(node: string, method: string): Promise<AppliedView>
+  /** The inputs that could have produced `node`. Only the newest call settles. */
+  chartMadeBy(node: string, methods: string[]): Promise<MadeByView>
+  chartPinForward(node: string, method: string, key: string): Promise<PinnedView>
+  chartPinBackward(node: string, method: string, key: string): Promise<PinnedView>
   dispose(): void
 }
 
@@ -32,10 +46,13 @@ type Waiting = {
   reject: (error: Error) => void
 }
 
+/** The answers that supersede their predecessor, so a slow one cannot overwrite a newer one. */
+const LATEST: Record<string, true> = { chartForward: true, chartMadeBy: true }
+
 /** Owns the worker and matches every answer to the request that asked for it. */
 export function createClient(worker: WorkerLike, callbacks: ClientCallbacks): Client {
   let nextId = 1
-  let latestPreimages = 0
+  const latest = new Map<string, number>()
   const waiting = new Map<number, Waiting>()
 
   const request = <T>(message: SolverRequest): Promise<T> =>
@@ -44,6 +61,15 @@ export function createClient(worker: WorkerLike, callbacks: ClientCallbacks): Cl
       worker.postMessage(message)
     })
 
+  /** A request whose successor wins: the older call never settles. */
+  const latestOnly = <T>(message: SolverRequest): Promise<T> => {
+    const previous = latest.get(message.type)
+    if (previous) waiting.delete(previous)
+    latest.set(message.type, message.id)
+    callbacks.onBusy(true)
+    return request<T>(message)
+  }
+
   const onMessage = (event: MessageEvent) => {
     const response = event.data as SolverResponse | null | undefined
     if (!response || typeof response !== 'object' || typeof response.type !== 'string') return
@@ -51,8 +77,8 @@ export function createClient(worker: WorkerLike, callbacks: ClientCallbacks): Cl
     if (!pending) return
     waiting.delete(response.id)
 
-    if (response.type === 'preimages') {
-      if (response.id !== latestPreimages) return
+    if (LATEST[response.type]) {
+      if (response.id !== latest.get(response.type)) return
       callbacks.onBusy(false)
     }
     if (response.error) {
@@ -73,8 +99,24 @@ export function createClient(worker: WorkerLike, callbacks: ClientCallbacks): Cl
       case 'mods':
         pending.resolve(response.mods ?? [])
         return
-      case 'preimages':
-        if (response.result) pending.resolve(response.result)
+      case 'chartStart':
+        if (response.node) pending.resolve(response.node)
+        else pending.reject(new Error('The solver answered with nothing.'))
+        return
+      case 'chartMethods':
+        pending.resolve(response.methods ?? [])
+        return
+      case 'chartForward':
+        if (response.applied) pending.resolve(response.applied)
+        else pending.reject(new Error('The solver answered with nothing.'))
+        return
+      case 'chartMadeBy':
+        if (response.madeBy) pending.resolve(response.madeBy)
+        else pending.reject(new Error('The solver answered with nothing.'))
+        return
+      case 'chartPinForward':
+      case 'chartPinBackward':
+        if (response.pinned) pending.resolve(response.pinned)
         else pending.reject(new Error('The solver answered with nothing.'))
         return
     }
@@ -95,13 +137,33 @@ export function createClient(worker: WorkerLike, callbacks: ClientCallbacks): Cl
       return request<ModOption[]>({ type: 'mods', id: nextId++, base, itemLevel, influences })
     },
 
-    preimages(target, methods) {
-      const id = nextId++
-      // An older request still waiting will never be answered to its caller.
-      if (latestPreimages) waiting.delete(latestPreimages)
-      latestPreimages = id
-      callbacks.onBusy(true)
-      return request<PreimagesView>({ type: 'preimages', id, target: JSON.stringify(target), methods })
+    chartStart(root, watch) {
+      return request<NodeView>({
+        type: 'chartStart',
+        id: nextId++,
+        root: JSON.stringify(root),
+        watch: JSON.stringify(watch),
+      })
+    },
+
+    chartMethods(node) {
+      return request<MethodOption[]>({ type: 'chartMethods', id: nextId++, node })
+    },
+
+    chartForward(node, method) {
+      return latestOnly<AppliedView>({ type: 'chartForward', id: nextId++, node, method })
+    },
+
+    chartMadeBy(node, methods) {
+      return latestOnly<MadeByView>({ type: 'chartMadeBy', id: nextId++, node, methods })
+    },
+
+    chartPinForward(node, method, key) {
+      return request<PinnedView>({ type: 'chartPinForward', id: nextId++, node, method, key })
+    },
+
+    chartPinBackward(node, method, key) {
+      return request<PinnedView>({ type: 'chartPinBackward', id: nextId++, node, method, key })
     },
 
     dispose() {

@@ -5,50 +5,97 @@ export type Rarity = 'normal' | 'magic' | 'rare' | 'unique'
 /** Influence names as the engine writes them in a spec. */
 export const INFLUENCES = ['shaper', 'elder', 'crusader', 'redeemer', 'hunter', 'warlord'] as const
 
-/** A tracked modifier by id; `values` only when a paste rolled it. */
-export interface ModSpec {
+/** A tracked modifier: its tier, or its family at that tier or higher. */
+export interface SlotSpec {
   id: string
-  values?: number[]
+  orBetter?: boolean
 }
 
 /**
- * An abstract item (`AbsSpec`): the tracked modifiers by id and how many untracked ones sit on
- * each side. The engine leaves out empty lists and zero counts when it writes one, so a spec
- * read from it goes through `normalizeSpec` first.
+ * An abstract item (`AbsSpec`): the slots the chart tracks and how many untracked modifiers sit
+ * on each side. The engine leaves out empty lists, zero counts and false flags when it writes
+ * one, so a spec read from it goes through `normalizeSpec` first.
  */
 export interface AbsSpec {
   base: string
   itemLevel: number
   rarity: Rarity
   influences: string[]
-  prefixes: ModSpec[]
-  suffixes: ModSpec[]
+  prefixes: SlotSpec[]
+  suffixes: SlotSpec[]
   anyPrefixes: number
   anySuffixes: number
+  corrupted: boolean
 }
 
-/** An abstract item as the page shows it: names and modifier texts. */
-export interface AbsView {
+/** A class as the page shows it: names and modifier texts. */
+export interface ClassView {
   base: string
   itemLevel: number
   rarity: string
+  corrupted: boolean
   influences: string[]
+  /** The tracked modifiers, each `"… or better"` when it stands for its family. */
   prefixes: string[]
   suffixes: string[]
   anyPrefixes: number
   anySuffixes: number
 }
 
-/** One input that could have produced the item. */
-export interface PreimageView {
+/** A chart node: its class, and what it stands for. */
+export interface NodeView {
+  id: string
+  spec: AbsSpec
+  view: ClassView
+  /** This is the root's class: the chart has come back to where it started. */
+  goal: boolean
+  /** How many items the node stands for, when it has any of its own. */
+  members: number | null
+  approx: boolean
+}
+
+export type OutcomeKind = 'item' | 'destroyed' | 'refused' | 'notModelled'
+
+/** One outcome of a method applied to a node. */
+export interface OutcomeView {
+  key: string
+  kind: OutcomeKind
+  p: number
+  /** The 95% range when `p` comes from a simulation. */
+  interval: [number, number] | null
+  view: ClassView | null
+  reason: string | null
+  goal: boolean
+}
+
+/** One method's outcomes from a node. */
+export interface AppliedView {
+  node: string
   method: string
   name: string
-  /** The chance the method turns `input` into the item, conditional on `input`. */
-  p: number
   cost: string
-  input: AbsView
-  /** `input` as a spec, in the engine's compact form. */
-  inputSpec: Partial<AbsSpec> & { base: string; itemLevel: number; rarity: Rarity }
+  /** The reforges run, when the numbers are simulated. */
+  simulated: number | null
+  outcomes: OutcomeView[]
+}
+
+/** One method a node can be pushed through. */
+export interface MethodOption {
+  id: string
+  name: string
+  family: string
+  cost: string
+}
+
+/** One input a method could have turned into a node. */
+export interface InputView {
+  key: string
+  method: string
+  name: string
+  p: number
+  interval: [number, number] | null
+  cost: string
+  view: ClassView
   note: string | null
 }
 
@@ -59,10 +106,27 @@ export interface UnmetView {
   reason: string
 }
 
-export interface PreimagesView {
-  target: AbsView
-  steps: PreimageView[]
+/** The inputs that could have produced a node. */
+export interface MadeByView {
+  node: string
+  inputs: InputView[]
   skipped: UnmetView[]
+}
+
+/** A pinned step. Edges always run in crafting order. */
+export interface EdgeView {
+  from: string
+  to: string
+  method: string
+  name: string
+  p: number
+  interval: [number, number] | null
+}
+
+/** A node added to the chart, with the edge that added it. */
+export interface PinnedView {
+  node: NodeView
+  edge: EdgeView
 }
 
 /** A modifier a target can name. */
@@ -84,8 +148,9 @@ export interface ItemView {
     itemLevel: number
     rarity: Rarity
     influences?: string[]
-    prefixes?: ModSpec[]
-    suffixes?: ModSpec[]
+    prefixes?: { id: string }[]
+    suffixes?: { id: string }[]
+    corrupted?: boolean
   } & Record<string, unknown>
   /** The item printed back as game text. */
   text: string
@@ -107,20 +172,13 @@ export interface StartInfo {
   bases: string[]
 }
 
-/** One item on the chart. */
-export interface ChartNode {
-  id: string
-  view: AbsView
-  spec: AbsSpec
-}
-
-/** A pinned step: `from` is the input, `to` the item it produced. */
-export interface ChartEdge {
-  from: string
-  to: string
+/** A pinned step as it is saved and replayed. */
+export interface Pin {
+  /** `f`: a forward step from `node`; `b`: a backward input above `node`. */
+  dir: 'f' | 'b'
+  node: string
   method: string
-  name: string
-  p: number
+  key: string
 }
 
 const RARITIES: readonly string[] = ['normal', 'magic', 'rare', 'unique']
@@ -129,13 +187,12 @@ function isRarity(raw: unknown): raw is Rarity {
   return typeof raw === 'string' && RARITIES.includes(raw)
 }
 
-function mods(raw: unknown): ModSpec[] {
+function slots(raw: unknown): SlotSpec[] {
   if (!Array.isArray(raw)) return []
   return raw.flatMap((entry: unknown) => {
     if (!entry || typeof entry !== 'object' || !('id' in entry) || typeof entry.id !== 'string') return []
-    const values = 'values' in entry && Array.isArray(entry.values) ? entry.values : null
-    return values
-      ? [{ id: entry.id, values: values.filter((v: unknown): v is number => typeof v === 'number') }]
+    return 'orBetter' in entry && entry.orBetter === true
+      ? [{ id: entry.id, orBetter: true }]
       : [{ id: entry.id }]
   })
 }
@@ -147,37 +204,19 @@ function count(raw: unknown): number {
 /** A spec with every field present, or `null` when `raw` is not one. */
 export function normalizeSpec(raw: unknown): AbsSpec | null {
   if (!raw || typeof raw !== 'object') return null
-  // Every field is read as `unknown` and checked before use.
   const value: Record<string, unknown> = { ...raw }
   if (typeof value.base !== 'string' || typeof value.itemLevel !== 'number') return null
-  const rarity = isRarity(value.rarity) ? value.rarity : 'rare'
   return {
     base: value.base,
     itemLevel: value.itemLevel,
-    rarity,
+    rarity: isRarity(value.rarity) ? value.rarity : 'rare',
     influences: Array.isArray(value.influences)
       ? value.influences.filter((i): i is string => typeof i === 'string')
       : [],
-    prefixes: mods(value.prefixes),
-    suffixes: mods(value.suffixes),
+    prefixes: slots(value.prefixes),
+    suffixes: slots(value.suffixes),
     anyPrefixes: count(value.anyPrefixes),
     anySuffixes: count(value.anySuffixes),
+    corrupted: value.corrupted === true,
   }
-}
-
-/**
- * A node's identity: the same item pinned twice is one node. Modifier order, values and
- * influence order do not count.
- */
-export function nodeId(spec: AbsSpec): string {
-  return [
-    spec.base,
-    spec.itemLevel,
-    spec.rarity,
-    [...spec.influences].sort().join('+'),
-    spec.prefixes.map((m) => m.id).sort().join(','),
-    spec.suffixes.map((m) => m.id).sort().join(','),
-    spec.anyPrefixes,
-    spec.anySuffixes,
-  ].join('|')
 }

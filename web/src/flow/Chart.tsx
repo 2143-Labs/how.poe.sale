@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Background, Controls, Handle, Position, ReactFlow } from '@xyflow/react'
+import { Background, Controls, ReactFlow } from '@xyflow/react'
 import type { Edge, Node, NodeProps, NodeTypes, ReactFlowInstance } from '@xyflow/react'
-import type { ChartEdge, ChartNode } from '../types'
+import type { EdgeView, NodeView } from '../types'
+import { Card } from './Card'
 import { useFlow, useFlowState } from './context'
-import { nodeTitle, percent } from './format'
+import { percent, range, tries } from './format'
 import { NODE_WIDTH, layoutGraph, type LayoutPositions } from './layout'
+import { pathChance } from './path'
 
 type ItemNodeData = {
-  node: ChartNode
+  node: NodeView
   root: boolean
-  /** The steps this node was pinned as the input of. */
-  out: ChartEdge[]
+  /** The steps that reached this item. */
+  in: EdgeView[]
+  /** The chance of the pinned path from here to the root, when it has one. */
+  chain: string | null
 }
 
 type ItemFlowNode = Node<ItemNodeData, 'item'>
@@ -19,79 +23,49 @@ function estimateHeight(data: ItemNodeData): number {
   const view = data.node.view
   const chips =
     view.prefixes.length + view.suffixes.length + (view.anyPrefixes > 0 ? 1 : 0) + (view.anySuffixes > 0 ? 1 : 0)
-  return 64 + chips * 20 + data.out.length * 16
+  return 64 + chips * 20 + data.in.length * 16
 }
 
 function ItemCard({ data, selected }: NodeProps<ItemFlowNode>) {
-  const view = data.node.view
-  const className = ['solution-node', selected ? 'is-selected' : '', data.root ? 'goal' : ''].filter(Boolean).join(' ')
-  return (
-    <div className={className}>
-      <Handle type="target" position={Position.Top} />
-      <div className="node-title">{nodeTitle(view)}</div>
-      <div className="node-meta">
-        {data.root && <span className="badge badge-expanded">target</span>}
-        <span className="badge">{view.rarity}</span>
-        {view.influences.map((influence) => (
-          <span key={influence} className="badge badge-lock">
-            {influence}
-          </span>
-        ))}
-      </div>
-      <div className="node-sides">
-        <ul className="chips">
-          <li className="chips-label">Prefixes</li>
-          {view.prefixes.map((text, index) => (
-            <li key={`p${index}`} className="chip chip-wanted">
-              {text}
-            </li>
-          ))}
-          {view.anyPrefixes > 0 && <li className="chip chip-other">any prefix ×{view.anyPrefixes}</li>}
-        </ul>
-        <ul className="chips">
-          <li className="chips-label">Suffixes</li>
-          {view.suffixes.map((text, index) => (
-            <li key={`s${index}`} className="chip chip-wanted">
-              {text}
-            </li>
-          ))}
-          {view.anySuffixes > 0 && <li className="chip chip-other">any suffix ×{view.anySuffixes}</li>}
-        </ul>
-      </div>
-      {data.out.map((edge) => (
-        <div key={`${edge.to}:${edge.method}`} className="node-value">
-          {edge.name} · {percent(edge.p)}
-        </div>
-      ))}
-      <Handle type="source" position={Position.Bottom} />
-    </div>
+  const badges: string[] = []
+  if (data.root) badges.push('root')
+  if (data.node.goal && !data.root) badges.push('goal')
+  if (data.node.approx) badges.push('≈')
+  const footer = data.in.map(
+    (edge) =>
+      `${edge.name} · ${edge.interval ? '≈ ' : ''}${percent(edge.p)}${range(edge.interval)} · ${tries(edge.p)}`,
   )
+  if (data.chain) footer.push(data.chain)
+  return <Card view={data.node.view} badges={badges} footer={footer} selected={selected} root={data.root} />
 }
 
 const nodeTypes: NodeTypes = { item: ItemCard }
 
-/**
- * The chart: the target at the bottom and every pinned input above the item it produced, so it
- * reads top-down in crafting order.
- */
+/** The chart: the root, and every step pinned from it in either direction. */
 export function Chart() {
   const { store } = useFlow()
-  const chart = useFlowState((state) => state.chart)
+  const nodes = useFlowState((state) => state.nodes)
   const edges = useFlowState((state) => state.edges)
   const selected = useFlowState((state) => state.selected)
   const [positions, setPositions] = useState<LayoutPositions>({})
   const [instance, setInstance] = useState<ReactFlowInstance<ItemFlowNode, Edge> | null>(null)
 
+  const rootId = nodes[0]?.id ?? null
   const data = useMemo(
     () =>
-      chart.map(
-        (node, index): ItemNodeData => ({
+      nodes.map((node, index): ItemNodeData => {
+        const chain = rootId ? pathChance(edges, node.id, rootId) : null
+        return {
           node,
           root: index === 0,
-          out: edges.filter((edge) => edge.from === node.id),
-        }),
-      ),
-    [chart, edges],
+          in: edges.filter((edge) => edge.to === node.id),
+          chain:
+            chain && chain.steps > 1
+              ? `path to the root · ${percent(chain.p)}${chain.approx ? ' ≈' : ''} over ${chain.steps} steps`
+              : null,
+        }
+      }),
+    [nodes, edges, rootId],
   )
   const flowEdges = useMemo<Edge[]>(
     () =>
@@ -104,7 +78,11 @@ export function Chart() {
     [edges],
   )
   const signature = useMemo(
-    () => [data.map((d) => `${d.node.id}#${estimateHeight(d)}`).join('|'), flowEdges.map((e) => e.id).join('|')].join('/'),
+    () =>
+      [
+        data.map((d) => `${d.node.id}#${estimateHeight(d)}`).join('|'),
+        flowEdges.map((e) => e.id).join('|'),
+      ].join('/'),
     [data, flowEdges],
   )
 
@@ -132,7 +110,7 @@ export function Chart() {
     return () => cancelAnimationFrame(handle)
   }, [instance, positions])
 
-  const nodes = useMemo<ItemFlowNode[]>(
+  const flowNodes = useMemo<ItemFlowNode[]>(
     () =>
       data.map((d, index) => ({
         id: d.node.id,
@@ -144,14 +122,14 @@ export function Chart() {
     [data, positions, selected],
   )
 
-  if (chart.length === 0) {
-    return <div className="graph-canvas graph-empty">Computing the target…</div>
+  if (nodes.length === 0) {
+    return <div className="graph-canvas graph-empty">Starting the chart…</div>
   }
 
   return (
     <div className="graph-canvas">
       <ReactFlow<ItemFlowNode, Edge>
-        nodes={nodes}
+        nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => store.getState().select(node.id)}

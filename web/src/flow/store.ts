@@ -1,43 +1,56 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import type { Client } from '../client'
 import { parseShareHash } from '../share'
 import {
-  nodeId,
   normalizeSpec,
   type AbsSpec,
-  type AbsView,
-  type ChartEdge,
-  type ChartNode,
+  type AppliedView,
+  type EdgeView,
+  type MadeByView,
+  type MethodOption,
   type ModOption,
-  type PreimageView,
-  type PreimagesView,
+  type NodeView,
+  type Pin,
+  type SlotSpec,
 } from '../types'
 import { HORROR_HELMET, type Scope } from './scope'
 
+export type Tab = 'forward' | 'backward'
+
 export interface FlowState {
-  /** The item the chart is built back from, as the panel edits it. */
-  spec: AbsSpec
-  /** Root first: the last target the engine accepted. */
-  chart: ChartNode[]
-  edges: ChartEdge[]
+  /** The item the chart is built from, as the panel edits it. */
+  root: AbsSpec
+  /** The modifiers tracked on top of the root's own. */
+  watch: SlotSpec[]
+  /** The root first, then every node pinned since. */
+  nodes: NodeView[]
+  edges: EdgeView[]
+  /** The pinned steps, in order, so a reload can replay them. */
+  pins: Pin[]
   selected: string | null
-  preimages: PreimagesView | null
-  /** The node `preimages` answers for. */
-  preimagesFor: string | null
+  tab: Tab
+  /** The methods the selected node can be pushed through. */
+  methods: MethodOption[]
+  method: string | null
+  applied: AppliedView | null
+  madeBy: MadeByView | null
   busy: boolean
   error: string | null
-  /** A share-link problem, shown as a dismissible banner. */
+  /** A share-link or replay problem, shown as a dismissible banner. */
   notice: string | null
   mods: ModOption[]
-  setSpec: (spec: AbsSpec) => void
-  /** The engine accepted `spec`: the chart starts over from it. */
-  accept: (spec: AbsSpec, result: PreimagesView) => void
+
+  setRoot: (root: AbsSpec) => void
+  setWatch: (watch: SlotSpec[]) => void
   select: (id: string) => void
-  setPreimages: (id: string, result: PreimagesView) => void
-  /** Puts a step's input on the chart under `parentId` and selects it. */
-  pin: (parentId: string, preimage: PreimageView) => void
+  setTab: (tab: Tab) => void
+  chooseMethod: (id: string) => void
+  /** Pins an outcome of the method shown for the selected node. */
+  pinForward: (key: string) => void
+  /** Pins an input a method could have started from, above the selected node. */
+  pinBackward: (method: string, key: string) => void
   /** Takes a node off the chart, with every node only it led to. */
   unpin: (id: string) => void
-  /** Keeps only the root. */
   clearChart: () => void
   setError: (message: string | null) => void
   setNotice: (message: string | null) => void
@@ -49,15 +62,16 @@ export type FlowStore = StoreApi<FlowState>
 
 /** What the store reads at start and writes to: the page's fragment and storage. */
 export interface StoreEnv {
+  client: Client
   hash: string
   storage: Pick<Storage, 'getItem' | 'setItem'> | null
   /** Drops a share fragment from the address bar once it is read. */
   dropHash: () => void
 }
 
-/** The target a page opens with when nothing was saved. */
-export function seedSpec(scope: Scope): AbsSpec {
-  const spec: AbsSpec = {
+/** The root a page opens with when nothing was saved. */
+export function seedRoot(scope: Scope): AbsSpec {
+  const root: AbsSpec = {
     base: scope.base ?? 'Archdemon Crown',
     itemLevel: 87,
     rarity: 'rare',
@@ -66,59 +80,61 @@ export function seedSpec(scope: Scope): AbsSpec {
     suffixes: [],
     anyPrefixes: 0,
     anySuffixes: 0,
+    corrupted: false,
   }
   if (scope.id === 'simple') {
     // The essence outcome: Essence of Horror's suffix and four modifiers it does not name.
-    spec.anyPrefixes = 2
-    spec.anySuffixes = 2
-    spec.suffixes = [{ id: HORROR_HELMET }]
+    root.anyPrefixes = 2
+    root.anySuffixes = 2
+    root.suffixes = [{ id: HORROR_HELMET }]
   }
-  return spec
+  return root
 }
 
 interface Saved {
-  spec: AbsSpec
-  chart: ChartNode[]
-  edges: ChartEdge[]
-  selected: string | null
+  root: AbsSpec
+  watch: SlotSpec[]
+  pins: Pin[]
 }
 
-function isView(raw: unknown): raw is AbsView {
+function fits(scope: Scope, root: AbsSpec): boolean {
+  return scope.base === null || root.base === scope.base
+}
+
+/** A pinned step, when it reads back as one. */
+function isPin(raw: unknown): raw is Pin {
   if (!raw || typeof raw !== 'object') return false
-  const v = raw as AbsView
-  return typeof v.base === 'string' && Array.isArray(v.prefixes) && Array.isArray(v.suffixes)
+  const pin = raw as Pin
+  return (
+    (pin.dir === 'f' || pin.dir === 'b') &&
+    typeof pin.node === 'string' &&
+    typeof pin.method === 'string' &&
+    typeof pin.key === 'string'
+  )
 }
 
-function isEdge(raw: unknown): raw is ChartEdge {
-  if (!raw || typeof raw !== 'object') return false
-  const e = raw as ChartEdge
-  return typeof e.from === 'string' && typeof e.to === 'string' && typeof e.method === 'string' && typeof e.p === 'number'
+function pinsOf(raw: unknown): Pin[] {
+  return (Array.isArray(raw) ? raw : []).filter(isPin)
 }
 
-function fits(scope: Scope, spec: AbsSpec): boolean {
-  return scope.base === null || spec.base === scope.base
+function watchOf(raw: unknown): SlotSpec[] {
+  return (Array.isArray(raw) ? raw : []).flatMap((entry: unknown) => {
+    if (!entry || typeof entry !== 'object' || !('id' in entry) || typeof entry.id !== 'string') return []
+    return 'orBetter' in entry && entry.orBetter === true
+      ? [{ id: entry.id, orBetter: true }]
+      : [{ id: entry.id }]
+  })
 }
 
-/** The saved chart, when it parses and belongs to its own target. */
+/** The saved chart, when it parses and belongs to its own page. */
 function load(scope: Scope, storage: StoreEnv['storage']): Saved | null {
   try {
     const raw = storage?.getItem(scope.storageKey)
     if (!raw) return null
-    const value = JSON.parse(raw) as Partial<Record<keyof Saved, unknown>> | null
-    const spec = normalizeSpec(value?.spec)
-    if (!value || !spec || !fits(scope, spec)) return null
-    const chart: ChartNode[] = (Array.isArray(value.chart) ? value.chart : []).flatMap((raw: unknown) => {
-      const node = raw as Partial<ChartNode> | null
-      const nodeSpec = normalizeSpec(node?.spec)
-      return nodeSpec && isView(node?.view) ? [{ id: nodeId(nodeSpec), view: node.view, spec: nodeSpec }] : []
-    })
-    if (chart[0]?.id !== nodeId(spec)) return { spec, chart: [], edges: [], selected: null }
-    const ids = new Set(chart.map((node) => node.id))
-    const edges = (Array.isArray(value.edges) ? value.edges : []).filter(
-      (edge: unknown): edge is ChartEdge => isEdge(edge) && ids.has(edge.from) && ids.has(edge.to),
-    )
-    const selected = typeof value.selected === 'string' && ids.has(value.selected) ? value.selected : chart[0].id
-    return { spec, chart, edges, selected }
+    const value = JSON.parse(raw) as Record<string, unknown> | null
+    const root = normalizeSpec(value?.root)
+    if (!value || !root || !fits(scope, root)) return null
+    return { root, watch: watchOf(value.watch), pins: pinsOf(value.pins) }
   } catch {
     return null
   }
@@ -126,15 +142,15 @@ function load(scope: Scope, storage: StoreEnv['storage']): Saved | null {
 
 /** The state a page opens with, and a notice when a share link could not be used. */
 function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null } {
-  const saved = () => load(scope, env.storage) ?? { spec: seedSpec(scope), chart: [], edges: [], selected: null }
+  const saved = (): Saved => load(scope, env.storage) ?? { root: seedRoot(scope), watch: [], pins: [] }
   const share = parseShareHash(env.hash)
   switch (share.kind) {
     case 'ok':
       env.dropHash()
-      if (share.scope !== scope.id || !fits(scope, share.target)) {
+      if (share.scope !== scope.id || !fits(scope, share.root)) {
         return { ...saved(), notice: 'This share link is for another page.' }
       }
-      return { spec: share.target, chart: [], edges: [], selected: null, notice: null }
+      return { root: share.root, watch: share.watch, pins: share.pins, notice: null }
     case 'legacy':
       return { ...saved(), notice: 'This link was made by the previous version of how.poe.sale and cannot be opened.' }
     case 'invalid':
@@ -144,15 +160,16 @@ function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null }
   }
 }
 
-/** Every node a chain of pinned steps leads from to the root. */
-function reachable(chart: ChartNode[], edges: ChartEdge[]): Set<string> {
-  const keep = new Set<string>(chart.length > 0 ? [chart[0].id] : [])
+/** Every node still joined to the root by pinned steps. */
+function reachable(nodes: NodeView[], edges: EdgeView[]): Set<string> {
+  const keep = new Set<string>(nodes.length > 0 ? [nodes[0].id] : [])
   let grew = true
   while (grew) {
     grew = false
     for (const edge of edges) {
-      if (keep.has(edge.to) && !keep.has(edge.from)) {
+      if (keep.has(edge.to) !== keep.has(edge.from)) {
         keep.add(edge.from)
+        keep.add(edge.to)
         grew = true
       }
     }
@@ -162,77 +179,174 @@ function reachable(chart: ChartNode[], edges: ChartEdge[]): Set<string> {
 
 export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
   const start = initial(scope, env)
-  const store = createStore<FlowState>()((set, get) => ({
-    ...start,
-    preimages: null,
-    preimagesFor: null,
-    busy: false,
-    error: null,
-    mods: [],
-    setSpec: (spec) => set({ spec }),
-    accept: (spec, result) => {
-      const id = nodeId(spec)
+  const store = createStore<FlowState>()((set, get) => {
+    const fail = (reason: unknown) =>
+      set({ error: reason instanceof Error ? reason.message : String(reason) })
+
+    /** Adds a pinned node and edge, when they are new. */
+    const keep = (node: NodeView, edge: EdgeView) => {
+      const { nodes, edges } = get()
       set({
-        chart: [{ id, view: result.target, spec }],
-        edges: [],
-        selected: id,
-        preimages: result,
-        preimagesFor: id,
-        error: null,
+        nodes: nodes.some((known) => known.id === node.id) ? nodes : [...nodes, node],
+        edges: edges.some(
+          (known) => known.from === edge.from && known.to === edge.to && known.method === edge.method,
+        )
+          ? edges
+          : [...edges, edge],
+        selected: node.id,
       })
-    },
-    select: (id) => set({ selected: id }),
-    setPreimages: (id, result) => set({ preimages: result, preimagesFor: id }),
-    pin: (parentId, preimage) => {
-      const spec = normalizeSpec(preimage.inputSpec)
-      if (!spec) return
-      const id = nodeId(spec)
-      const { chart, edges } = get()
-      const nextChart = chart.some((node) => node.id === id) ? chart : [...chart, { id, view: preimage.input, spec }]
-      const known = edges.some((e) => e.from === id && e.to === parentId && e.method === preimage.method)
-      const nextEdges = known
-        ? edges
-        : [...edges, { from: id, to: parentId, method: preimage.method, name: preimage.name, p: preimage.p }]
-      set({ chart: nextChart, edges: nextEdges, selected: id })
-    },
-    unpin: (id) => {
-      const { chart, edges, selected } = get()
-      if (chart.length === 0 || chart[0].id === id) return
-      const left = edges.filter((edge) => edge.from !== id && edge.to !== id)
-      const keep = reachable(
-        chart.filter((node) => node.id !== id),
-        left,
-      )
-      set({
-        chart: chart.filter((node) => keep.has(node.id)),
-        edges: left.filter((edge) => keep.has(edge.from) && keep.has(edge.to)),
-        selected: selected && keep.has(selected) ? selected : chart[0].id,
-      })
-    },
-    clearChart: () => {
-      const { chart } = get()
-      set({ chart: chart.slice(0, 1), edges: [], selected: chart[0]?.id ?? null })
-    },
-    setError: (error) => set({ error }),
-    setNotice: (notice) => set({ notice }),
-    setBusy: (busy) => set({ busy }),
-    setMods: (mods) => set({ mods }),
-  }))
+    }
+
+    /** The methods the selected node can be pushed through, and its inputs when it shows them. */
+    const refresh = async (id: string) => {
+      const { tab } = get()
+      try {
+        const methods = await env.client.chartMethods(id)
+        if (get().selected !== id) return
+        set({ methods, method: null, applied: null })
+        if (tab === 'backward') {
+          const madeBy = await env.client.chartMadeBy(id, scope.id === 'simple' ? scope.methods : [])
+          if (get().selected === id) set({ madeBy })
+        }
+      } catch (reason) {
+        fail(reason)
+      }
+    }
+
+    /** Starts the engine's chart afresh from `root` and `watch`, then replays `pins`. */
+    const restart = async (root: AbsSpec, watch: SlotSpec[], pins: Pin[]) => {
+      set({ root, watch, pins: [], nodes: [], edges: [], selected: null, methods: [], method: null, applied: null, madeBy: null })
+      try {
+        const node = await env.client.chartStart(root, watch)
+        set({ nodes: [node], selected: node.id })
+        for (const pin of pins) {
+          const pinned =
+            pin.dir === 'f'
+              ? await env.client.chartPinForward(pin.node, pin.method, pin.key)
+              : await env.client.chartPinBackward(pin.node, pin.method, pin.key)
+          keep(pinned.node, pinned.edge)
+          set({ pins: [...get().pins, pin] })
+        }
+      } catch (reason) {
+        set({ notice: `The saved chart no longer matches the engine; it was cut at step ${get().pins.length}.` })
+        fail(reason)
+        return
+      }
+      const selected = get().selected
+      if (selected) await refresh(selected)
+    }
+
+    void restart(start.root, start.watch, start.pins)
+
+    return {
+      root: start.root,
+      watch: start.watch,
+      nodes: [],
+      edges: [],
+      pins: [],
+      selected: null,
+      tab: 'forward',
+      methods: [],
+      method: null,
+      applied: null,
+      madeBy: null,
+      busy: false,
+      error: null,
+      notice: start.notice,
+      mods: [],
+
+      setRoot: (root) => {
+        void restart(root, get().watch, [])
+      },
+      setWatch: (watch) => {
+        void restart(get().root, watch, [])
+      },
+      select: (id) => {
+        set({ selected: id, applied: null, madeBy: null, method: null })
+        void refresh(id)
+      },
+      setTab: (tab) => {
+        set({ tab })
+        const id = get().selected
+        if (!id) return
+        if (tab === 'backward' && !get().madeBy) {
+          env.client
+            .chartMadeBy(id, scope.id === 'simple' ? scope.methods : [])
+            .then((madeBy) => {
+              if (get().selected === id) set({ madeBy })
+            })
+            .catch(fail)
+        }
+      },
+      chooseMethod: (id) => {
+        const node = get().selected
+        if (!node) return
+        set({ method: id, applied: null })
+        env.client
+          .chartForward(node, id)
+          .then((applied) => {
+            if (get().selected === node && get().method === id) set({ applied })
+          })
+          .catch(fail)
+      },
+      pinForward: (key) => {
+        const { selected, method, pins } = get()
+        if (!selected || !method) return
+        env.client
+          .chartPinForward(selected, method, key)
+          .then((pinned) => {
+            keep(pinned.node, pinned.edge)
+            set({ pins: [...pins, { dir: 'f', node: selected, method, key }] })
+            void refresh(pinned.node.id)
+          })
+          .catch(fail)
+      },
+      pinBackward: (method, key) => {
+        const { selected, pins } = get()
+        if (!selected) return
+        env.client
+          .chartPinBackward(selected, method, key)
+          .then((pinned) => {
+            keep(pinned.node, pinned.edge)
+            set({ pins: [...pins, { dir: 'b', node: selected, method, key }] })
+            void refresh(pinned.node.id)
+          })
+          .catch(fail)
+      },
+      unpin: (id) => {
+        const { nodes, edges, selected, pins } = get()
+        if (nodes.length === 0 || nodes[0].id === id) return
+        const left = edges.filter((edge) => edge.from !== id && edge.to !== id)
+        const rest = nodes.filter((node) => node.id !== id)
+        const helped = reachable(rest, left)
+        set({
+          nodes: rest.filter((node) => helped.has(node.id)),
+          edges: left.filter((edge) => helped.has(edge.from) && helped.has(edge.to)),
+          pins: pins.filter((pin) => pin.key !== id),
+          selected: selected && helped.has(selected) ? selected : nodes[0].id,
+        })
+      },
+      clearChart: () => {
+        const { nodes } = get()
+        if (nodes.length === 0) return
+        set({ nodes: nodes.slice(0, 1), edges: [], pins: [], selected: nodes[0].id })
+        void refresh(nodes[0].id)
+      },
+      setError: (error) => set({ error }),
+      setNotice: (notice) => set({ notice }),
+      setBusy: (busy) => set({ busy }),
+      setMods: (mods) => set({ mods }),
+    }
+  })
 
   if (env.storage) {
     const storage = env.storage
     store.subscribe((state, previous) => {
-      if (
-        state.spec === previous.spec &&
-        state.chart === previous.chart &&
-        state.edges === previous.edges &&
-        state.selected === previous.selected
-      ) {
+      if (state.root === previous.root && state.watch === previous.watch && state.pins === previous.pins) {
         return
       }
       try {
-        const { spec, chart, edges, selected } = state
-        storage.setItem(scope.storageKey, JSON.stringify({ spec, chart, edges, selected }))
+        storage.setItem(scope.storageKey, JSON.stringify({ root: state.root, watch: state.watch, pins: state.pins }))
       } catch {
         // storage full or unavailable: the chart still lives for this visit
       }

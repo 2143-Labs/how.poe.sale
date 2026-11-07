@@ -296,6 +296,7 @@ td {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .picker {
@@ -529,4 +530,60 @@ td {
 .react-flow__edge.edge-chosen .react-flow__edge-path {
   stroke: var(--accent);
   stroke-width: 2;
+}
+
+.assumptions {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.35rem 0.6rem;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.tab.is-current {
+  border-bottom-color: currentColor;
+  opacity: 1;
+}
+
+.picker-row.is-current,
+.method-row.is-current {
+  outline: 1px solid currentColor;
+}
+
+.methods {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.method-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.method-row button {
+  flex: 0 0 auto;
+}
+
+.method-row .picker-text {
+  flex: 1 1 auto;
 }
