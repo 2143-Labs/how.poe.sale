@@ -16,9 +16,84 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="The how.poe.sale solver: a target pattern and a pasted item beside a ranked table of next crafting steps" />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #12131a;
+        --panel: #1b1d27;
+        --border: #2f3345;
+        --text: #e6e7ee;
+        --muted: #9aa0b4;
+        --accent: #f0b44d;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 20px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 6px;
+      }
+      p {
+        color: var(--muted);
+        margin: 0 0 28px;
+      }
+      .cards {
+        display: grid;
+        gap: 14px;
+      }
+      .card {
+        display: block;
+        padding: 16px 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+        color: var(--text);
+        text-decoration: none;
+      }
+      .card:hover {
+        border-color: var(--accent);
+      }
+      .card strong {
+        display: block;
+        font-size: 17px;
+        margin-bottom: 2px;
+      }
+      .card span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <main>
+      <h1>how.poe.sale</h1>
+      <p>Start from the item you want and work back to the item you can make.</p>
+      <div class="cards">
+        <a class="card" href="/poe1/">
+          <strong>Path of Exile 1</strong>
+          <span>Any base: pick the modifiers you want and see which steps could have produced them.</span>
+        </a>
+        <a class="card" href="/simple/">
+          <strong>Path of Exile 1 simple</strong>
+          <span>The Archdemon Crown with the Exalted Orb, the Orb of Annulment, the two Cannot Be Changed crafts and Essence of Horror.</span>
+        </a>
+        <a class="card" href="/poe2/">
+          <strong>Path of Exile 2</strong>
+          <span>Not supported yet.</span>
+        </a>
+      </div>
+    </main>
+    <script>
+      // Share links used to open the site's root; they belong to the Path of Exile 1 page now.
+      if (/^#(s|p)=/.test(location.hash)) location.replace('/poe1/' + location.hash)
+    </script>
   </body>
 </html>

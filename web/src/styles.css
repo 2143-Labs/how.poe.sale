@@ -234,7 +234,7 @@ td {
 
 .columns {
   display: grid;
-  grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -258,20 +258,275 @@ td {
   margin: 6px 0;
 }
 
-.step-does {
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-.sources {
-  padding-left: 18px;
+.app-header h1 a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.sources li {
-  margin-bottom: 8px;
+.scope-title {
+  color: var(--accent);
+}
+
+/* --- target panel --- */
+
+.field {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.field > span {
+  color: var(--muted);
+}
+
+.influences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.picker {
+  margin-top: 10px;
+}
+
+.picker-search {
+  width: 100%;
+  margin: 6px 0;
+}
+
+.picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picker-results {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.picker-row:hover {
+  background: var(--panel-alt);
+}
+
+.picker-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-level {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.side {
+  font-size: 10px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.side-prefix {
+  border-color: var(--ok);
+}
+
+.side-suffix {
+  border-color: var(--recovery);
+}
+
+.paste {
+  margin-top: 12px;
+}
+
+.paste summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.paste select,
+.paste textarea {
+  margin-top: 6px;
+}
+
+/* --- inspector --- */
+
+.steps-table code {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.step-note {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.skipped {
+  margin-top: 10px;
+}
+
+.skipped summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.skipped ul {
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* --- chart --- */
+
+.graph-canvas {
+  height: 560px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0e0f14;
+  border: 1px solid var(--border);
+}
+
+.graph-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.solution-node {
+  width: 260px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-alt);
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.solution-node.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.solution-node.goal {
+  background: #1f2433;
+}
+
+.node-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.node-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.badge {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.badge-lock {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.badge-expanded {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.node-sides {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chips-label {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.chip {
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: var(--panel);
+  border-left: 3px solid var(--border);
+}
+
+.chip-wanted {
+  border-left-color: var(--ok);
+}
+
+.chip-other {
+  border-left-color: var(--muted);
+  color: var(--muted);
+}
+
+.node-value {
+  margin-top: 6px;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.react-flow__edge.edge-chosen .react-flow__edge-path {
+  stroke: var(--accent);
+  stroke-width: 2;
 }
