@@ -5,16 +5,17 @@
 //! the inputs that could have produced the item, with the chance it did. A row's chance is
 //! conditional on its own input, so different rows are not a partition of one event.
 //!
-//! A row whose input differs from the item by an untracked slot ("any prefix", "any suffix")
-//! reports the chance the step acted on that side: that the orb added a modifier of that side,
-//! or that the annulment took one. That is the chance of the side, not of one modifier.
+//! A row whose input differs from the item by an untracked slot ("any prefix", "any suffix") is
+//! the chance the step acted on that side: the chance the orb added a modifier of that side, or
+//! the chance the annulment took one of the untracked modifiers sitting there. Each removable
+//! modifier of an annulment's input is equally likely (claim `annul.uniform`), so that chance is
+//! the untracked count over every removable modifier.
 
 use std::collections::BTreeMap;
 
 use crate::apply::{self, Params};
 use crate::data::{Cost, Data, Rarity, Side};
-use crate::invert;
-use crate::item::{AbsSpec, AffixSpec, Item, ItemError, ItemSpec, ModSpec};
+use crate::item::{AbsSpec, AffixSpec, Item, ItemError, ItemSpec, MetaMod, ModSpec};
 use crate::method::{Method, Op, Pool, Require, SideReq};
 
 /// An item whose untracked modifiers are counted, not named: `item` holds only the tracked ones.
@@ -210,7 +211,7 @@ pub fn preimages(data: &Data, target: &AbsItem, methods: &[&str]) -> Preimages {
 fn rule(data: &Data, method: &Method, target: &AbsItem) -> Option<(Vec<Found>, String)> {
     Some(match method.id.as_str() {
         "currency/exalted" => exalted(data, target),
-        "currency/annulment" => annulment(data, target),
+        "currency/annulment" => annulment(data, method, target),
         "bench/add/StrMasterItemGenerationCannotChangePrefixes"
         | "bench/add/DexMasterItemGenerationCannotChangeSuffixes" => bench(data, method, target),
         "essence/essence-of-horror" => essence(data, method, target),
@@ -346,30 +347,35 @@ fn exalted(data: &Data, target: &AbsItem) -> (Vec<Found>, String) {
     (out, empty.to_string())
 }
 
-/// An Orb of Annulment: the item with one more untracked modifier on a side, at that side's
-/// share of the modifiers the input could have held there. The two sides' shares add up to 1.
-fn annulment(data: &Data, target: &AbsItem) -> (Vec<Found>, String) {
+/// An Orb of Annulment: the item with one more untracked modifier on a side, at the chance the
+/// orb took one of the untracked modifiers on that side: each removable modifier of the input is
+/// equally likely (claim `annul.uniform`).
+fn annulment(data: &Data, method: &Method, target: &AbsItem) -> (Vec<Found>, String) {
     // The input held one more modifier than the result on the side the orb took from, so that
     // side had room in the result, and a side a metamod locks gives nothing up.
-    let open = Side::BOTH.map(|s| !target.item.locked(data, s) && !target.full(data, s));
-    let mut count = [0usize; 2];
-    for m in invert::eligible(data, &target.item) {
-        if let Some(side) = data.mod_at(m).side
-            && open[side.index()]
-        {
-            count[side.index()] += 1;
-        }
-    }
-    let total = count[0] + count[1];
+    let locked = Side::BOTH.map(|s| target.item.locked(data, s));
+    let open = Side::BOTH.map(|s| !locked[s.index()] && !target.full(data, s));
+    let removable = apply::changeable(data, method, &target.item);
+    // Untracked slots are counted as removable: the model does not name them.
+    let untracked: usize = Side::BOTH
+        .into_iter()
+        .filter(|s| !locked[s.index()])
+        .map(|s| usize::from(target.any[s.index()]))
+        .sum();
+    let total = removable[0] + removable[1] + untracked + 1;
+    let note = (target.item.has_meta(data, MetaMod::NoAttack)
+        || target.item.has_meta(data, MetaMod::NoCaster))
+    .then(|| "untracked modifiers are counted as removable".to_string());
     let mut out = Vec::new();
     for side in Side::BOTH {
         let i = side.index();
-        if total == 0 || !open[i] || count[i] == 0 {
+        if !open[i] {
             continue;
         }
         let mut before = target.clone();
         before.any[i] += 1;
-        out.push((before, count[i] as f64 / total as f64, None));
+        let taken = before.any[i] as usize;
+        out.push((before, taken as f64 / total as f64, note.clone()));
     }
     let empty = if full_both(data, target) {
         rarity_reason(data, target).unwrap_or(

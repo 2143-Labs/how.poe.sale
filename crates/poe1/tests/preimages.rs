@@ -118,8 +118,10 @@ fn an_exalt_skips_a_side_untracked_slots_fill() {
     assert_eq!(prefix.p, 1.0);
 }
 
+/// Each removable modifier of the input is equally likely to go (claim `annul.uniform`): with
+/// one prefix and one suffix, the orb takes the prefix one time in three.
 #[test]
-fn an_annul_gives_a_bucket_per_side() {
+fn an_annul_takes_each_modifier_equally() {
     let target = crown(&["IncreasedLife9"], &["FireResist8"], [0, 0]);
     let found = run(&target, &[ANNUL]);
     assert_eq!(found.steps.len(), 2, "{:?}", found.skipped);
@@ -128,9 +130,48 @@ fn an_annul_gives_a_bucket_per_side() {
     assert_eq!(anys, [[0, 1], [1, 0]]);
     for step in &found.steps {
         assert_eq!(step.input.item, target.item);
+        assert!((step.p - 1.0 / 3.0).abs() < 1e-12, "{}", step.p);
     }
-    let total: f64 = found.steps.iter().map(|s| s.p).sum();
-    assert!((total - 1.0).abs() < 1e-12, "{total}");
+}
+
+/// Untracked slots count toward the chance an untracked modifier was the one the orb took. The
+/// simple page's default holds three prefixes (two untracked) and three suffixes (one tracked,
+/// two untracked), so the prefix bucket is three of the input's six removable modifiers.
+#[test]
+fn an_annul_counts_untracked_slots() {
+    let target = crown(&[], &[HORROR], [2, 2]);
+    let found = run(&target, &[ANNUL]);
+    assert_eq!(found.steps.len(), 1, "{:?}", found.skipped);
+    let step = &found.steps[0];
+    assert_eq!(step.input.any, [3, 2]);
+    assert!((step.p - 0.5).abs() < 1e-12, "{}", step.p);
+}
+
+/// Both sides open: two untracked prefixes and one untracked suffix beside the tracked one.
+#[test]
+fn an_annul_splits_by_removable_modifiers() {
+    let target = crown(&[], &[HORROR], [2, 1]);
+    let found = run(&target, &[ANNUL]);
+    assert_eq!(found.steps.len(), 2, "{:?}", found.skipped);
+    let prefix = found.steps.iter().find(|s| s.input.any == [3, 1]).expect("prefix");
+    let suffix = found.steps.iter().find(|s| s.input.any == [2, 2]).expect("suffix");
+    assert!((prefix.p - 0.6).abs() < 1e-12, "{}", prefix.p);
+    assert!((suffix.p - 0.4).abs() < 1e-12, "{}", suffix.p);
+}
+
+/// A locked side gives nothing up, and its metamod is the only removable prefix.
+#[test]
+fn a_locked_side_gives_no_annul_row() {
+    let target = crown(
+        &["DexMasterItemGenerationCannotChangeSuffixes"],
+        &["FireResist8"],
+        [0, 1],
+    );
+    let found = run(&target, &[ANNUL]);
+    assert_eq!(found.steps.len(), 1, "{:?}", found.skipped);
+    let step = &found.steps[0];
+    assert_eq!(step.input.any, [1, 1]);
+    assert!((step.p - 0.5).abs() < 1e-12, "{}", step.p);
 }
 
 /// "Suffixes Cannot Be Changed" is a prefix craft.
