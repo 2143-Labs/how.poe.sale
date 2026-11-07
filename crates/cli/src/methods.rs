@@ -390,6 +390,7 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
                 "essence.ignores-metamods".into(),
                 "reforge.guarantee-present".into(),
                 "reforge.counts".into(),
+                "reforge.side-first".into(),
                 "metamod.multicraft-does-not-block".into(),
             ],
             game_text: None,

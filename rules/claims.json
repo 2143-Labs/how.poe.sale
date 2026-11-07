@@ -1116,6 +1116,15 @@
       "quote": "Mark Locks as a TODO. They are EXTREMELY hard to model because you can hover as many currencies as you want",
       "patch": "3.29",
       "checked": true
+    },
+    {
+      "id": "reforge.side-first",
+      "statement": "A reforge fills its open slots one modifier at a time; each draw picks a side uniformly among the sides that still have room, and then a modifier on that side by weight. The guaranteed modifier is placed before the draws.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "Side first, like the Exalted Orb.",
+      "patch": "3.29",
+      "checked": true
     }
   ]
 }
