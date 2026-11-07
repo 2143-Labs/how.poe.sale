@@ -95,6 +95,27 @@ pub struct AffixSpec {
     pub fractured: bool,
 }
 
+/// The wire form of `preimages::AbsItem`: the tracked explicit modifiers by id, and how many
+/// untracked ones sit on each side beside them.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AbsSpec {
+    /// A metadata id, or a base name that is unique.
+    pub base: String,
+    pub item_level: u8,
+    pub rarity: Rarity,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub influences: Vec<Influence>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub prefixes: Vec<ModSpec>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub suffixes: Vec<ModSpec>,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub any_prefixes: u8,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub any_suffixes: u8,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Item {
     pub base: u16,

@@ -441,7 +441,7 @@ fn undo_add_veiled(data: &Data, target: &Item) -> Vec<(Item, f64, Option<String>
 
 /// Every modifier that could sit as an explicit on this item: the natural pool, and the crafted,
 /// essence, delve, unveiled, veiled, mercenary and ducat modifiers that can spawn on its tags.
-fn eligible(data: &Data, item: &Item) -> Vec<u32> {
+pub(crate) fn eligible(data: &Data, item: &Item) -> Vec<u32> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
     let groups = item.explicit_groups(data);
