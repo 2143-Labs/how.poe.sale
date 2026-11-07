@@ -159,7 +159,8 @@ pub fn preimages(
         .validate(data)
         .map_err(|e| format!("target: the item {e}"))?;
     let ids: Vec<&str> = methods.iter().map(String::as_str).collect();
-    let found = preimages::preimages(data, &target, &ids);
+    let slots = preimages::tracked(data, &spec, &[])?;
+    let found = preimages::preimages(data, &target, &slots, &ids);
     Ok(PreimagesView {
         target: abs_view(data, &target),
         steps: found
@@ -196,6 +197,7 @@ pub fn mods(
         suffixes: Vec::new(),
         any_prefixes: 0,
         any_suffixes: 0,
+        corrupted: false,
     };
     let item = match AbsItem::from_spec(data, &spec) {
         Ok(abs) => abs.item,

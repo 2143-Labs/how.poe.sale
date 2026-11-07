@@ -1049,7 +1049,7 @@ fn resistance_ranks(data: &Data, item: &Item, mod_type: &str) -> Vec<u32> {
 
 /// Puts `m` on its side, unrolled; a normal item that gains an explicit turns magic (owner,
 /// Q3, for a bench craft; every add follows it, so no result is a normal item with explicits).
-fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
+pub(crate) fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
     let side = data.mod_at(m).side?;
     item.affixes_mut(side).push(Affix::new(m));
     if item.rarity == Rarity::Normal {

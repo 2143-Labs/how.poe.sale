@@ -95,6 +95,16 @@ pub struct AffixSpec {
     pub fractured: bool,
 }
 
+/// One tracked explicit slot: the modifier naming it, and whether it stands for its family at
+/// that tier or higher ("tier 3 life or better").
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SlotSpec {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub or_better: bool,
+}
+
 /// The wire form of `preimages::AbsItem`: the tracked explicit modifiers by id, and how many
 /// untracked ones sit on each side beside them.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -107,13 +117,15 @@ pub struct AbsSpec {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub influences: Vec<Influence>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prefixes: Vec<ModSpec>,
+    pub prefixes: Vec<SlotSpec>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub suffixes: Vec<ModSpec>,
+    pub suffixes: Vec<SlotSpec>,
     #[serde(default, skip_serializing_if = "is_zero")]
     pub any_prefixes: u8,
     #[serde(default, skip_serializing_if = "is_zero")]
     pub any_suffixes: u8,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub corrupted: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
