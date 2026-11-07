@@ -1,16 +1,15 @@
-//! What the browser shows, as JSON: a pasted item as the engine reads it, a target pattern made
-//! from a pasted item, and the one-step report (`solve::next_steps` and `invert::sources`) with
-//! every number and word already chosen. The words come from the catalog's own helpers, so the
-//! page and `catalog/next-steps.md` describe a step the same way.
+//! What the browser shows, as JSON: a pasted item as the engine reads it, the steps that could
+//! have produced an abstract item (`preimages::preimages`), the modifiers a target can name, and
+//! the bases. Every number and word is chosen here; the page lays them out.
 
 use serde::Serialize;
 
-use crate::catalog::{op_sentence, paid_cost, stands_word, state_phrase};
-use crate::data::Data;
-use crate::invert::{self, Inversion};
-use crate::item::{Item, ItemSpec};
-use crate::pattern::{self, Pattern, PatternSpec};
-use crate::solve::{self, Assessment};
+use crate::apply;
+use crate::catalog::paid_cost;
+use crate::data::{Data, Side};
+use crate::item::{AbsSpec, Influence, Item, ItemError, ItemSpec, Rarity};
+use crate::method::{Pool, SideReq};
+use crate::preimages::{self, AbsItem};
 use crate::text;
 
 /// A pasted item as the engine read it.
@@ -24,38 +23,7 @@ pub struct ItemView {
     pub warnings: Vec<String>,
 }
 
-/// The item as it stands against the pattern.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct NowView {
-    pub progress: f64,
-    pub matches: f64,
-    pub blocked: f64,
-    /// Whether the item can pass the pattern's item filter at all.
-    pub fits: bool,
-}
-
-/// One step the item allows.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct StepView {
-    pub method: String,
-    pub name: String,
-    pub stands: String,
-    pub cost: String,
-    pub finish: f64,
-    pub goal: f64,
-    pub better: f64,
-    pub worse: f64,
-    pub blocked: f64,
-    pub results: usize,
-    /// What the method does, one sentence per op.
-    pub does: String,
-    /// Whether the step does exactly what the one before it does.
-    pub tied: bool,
-}
-
-/// A method that does not apply, or cannot be walked backwards, and why.
+/// A method that shows no input, and why.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UnmetView {
@@ -64,47 +32,59 @@ pub struct UnmetView {
     pub reason: String,
 }
 
-/// One input that could have produced the item.
+/// An abstract item as the page shows it: names and modifier texts, not ids.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct SourceView {
+pub struct AbsView {
+    pub base: String,
+    pub item_level: u8,
+    pub rarity: String,
+    pub influences: Vec<String>,
+    /// Tracked modifier texts, in item order.
+    pub prefixes: Vec<String>,
+    pub suffixes: Vec<String>,
+    pub any_prefixes: u8,
+    pub any_suffixes: u8,
+}
+
+/// One input that could have produced the item. `input_spec` lets the page ask about the input
+/// in turn without rebuilding it from display text.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PreimageView {
     pub method: String,
     pub name: String,
     pub p: f64,
+    pub cost: String,
+    pub input: AbsView,
+    pub input_spec: AbsSpec,
     pub note: Option<String>,
 }
 
-/// The inputs that read as one pattern state.
+/// The steps that could have produced the target, and the methods that show none.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GroupView {
-    pub state: String,
-    pub best: f64,
-    /// The most likely source's input, as game text.
-    pub example: String,
-    pub sources: Vec<SourceView>,
-}
-
-/// What the inverse solver found.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct SourcesView {
-    pub found: usize,
-    pub groups: Vec<GroupView>,
+pub struct PreimagesView {
+    pub target: AbsView,
+    pub steps: Vec<PreimageView>,
     pub skipped: Vec<UnmetView>,
 }
 
-/// The one-step report.
+/// A modifier a target can name.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct SolveView {
-    pub now: NowView,
-    pub exact: Vec<StepView>,
-    pub certain: Vec<StepView>,
-    pub blind: Vec<StepView>,
-    pub unmet: Vec<UnmetView>,
-    pub sources: SourcesView,
+pub struct ModOptionView {
+    pub id: String,
+    pub text: String,
+    pub side: String,
+    pub level: u8,
+    pub influence: Option<String>,
+    /// `"natural"`, or the name of the essence that adds it.
+    pub source: String,
 }
+
+/// The most modifiers `mods` lists.
+const MOD_LIMIT: usize = 2000;
 
 /// Reads a pasted item: the item, with the warnings of the reader.
 fn read(data: &Data, text: &str) -> Result<(Item, Vec<String>), String> {
@@ -123,23 +103,6 @@ pub fn read_item(data: &Data, text: &str) -> Result<ItemView, String> {
     })
 }
 
-/// The pattern that asks for `target` exactly (`pattern::from_item`). An item with no explicit
-/// modifier to aim for has no slot, and a pattern with no slot would score every item that fits
-/// its filter as finished, so it is refused.
-pub fn target_of(data: &Data, target: &Item) -> Result<PatternSpec, String> {
-    let spec = pattern::from_item(data, target);
-    if spec.prefixes.is_empty() && spec.suffixes.is_empty() {
-        return Err("target: the pasted item has no explicit modifier to aim for".into());
-    }
-    Ok(spec)
-}
-
-/// `target_of` a pasted item.
-pub fn target(data: &Data, text: &str) -> Result<PatternSpec, String> {
-    let (item, _) = read(data, text)?;
-    target_of(data, &item)
-}
-
 fn name_of(data: &Data, method: &str) -> String {
     data.method(method)
         .map_or_else(|| method.to_string(), |m| m.name.clone())
@@ -155,92 +118,140 @@ fn unmet(data: &Data, list: &[(String, String)]) -> Vec<UnmetView> {
         .collect()
 }
 
-fn steps(data: &Data, group: &[Assessment]) -> Vec<StepView> {
-    group
-        .iter()
-        .enumerate()
-        .map(|(i, a)| {
-            let w = &a.weighed;
-            let does = data
-                .method(&a.method)
-                .map(|m| {
-                    m.ops
-                        .iter()
-                        .map(|op| op_sentence(data, op))
-                        .collect::<Vec<_>>()
-                        .join("; ")
-                })
-                .unwrap_or_default();
-            StepView {
-                method: a.method.clone(),
-                name: a.name.clone(),
-                stands: stands_word(a.stands()).to_string(),
-                cost: paid_cost(data, &a.cost),
-                finish: w.finish,
-                goal: w.goal,
-                better: w.better,
-                worse: w.worse,
-                blocked: w.blocked,
-                results: w.results,
-                does,
-                tied: i > 0 && group[i - 1].tied(a),
-            }
-        })
-        .collect()
+/// A modifier's text on one line.
+fn mod_text(data: &Data, m: u32) -> String {
+    data.mod_at(m).text.replace('\n', " / ")
 }
 
-fn sources(data: &Data, pattern: &Pattern, inversion: &Inversion) -> SourcesView {
-    SourcesView {
-        found: inversion.found,
-        groups: inversion
-            .groups
+fn abs_view(data: &Data, item: &AbsItem) -> AbsView {
+    let texts = |side: Side| -> Vec<String> {
+        item.item
+            .affixes(side)
             .iter()
-            .map(|g| GroupView {
-                state: state_phrase(pattern, &g.state),
-                best: g.best,
-                example: g
-                    .sources
-                    .first()
-                    .map(|s| text::render(data, &s.input))
-                    .unwrap_or_default(),
-                sources: g
-                    .sources
-                    .iter()
-                    .map(|s| SourceView {
-                        method: s.method.clone(),
-                        name: s.name.clone(),
-                        p: s.p,
-                        note: s.note.clone(),
-                    })
-                    .collect(),
-            })
+            .map(|a| mod_text(data, a.roll.m))
+            .collect()
+    };
+    AbsView {
+        base: data.base_at(item.item.base).name.clone(),
+        item_level: item.item.item_level,
+        rarity: item.item.rarity.name().to_string(),
+        influences: Influence::ALL
+            .into_iter()
+            .filter(|i| item.item.has_influence(*i))
+            .map(|i| i.name().to_string())
             .collect(),
-        skipped: unmet(data, &inversion.skipped),
+        prefixes: texts(Side::Prefix),
+        suffixes: texts(Side::Suffix),
+        any_prefixes: item.any[0],
+        any_suffixes: item.any[1],
     }
 }
 
-/// The one-step report for a pattern (JSON text) and a pasted item.
-pub fn solve(data: &Data, pattern_json: &str, item_text: &str) -> Result<SolveView, String> {
-    let spec: PatternSpec =
-        serde_json::from_str(pattern_json).map_err(|e| format!("pattern: {e}"))?;
-    let pattern = Pattern::compile(data, &spec).map_err(|e| e.to_string())?;
-    let (item, _) = read(data, item_text)?;
-    let report = solve::next_steps(data, &pattern, &item);
-    let fits = pattern::evaluate(data, &pattern, &item)
-        .iter()
-        .any(|(p, s)| *p > 0.0 && s.item_ok);
-    let inversion = invert::sources(data, &pattern, &item);
-    Ok(SolveView {
-        now: NowView {
-            progress: report.now.progress,
-            matches: report.now.matches,
-            blocked: report.now.blocked,
-            fits,
-        },
-        exact: steps(data, &report.exact),
-        certain: steps(data, &report.certain),
-        blind: steps(data, &report.blind),
-        unmet: unmet(data, &report.unmet),
-        sources: sources(data, &pattern, &inversion),
+/// The steps that could have produced a target (`AbsSpec` JSON), over the methods named.
+pub fn preimages(
+    data: &Data,
+    target_json: &str,
+    methods: &[String],
+) -> Result<PreimagesView, String> {
+    let spec: AbsSpec = serde_json::from_str(target_json).map_err(|e| format!("target: {e}"))?;
+    let target = AbsItem::from_spec(data, &spec).map_err(|e| format!("target: the item {e}"))?;
+    target
+        .validate(data)
+        .map_err(|e| format!("target: the item {e}"))?;
+    let ids: Vec<&str> = methods.iter().map(String::as_str).collect();
+    let found = preimages::preimages(data, &target, &ids);
+    Ok(PreimagesView {
+        target: abs_view(data, &target),
+        steps: found
+            .steps
+            .iter()
+            .map(|s| PreimageView {
+                method: s.method.clone(),
+                name: s.name.clone(),
+                p: s.p,
+                cost: paid_cost(data, &s.cost),
+                input: abs_view(data, &s.input),
+                input_spec: s.input.to_spec(data),
+                note: s.note.clone(),
+            })
+            .collect(),
+        skipped: unmet(data, &found.skipped),
     })
+}
+
+/// Every modifier a rare `base` at `item_level` with these influences can roll, and every
+/// essence modifier for its class: prefixes first, then by level and text.
+pub fn mods(
+    data: &Data,
+    base: &str,
+    item_level: u8,
+    influences: &[Influence],
+) -> Result<Vec<ModOptionView>, String> {
+    let spec = AbsSpec {
+        base: base.to_string(),
+        item_level,
+        rarity: Rarity::Rare,
+        influences: influences.to_vec(),
+        prefixes: Vec::new(),
+        suffixes: Vec::new(),
+        any_prefixes: 0,
+        any_suffixes: 0,
+    };
+    let item = match AbsItem::from_spec(data, &spec) {
+        Ok(abs) => abs.item,
+        Err(ItemError::UnknownBase(_)) => return Err(format!("mods: unknown base \"{base}\"")),
+        Err(e) => return Err(format!("mods: {e}")),
+    };
+    let option = |m: u32, source: &str| -> Option<ModOptionView> {
+        let md = data.mod_at(m);
+        Some(ModOptionView {
+            id: md.id.clone(),
+            text: mod_text(data, m),
+            side: md.side?.name().to_string(),
+            level: md.level,
+            influence: md.influence.map(|i| i.name().to_string()),
+            source: source.to_string(),
+        })
+    };
+    let mut out: Vec<ModOptionView> =
+        apply::pool_candidates(data, &item, &Pool::Natural, SideReq::Any, true, true)
+            .into_iter()
+            .filter_map(|(m, _)| option(m, "natural"))
+            .collect();
+    let class = data.base_at(item.base).class;
+    for essence in &data.essences {
+        if let Some(&(_, m)) = essence.mods.iter().find(|(c, _)| *c == class) {
+            out.extend(option(m, &essence.name));
+        }
+    }
+    out.sort_by(|a, b| {
+        (a.side != "prefix", a.level, &a.text, &a.id).cmp(&(
+            b.side != "prefix",
+            b.level,
+            &b.text,
+            &b.id,
+        ))
+    });
+    out.dedup_by(|a, b| a.id == b.id);
+    out.truncate(MOD_LIMIT);
+    Ok(out)
+}
+
+/// Every base a target can name, sorted: its name, or its metadata id when several bases share
+/// the name (as `Item::to_spec` writes it).
+pub fn bases(data: &Data) -> Vec<String> {
+    let mut out: Vec<String> = data
+        .bases
+        .iter()
+        .map(|b| {
+            if data.bases_named(&b.name).len() == 1 {
+                b.name.clone()
+            } else {
+                b.id.clone()
+            }
+        })
+        .collect();
+    out.sort();
+    out.dedup();
+    out
 }
