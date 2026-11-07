@@ -14,6 +14,7 @@ use poe1::test_data;
 const EXALT: &str = "currency/exalted";
 const ANNUL: &str = "currency/annulment";
 const ESSENCE: &str = "essence/essence-of-horror";
+const VEILED_CHAOS: &str = "currency/veiled-chaos";
 /// Essence of Horror's helmet modifier, a suffix.
 const HORROR: &str = "SocketedGemsDealMoreElementalDamageEssence1";
 /// ColdResist6: the crown can roll tiers 6, 7 and 8 of it at item level 87.
@@ -289,4 +290,44 @@ fn a_class_keeps_the_tiers_it_was_tracked_with() {
     let key = preimages::abs_key(data, &target);
     let again = AbsItem::from_spec(data, &target.to_spec(data)).expect("the spec resolves");
     assert_eq!(preimages::abs_key(data, &again), key);
+}
+
+/// A Veiled Chaos Orb is a Chaos Orb whose result has one of its added modifiers veiled, on that
+/// modifier's own side (claim `veiled-chaos.replaces-one`): 4, 5 or 6 modifiers at 8:3:1
+/// (claim `chaos.count`), exactly one of them the placeholder, which a class names rather than
+/// counts. With room on both sides the veil is a prefix half the time.
+#[test]
+fn a_veiled_chaos_veils_one_added_modifier() {
+    let data = test_data();
+    let start = crown(&["IncreasedLife9"], &["FireResist8"], [0, 0]);
+    let applied = forward::apply_node(
+        data,
+        &node_of(&start),
+        method(VEILED_CHAOS),
+        &[],
+        forward::seed_for("start", VEILED_CHAOS),
+    );
+    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    let placeholders = apply::VEILED.map(|id| data.mod_by_id(id).expect("a placeholder"));
+    let mut totals = [0.0f64; 3];
+    let mut prefix = 0.0;
+    for group in &applied.groups {
+        let Kind::Item(class) = &group.kind else {
+            panic!("not an item: {:?}", group.kind);
+        };
+        let named: Vec<u32> = class.item.explicits().map(|a| a.roll.m).collect();
+        assert_eq!(named.len(), 1, "only the veil is named: {named:?}");
+        assert!(placeholders.contains(&named[0]), "{named:?}");
+        if named[0] == placeholders[0] {
+            prefix += group.p;
+        }
+        let total = 1 + usize::from(class.any[0]) + usize::from(class.any[1]);
+        totals[total - 4] += group.p;
+    }
+    let n = f64::from(forward::SIMULATIONS);
+    let near = |got: f64, want: f64| (got - want).abs() < 4.0 * (want * (1.0 - want) / n).sqrt();
+    for (got, want) in totals.into_iter().zip([8.0 / 12.0, 3.0 / 12.0, 1.0 / 12.0]) {
+        assert!(near(got, want), "{totals:?}");
+    }
+    assert!(near(prefix, 0.5), "veiled prefix {prefix}");
 }

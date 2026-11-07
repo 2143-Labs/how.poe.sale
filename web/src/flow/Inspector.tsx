@@ -181,7 +181,11 @@ export function Inspector() {
                 <span className="picker-text">{option.cost}</span>
               </li>
             ))}
-            {list.length === 0 && <li className="hint">No method matches. Type two characters or more.</li>}
+            {list.length === 0 && (
+              <li className="hint">
+                {query.trim().length < 2 ? 'No method applies to this item.' : 'No method matches the search.'}
+              </li>
+            )}
           </ul>
           {busy && <p className="busy">Computing…</p>}
           {applied && <Applied applied={applied} />}

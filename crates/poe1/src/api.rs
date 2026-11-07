@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::apply;
 use crate::catalog::paid_cost;
-use crate::data::{Data, Side};
+use crate::data::{Data, ModKind, Side};
 use crate::forward::{self, Kind};
 use crate::item::{AbsSpec, Influence, Item, ItemError, ItemSpec, Rarity, SlotSpec};
 use crate::method::{Pool, SideReq};
@@ -193,9 +193,19 @@ fn unmet(data: &Data, list: &[(String, String)]) -> Vec<UnmetView> {
         .collect()
 }
 
-/// A modifier's text on one line.
+/// A modifier's text on one line, the way the game shows it: the unrevealed veiled placeholder
+/// (which has no text of its own) as "Veiled Prefix" or "Veiled Suffix", and a crafted modifier
+/// marked "(crafted)".
 fn mod_text(data: &Data, m: u32) -> String {
-    data.mod_at(m).text.replace('\n', " / ")
+    let md = data.mod_at(m);
+    match md.kind {
+        ModKind::Veiled => match md.side {
+            Some(Side::Suffix) => "Veiled Suffix".into(),
+            _ => "Veiled Prefix".into(),
+        },
+        ModKind::Crafted => format!("{} (crafted)", md.text.replace('\n', " / ")),
+        _ => md.text.replace('\n', " / "),
+    }
 }
 
 /// The backward methods a chart offers when the page names none.

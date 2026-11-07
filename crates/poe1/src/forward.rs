@@ -1,17 +1,19 @@
 //! Forward steps: apply one method to a node's items and group the results by the modifiers the
 //! chart tracks.
 //!
-//! A node stands for a class of items (tracked modifier families plus a count of untracked
-//! modifiers per side) and, when it was reached forward, a weighted sample of the items in that
-//! class. Applying a method to every member gives the classes it can reach with their chances.
-//! `apply` answers every method exactly except a reforge's `Fill`; a reforge is simulated with a
-//! fixed seed, so the same node and method always give the same numbers, and its rows carry a
-//! 95% range. Claim `reforge.side-first` is the side choice inside the simulation.
+//! A node stands for a class of items (tracked modifier families, every crafted modifier and the
+//! unrevealed veiled modifier, plus a count of the other modifiers per side) and, when it was
+//! reached forward, a weighted sample of the items in that class. Applying a method to every
+//! member gives the classes it can reach with their chances. `apply` answers every method
+//! exactly except a reforge's `Fill`; a reforge is simulated with a fixed seed, so the same node
+//! and method always give the same numbers, and its rows carry a 95% range. Claim
+//! `reforge.side-first` is the side choice inside the simulation, and a Veiled Chaos Orb's veil
+//! then replaces one of the modifiers the reforge added (claim `veiled-chaos.replaces-one`).
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::apply::{self, Leaf, Outcome, Params};
-use crate::data::{Data, Side};
+use crate::data::{Data, ModKind, Side};
 use crate::item::Item;
 use crate::method::{Fill, Method, Op, Pool, SideReq, Weighting};
 use crate::preimages::{AbsItem, Slot};
@@ -163,8 +165,8 @@ impl Weighted {
     }
 }
 
-/// The class `item` belongs to: the tracked slots it fills, and how many untracked modifiers sit
-/// on each side.
+/// The class `item` belongs to: the tracked slots it fills, the crafted and veiled modifiers it
+/// holds, and how many other modifiers sit on each side.
 pub fn classify(data: &Data, tracked: &[Slot], item: &Item) -> AbsItem {
     let mut out = item.clone();
     out.prefixes.clear();
@@ -192,6 +194,7 @@ pub fn classify(data: &Data, tracked: &[Slot], item: &Item) -> AbsItem {
                         better.insert(slot.m);
                     }
                 }
+                None if named(data, m) => out.affixes_mut(side).push(crate::item::Affix::new(m)),
                 None => any[side.index()] += 1,
             }
         }
@@ -204,13 +207,18 @@ pub fn classify(data: &Data, tracked: &[Slot], item: &Item) -> AbsItem {
     }
 }
 
+/// Whether a class names `m` though no slot tracks it: a crafted modifier or the unrevealed veiled
+/// placeholder. Both are placed on purpose and change what later methods do (a metamod's lock,
+/// the bench's one-craft limit, an Unveil), so two items that differ in one are different nodes.
+fn named(data: &Data, m: u32) -> bool {
+    matches!(data.mod_at(m).kind, ModKind::Crafted | ModKind::Veiled)
+}
+
 /// The fill a method ends with, when the model can run it here.
 fn single_fill(method: &Method) -> Option<&Fill> {
     match method.ops.last() {
         Some(Op::Fill { fill })
-            if fill.weighting == Weighting::Normal
-                && fill.include.is_none()
-                && !fill.one_veiled =>
+            if fill.weighting == Weighting::Normal && fill.include.is_none() =>
         {
             Some(fill)
         }
@@ -421,8 +429,19 @@ fn simulate(
             Leaf::Pending(pending) => {
                 let only_fill = matches!(pending.ops.as_slice(), [Op::Fill { .. }]);
                 if pending.certain && only_fill {
-                    let item = fill_once(data, &pending.item, fill, &mut lists, &mut rng);
-                    push_item(data, tracked, &mut groups, &item, one);
+                    let (mut item, added) =
+                        fill_once(data, &pending.item, fill, &mut lists, &mut rng);
+                    let veiled = if fill.one_veiled {
+                        veil(data, &mut item, &added, &mut rng)
+                    } else {
+                        Ok(())
+                    };
+                    match veiled {
+                        Ok(()) => push_item(data, tracked, &mut groups, &item, one),
+                        Err(why) => {
+                            push(&mut groups, Kind::NotModelled(why.into()), one, None, None)
+                        }
+                    }
                 } else {
                     push(
                         &mut groups,
@@ -451,17 +470,19 @@ fn simulate(
 }
 
 /// One reforge: draw the total, then fill the open slots one modifier at a time, each draw
-/// picking a side with room uniformly (claim `reforge.side-first`).
+/// picking a side with room uniformly (claim `reforge.side-first`). Returns the item and the
+/// modifiers it added, in draw order.
 fn fill_once(
     data: &Data,
     item: &Item,
     fill: &Fill,
     lists: &mut BTreeMap<Item, [Weighted; 2]>,
     rng: &mut SplitMix64,
-) -> Item {
+) -> (Item, Vec<u32>) {
     let n = draw_count(&fill.counts, rng);
     let additions = fill.additions(data, item, n);
     let mut cur = item.clone();
+    let mut added = Vec::new();
     if lists.get(item).is_none() {
         let all = data_sides(data, item, fill);
         lists.insert(item.clone(), all);
@@ -502,6 +523,7 @@ fn fill_once(
                 }
             };
             apply::add_affix(data, &mut cur, m);
+            added.push(m);
             placed = true;
             break;
         }
@@ -509,7 +531,31 @@ fn fill_once(
             break;
         }
     }
-    cur
+    (cur, added)
+}
+
+/// A Veiled Chaos Orb's veil (claim `veiled-chaos.replaces-one`): one of the modifiers the
+/// reforge added becomes the veiled placeholder of that modifier's side. The claim names no rule
+/// for which one, so each added modifier is taken as equally likely.
+fn veil(
+    data: &Data,
+    item: &mut Item,
+    added: &[u32],
+    rng: &mut SplitMix64,
+) -> Result<(), &'static str> {
+    if added.is_empty() {
+        return Err("the reforge added no modifier for the veil to replace");
+    }
+    let m = added[rng.below(added.len())];
+    let Some(side) = data.mod_at(m).side else {
+        return Err("the veiled modifier has no side");
+    };
+    let Some(placeholder) = data.mod_by_id(apply::VEILED[side.index()]) else {
+        return Err("the bundle lacks a veiled placeholder modifier");
+    };
+    item.affixes_mut(side).retain(|a| a.roll.m != m);
+    apply::add_affix(data, item, placeholder);
+    Ok(())
 }
 
 /// The fill's pool on `item`, split by side, with the level cap applied.

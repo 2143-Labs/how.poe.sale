@@ -5,6 +5,7 @@ mod common;
 
 use common::root;
 use poe1::api;
+use poe1::forward;
 use poe1::test_data;
 
 const METHODS: [&str; 5] = [
@@ -187,4 +188,56 @@ fn read_item_reports_its_warnings() {
         "{:?}",
         view.warnings
     );
+}
+
+/// The metacraft: boots with three suffixes and no prefix, Suffixes Cannot Be Changed, then a
+/// Veiled Chaos Orb. The lock is named on its card, so it is never the node an Exalted Orb's
+/// random prefix reaches; the reforge keeps the suffixes, removes the lock, and adds one, two or
+/// three prefixes at 8:3:1 (claims `reforge.counts`, `chaos.count`), one of them veiled.
+#[test]
+fn a_meta_craft_runs_forward() {
+    const LOCK: &str = "bench/add/DexMasterItemGenerationCannotChangeSuffixes";
+    let data = test_data();
+    let root = serde_json::json!({
+        "base": "Slink Boots",
+        "itemLevel": 86,
+        "rarity": "rare",
+        "suffixes": [{ "id": "FireResist8" }, { "id": "ColdResist8" }, { "id": "LightningResist8" }],
+    })
+    .to_string();
+    let (mut chart, node) = api::Chart::start(data, &root, "[]").expect("a chart");
+    assert_eq!(node.members, Some(1));
+    let lock = chart.forward(data, &node.id, LOCK).expect("the lock");
+    assert_eq!(lock.outcomes.len(), 1);
+    let locked = lock.outcomes[0].clone();
+    let view = locked.view.as_ref().expect("an item");
+    assert_eq!(view.prefixes, ["Suffixes Cannot Be Changed (crafted)"]);
+    assert_eq!(view.any_prefixes, 0);
+    let exalt = chart
+        .forward(data, &node.id, "currency/exalted")
+        .expect("an exalt");
+    assert!(exalt.outcomes.iter().all(|o| o.key != locked.key));
+    let pinned = chart
+        .pin_forward(data, &node.id, LOCK, &locked.key)
+        .expect("the lock pins");
+    let veiled = chart
+        .forward(data, &pinned.node.id, "currency/veiled-chaos")
+        .expect("a veiled chaos");
+    assert_eq!(veiled.simulated, Some(forward::SIMULATIONS));
+    let n = f64::from(forward::SIMULATIONS);
+    let cases = [(0u8, 2.0 / 3.0), (1, 1.0 / 4.0), (2, 1.0 / 12.0)];
+    assert_eq!(veiled.outcomes.len(), cases.len());
+    for (any, want) in cases {
+        let outcome = veiled
+            .outcomes
+            .iter()
+            .find(|o| o.view.as_ref().is_some_and(|v| v.any_prefixes == any))
+            .unwrap_or_else(|| panic!("no outcome with {any} other prefixes"));
+        let view = outcome.view.as_ref().expect("an item");
+        assert_eq!(view.prefixes, ["Veiled Prefix"]);
+        assert_eq!(view.suffixes.len(), 3);
+        assert_eq!(view.any_suffixes, 0);
+        let tolerance = 4.0 * (want * (1.0 - want) / n).sqrt();
+        assert!((outcome.p - want).abs() < tolerance, "{any}: {}", outcome.p);
+    }
 }
