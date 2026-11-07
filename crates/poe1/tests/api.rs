@@ -24,51 +24,124 @@ fn methods() -> Vec<String> {
     METHODS.iter().map(|m| m.to_string()).collect()
 }
 
-/// The essence outcome with two untracked prefixes and two untracked suffixes beside the
-/// essence's suffix: every method answers, with the input's spec ready to ask about in turn.
-#[test]
-fn preimages_answer_in_json() {
-    let d = test_data();
-    let target = serde_json::json!({
+/// The simple page's root: the essence's suffix with two untracked prefixes and suffixes.
+fn simple_root() -> String {
+    serde_json::json!({
         "base": "Archdemon Crown",
         "itemLevel": 87,
         "rarity": "rare",
         "suffixes": [{ "id": "SocketedGemsDealMoreElementalDamageEssence1" }],
         "anyPrefixes": 2,
         "anySuffixes": 2,
-    });
-    let view = api::preimages(d, &target.to_string(), &methods()).expect("a view");
-    let json = serde_json::to_value(&view).unwrap();
-    assert!(
-        json["steps"][0]["input"].get("anyPrefixes").is_some(),
-        "{json}"
-    );
-    assert_eq!(json["target"]["anySuffixes"], 2);
+    })
+    .to_string()
+}
+
+/// The chart grows both ways: the essence explains the root, its input is a node of its own, and
+/// pushing that node forward reaches the root again, in the same node.
+#[test]
+fn a_chart_grows_both_ways() {
+    let d = test_data();
+    let (mut chart, root) = api::Chart::start(d, &simple_root(), "[]").expect("a chart");
+    let json = serde_json::to_value(&root).unwrap();
+    assert_eq!(json["view"]["anySuffixes"], 2);
     assert_eq!(
-        json["target"]["suffixes"][0],
+        json["view"]["suffixes"][0],
         "Socketed Gems deal 30% more Elemental Damage"
     );
-    let essence = view
-        .steps
+    assert_eq!(json["members"], serde_json::Value::Null);
+    assert_eq!(json["goal"], true);
+
+    let made = chart.made_by(d, &root.id, &methods()).expect("a view");
+    let essence = made
+        .inputs
         .iter()
         .find(|s| s.method == "essence/essence-of-horror")
         .expect("the essence step");
     assert!((essence.p - 11.0 / 64.0).abs() < 1e-12, "{}", essence.p);
-    assert_eq!(essence.input_spec.rarity, poe1::item::Rarity::Normal);
     assert_eq!(essence.cost, "1 × Essence of Horror");
     for m in METHODS {
         let shown =
-            view.steps.iter().any(|s| s.method == m) || view.skipped.iter().any(|s| s.method == m);
+            made.inputs.iter().any(|s| s.method == m) || made.skipped.iter().any(|s| s.method == m);
         assert!(shown, "{m}");
     }
 
-    let err = api::preimages(d, "{", &methods()).unwrap_err();
-    assert!(err.starts_with("target: "), "{err}");
-    let mut wide = target.clone();
-    wide["anyPrefixes"] = 4.into();
+    let pinned = chart
+        .pin_backward(d, &root.id, "essence/essence-of-horror", &essence.key)
+        .expect("a node");
+    assert_eq!(pinned.node.members, Some(1));
+    assert_eq!(pinned.edge.from, pinned.node.id);
+    assert_eq!(pinned.edge.to, root.id);
+
+    let applied = chart
+        .forward(d, &pinned.node.id, "essence/essence-of-horror")
+        .expect("an outcome");
+    let back = applied
+        .outcomes
+        .iter()
+        .find(|o| o.key == root.id)
+        .expect("the root's class");
+    let tolerance = 4.0 * (essence.p * (1.0 - essence.p) / 200_000.0).sqrt();
+    assert!((back.p - essence.p).abs() < tolerance, "{}", back.p);
+
+    let again = chart
+        .pin_forward(d, &pinned.node.id, "essence/essence-of-horror", &root.id)
+        .expect("a node");
+    assert_eq!(again.node.id, root.id);
+    // The root began as a class with no items; the forward path gives it the ones it reaches.
+    assert!(again.node.members.is_some(), "{:?}", again.node.members);
+}
+
+/// A reforge's numbers come from a simulation, so the view says how many runs and carries the
+/// range.
+#[test]
+fn a_reforge_reports_its_simulation() {
+    let d = test_data();
+    let root = serde_json::json!({
+        "base": "Archdemon Crown",
+        "itemLevel": 87,
+        "rarity": "normal",
+    })
+    .to_string();
+    let (mut chart, node) = api::Chart::start(d, &root, "[]").expect("a chart");
+    let applied = chart
+        .forward(d, &node.id, "essence/essence-of-horror")
+        .expect("an outcome");
+    assert_eq!(applied.simulated, Some(200_000));
+    assert!(applied.outcomes[0].interval.is_some());
+}
+
+/// Two tiers of one family cannot both be tracked, and neither can a ninth modifier.
+#[test]
+fn track_refuses_one_family_twice() {
+    let d = test_data();
+    let watched = serde_json::json!([
+        { "id": "ColdResist6", "orBetter": true },
+        { "id": "ColdResist8" }
+    ])
+    .to_string();
+    let err = api::Chart::start(d, &simple_root(), &watched)
+        .err()
+        .expect("a refusal");
+    assert!(err.starts_with("track: "), "{err}");
+    assert!(err.contains("track the same family"), "{err}");
+}
+
+#[test]
+fn a_chart_refuses_a_bad_root() {
+    let d = test_data();
+    let err = api::Chart::start(d, "{", "[]").err().expect("a refusal");
+    assert!(err.starts_with("root: "), "{err}");
+    let wide = serde_json::json!({
+        "base": "Archdemon Crown",
+        "itemLevel": 87,
+        "rarity": "rare",
+        "anyPrefixes": 4,
+    })
+    .to_string();
     assert_eq!(
-        api::preimages(d, &wide.to_string(), &methods()).unwrap_err(),
-        "target: the item prefixes: 4 modifiers, the rarity holds 3"
+        api::Chart::start(d, &wide, "[]").err().expect("a refusal"),
+        "root: the item prefixes: 4 modifiers, the rarity holds 3"
     );
 }
 

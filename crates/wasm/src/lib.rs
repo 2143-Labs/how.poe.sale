@@ -1,6 +1,8 @@
 //! The wasm-bindgen bridge the Web Worker talks to: it holds the bundle and answers with the
 //! JSON views of `poe1::api`. The example pastes are the repository's own fixtures, compiled in.
 
+use std::cell::RefCell;
+
 use poe1::api;
 use poe1::data::Data;
 use poe1::item::Influence;
@@ -79,6 +81,10 @@ fn js_error(e: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&e.to_string())
 }
 
+fn no_chart() -> &'static str {
+    "chart: start a chart first"
+}
+
 /// A comma-joined list, without empty entries.
 fn list(joined: &str) -> impl Iterator<Item = &str> {
     joined.split(',').map(str::trim).filter(|s| !s.is_empty())
@@ -99,6 +105,7 @@ fn influences(joined: &str) -> Result<Vec<Influence>, String> {
 #[wasm_bindgen]
 pub struct Bridge {
     data: Data,
+    chart: RefCell<Option<api::Chart>>,
 }
 
 #[wasm_bindgen]
@@ -107,7 +114,10 @@ impl Bridge {
     pub fn new(bundle_json: &str) -> Result<Bridge, JsValue> {
         console_error_panic_hook::set_once();
         let data = Data::from_json(bundle_json).map_err(js_error)?;
-        Ok(Bridge { data })
+        Ok(Bridge {
+            data,
+            chart: RefCell::new(None),
+        })
     }
 
     pub fn version(&self) -> String {
@@ -141,11 +151,70 @@ impl Bridge {
         serde_json::to_string(&view).map_err(js_error)
     }
 
-    /// The steps that could have produced a target (`AbsSpec` JSON) over the comma-joined
-    /// method ids: `PreimagesView` JSON.
-    pub fn preimages(&self, target: &str, methods: &str) -> Result<String, JsValue> {
+    /// Starts a chart from a root class (`AbsSpec` JSON) and the comma-separated slots to watch:
+    /// `NodeView` JSON.
+    pub fn chart_start(&self, root: &str, watch: &str) -> Result<String, JsValue> {
+        let watch = if watch.trim().is_empty() { "[]" } else { watch };
+        let (chart, view) = api::Chart::start(&self.data, root, watch).map_err(js_error)?;
+        *self.chart.borrow_mut() = Some(chart);
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// The methods a node can be pushed through: `MethodOptionView[]` JSON.
+    pub fn chart_methods(&self, node: &str) -> Result<String, JsValue> {
+        let mut chart = self.chart.borrow_mut();
+        let chart = chart.as_mut().ok_or_else(no_chart).map_err(js_error)?;
+        let view = chart.methods(&self.data, node).map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// One method's outcomes from a node: `AppliedView` JSON.
+    pub fn chart_forward(&self, node: &str, method: &str) -> Result<String, JsValue> {
+        let mut chart = self.chart.borrow_mut();
+        let chart = chart.as_mut().ok_or_else(no_chart).map_err(js_error)?;
+        let view = chart.forward(&self.data, node, method).map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// The inputs that could have produced a node, over the comma-joined methods (empty for the
+    /// chart's own set): `MadeByView` JSON.
+    pub fn chart_made_by(&self, node: &str, methods: &str) -> Result<String, JsValue> {
         let methods: Vec<String> = list(methods).map(str::to_string).collect();
-        let view = api::preimages(&self.data, target, &methods).map_err(js_error)?;
+        let mut chart = self.chart.borrow_mut();
+        let chart = chart.as_mut().ok_or_else(no_chart).map_err(js_error)?;
+        let view = chart
+            .made_by(&self.data, node, &methods)
+            .map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// Adds a forward outcome to the chart: `PinnedView` JSON.
+    pub fn chart_pin_forward(
+        &self,
+        node: &str,
+        method: &str,
+        key: &str,
+    ) -> Result<String, JsValue> {
+        let mut chart = self.chart.borrow_mut();
+        let chart = chart.as_mut().ok_or_else(no_chart).map_err(js_error)?;
+        let view = chart
+            .pin_forward(&self.data, node, method, key)
+            .map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// Adds a backward input to the chart: `PinnedView` JSON.
+    pub fn chart_pin_backward(
+        &self,
+        node: &str,
+        method: &str,
+        key: &str,
+    ) -> Result<String, JsValue> {
+        let mut chart = self.chart.borrow_mut();
+        let chart = chart.as_mut().ok_or_else(no_chart).map_err(js_error)?;
+        let view = chart
+            .pin_backward(&self.data, node, method, key)
+            .map_err(js_error)?;
         serde_json::to_string(&view).map_err(js_error)
     }
 
