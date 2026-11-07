@@ -156,6 +156,7 @@ export function Chart() {
         nodeTypes={nodeTypes}
         onNodeClick={(_event, node) => store.getState().select(node.id)}
         onInit={setInstance}
+        colorMode="dark"
         nodesConnectable={false}
         nodesDraggable={false}
         minZoom={0.1}
