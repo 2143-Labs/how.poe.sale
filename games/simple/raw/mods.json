@@ -1,0 +1,1788 @@
+{
+  "StrMasterItemGenerationCannotChangePrefixes": {
+    "adds_tags": [],
+    "domain": "crafted",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ItemGenerationCannotChangePrefixes"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "of Prefixes",
+    "required_level": 1,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "id": "item_generation_cannot_change_prefixes",
+        "max": 1,
+        "min": 1
+      }
+    ],
+    "text": "Prefixes Cannot Be Changed",
+    "type": "ItemGenerationCannotChangePrefixes",
+    "gold_value": null
+  },
+  "DexMasterItemGenerationCannotChangeSuffixes": {
+    "adds_tags": [],
+    "domain": "crafted",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ItemGenerationCannotChangeSuffixes"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Suffixed",
+    "required_level": 1,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "id": "item_generation_cannot_change_suffixes",
+        "max": 1,
+        "min": 1
+      }
+    ],
+    "text": "Suffixes Cannot Be Changed",
+    "type": "ItemGenerationCannotChangeSuffixes",
+    "gold_value": null
+  },
+  "VeiledPrefix": {
+    "adds_tags": [],
+    "domain": "veiled",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "VeiledPrefix"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Veiled",
+    "required_level": 1,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "id": "veiled_mod_type",
+        "max": 1,
+        "min": 1
+      },
+      {
+        "id": "veiled_mod_seed",
+        "max": 30000,
+        "min": 1
+      }
+    ],
+    "text": null,
+    "type": "VeiledPrefix",
+    "gold_value": null
+  },
+  "VeiledSuffix": {
+    "adds_tags": [],
+    "domain": "veiled",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "VeiledSuffix"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "of the Veil",
+    "required_level": 1,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "id": "veiled_mod_type",
+        "max": 2,
+        "min": 2
+      },
+      {
+        "id": "veiled_mod_seed",
+        "max": 30000,
+        "min": 1
+      }
+    ],
+    "text": null,
+    "type": "VeiledSuffix",
+    "gold_value": null
+  },
+  "SimpleLife1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedLife"
+    ],
+    "implicit_tags": [
+      "resource",
+      "life"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_life",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10 to maximum Life",
+    "type": "IncreasedLife"
+  },
+  "SimpleLife2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedLife"
+    ],
+    "implicit_tags": [
+      "resource",
+      "life"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_life",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20 to maximum Life",
+    "type": "IncreasedLife"
+  },
+  "SimpleLife3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedLife"
+    ],
+    "implicit_tags": [
+      "resource",
+      "life"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_life",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30 to maximum Life",
+    "type": "IncreasedLife"
+  },
+  "SimpleLife4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedLife"
+    ],
+    "implicit_tags": [
+      "resource",
+      "life"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_life",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40 to maximum Life",
+    "type": "IncreasedLife"
+  },
+  "SimpleEnergyShield1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalEnergyShield"
+    ],
+    "implicit_tags": [
+      "defences",
+      "energy_shield"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_energy_shield",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10 to maximum Energy Shield",
+    "type": "LocalEnergyShield"
+  },
+  "SimpleEnergyShield2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalEnergyShield"
+    ],
+    "implicit_tags": [
+      "defences",
+      "energy_shield"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_energy_shield",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20 to maximum Energy Shield",
+    "type": "LocalEnergyShield"
+  },
+  "SimpleEnergyShield3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalEnergyShield"
+    ],
+    "implicit_tags": [
+      "defences",
+      "energy_shield"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_energy_shield",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30 to maximum Energy Shield",
+    "type": "LocalEnergyShield"
+  },
+  "SimpleEnergyShield4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalEnergyShield"
+    ],
+    "implicit_tags": [
+      "defences",
+      "energy_shield"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_energy_shield",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40 to maximum Energy Shield",
+    "type": "LocalEnergyShield"
+  },
+  "SimpleMana1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedMana"
+    ],
+    "implicit_tags": [
+      "resource",
+      "mana"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_mana",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10 to maximum Mana",
+    "type": "IncreasedMana"
+  },
+  "SimpleMana2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedMana"
+    ],
+    "implicit_tags": [
+      "resource",
+      "mana"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_mana",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20 to maximum Mana",
+    "type": "IncreasedMana"
+  },
+  "SimpleMana3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedMana"
+    ],
+    "implicit_tags": [
+      "resource",
+      "mana"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_mana",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30 to maximum Mana",
+    "type": "IncreasedMana"
+  },
+  "SimpleMana4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "IncreasedMana"
+    ],
+    "implicit_tags": [
+      "resource",
+      "mana"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "helmet",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_maximum_mana",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40 to maximum Mana",
+    "type": "IncreasedMana"
+  },
+  "SimplePhysical1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalPhysicalDamagePercent"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "40% increased Physical Damage",
+    "type": "LocalPhysicalDamagePercent"
+  },
+  "SimplePhysical2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalPhysicalDamagePercent"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 60,
+        "min": 60
+      }
+    ],
+    "text": "60% increased Physical Damage",
+    "type": "LocalPhysicalDamagePercent"
+  },
+  "SimplePhysical3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalPhysicalDamagePercent"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 80,
+        "min": 80
+      }
+    ],
+    "text": "80% increased Physical Damage",
+    "type": "LocalPhysicalDamagePercent"
+  },
+  "SimplePhysical4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalPhysicalDamagePercent"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 100,
+        "min": 100
+      }
+    ],
+    "text": "100% increased Physical Damage",
+    "type": "LocalPhysicalDamagePercent"
+  },
+  "SimpleAddedPhysical1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalAddedPhysicalDamage"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_minimum_added_physical_damage",
+        "max": 2,
+        "min": 2
+      },
+      {
+        "id": "local_maximum_added_physical_damage",
+        "max": 4,
+        "min": 4
+      }
+    ],
+    "text": "Adds 2 to 4 Physical Damage",
+    "type": "LocalAddedPhysicalDamage"
+  },
+  "SimpleAddedPhysical2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalAddedPhysicalDamage"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_minimum_added_physical_damage",
+        "max": 4,
+        "min": 4
+      },
+      {
+        "id": "local_maximum_added_physical_damage",
+        "max": 8,
+        "min": 8
+      }
+    ],
+    "text": "Adds 4 to 8 Physical Damage",
+    "type": "LocalAddedPhysicalDamage"
+  },
+  "SimpleAddedPhysical3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalAddedPhysicalDamage"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_minimum_added_physical_damage",
+        "max": 8,
+        "min": 8
+      },
+      {
+        "id": "local_maximum_added_physical_damage",
+        "max": 16,
+        "min": 16
+      }
+    ],
+    "text": "Adds 8 to 16 Physical Damage",
+    "type": "LocalAddedPhysicalDamage"
+  },
+  "SimpleAddedPhysical4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalAddedPhysicalDamage"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_minimum_added_physical_damage",
+        "max": 16,
+        "min": 16
+      },
+      {
+        "id": "local_maximum_added_physical_damage",
+        "max": 32,
+        "min": 32
+      }
+    ],
+    "text": "Adds 16 to 32 Physical Damage",
+    "type": "LocalAddedPhysicalDamage"
+  },
+  "SimpleHybridPhysical1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 15,
+        "min": 15
+      },
+      {
+        "id": "local_accuracy_rating",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "15% increased Physical Damage\n+20 to Accuracy Rating",
+    "type": "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+  },
+  "SimpleHybridPhysical2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 25,
+        "min": 25
+      },
+      {
+        "id": "local_accuracy_rating",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "25% increased Physical Damage\n+40 to Accuracy Rating",
+    "type": "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+  },
+  "SimpleHybridPhysical3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 35,
+        "min": 35
+      },
+      {
+        "id": "local_accuracy_rating",
+        "max": 60,
+        "min": 60
+      }
+    ],
+    "text": "35% increased Physical Damage\n+60 to Accuracy Rating",
+    "type": "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+  },
+  "SimpleHybridPhysical4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "prefix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+    ],
+    "implicit_tags": [
+      "damage",
+      "physical",
+      "attack"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_physical_damage_+%",
+        "max": 45,
+        "min": 45
+      },
+      {
+        "id": "local_accuracy_rating",
+        "max": 80,
+        "min": 80
+      }
+    ],
+    "text": "45% increased Physical Damage\n+80 to Accuracy Rating",
+    "type": "LocalIncreasedPhysicalDamagePercentAndAccuracyRating"
+  },
+  "SimpleFireResist1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "FireResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "fire",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 400
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_fire_damage_resistance_%",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10% to Fire Resistance",
+    "type": "FireResistance"
+  },
+  "SimpleFireResist2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "FireResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "fire",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 300
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_fire_damage_resistance_%",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20% to Fire Resistance",
+    "type": "FireResistance"
+  },
+  "SimpleFireResist3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "FireResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "fire",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 200
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_fire_damage_resistance_%",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30% to Fire Resistance",
+    "type": "FireResistance"
+  },
+  "SimpleFireResist4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "FireResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "fire",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 100
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_fire_damage_resistance_%",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40% to Fire Resistance",
+    "type": "FireResistance"
+  },
+  "SimpleColdResist1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "ColdResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "cold",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 400
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_cold_damage_resistance_%",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10% to Cold Resistance",
+    "type": "ColdResistance"
+  },
+  "SimpleColdResist2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "ColdResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "cold",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 300
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_cold_damage_resistance_%",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20% to Cold Resistance",
+    "type": "ColdResistance"
+  },
+  "SimpleColdResist3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "ColdResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "cold",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 200
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_cold_damage_resistance_%",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30% to Cold Resistance",
+    "type": "ColdResistance"
+  },
+  "SimpleColdResist4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "ColdResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "cold",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 100
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_cold_damage_resistance_%",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40% to Cold Resistance",
+    "type": "ColdResistance"
+  },
+  "SimpleLightningResist1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LightningResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "lightning",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 400
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_lightning_damage_resistance_%",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10% to Lightning Resistance",
+    "type": "LightningResistance"
+  },
+  "SimpleLightningResist2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LightningResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "lightning",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 300
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_lightning_damage_resistance_%",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20% to Lightning Resistance",
+    "type": "LightningResistance"
+  },
+  "SimpleLightningResist3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LightningResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "lightning",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 200
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_lightning_damage_resistance_%",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30% to Lightning Resistance",
+    "type": "LightningResistance"
+  },
+  "SimpleLightningResist4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LightningResistance"
+    ],
+    "implicit_tags": [
+      "elemental",
+      "lightning",
+      "resistance"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 100
+      }
+    ],
+    "stats": [
+      {
+        "id": "base_lightning_damage_resistance_%",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40% to Lightning Resistance",
+    "type": "LightningResistance"
+  },
+  "SimpleStrength1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "Strength"
+    ],
+    "implicit_tags": [
+      "attribute"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 400
+      }
+    ],
+    "stats": [
+      {
+        "id": "additional_strength",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "+10 to Strength",
+    "type": "Strength"
+  },
+  "SimpleStrength2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "Strength"
+    ],
+    "implicit_tags": [
+      "attribute"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 300
+      }
+    ],
+    "stats": [
+      {
+        "id": "additional_strength",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "+20 to Strength",
+    "type": "Strength"
+  },
+  "SimpleStrength3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "Strength"
+    ],
+    "implicit_tags": [
+      "attribute"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 200
+      }
+    ],
+    "stats": [
+      {
+        "id": "additional_strength",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "+30 to Strength",
+    "type": "Strength"
+  },
+  "SimpleStrength4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "Strength"
+    ],
+    "implicit_tags": [
+      "attribute"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 100
+      }
+    ],
+    "stats": [
+      {
+        "id": "additional_strength",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "+40 to Strength",
+    "type": "Strength"
+  },
+  "SimpleAttackSpeed1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedAttackSpeed"
+    ],
+    "implicit_tags": [
+      "attack",
+      "speed"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_attack_speed_+%",
+        "max": 5,
+        "min": 5
+      }
+    ],
+    "text": "5% increased Attack Speed",
+    "type": "LocalIncreasedAttackSpeed"
+  },
+  "SimpleAttackSpeed2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedAttackSpeed"
+    ],
+    "implicit_tags": [
+      "attack",
+      "speed"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_attack_speed_+%",
+        "max": 8,
+        "min": 8
+      }
+    ],
+    "text": "8% increased Attack Speed",
+    "type": "LocalIncreasedAttackSpeed"
+  },
+  "SimpleAttackSpeed3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedAttackSpeed"
+    ],
+    "implicit_tags": [
+      "attack",
+      "speed"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_attack_speed_+%",
+        "max": 11,
+        "min": 11
+      }
+    ],
+    "text": "11% increased Attack Speed",
+    "type": "LocalIncreasedAttackSpeed"
+  },
+  "SimpleAttackSpeed4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalIncreasedAttackSpeed"
+    ],
+    "implicit_tags": [
+      "attack",
+      "speed"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_attack_speed_+%",
+        "max": 14,
+        "min": 14
+      }
+    ],
+    "text": "14% increased Attack Speed",
+    "type": "LocalIncreasedAttackSpeed"
+  },
+  "SimpleCriticalChance1": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalCriticalStrikeChance"
+    ],
+    "implicit_tags": [
+      "attack",
+      "critical"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 400
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_critical_strike_chance_+%",
+        "max": 10,
+        "min": 10
+      }
+    ],
+    "text": "10% increased Critical Strike Chance",
+    "type": "LocalCriticalStrikeChance"
+  },
+  "SimpleCriticalChance2": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalCriticalStrikeChance"
+    ],
+    "implicit_tags": [
+      "attack",
+      "critical"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 20,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 300
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_critical_strike_chance_+%",
+        "max": 20,
+        "min": 20
+      }
+    ],
+    "text": "20% increased Critical Strike Chance",
+    "type": "LocalCriticalStrikeChance"
+  },
+  "SimpleCriticalChance3": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalCriticalStrikeChance"
+    ],
+    "implicit_tags": [
+      "attack",
+      "critical"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 40,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 200
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_critical_strike_chance_+%",
+        "max": 30,
+        "min": 30
+      }
+    ],
+    "text": "30% increased Critical Strike Chance",
+    "type": "LocalCriticalStrikeChance"
+  },
+  "SimpleCriticalChance4": {
+    "adds_tags": [],
+    "domain": "item",
+    "generation_type": "suffix",
+    "generation_weights": [],
+    "groups": [
+      "LocalCriticalStrikeChance"
+    ],
+    "implicit_tags": [
+      "attack",
+      "critical"
+    ],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 70,
+    "spawn_weights": [
+      {
+        "tag": "bow",
+        "weight": 100
+      },
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "id": "local_critical_strike_chance_+%",
+        "max": 40,
+        "min": 40
+      }
+    ],
+    "text": "40% increased Critical Strike Chance",
+    "type": "LocalCriticalStrikeChance"
+  }
+}

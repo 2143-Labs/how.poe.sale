@@ -1,0 +1,640 @@
+{
+  "methods": [
+    {
+      "id": "currency/alchemy",
+      "name": "Orb of Alchemy",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Alchemy",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "normal"
+          ]
+        },
+        {
+          "kind": "category",
+          "anyOf": [
+            "weapon",
+            "armour",
+            "jewellery",
+            "quiver",
+            "jewel",
+            "abyss-jewel"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "op": "setRarity",
+          "rarity": "rare"
+        },
+        {
+          "op": "fill",
+          "fill": {
+            "counts": [
+              [
+                4,
+                8
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                1
+              ]
+            ]
+          }
+        }
+      ],
+      "claims": [
+        "game-text",
+        "chaos.count",
+        "reforge.counts"
+      ],
+      "example": "slink-boots-normal"
+    },
+    {
+      "id": "currency/alteration",
+      "name": "Orb of Alteration",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Alteration",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic"
+          ]
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "ignore"
+      },
+      "ops": [
+        {
+          "op": "clear"
+        },
+        {
+          "op": "chance",
+          "branches": [
+            {
+              "p": 0.5,
+              "ops": [
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                }
+              ]
+            },
+            {
+              "p": 0.5,
+              "ops": [
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                },
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "claims": [
+        "add.side-first",
+        "game-text",
+        "magic.mod-count",
+        "magic.count-weights"
+      ],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/annulment",
+      "name": "Orb of Annulment",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Annulment",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic",
+            "rare"
+          ]
+        },
+        {
+          "kind": "minExplicits",
+          "n": 1
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "respect"
+      },
+      "ops": [
+        {
+          "op": "removeRandom",
+          "filter": {
+            "kind": "any"
+          }
+        }
+      ],
+      "claims": [
+        "game-text",
+        "annul.locks",
+        "annul.uniform",
+        "fractured.kept",
+        "metamod.cannot-roll",
+        "veiled.placeholder-removable",
+        "multicraft.annul"
+      ],
+      "example": "crown-d2-scbc"
+    },
+    {
+      "id": "currency/augmentation",
+      "name": "Orb of Augmentation",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Augmentation",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic"
+          ]
+        },
+        {
+          "kind": "openAffix",
+          "side": "any"
+        }
+      ],
+      "ops": [
+        {
+          "op": "addRandom",
+          "pool": {
+            "kind": "natural"
+          },
+          "side": "any"
+        }
+      ],
+      "claims": [
+        "add.side-first",
+        "game-text",
+        "spawn.first-match"
+      ],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/chaos",
+      "name": "Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Chaos Orb",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "rare"
+          ]
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "ignore"
+      },
+      "ops": [
+        {
+          "op": "setRarity",
+          "rarity": "rare"
+        },
+        {
+          "op": "clear"
+        },
+        {
+          "op": "fill",
+          "fill": {
+            "counts": [
+              [
+                4,
+                8
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                1
+              ]
+            ]
+          }
+        }
+      ],
+      "claims": [
+        "game-text",
+        "chaos.count",
+        "chaos.respects-locks",
+        "reforge.counts"
+      ],
+      "example": "crown-a"
+    },
+    {
+      "id": "currency/divine",
+      "name": "Divine Orb",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic",
+            "rare",
+            "unique"
+          ]
+        },
+        {
+          "kind": "minExplicits",
+          "n": 1
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "ignore"
+      },
+      "ops": [
+        {
+          "op": "rerollValues",
+          "scope": "explicit"
+        }
+      ],
+      "claims": [
+        "game-text",
+        "fractured.kept"
+      ],
+      "example": "crown-actual"
+    },
+    {
+      "id": "currency/exalted",
+      "name": "Exalted Orb",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Exalted Orb",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "rare"
+          ]
+        },
+        {
+          "kind": "openAffix",
+          "side": "any"
+        }
+      ],
+      "ops": [
+        {
+          "op": "addRandom",
+          "pool": {
+            "kind": "natural"
+          },
+          "side": "any"
+        }
+      ],
+      "claims": [
+        "game-text",
+        "add.side-first",
+        "spawn.first-match",
+        "metamod.cannot-roll"
+      ],
+      "example": "crown-a-mana"
+    },
+    {
+      "id": "currency/regal",
+      "name": "Regal Orb",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Regal Orb",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic"
+          ]
+        },
+        {
+          "kind": "category",
+          "anyOf": [
+            "weapon",
+            "armour",
+            "jewellery",
+            "quiver",
+            "jewel",
+            "abyss-jewel"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "op": "setRarity",
+          "rarity": "rare"
+        },
+        {
+          "op": "addRandom",
+          "pool": {
+            "kind": "natural"
+          },
+          "side": "any"
+        }
+      ],
+      "claims": [
+        "add.side-first",
+        "game-text",
+        "spawn.first-match"
+      ],
+      "example": "cobalt-jewel-magic"
+    },
+    {
+      "id": "currency/scouring",
+      "name": "Orb of Scouring",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Scouring",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "magic",
+            "rare"
+          ]
+        },
+        {
+          "kind": "minExplicits",
+          "n": 1
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "ignore"
+      },
+      "ops": [
+        {
+          "op": "scour"
+        }
+      ],
+      "claims": [
+        "game-text",
+        "scour.locks",
+        "fractured.kept",
+        "remove.cannot-roll-scope"
+      ],
+      "example": "crown-l1"
+    },
+    {
+      "id": "currency/transmutation",
+      "name": "Orb of Transmutation",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Orb of Transmutation",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "normal"
+          ]
+        }
+      ],
+      "ops": [
+        {
+          "op": "setRarity",
+          "rarity": "magic"
+        },
+        {
+          "op": "chance",
+          "branches": [
+            {
+              "p": 0.5,
+              "ops": [
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                }
+              ]
+            },
+            {
+              "p": 0.5,
+              "ops": [
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                },
+                {
+                  "op": "addRandom",
+                  "pool": {
+                    "kind": "natural"
+                  },
+                  "side": "any"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "claims": [
+        "add.side-first",
+        "game-text",
+        "magic.mod-count",
+        "magic.count-weights"
+      ],
+      "example": "cobalt-jewel-normal"
+    },
+    {
+      "id": "currency/veiled-chaos",
+      "name": "Veiled Chaos Orb",
+      "family": "currency",
+      "cost": [
+        {
+          "name": "Veiled Chaos Orb",
+          "amount": 1
+        }
+      ],
+      "requires": [
+        {
+          "kind": "notCorrupted"
+        },
+        {
+          "kind": "notMirrored"
+        },
+        {
+          "kind": "rarity",
+          "anyOf": [
+            "rare"
+          ]
+        }
+      ],
+      "protect": {
+        "locks": "respect",
+        "cannotRoll": "ignore"
+      },
+      "ops": [
+        {
+          "op": "setRarity",
+          "rarity": "rare"
+        },
+        {
+          "op": "clear"
+        },
+        {
+          "op": "fill",
+          "fill": {
+            "counts": [
+              [
+                4,
+                8
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                1
+              ]
+            ],
+            "oneVeiled": true
+          }
+        }
+      ],
+      "claims": [
+        "game-text",
+        "chaos.count",
+        "chaos.respects-locks",
+        "veiled-chaos.replaces-one",
+        "reforge.counts"
+      ],
+      "example": "crown-a"
+    }
+  ]
+}

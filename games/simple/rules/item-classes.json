@@ -1,0 +1,40 @@
+{
+  "claims": [
+    "classes.max-sockets",
+    "classes.affix-limits"
+  ],
+  "categories": {
+    "weapon": {
+      "magic": [
+        1,
+        1
+      ],
+      "rare": [
+        3,
+        3
+      ]
+    },
+    "armour": {
+      "magic": [
+        1,
+        1
+      ],
+      "rare": [
+        3,
+        3
+      ]
+    }
+  },
+  "classes": [
+    {
+      "id": "Bow",
+      "category": "weapon",
+      "maxSockets": 6
+    },
+    {
+      "id": "Helmet",
+      "category": "armour",
+      "maxSockets": 4
+    }
+  ]
+}

@@ -1,0 +1,524 @@
+[
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "ignore"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "Prefixes Cannot Be Changed",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "item_generation_cannot_change_prefixes"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "ignore"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "Suffixes Cannot Be Changed",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "item_generation_cannot_change_suffixes"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0} to Strength",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "additional_strength"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          },
+          {
+            "min": 1,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "ignore",
+          "ignore"
+        ],
+        "index_handlers": [
+          [],
+          []
+        ],
+        "string": "No Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          },
+          {
+            "min": null,
+            "max": -1,
+            "negated": null
+          }
+        ],
+        "format": [
+          "ignore",
+          "ignore"
+        ],
+        "index_handlers": [
+          [],
+          []
+        ],
+        "string": "No Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": -100,
+            "negated": null
+          },
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "ignore",
+          "ignore"
+        ],
+        "index_handlers": [
+          [],
+          []
+        ],
+        "string": "No Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": 1,
+            "max": null,
+            "negated": null
+          },
+          {
+            "min": 0,
+            "max": 0,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#",
+          "ignore"
+        ],
+        "index_handlers": [
+          [],
+          []
+        ],
+        "string": "{0}% increased Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": -99,
+            "max": -1,
+            "negated": null
+          },
+          {
+            "min": 0,
+            "max": 0,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#",
+          "ignore"
+        ],
+        "index_handlers": [
+          [
+            "negate"
+          ],
+          []
+        ],
+        "string": "{0}% reduced Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_physical_damage_+%",
+      "local_weapon_no_physical_damage"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          },
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#",
+          "#"
+        ],
+        "index_handlers": [
+          [],
+          []
+        ],
+        "string": "Adds {0} to {1} Physical Damage",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_minimum_added_physical_damage",
+      "local_maximum_added_physical_damage"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": 1,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0}% increased Attack Speed",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": -1,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#"
+        ],
+        "index_handlers": [
+          [
+            "negate"
+          ]
+        ],
+        "string": "{0}% reduced Attack Speed",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_attack_speed_+%"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": 1,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0}% increased Critical Strike Chance",
+        "reminder_text": null,
+        "is_markup": null
+      },
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": -1,
+            "negated": null
+          }
+        ],
+        "format": [
+          "#"
+        ],
+        "index_handlers": [
+          [
+            "negate"
+          ]
+        ],
+        "string": "{0}% reduced Critical Strike Chance",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_critical_strike_chance_+%"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0} to maximum Energy Shield",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_energy_shield"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0} to maximum Life",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "base_maximum_life"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0} to maximum Mana",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "base_maximum_mana"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0}% to Fire Resistance",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "base_fire_damage_resistance_%"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0}% to Cold Resistance",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "base_cold_damage_resistance_%"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0}% to Lightning Resistance",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "base_lightning_damage_resistance_%"
+    ],
+    "hidden": null
+  },
+  {
+    "English": [
+      {
+        "condition": [
+          {
+            "min": null,
+            "max": null,
+            "negated": null
+          }
+        ],
+        "format": [
+          "+#"
+        ],
+        "index_handlers": [
+          []
+        ],
+        "string": "{0} to Accuracy Rating",
+        "reminder_text": null,
+        "is_markup": null
+      }
+    ],
+    "ids": [
+      "local_accuracy_rating"
+    ],
+    "hidden": null
+  }
+]

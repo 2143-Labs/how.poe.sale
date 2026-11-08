@@ -1,0 +1,46 @@
+[
+  {
+    "actions": {
+      "change_socket_count": null,
+      "link_sockets": null,
+      "color_sockets": null,
+      "add_explicit_mod": "StrMasterItemGenerationCannotChangePrefixes",
+      "remove_crafted_mods": null,
+      "add_enchant_mod": null,
+      "remove_enchantments": null,
+      "reroll_rarity": null,
+      "reroll_rare_mods": null
+    },
+    "bench_tier": 0,
+    "cost": {
+      "Metadata/Items/Currency/CurrencyModValues": 2
+    },
+    "item_classes": [
+      "Bow",
+      "Helmet"
+    ],
+    "master": "Einhar, Beastmaster"
+  },
+  {
+    "actions": {
+      "change_socket_count": null,
+      "link_sockets": null,
+      "color_sockets": null,
+      "add_explicit_mod": "DexMasterItemGenerationCannotChangeSuffixes",
+      "remove_crafted_mods": null,
+      "add_enchant_mod": null,
+      "remove_enchantments": null,
+      "reroll_rarity": null,
+      "reroll_rare_mods": null
+    },
+    "bench_tier": 0,
+    "cost": {
+      "Metadata/Items/Currency/CurrencyModValues": 2
+    },
+    "item_classes": [
+      "Bow",
+      "Helmet"
+    ],
+    "master": "Einhar, Beastmaster"
+  }
+]
