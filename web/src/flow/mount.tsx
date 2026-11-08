@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@xyflow/react/dist/style.css'
 import '../styles.css'
 import { createClient } from '../client'
+import type { InitMessage } from '../protocol'
 import { App } from './App'
 import { FlowContext } from './context'
 import type { Scope } from './scope'
@@ -19,7 +20,11 @@ function storage(): Storage | null {
 /** Starts a chart page: its worker, its state, and the app in `#root`. */
 export function mount(scope: Scope): void {
   let store: FlowStore | null = null
-  const client = createClient(new Worker(new URL('../worker.ts', import.meta.url), { type: 'module' }), {
+  // Vite finds the worker only when its options are literals, so the bundle URL goes in a message;
+  // the worker handles messages in order, so `init` comes before every request.
+  const worker = new Worker(new URL('../worker.ts', import.meta.url), { type: 'module' })
+  worker.postMessage({ type: 'init', bundle: scope.bundle } satisfies InitMessage)
+  const client = createClient(worker, {
     onBusy: (busy) => store?.getState().setBusy(busy),
   })
   store = createFlowStore(scope, {

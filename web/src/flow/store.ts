@@ -13,7 +13,7 @@ import {
   type Pin,
   type SlotSpec,
 } from '../types'
-import { HORROR_HELMET, type Scope } from './scope'
+import type { Scope } from './scope'
 
 export type Tab = 'forward' | 'backward'
 
@@ -69,10 +69,10 @@ export interface StoreEnv {
   dropHash: () => void
 }
 
-/** The root a page opens with when nothing was saved. */
+/** The root a page opens with when nothing was saved: the game's default base, rare and empty. */
 export function seedRoot(scope: Scope): AbsSpec {
-  const root: AbsSpec = {
-    base: scope.base ?? 'Archdemon Crown',
+  return {
+    base: scope.defaultBase,
     itemLevel: 87,
     rarity: 'rare',
     influences: [],
@@ -82,23 +82,12 @@ export function seedRoot(scope: Scope): AbsSpec {
     anySuffixes: 0,
     corrupted: false,
   }
-  if (scope.id === 'simple') {
-    // The essence outcome: Essence of Horror's suffix and four modifiers it does not name.
-    root.anyPrefixes = 2
-    root.anySuffixes = 2
-    root.suffixes = [{ id: HORROR_HELMET }]
-  }
-  return root
 }
 
 interface Saved {
   root: AbsSpec
   watch: SlotSpec[]
   pins: Pin[]
-}
-
-function fits(scope: Scope, root: AbsSpec): boolean {
-  return scope.base === null || root.base === scope.base
 }
 
 /** A pinned step, when it reads back as one. */
@@ -133,7 +122,7 @@ function load(scope: Scope, storage: StoreEnv['storage']): Saved | null {
     if (!raw) return null
     const value = JSON.parse(raw) as Record<string, unknown> | null
     const root = normalizeSpec(value?.root)
-    if (!value || !root || !fits(scope, root)) return null
+    if (!value || !root) return null
     return { root, watch: watchOf(value.watch), pins: pinsOf(value.pins) }
   } catch {
     return null
@@ -147,7 +136,7 @@ function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null }
   switch (share.kind) {
     case 'ok':
       env.dropHash()
-      if (share.scope !== scope.id || !fits(scope, share.root)) {
+      if (share.scope !== scope.id) {
         return { ...saved(), notice: 'This share link is for another page.' }
       }
       return { root: share.root, watch: share.watch, pins: share.pins, notice: null }
@@ -205,7 +194,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         if (get().selected !== id) return
         set({ methods, method: null, applied: null })
         if (tab === 'backward') {
-          const madeBy = await env.client.chartMadeBy(id, scope.id === 'simple' ? scope.methods : [])
+          const madeBy = await env.client.chartMadeBy(id, [])
           if (get().selected === id) set({ madeBy })
         }
       } catch (reason) {
@@ -271,7 +260,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         if (!id) return
         if (tab === 'backward' && !get().madeBy) {
           env.client
-            .chartMadeBy(id, scope.id === 'simple' ? scope.methods : [])
+            .chartMadeBy(id, [])
             .then((madeBy) => {
               if (get().selected === id) set({ madeBy })
             })

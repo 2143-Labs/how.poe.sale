@@ -18,7 +18,7 @@ Forward comes first. Backward work waits until forward is mastered. Both directi
 | Path | What |
 |---|---|
 | `crates/poe1` | The PoE1 3.29 model: the data bundle, concrete items, patterns, every crafting method as data, `apply`, the one-step solver and its inverse, game text, the generated catalog and the JSON views the browser shows. See `crates/poe1/README.md`. |
-| `crates/cli` | Builds `data/bundle.json` from the pinned repoe export and `rules/`, writes `catalog/`, and runs the solver from the command line. |
+| `crates/cli` | Builds `data/bundle.json` from the pinned repoe export and `rules/`, and `data/simple.json` from `games/simple/`; writes `catalog/`, and runs the solver from the command line. |
 | `crates/wasm` | The `Bridge` the worker calls. |
 | `crates/server` | axum static server for the built front end, plus `/health`. |
 | `crates/solver` | Game-agnostic graph solver, kept for the route solver; nothing uses it yet. |
@@ -32,6 +32,7 @@ Everything comes from the flake; there is no global Rust toolchain to install.
 nix develop
 bash scripts/fetch-data.sh                                    # pinned repoe files into data/raw/, hash-checked
 cargo run -p cli --release -- bundle --raw data/raw --rules rules --out data/bundle.json
+cargo run -p cli --release -- bundle --raw games/simple/raw --rules games/simple/rules --claims rules/claims.json --out data/simple.json   # the Simple game's data, from games/simple/
 cd web && npm ci && npm run dev                               # builds the wasm, copies the bundle, starts Vite
 ```
 

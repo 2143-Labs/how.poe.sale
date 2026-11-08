@@ -22,7 +22,7 @@ interface TargetPanelProps {
 
 /** The item the chart starts from: the root class, and the modifiers watched on top of it. */
 export function TargetPanel({ bases, examples }: TargetPanelProps) {
-  const { scope, client, store } = useFlow()
+  const { client, store } = useFlow()
   const root = useFlowState((state) => state.root)
   const watch = useFlowState((state) => state.watch)
   const [paste, setPaste] = useState('')
@@ -78,10 +78,6 @@ export function TargetPanel({ bases, examples }: TargetPanelProps) {
       .parse(paste)
       .then((view) => {
         const item = view.item
-        if (scope.base && item.base !== scope.base) {
-          setPasteError(`This page only takes an ${scope.base}.`)
-          return
-        }
         setPasteError(null)
         update({
           base: item.base,
@@ -107,22 +103,18 @@ export function TargetPanel({ bases, examples }: TargetPanelProps) {
 
       <div className="field">
         <span>Base</span>
-        {scope.base ? (
-          <strong>{scope.base}</strong>
-        ) : (
-          <select
-            value={root.base}
-            onChange={(event) =>
-              update({ base: event.target.value, prefixes: [], suffixes: [], corrupted: false })
-            }
-          >
-            {options.map((base) => (
-              <option key={base} value={base}>
-                {base}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          value={root.base}
+          onChange={(event) =>
+            update({ base: event.target.value, prefixes: [], suffixes: [], corrupted: false })
+          }
+        >
+          {options.map((base) => (
+            <option key={base} value={base}>
+              {base}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="field">

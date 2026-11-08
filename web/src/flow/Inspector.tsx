@@ -1,17 +1,11 @@
 import { useMemo, useState } from 'react'
-import type { AppliedView, InputView, MethodOption, OutcomeView, WatchView } from '../types'
+import type { AppliedView, InputView, OutcomeView, WatchView } from '../types'
 import { errorText, useFlow, useFlowState } from './context'
 import { percent, range, summary, tries } from './format'
 import { pathChance } from './path'
 
 /** The most outcome rows the table shows. */
 const ROWS = 100
-
-/** The methods a page offers: on the simple page, its own set plus every essence. */
-function offered(scopeId: string, scopeMethods: string[], methods: MethodOption[]): MethodOption[] {
-  if (scopeId !== 'simple') return methods
-  return methods.filter((m) => scopeMethods.includes(m.id) || m.id.startsWith('essence/'))
-}
 
 function OutcomeRow({ outcome, onPin }: { outcome: OutcomeView; onPin: (key: string) => void }) {
   return (
@@ -131,7 +125,7 @@ function InputRow({ input, onPin }: { input: InputView; onPin: (method: string, 
 
 /** What the selected node can be made from, and what it becomes. */
 export function Inspector() {
-  const { scope, store } = useFlow()
+  const { store } = useFlow()
   const nodes = useFlowState((state) => state.nodes)
   const edges = useFlowState((state) => state.edges)
   const selected = useFlowState((state) => state.selected)
@@ -148,11 +142,10 @@ export function Inspector() {
   const chain = node && rootId ? pathChance(edges, node.id, rootId) : null
   const list = useMemo(() => {
     const words = query.trim().toLowerCase()
-    const all = offered(scope.id, scope.methods, methods)
     return words.length < 2
-      ? all.slice(0, 40)
-      : all.filter((m) => m.name.toLowerCase().includes(words) || m.id.toLowerCase().includes(words)).slice(0, 200)
-  }, [methods, query, scope.id, scope.methods])
+      ? methods.slice(0, 40)
+      : methods.filter((m) => m.name.toLowerCase().includes(words) || m.id.toLowerCase().includes(words)).slice(0, 200)
+  }, [methods, query])
 
   if (!node) return <section className="panel inspector" />
 

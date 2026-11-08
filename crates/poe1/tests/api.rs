@@ -25,8 +25,9 @@ fn methods() -> Vec<String> {
     METHODS.iter().map(|m| m.to_string()).collect()
 }
 
-/// The simple page's root: the essence's suffix with two untracked prefixes and suffixes.
-fn simple_root() -> String {
+/// The Essence of Horror outcome on an Archdemon Crown: its suffix and two untracked prefixes and
+/// suffixes.
+fn horror_root() -> String {
     serde_json::json!({
         "base": "Archdemon Crown",
         "itemLevel": 87,
@@ -43,7 +44,7 @@ fn simple_root() -> String {
 #[test]
 fn a_chart_grows_both_ways() {
     let d = test_data();
-    let (mut chart, root) = api::Chart::start(d, &simple_root(), "[]").expect("a chart");
+    let (mut chart, root) = api::Chart::start(d, &horror_root(), "[]").expect("a chart");
     let json = serde_json::to_value(&root).unwrap();
     assert_eq!(json["view"]["anySuffixes"], 2);
     assert_eq!(
@@ -121,7 +122,7 @@ fn track_refuses_one_family_twice() {
         { "id": "ColdResist8" }
     ])
     .to_string();
-    let err = api::Chart::start(d, &simple_root(), &watched)
+    let err = api::Chart::start(d, &horror_root(), &watched)
         .err()
         .expect("a refusal");
     assert!(err.starts_with("track: "), "{err}");

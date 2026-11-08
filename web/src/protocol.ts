@@ -9,6 +9,12 @@ import type {
   StartInfo,
 } from './types'
 
+/** Main thread → worker, once, before any request: the URL of the game's data bundle. */
+export interface InitMessage {
+  type: 'init'
+  bundle: string
+}
+
 /** Main thread → worker. */
 export type SolverRequest =
   | { type: 'start'; id: number }

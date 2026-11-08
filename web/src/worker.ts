@@ -1,13 +1,17 @@
 import init, { Bridge } from './wasm/pkg/solver.js'
-import type { SolverRequest, SolverResponse } from './protocol'
+import type { InitMessage, SolverRequest, SolverResponse } from './protocol'
 
 let bridge: Promise<Bridge> | null = null
+/** The page's data bundle, named by its `init` message. */
+let bundleUrl: string | null = null
 
 function load(): Promise<Bridge> {
   bridge ??= (async () => {
+    const url = bundleUrl
+    if (url === null) throw new Error('the page named no data bundle')
     await init()
-    const res = await fetch('/data/bundle.json')
-    if (!res.ok) throw new Error(`bundle.json: HTTP ${res.status}`)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
     return new Bridge(await res.text())
   })().catch((error: unknown) => {
     // A failed load is not cached: the next request fetches again.
@@ -24,8 +28,12 @@ function errorText(error: unknown): string {
 }
 
 self.onmessage = async (event: MessageEvent) => {
-  const message = event.data as SolverRequest
+  const message = event.data as SolverRequest | InitMessage
   if (!message || typeof message.type !== 'string') return
+  if (message.type === 'init') {
+    bundleUrl = message.bundle
+    return
+  }
   try {
     const b = await load()
     let response: SolverResponse

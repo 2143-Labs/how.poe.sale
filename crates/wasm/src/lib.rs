@@ -128,10 +128,11 @@ impl Bridge {
         )
     }
 
-    /// The example pastes: JSON `[{"id", "label", "text"}]`.
+    /// The example pastes this game's data reads: JSON `[{"id", "label", "text"}]`.
     pub fn examples(&self) -> String {
         let list: Vec<serde_json::Value> = EXAMPLES
             .iter()
+            .filter(|(_, text)| api::read_item(&self.data, text).is_ok())
             .map(|(id, text)| serde_json::json!({ "id": id, "label": label(id), "text": text }))
             .collect();
         serde_json::Value::Array(list).to_string()
