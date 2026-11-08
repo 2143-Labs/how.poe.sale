@@ -4,7 +4,7 @@ import type { Edge, Node, NodeProps, NodeTypes, ReactFlowInstance } from '@xyflo
 import type { EdgeView, NodeView } from '../types'
 import { Card } from './Card'
 import { useFlow, useFlowState } from './context'
-import { percent, range, tries } from './format'
+import { itemsFrom, percent, range, tries } from './format'
 import { NODE_WIDTH, layoutGraph, type LayoutPositions } from './layout'
 import { pathChance } from './path'
 
@@ -15,6 +15,8 @@ type ItemNodeData = {
   in: EdgeView[]
   /** The chance of the pinned path from here to the root, when it has one. */
   chain: string | null
+  /** Where a node reached by several steps got its items. */
+  from: string | null
 }
 
 type ItemFlowNode = Node<ItemNodeData, 'item'>
@@ -23,19 +25,19 @@ function estimateHeight(data: ItemNodeData): number {
   const view = data.node.view
   const chips =
     view.prefixes.length + view.suffixes.length + (view.anyPrefixes > 0 ? 1 : 0) + (view.anySuffixes > 0 ? 1 : 0)
-  return 64 + chips * 20 + data.in.length * 16
+  return 64 + chips * 20 + data.in.length * 16 + (data.from ? 16 : 0)
 }
 
 function ItemCard({ data, selected }: NodeProps<ItemFlowNode>) {
   const badges: string[] = []
   if (data.root) badges.push('root')
-  if (data.node.goal && !data.root) badges.push('goal')
   if (data.node.approx) badges.push('≈')
   const footer = data.in.map(
     (edge) =>
-      `${edge.name} · ${edge.interval ? '≈ ' : ''}${percent(edge.p)}${range(edge.interval)} · ${tries(edge.p)}`,
+      `${edge.name} · ${edge.interval ? '≈ ' : ''}${percent(edge.p)}${range(edge.interval)}${edge.repeatable ? ` · ${tries(edge.p)}` : ''}`,
   )
   if (data.chain) footer.push(data.chain)
+  if (data.from) footer.push(data.from)
   return <Card view={data.node.view} badges={badges} footer={footer} selected={selected} root={data.root} />
 }
 
@@ -63,6 +65,7 @@ export function Chart() {
             chain && chain.steps > 1
               ? `path to the root · ${percent(chain.p)}${chain.approx ? ' ≈' : ''} over ${chain.steps} steps`
               : null,
+          from: itemsFrom(node, nodes, edges),
         }
       }),
     [nodes, edges, rootId],

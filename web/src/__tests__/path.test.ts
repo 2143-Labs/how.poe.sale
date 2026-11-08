@@ -10,6 +10,7 @@ function edge(from: string, to: string, p: number, simulated = false): EdgeView 
     name: 'a step',
     p,
     interval: simulated ? [p - 0.01, p + 0.01] : null,
+    repeatable: false,
   }
 }
 

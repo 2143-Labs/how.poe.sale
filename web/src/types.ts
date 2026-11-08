@@ -47,11 +47,11 @@ export interface NodeView {
   id: string
   spec: AbsSpec
   view: ClassView
-  /** This is the root's class: the chart has come back to where it started. */
-  goal: boolean
   /** How many items the node stands for, when it has any of its own. */
   members: number | null
   approx: boolean
+  /** The forward step whose outcome gave the node its items: the node it was used on, and the method. */
+  source: { from: string; method: string } | null
 }
 
 export type OutcomeKind = 'item' | 'destroyed' | 'refused' | 'notModelled'
@@ -65,7 +65,6 @@ export interface OutcomeView {
   interval: [number, number] | null
   view: ClassView | null
   reason: string | null
-  goal: boolean
 }
 
 /** The chance a step's result holds a watched modifier, or ("at least one of these") any of them. */
@@ -84,6 +83,8 @@ export interface AppliedView {
   cost: string
   /** The reforges run, when the numbers are simulated. */
   simulated: number | null
+  /** The method can be used again on each result with the same odds, so a count of tries means something. */
+  repeatable: boolean
   outcomes: OutcomeView[]
   /** Each watched modifier's chance, then the chance of at least one when two or more are watched. */
   watched: WatchView[]
@@ -107,6 +108,8 @@ export interface InputView {
   cost: string
   view: ClassView
   note: string | null
+  /** The method can be used again on the node it made with the same odds. */
+  repeatable: boolean
 }
 
 /** A method that shows no input, and why. */
@@ -131,6 +134,8 @@ export interface EdgeView {
   name: string
   p: number
   interval: [number, number] | null
+  /** The method can be used again on the step's result with the same odds. */
+  repeatable: boolean
 }
 
 /** A node added to the chart, with the edge that added it. */

@@ -7,19 +7,29 @@ import { pathChance } from './path'
 /** The most outcome rows the table shows. */
 const ROWS = 100
 
-function OutcomeRow({ outcome, onPin }: { outcome: OutcomeView; onPin: (key: string) => void }) {
+function OutcomeRow({
+  outcome,
+  repeatable,
+  onChart,
+  onPin,
+}: {
+  outcome: OutcomeView
+  repeatable: boolean
+  onChart: boolean
+  onPin: (key: string) => void
+}) {
   return (
     <tr>
       <td>
         {outcome.view ? summary(outcome.view) : (outcome.reason ?? outcome.kind)}
-        {outcome.goal && <span className="badge badge-expanded">goal</span>}
+        {onChart && <span className="badge badge-expanded">on chart</span>}
       </td>
       <td className="num">
         {outcome.interval ? '≈ ' : ''}
         {percent(outcome.p)}
         {range(outcome.interval)}
       </td>
-      <td className="num">{tries(outcome.p)}</td>
+      <td className="num">{repeatable ? tries(outcome.p) : '—'}</td>
       <td>
         {outcome.kind === 'item' && (
           <button type="button" onClick={() => onPin(outcome.key)}>
@@ -31,8 +41,29 @@ function OutcomeRow({ outcome, onPin }: { outcome: OutcomeView; onPin: (key: str
   )
 }
 
-/** What the step gives each watched modifier: the outcome rows split by every tracked slot, so these are their sums. */
-function Watched({ watched }: { watched: WatchView[] }) {
+/**
+ * What the step gives each watched modifier: the outcome rows split by every tracked slot, so these are their sums. A
+ * simulated chance no run hit shows its upper bound rather than "never".
+ */
+function Watched({
+  watched,
+  simulated,
+  repeatable,
+}: {
+  watched: WatchView[]
+  simulated: number | null
+  repeatable: boolean
+}) {
+  const chance = (w: WatchView) => {
+    if (w.p === 0 && w.interval && simulated) {
+      return `not seen in ${simulated.toLocaleString('en-US')} runs (95%: under ${percent(w.interval[1])})`
+    }
+    return `${w.interval ? '≈ ' : ''}${percent(w.p)}${range(w.interval)}`
+  }
+  const tried = (w: WatchView) => {
+    if (w.p === 0) return w.interval ? '—' : 'never'
+    return repeatable ? tries(w.p) : '—'
+  }
   return (
     <table className="steps-table">
       <thead>
@@ -46,12 +77,8 @@ function Watched({ watched }: { watched: WatchView[] }) {
         {watched.map((w) => (
           <tr key={w.label}>
             <td>{w.label}</td>
-            <td className="num">
-              {w.interval ? '≈ ' : ''}
-              {percent(w.p)}
-              {range(w.interval)}
-            </td>
-            <td className="num">{w.p > 0 ? tries(w.p) : 'never'}</td>
+            <td className="num">{chance(w)}</td>
+            <td className="num">{tried(w)}</td>
           </tr>
         ))}
       </tbody>
@@ -61,6 +88,7 @@ function Watched({ watched }: { watched: WatchView[] }) {
 
 function Applied({ applied }: { applied: AppliedView }) {
   const { store } = useFlow()
+  const nodes = useFlowState((state) => state.nodes)
   const rows = applied.outcomes
   const shown = rows.slice(0, ROWS)
   const rest = rows.slice(ROWS)
@@ -74,7 +102,9 @@ function Applied({ applied }: { applied: AppliedView }) {
           Simulated: {applied.simulated} seeded reforges; outcomes rarer than 1 in {applied.simulated} may be missing.
         </p>
       )}
-      {applied.watched.length > 0 && <Watched watched={applied.watched} />}
+      {applied.watched.length > 0 && (
+        <Watched watched={applied.watched} simulated={applied.simulated} repeatable={applied.repeatable} />
+      )}
       <table className="steps-table">
         <thead>
           <tr>
@@ -86,7 +116,13 @@ function Applied({ applied }: { applied: AppliedView }) {
         </thead>
         <tbody>
           {shown.map((outcome) => (
-            <OutcomeRow key={outcome.key} outcome={outcome} onPin={(key) => store.getState().pinForward(key)} />
+            <OutcomeRow
+              key={outcome.key}
+              outcome={outcome}
+              repeatable={applied.repeatable}
+              onChart={nodes.some((n) => n.id === outcome.key)}
+              onPin={(key) => store.getState().pinForward(key)}
+            />
           ))}
         </tbody>
       </table>
@@ -111,7 +147,7 @@ function InputRow({ input, onPin }: { input: InputView; onPin: (method: string, 
         {percent(input.p)}
         {range(input.interval)}
       </td>
-      <td className="num">{tries(input.p)}</td>
+      <td className="num">{input.repeatable ? tries(input.p) : '—'}</td>
       <td>{input.cost}</td>
       <td className="step-note">{input.note}</td>
       <td>

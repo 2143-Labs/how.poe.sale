@@ -31,9 +31,9 @@ function nodeOf(id: string): NodeView {
       anyPrefixes: root.anyPrefixes,
       anySuffixes: root.anySuffixes,
     },
-    goal: false,
     members: null,
     approx: false,
+    source: null,
   }
 }
 
@@ -62,7 +62,16 @@ class FakeClient implements Client {
   }
 
   async chartForward() {
-    return { node: 'root', method: 'm', name: 'M', cost: 'none', simulated: null, outcomes: [], watched: [] }
+    return {
+      node: 'root',
+      method: 'm',
+      name: 'M',
+      cost: 'none',
+      simulated: null,
+      repeatable: false,
+      outcomes: [],
+      watched: [],
+    }
   }
 
   async chartMadeBy(node: string) {
@@ -70,14 +79,14 @@ class FakeClient implements Client {
   }
 
   async chartPinForward(_node: string, method: string, key: string) {
-    const edge: EdgeView = { from: 'root', to: key, method, name: 'M', p: 0.5, interval: null }
+    const edge: EdgeView = { from: 'root', to: key, method, name: 'M', p: 0.5, interval: null, repeatable: false }
     const pinned: PinnedView = { node: nodeOf(key), edge }
     this.pinned.push(pinned)
     return pinned
   }
 
   async chartPinBackward(node: string, method: string, key: string) {
-    const edge: EdgeView = { from: key, to: node, method, name: 'M', p: 0.5, interval: null }
+    const edge: EdgeView = { from: key, to: node, method, name: 'M', p: 0.5, interval: null, repeatable: false }
     const pinned: PinnedView = { node: nodeOf(key), edge }
     this.pinned.push(pinned)
     return pinned

@@ -4,7 +4,7 @@ import { nodeTitle } from './format'
 
 interface CardProps {
   view: ClassView
-  /** Short labels under the title: `root`, `goal`, `≈`. */
+  /** Short labels under the title: `root`, `≈`. */
   badges: string[]
   /** One line per step that reached this item. */
   footer: string[]

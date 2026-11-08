@@ -1,7 +1,8 @@
-import type { ClassView } from '../types'
+import type { ClassView, EdgeView, NodeView } from '../types'
 
-/** A chance as a percentage with two decimals. */
+/** A chance as a percentage with two decimals; below 0.01% to three significant figures, so a tiny chance is not 0.00%. */
 export function percent(p: number): string {
+  if (p > 0 && p < 0.0001) return `${Number.parseFloat((p * 100).toPrecision(3))}%`
   return `${(p * 100).toFixed(2)}%`
 }
 
@@ -36,4 +37,17 @@ export function summary(view: ClassView): string {
     parts.push('no modifiers')
   }
   return parts.join(' · ')
+}
+
+/**
+ * Where a node reached by more than one pinned step got its items: the step that gave them. Its
+ * odds onward come from those items, so a merged node says which they are.
+ */
+export function itemsFrom(node: NodeView, nodes: NodeView[], edges: EdgeView[]): string | null {
+  const source = node.source
+  if (!source || edges.filter((edge) => edge.to === node.id).length < 2) return null
+  const step = edges.find((edge) => edge.from === source.from && edge.to === node.id && edge.method === source.method)
+  const name = step?.name ?? source.method
+  const from = nodes.find((n) => n.id === source.from)
+  return from ? `items from: ${name} on ${summary(from.view)}` : `items from: an earlier ${name} step`
 }
