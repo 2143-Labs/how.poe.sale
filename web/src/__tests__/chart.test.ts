@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Client } from '../client'
 import { createFlowStore } from '../flow/store'
 import { SCOPES } from '../flow/scope'
-import type { AbsSpec, EdgeView, ItemView, NodeView, PinnedView } from '../types'
+import type { AbsSpec, EdgeView, ItemView, MethodOption, NodeView, PinnedView } from '../types'
 
 const root: AbsSpec = {
   base: 'Archdemon Crown',
@@ -57,7 +57,7 @@ class FakeClient implements Client {
     return nodeOf('root')
   }
 
-  async chartMethods() {
+  async chartMethods(): Promise<MethodOption[]> {
     return []
   }
 
@@ -78,8 +78,8 @@ class FakeClient implements Client {
     return { node, inputs: [], skipped: [] }
   }
 
-  async chartPinForward(_node: string, method: string, key: string) {
-    const edge: EdgeView = { from: 'root', to: key, method, name: 'M', p: 0.5, interval: null, repeatable: false }
+  async chartPinForward(node: string, method: string, key: string) {
+    const edge: EdgeView = { from: node, to: key, method, name: 'M', p: 0.5, interval: null, repeatable: false }
     const pinned: PinnedView = { node: nodeOf(key), edge }
     this.pinned.push(pinned)
     return pinned
@@ -94,6 +94,17 @@ class FakeClient implements Client {
 
   dispose(): void {
     // nothing to release
+  }
+}
+
+/** A client whose method lists wait until the test releases them. */
+class SlowMethods extends FakeClient {
+  release: () => void = () => undefined
+  async chartMethods(): Promise<MethodOption[]> {
+    await new Promise<void>((resolve) => {
+      this.release = resolve
+    })
+    return [{ id: 'm', name: 'M', family: 'currency', cost: '1 × M' }]
   }
 }
 
@@ -156,5 +167,45 @@ describe('the chart', () => {
     expect(flow.getState().edges).toHaveLength(2)
     expect(flow.getState().selected).toBe('root')
     expect(flow.getState().pins).toHaveLength(2)
+  })
+
+  it("keeps a method chosen while the next node's methods load", async () => {
+    const client = new SlowMethods()
+    const flow = createFlowStore(SCOPES.simple, { client, hash: '', storage: null, dropHash: () => undefined })
+    await flush()
+    client.release()
+    await flush()
+    expect(flow.getState().methods).toHaveLength(1)
+    flow.setState({ method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    expect(flow.getState().selected).toBe('a')
+    expect(flow.getState().methods).toEqual([])
+    flow.getState().chooseMethod('k')
+    await flush()
+    client.release()
+    await flush()
+    expect(flow.getState().method).toBe('k')
+    expect(flow.getState().applied).not.toBeNull()
+    expect(flow.getState().methods).toHaveLength(1)
+  })
+
+  it('keeps only the pins a reload can replay after a removal', async () => {
+    const { flow } = await store()
+    const pin = async (from: string, key: string) => {
+      flow.setState({ selected: from, method: 'm' })
+      flow.getState().pinForward(key)
+      await flush()
+    }
+    await pin('root', 'a')
+    await pin('a', 'b')
+    await pin('b', 'c')
+    await pin('root', 'b')
+    flow.getState().unpin('a')
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'b', 'c'])
+    expect(flow.getState().pins).toEqual([
+      { dir: 'f', node: 'root', method: 'm', key: 'b' },
+      { dir: 'f', node: 'b', method: 'm', key: 'c' },
+    ])
   })
 })

@@ -168,11 +168,36 @@ function reachable(nodes: NodeView[], edges: EdgeView[]): Set<string> {
   return keep
 }
 
+/**
+ * The pins whose ends both stay on the chart, in an order a replay can follow: each starts from
+ * the root or from a node an earlier kept pin made. A pin whose start no kept pin makes is dropped.
+ */
+function replayable(pins: Pin[], root: string, kept: Set<string>): Pin[] {
+  const live = pins.filter((pin) => kept.has(pin.node) && kept.has(pin.key))
+  const made = new Set([root])
+  const out: Pin[] = []
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const pin of live) {
+      if (out.includes(pin) || !made.has(pin.node)) continue
+      out.push(pin)
+      made.add(pin.key)
+      grew = true
+    }
+  }
+  return out
+}
+
 export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
   const start = initial(scope, env)
   const store = createStore<FlowState>()((set, get) => {
     const fail = (reason: unknown) =>
       set({ error: reason instanceof Error ? reason.message : String(reason) })
+
+    /** The state for selecting `id`: a different node starts with no methods, chosen method or answers until `refresh` fills them. */
+    const moveTo = (id: string): Partial<FlowState> =>
+      get().selected === id ? { selected: id } : { selected: id, methods: [], method: null, applied: null, madeBy: null }
 
     /** Adds a pinned node and edge, when they are new, and selects the node unless told not to. */
     const keep = (node: NodeView, edge: EdgeView, select = true) => {
@@ -184,7 +209,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         )
           ? edges
           : [...edges, edge],
-        selected: select ? node.id : get().selected,
+        ...(select ? moveTo(node.id) : {}),
       })
     }
 
@@ -194,7 +219,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
       try {
         const methods = await env.client.chartMethods(id)
         if (get().selected !== id) return
-        set({ methods, method: null, applied: null })
+        set({ methods })
         if (tab === 'backward') {
           const madeBy = await env.client.chartMadeBy(id, [])
           if (get().selected === id) set({ madeBy })
@@ -253,7 +278,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         void restart(get().root, watch, [])
       },
       select: (id) => {
-        set({ selected: id, applied: null, madeBy: null, method: null })
+        set({ ...moveTo(id), method: null, applied: null, madeBy: null })
         void refresh(id)
       },
       setTab: (tab) => {
@@ -323,20 +348,23 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
       unpin: (id) => {
         const { nodes, edges, selected, pins } = get()
         if (nodes.length === 0 || nodes[0].id === id) return
-        const left = edges.filter((edge) => edge.from !== id && edge.to !== id)
         const rest = nodes.filter((node) => node.id !== id)
-        const helped = reachable(rest, left)
+        const left = edges.filter((edge) => edge.from !== id && edge.to !== id)
+        const kept = replayable(pins, nodes[0].id, reachable(rest, left))
+        const made = new Set([nodes[0].id, ...kept.map((pin) => pin.key)])
+        const next = selected && made.has(selected) ? selected : nodes[0].id
         set({
-          nodes: rest.filter((node) => helped.has(node.id)),
-          edges: left.filter((edge) => helped.has(edge.from) && helped.has(edge.to)),
-          pins: pins.filter((pin) => pin.key !== id),
-          selected: selected && helped.has(selected) ? selected : nodes[0].id,
+          nodes: rest.filter((node) => made.has(node.id)),
+          edges: left.filter((edge) => made.has(edge.from) && made.has(edge.to)),
+          pins: kept,
+          ...moveTo(next),
         })
+        if (next !== selected) void refresh(next)
       },
       clearChart: () => {
         const { nodes } = get()
         if (nodes.length === 0) return
-        set({ nodes: nodes.slice(0, 1), edges: [], pins: [], selected: nodes[0].id })
+        set({ nodes: nodes.slice(0, 1), edges: [], pins: [], ...moveTo(nodes[0].id), method: null, applied: null })
         void refresh(nodes[0].id)
       },
       setError: (error) => set({ error }),
