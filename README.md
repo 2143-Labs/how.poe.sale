@@ -4,6 +4,15 @@ A crafting solver for Path of Exile 1 (3.29, Curse of the Allflame). Paste an it
 
 Live at <https://how.john2143.com>. Everything runs in your browser: the engine is Rust compiled to WebAssembly, running in a Web Worker. Your pattern and item are kept in `localStorage` and in the share link; the server only serves files.
 
+## Two directions
+
+The most important feature of how.poe.sale is that it works in both directions on one chart.
+
+1. **Forward: what can this make?** Given an item, or the inputs to a node, apply a currency or other crafting method and show every possible output in the flowchart, each with its chance.
+2. **Backward: what could have made this?** Given an item, show the steps that could have produced it.
+
+Forward comes first. Backward work waits until forward is mastered. Both directions grow the same chart: a node is a class of items, so a forward outcome and a backward input that land on the same class are the same node.
+
 ## How it works
 
 | Path | What |
