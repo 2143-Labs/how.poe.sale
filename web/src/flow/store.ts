@@ -47,6 +47,8 @@ export interface FlowState {
   chooseMethod: (id: string) => void
   /** Pins an outcome of the method shown for the selected node. */
   pinForward: (key: string) => void
+  /** Pins each outcome of the method shown for the selected node, in order, keeping the selection. */
+  pinAll: (keys: string[]) => Promise<void>
   /** Pins an input a method could have started from, above the selected node. */
   pinBackward: (method: string, key: string) => void
   /** Takes a node off the chart, with every node only it led to. */
@@ -172,8 +174,8 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
     const fail = (reason: unknown) =>
       set({ error: reason instanceof Error ? reason.message : String(reason) })
 
-    /** Adds a pinned node and edge, when they are new. */
-    const keep = (node: NodeView, edge: EdgeView) => {
+    /** Adds a pinned node and edge, when they are new, and selects the node unless told not to. */
+    const keep = (node: NodeView, edge: EdgeView, select = true) => {
       const { nodes, edges } = get()
       set({
         nodes: nodes.some((known) => known.id === node.id) ? nodes : [...nodes, node],
@@ -182,7 +184,7 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         )
           ? edges
           : [...edges, edge],
-        selected: node.id,
+        selected: select ? node.id : get().selected,
       })
     }
 
@@ -279,25 +281,41 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
           .catch(fail)
       },
       pinForward: (key) => {
-        const { selected, method, pins } = get()
+        const { selected, method } = get()
         if (!selected || !method) return
         env.client
           .chartPinForward(selected, method, key)
           .then((pinned) => {
             keep(pinned.node, pinned.edge)
-            set({ pins: [...pins, { dir: 'f', node: selected, method, key }] })
+            set({ pins: [...get().pins, { dir: 'f', node: selected, method, key }] })
             void refresh(pinned.node.id)
           })
           .catch(fail)
       },
+      pinAll: async (keys) => {
+        const { selected, method } = get()
+        if (!selected || !method) return
+        for (const key of keys) {
+          const pinned = get().edges.some((e) => e.from === selected && e.to === key && e.method === method)
+          if (pinned) continue
+          try {
+            const step = await env.client.chartPinForward(selected, method, key)
+            keep(step.node, step.edge, false)
+            set({ pins: [...get().pins, { dir: 'f', node: selected, method, key }] })
+          } catch (reason) {
+            fail(reason)
+            return
+          }
+        }
+      },
       pinBackward: (method, key) => {
-        const { selected, pins } = get()
+        const { selected } = get()
         if (!selected) return
         env.client
           .chartPinBackward(selected, method, key)
           .then((pinned) => {
             keep(pinned.node, pinned.edge)
-            set({ pins: [...pins, { dir: 'b', node: selected, method, key }] })
+            set({ pins: [...get().pins, { dir: 'b', node: selected, method, key }] })
             void refresh(pinned.node.id)
           })
           .catch(fail)

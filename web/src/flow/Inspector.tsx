@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import type { AppliedView, InputView, OutcomeView, WatchView } from '../types'
+import type { AppliedView, InputView, NodeView, OutcomeView, WatchView } from '../types'
+import { chainFrom, type Chain } from './chain'
 import { errorText, useFlow, useFlowState } from './context'
-import { percent, range, summary, tries } from './format'
+import { count, percent, range, summary, tries } from './format'
 import { pathChance } from './path'
 
 /** The most outcome rows the table shows. */
@@ -92,6 +93,7 @@ function Applied({ applied }: { applied: AppliedView }) {
   const rows = applied.outcomes
   const shown = rows.slice(0, ROWS)
   const rest = rows.slice(ROWS)
+  const items = rows.filter((o) => o.kind === 'item')
   return (
     <>
       <p className="hint">
@@ -104,6 +106,11 @@ function Applied({ applied }: { applied: AppliedView }) {
       )}
       {applied.watched.length > 0 && (
         <Watched watched={applied.watched} simulated={applied.simulated} repeatable={applied.repeatable} />
+      )}
+      {items.length > 1 && items.length <= 20 && (
+        <button type="button" onClick={() => void store.getState().pinAll(items.map((o) => o.key))}>
+          Pin all {items.length}
+        </button>
       )}
       <table className="steps-table">
         <thead>
@@ -131,6 +138,59 @@ function Applied({ applied }: { applied: AppliedView }) {
           {rest.length} more outcomes, {percent(rest.reduce((sum, o) => sum + o.p, 0))} together.
         </p>
       )}
+    </>
+  )
+}
+
+/** Where the pinned steps from the selected item end, and how many of each method they use on average. */
+function Totals({ chain, nodes }: { chain: Chain; nodes: NodeView[] }) {
+  if (chain.kind === 'none') return null
+  if (chain.kind === 'endless') {
+    return <p className="hint">These pinned steps can go round forever: pin a way out of the loop.</p>
+  }
+  const label = (id: string) => {
+    const node = nodes.find((n) => n.id === id)
+    return node ? summary(node.view) : id
+  }
+  const approx = chain.approx ? '≈ ' : ''
+  return (
+    <>
+      <h3>Following the pinned steps from here</h3>
+      <table className="steps-table">
+        <thead>
+          <tr>
+            <th>Ends at</th>
+            <th>Chance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {chain.ends.map((end) => (
+            <tr key={end.node}>
+              <td>{label(end.node)}</td>
+              <td className="num">
+                {approx}
+                {percent(end.p)}
+              </td>
+            </tr>
+          ))}
+          {chain.off > 1e-9 && (
+            <tr>
+              <td>Leaves the pinned steps</td>
+              <td className="num">
+                {approx}
+                {percent(chain.off)}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <p className="hint">On average: {chain.uses.map((u) => `${count(u.n)} × ${u.name}`).join(', ')}.</p>
+      {chain.ignored.map((entry) => (
+        <p key={entry.node} className="hint">
+          At {label(entry.node)}: follows {entry.follows}; the other pinned steps there ({entry.others.join(', ')}) are
+          not counted.
+        </p>
+      ))}
     </>
   )
 }
@@ -176,6 +236,7 @@ export function Inspector() {
   const node = nodes.find((n) => n.id === selected) ?? nodes[0] ?? null
   const rootId = nodes[0]?.id ?? null
   const chain = node && rootId ? pathChance(edges, node.id, rootId) : null
+  const totals = useMemo(() => (node ? chainFrom(edges, node.id) : null), [edges, node])
   const list = useMemo(() => {
     const words = query.trim().toLowerCase()
     return words.length < 2
@@ -197,6 +258,7 @@ export function Inspector() {
           {percent(chain.p)}.
         </p>
       )}
+      {totals && <Totals chain={totals} nodes={nodes} />}
       <div className="tabs">
         <button type="button" className={tab === 'forward' ? 'tab is-current' : 'tab'} onClick={() => store.getState().setTab('forward')}>
           Apply

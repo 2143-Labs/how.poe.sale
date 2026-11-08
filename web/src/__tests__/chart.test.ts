@@ -147,4 +147,14 @@ describe('the chart', () => {
     flow.getState().unpin('b')
     expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a'])
   })
+
+  it('pins every outcome and stays on the source', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    await flow.getState().pinAll(['a', 'b', 'a'])
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a', 'b'])
+    expect(flow.getState().edges).toHaveLength(2)
+    expect(flow.getState().selected).toBe('root')
+    expect(flow.getState().pins).toHaveLength(2)
+  })
 })

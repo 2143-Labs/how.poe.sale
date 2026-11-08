@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Background, Controls, ReactFlow } from '@xyflow/react'
-import type { Edge, Node, NodeProps, NodeTypes, ReactFlowInstance } from '@xyflow/react'
+import type { Edge, EdgeTypes, Node, NodeProps, NodeTypes, ReactFlowInstance } from '@xyflow/react'
 import type { EdgeView, NodeView } from '../types'
 import { Card } from './Card'
 import { useFlow, useFlowState } from './context'
 import { itemsFrom, percent, range, tries } from './format'
 import { NODE_WIDTH, layoutGraph, type LayoutPositions } from './layout'
+import { LoopEdge } from './LoopEdge'
 import { pathChance } from './path'
 
 type ItemNodeData = {
@@ -42,6 +43,7 @@ function ItemCard({ data, selected }: NodeProps<ItemFlowNode>) {
 }
 
 const nodeTypes: NodeTypes = { item: ItemCard }
+const edgeTypes: EdgeTypes = { loop: LoopEdge }
 
 /** The chart: the root, and every step pinned from it in either direction. */
 export function Chart() {
@@ -76,6 +78,7 @@ export function Chart() {
         id: `${edge.from}->${edge.to}:${edge.method}`,
         source: edge.from,
         target: edge.to,
+        type: edge.from === edge.to ? 'loop' : 'default',
         className: 'edge-chosen',
       })),
     [edges],
@@ -93,7 +96,10 @@ export function Chart() {
     let cancelled = false
     layoutGraph(
       data.map((d) => ({ id: d.node.id, height: estimateHeight(d) })),
-      flowEdges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target })),
+      // A step back to the same item is drawn beside its card (`LoopEdge`), not laid out.
+      flowEdges
+        .filter((edge) => edge.source !== edge.target)
+        .map((edge) => ({ id: edge.id, source: edge.source, target: edge.target })),
     )
       .then((laid) => {
         if (!cancelled) setPositions(laid)
@@ -135,6 +141,7 @@ export function Chart() {
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodeClick={(_event, node) => store.getState().select(node.id)}
         onInit={setInstance}
         colorMode="dark"
