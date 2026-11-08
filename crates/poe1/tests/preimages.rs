@@ -411,3 +411,22 @@ fn an_essence_with_a_tracked_life_is_simulated() {
     assert!(step.p > 0.0, "{}", step.p);
     assert!(step.interval.is_some());
 }
+
+/// A family's "or better" counts tiers of its own kind only: the essence-only flat physical
+/// modifier shares the family and sits at a higher level, but rolls below the top natural tier.
+#[test]
+fn a_family_keeps_to_its_own_kind() {
+    let data = test_data();
+    let slot = Slot::from_spec(
+        data,
+        &SlotSpec {
+            id: "LocalAddedPhysicalDamage9".into(),
+            or_better: true,
+        },
+    )
+    .expect("a slot");
+    let id = |s: &str| data.mod_by_id(s).expect("a modifier");
+    assert!(slot.matches(data, id("LocalAddedPhysicalDamage9")));
+    assert!(!slot.matches(data, id("LocalAddedPhysicalDamage8")));
+    assert!(!slot.matches(data, id("LocalAddedPhysicalDamageEssenceNew7")));
+}

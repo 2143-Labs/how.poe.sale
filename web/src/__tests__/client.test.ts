@@ -37,7 +37,7 @@ const root: AbsSpec = {
 }
 
 function applied(method: string): AppliedView {
-  return { node: 'root', method, name: method, cost: 'none', simulated: null, outcomes: [] }
+  return { node: 'root', method, name: method, cost: 'none', simulated: null, outcomes: [], watched: [] }
 }
 
 describe('client', () => {

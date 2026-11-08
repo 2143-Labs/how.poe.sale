@@ -2,7 +2,7 @@
 //! have produced an abstract item (`preimages::preimages`), the modifiers a target can name, and
 //! the bases. Every number and word is chosen here; the page lays them out.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
 
@@ -79,6 +79,16 @@ pub struct OutcomeView {
     pub goal: bool,
 }
 
+/// The chance a step's result holds a watched modifier.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WatchView {
+    /// The watched modifier's text, or "at least one of these".
+    pub label: String,
+    pub p: f64,
+    pub interval: Option<[f64; 2]>,
+}
+
 /// One method's outcomes from a node.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -90,6 +100,10 @@ pub struct AppliedView {
     /// The reforges run, when the numbers are simulated.
     pub simulated: Option<u32>,
     pub outcomes: Vec<OutcomeView>,
+    /// For each watched modifier the chance the result holds it, then, with two or more
+    /// watched, the chance it holds at least one: the outcomes split by every tracked slot and
+    /// untracked count, so these are their sums.
+    pub watched: Vec<WatchView>,
 }
 
 /// One input a method could have turned into a node.
@@ -235,6 +249,8 @@ pub struct Chart {
     /// The root's class: reaching it again is what the page calls the goal.
     root: String,
     tracked: Vec<Slot>,
+    /// The modifiers the page watches for ("Also track"), in its order, less the root's own.
+    watched: Vec<u32>,
     nodes: BTreeMap<String, (AbsItem, Option<forward::Node>)>,
     last: Option<(String, String, forward::Applied)>,
     made_by: Option<(String, Preimages)>,
@@ -250,6 +266,20 @@ impl Chart {
         let watch: Vec<SlotSpec> =
             serde_json::from_str(watch_json).map_err(|e| format!("watch: {e}"))?;
         let tracked = preimages::tracked(data, &spec, &watch).map_err(|e| format!("track: {e}"))?;
+        let in_root: BTreeSet<&str> = spec
+            .prefixes
+            .iter()
+            .chain(&spec.suffixes)
+            .map(|s| s.id.as_str())
+            .collect();
+        let mut watched = Vec::new();
+        for w in watch.iter().filter(|w| !in_root.contains(w.id.as_str())) {
+            if let Some(slot) = tracked.iter().find(|s| data.mod_at(s.m).id == w.id)
+                && !watched.contains(&slot.m)
+            {
+                watched.push(slot.m);
+            }
+        }
         let target = AbsItem::from_spec(data, &spec).map_err(|e| format!("root: the item {e}"))?;
         target
             .validate(data)
@@ -264,6 +294,7 @@ impl Chart {
         let chart = Chart {
             root: id.clone(),
             tracked,
+            watched,
             nodes,
             last: None,
             made_by: None,
@@ -566,7 +597,42 @@ impl Chart {
                     }
                 })
                 .collect(),
+            watched: self.watched_view(data, applied),
         })
+    }
+
+    /// The chance the step's result holds each watched modifier, and with two or more watched,
+    /// the chance it holds at least one of them.
+    fn watched_view(&self, data: &Data, applied: &forward::Applied) -> Vec<WatchView> {
+        let chance = |hit: &dyn Fn(&AbsItem) -> bool| -> f64 {
+            applied
+                .groups
+                .iter()
+                .filter_map(|g| match &g.kind {
+                    Kind::Item(class) if hit(class) => Some(g.p),
+                    _ => None,
+                })
+                .sum()
+        };
+        let holds = |class: &AbsItem, m: u32| class.item.explicits().any(|a| a.roll.m == m);
+        let view = |label: String, p: f64| WatchView {
+            label,
+            p,
+            interval: applied.simulated.map(|n| forward::interval(p, n)),
+        };
+        let mut out: Vec<WatchView> = self
+            .watched
+            .iter()
+            .filter_map(|&m| {
+                let slot = self.tracked.iter().find(|s| s.m == m)?;
+                Some(view(slot.text(data), chance(&|c| holds(c, m))))
+            })
+            .collect();
+        if self.watched.len() > 1 {
+            let any = chance(&|c| self.watched.iter().any(|&m| holds(c, m)));
+            out.push(view("at least one of these".into(), any));
+        }
+        out
     }
 
     fn made_by_view(

@@ -60,12 +60,18 @@ impl Slot {
         })
     }
 
-    /// Whether `m` fills this slot: the same family on the same side, at this tier or higher.
+    /// Whether `m` fills this slot: the same family on the same side, at this tier or higher. A
+    /// tier is only ever compared with tiers of its own kind: an essence-only modifier shares its
+    /// family with the natural tiers and sits at a high level, yet rolls below the top natural
+    /// tier (`LocalAddedPhysicalDamageEssenceNew7` against `LocalAddedPhysicalDamage9`).
     pub fn matches(&self, data: &Data, m: u32) -> bool {
         let md = data.mod_at(m);
         md.side == Some(self.side)
             && md.mod_type == self.mod_type
-            && (m == self.m || (self.or_better && md.level >= self.level))
+            && (m == self.m
+                || (self.or_better
+                    && md.level >= self.level
+                    && md.kind == data.mod_at(self.m).kind))
     }
 
     /// The slot as the page reads it: the tier's text, plus "or better" for a family.

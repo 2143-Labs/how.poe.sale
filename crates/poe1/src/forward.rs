@@ -7,8 +7,10 @@
 //! member gives the classes it can reach with their chances. `apply` answers every method
 //! exactly except a reforge's `Fill`; a reforge is simulated with a fixed seed, so the same node
 //! and method always give the same numbers, and its rows carry a 95% range. Claim
-//! `reforge.side-first` is the side choice inside the simulation, and a Veiled Chaos Orb's veil
-//! then replaces one of the modifiers the reforge added (claim `veiled-chaos.replaces-one`).
+//! `reforge.side-first` is the side choice inside the simulation; a tag reforge (a Harvest
+//! "reforge with a Physical modifier") repeats until its result holds a modifier with the tag
+//! (claim `reforge.guarantee-present`); and a Veiled Chaos Orb's veil then replaces one of the
+//! modifiers the reforge added (claim `veiled-chaos.replaces-one`).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -22,6 +24,15 @@ use crate::preimages::{AbsItem, Slot};
 pub const MEMBER_CAP: usize = 1000;
 /// The reforges a simulation runs.
 pub const SIMULATIONS: u32 = 200_000;
+/// The rerolls one simulation may spend on a tag reforge, over all its runs: a tag the reforge
+/// rarely reaches stops the simulation here rather than hold the page.
+const REROLLS: u64 = 20 * SIMULATIONS as u64;
+
+/// The 95% range of a chance `p` measured over `n` runs (normal approximation).
+pub fn interval(p: f64, n: u32) -> [f64; 2] {
+    let sd = (p * (1.0 - p) / f64::from(n)).sqrt();
+    [(p - 1.96 * sd).max(0.0), (p + 1.96 * sd).min(1.0)]
+}
 
 /// The items a node stands for, with their chances given the node (they sum to 1).
 #[derive(Clone, Debug, PartialEq)]
@@ -217,11 +228,7 @@ fn named(data: &Data, m: u32) -> bool {
 /// The fill a method ends with, when the model can run it here.
 fn single_fill(method: &Method) -> Option<&Fill> {
     match method.ops.last() {
-        Some(Op::Fill { fill })
-            if fill.weighting == Weighting::Normal && fill.include.is_none() =>
-        {
-            Some(fill)
-        }
+        Some(Op::Fill { fill }) if fill.weighting == Weighting::Normal => Some(fill),
         _ => None,
     }
 }
@@ -387,6 +394,8 @@ fn simulate(
     }
     let mut groups: BTreeMap<Kind, Group> = BTreeMap::new();
     let mut lists: BTreeMap<Item, [Weighted; 2]> = BTreeMap::new();
+    let mut includes: BTreeMap<Item, Option<BTreeSet<u32>>> = BTreeMap::new();
+    let mut rerolls = 0u64;
     let one = 1.0 / f64::from(SIMULATIONS);
     for _ in 0..SIMULATIONS {
         let x = rng.unit() * total;
@@ -429,18 +438,29 @@ fn simulate(
             Leaf::Pending(pending) => {
                 let only_fill = matches!(pending.ops.as_slice(), [Op::Fill { .. }]);
                 if pending.certain && only_fill {
-                    let (mut item, added) =
-                        fill_once(data, &pending.item, fill, &mut lists, &mut rng);
-                    let veiled = if fill.one_veiled {
-                        veil(data, &mut item, &added, &mut rng)
-                    } else {
-                        Ok(())
+                    let include = match &fill.include {
+                        Some(pool) => includes
+                            .entry(pending.item.clone())
+                            .or_insert_with(|| include_set(data, &pending.item, fill, pool))
+                            .as_ref()
+                            .map(Some)
+                            .ok_or("no modifier with the reforge's tag can roll on this item"),
+                        None => Ok(None),
                     };
-                    match veiled {
-                        Ok(()) => push_item(data, tracked, &mut groups, &item, one),
-                        Err(why) => {
-                            push(&mut groups, Kind::NotModelled(why.into()), one, None, None)
-                        }
+                    let reforged = include.map_err(String::from).and_then(|include| {
+                        reforge(
+                            data,
+                            &pending.item,
+                            fill,
+                            &mut lists,
+                            include,
+                            &mut rerolls,
+                            &mut rng,
+                        )
+                    });
+                    match reforged {
+                        Ok(item) => push_item(data, tracked, &mut groups, &item, one),
+                        Err(why) => push(&mut groups, Kind::NotModelled(why), one, None, None),
                     }
                 } else {
                     push(
@@ -454,12 +474,9 @@ fn simulate(
             }
         }
     }
-    let n = f64::from(SIMULATIONS);
     let mut out = finish(groups);
     for group in &mut out {
-        let p = group.p;
-        let sd = (p * (1.0 - p) / n).sqrt();
-        group.interval = Some([(p - 1.96 * sd).max(0.0), (p + 1.96 * sd).min(1.0)]);
+        group.interval = Some(interval(group.p, SIMULATIONS));
     }
     out.sort_by(|a, b| b.p.total_cmp(&a.p).then_with(|| a.kind.cmp(&b.kind)));
     Applied {
@@ -467,6 +484,54 @@ fn simulate(
         groups: out,
         simulated: Some(SIMULATIONS),
     }
+}
+
+/// One reforge of a pending item: the fill, drawn again while a tag reforge's result holds no
+/// modifier of its tag (claim `reforge.guarantee-present`: the reforge repeats rather than place
+/// the tagged modifier first), then a Veiled Chaos Orb's veil.
+fn reforge(
+    data: &Data,
+    item: &Item,
+    fill: &Fill,
+    lists: &mut BTreeMap<Item, [Weighted; 2]>,
+    include: Option<&BTreeSet<u32>>,
+    rerolls: &mut u64,
+    rng: &mut SplitMix64,
+) -> Result<Item, String> {
+    loop {
+        let (mut out, added) = fill_once(data, item, fill, lists, rng);
+        if include.is_none_or(|set| out.explicits().any(|a| set.contains(&a.roll.m))) {
+            if fill.one_veiled {
+                veil(data, &mut out, &added, rng)?;
+            }
+            return Ok(out);
+        }
+        *rerolls += 1;
+        if *rerolls > REROLLS {
+            return Err(format!(
+                "the reforge rarely reaches its tag: the simulation stopped after {REROLLS} rerolls"
+            ));
+        }
+    }
+}
+
+/// The modifiers a tag reforge on `item` counts as its tag: the tag's pool on the base, within
+/// the fill's level cap. `None` when the item holds none and none can roll into its open slots,
+/// so the reforge could never stop.
+fn include_set(data: &Data, item: &Item, fill: &Fill, pool: &Pool) -> Option<BTreeSet<u32>> {
+    let set: BTreeSet<u32> = apply::pool_candidates(data, item, pool, fill.side, true, true)
+        .into_iter()
+        .map(|(m, _)| m)
+        .filter(|m| {
+            fill.mod_level_max
+                .is_none_or(|cap| data.mod_at(*m).level <= cap)
+        })
+        .collect();
+    let held = item.explicits().any(|a| set.contains(&a.roll.m));
+    let rollable = set
+        .iter()
+        .any(|m| data.mod_at(*m).side.is_some_and(|s| item.open(data, s) > 0));
+    (held || rollable).then_some(set)
 }
 
 /// One reforge: draw the total, then fill the open slots one modifier at a time, each draw

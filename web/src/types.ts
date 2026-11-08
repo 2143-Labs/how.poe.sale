@@ -68,6 +68,14 @@ export interface OutcomeView {
   goal: boolean
 }
 
+/** The chance a step's result holds a watched modifier, or ("at least one of these") any of them. */
+export interface WatchView {
+  label: string
+  p: number
+  /** The 95% range when `p` comes from a simulation. */
+  interval: [number, number] | null
+}
+
 /** One method's outcomes from a node. */
 export interface AppliedView {
   node: string
@@ -77,6 +85,8 @@ export interface AppliedView {
   /** The reforges run, when the numbers are simulated. */
   simulated: number | null
   outcomes: OutcomeView[]
+  /** Each watched modifier's chance, then the chance of at least one when two or more are watched. */
+  watched: WatchView[]
 }
 
 /** One method a node can be pushed through. */

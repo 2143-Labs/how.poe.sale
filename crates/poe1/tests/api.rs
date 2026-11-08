@@ -241,3 +241,54 @@ fn a_meta_craft_runs_forward() {
         assert!((outcome.p - want).abs() < tolerance, "{any}: {}", outcome.p);
     }
 }
+
+/// The chance of "any T1 physical prefix": a step lists, for each watched modifier, the chance
+/// its result holds it, and the chance it holds at least one, which is the sum of the outcomes
+/// naming one. A Harvest physical reforge reaches them more often than a Chaos Orb.
+#[test]
+fn a_watch_list_sums_its_hits() {
+    let data = test_data();
+    let foil = |rarity: &str| {
+        serde_json::json!({ "base": "Jewelled Foil", "itemLevel": 86, "rarity": rarity })
+            .to_string()
+    };
+    let watch = serde_json::json!([
+        { "id": "LocalAddedPhysicalDamage9" },
+        { "id": "LocalIncreasedPhysicalDamagePercent8" },
+        { "id": "LocalIncreasedPhysicalDamagePercentAndAccuracyRating8" },
+    ])
+    .to_string();
+    let check = |rarity: &str, method: &str| -> api::AppliedView {
+        let (mut chart, node) = api::Chart::start(data, &foil(rarity), &watch).expect("a chart");
+        let applied = chart.forward(data, &node.id, method).expect("a step");
+        assert_eq!(applied.watched.len(), 4, "{method}");
+        assert_eq!(applied.watched[3].label, "at least one of these");
+        let any = applied.watched[3].p;
+        let named: f64 = applied
+            .outcomes
+            .iter()
+            .filter(|o| o.view.as_ref().is_some_and(|v| !v.prefixes.is_empty()))
+            .map(|o| o.p)
+            .sum();
+        assert!((any - named).abs() < 1e-12, "{method}: {any} != {named}");
+        let marginals: f64 = applied.watched[..3].iter().map(|w| w.p).sum();
+        assert!(
+            applied.watched[..3]
+                .iter()
+                .all(|w| w.p > 0.0 && w.p <= any + 1e-12)
+        );
+        assert!(any <= marginals + 1e-12, "{method}");
+        let simulated = applied.simulated.is_some();
+        assert!(
+            applied
+                .watched
+                .iter()
+                .all(|w| w.interval.is_some() == simulated)
+        );
+        applied
+    };
+    check("magic", "currency/alteration");
+    let chaos = check("rare", "currency/chaos");
+    let harvest = check("rare", "harvest/reforge-physical");
+    assert!(harvest.watched[3].p > chaos.watched[3].p);
+}

@@ -331,3 +331,68 @@ fn a_veiled_chaos_veils_one_added_modifier() {
     }
     assert!(near(prefix, 0.5), "veiled prefix {prefix}");
 }
+
+/// A Harvest "reforge with a Physical modifier" is a Chaos Orb's reforge that repeats until the
+/// result holds a physical modifier (claim `reforge.guarantee-present`): every result holds one,
+/// and the chance of a physical modifier is the Chaos Orb's chance divided by the Chaos Orb's
+/// chance of any physical modifier.
+#[test]
+fn a_tag_reforge_is_a_chaos_orb_that_reached_its_tag() {
+    const PERCENT: &str = "LocalIncreasedPhysicalDamagePercent8";
+    let data = test_data();
+    let mut s = spec(&[], &[], [0, 0]);
+    s.base = "Jewelled Foil".into();
+    s.item_level = 86;
+    let foil = AbsItem::from_spec(data, &s).expect("a foil");
+    let tracked = [slot(data, PERCENT, false)];
+    let physical = data.tag_by_name("physical").expect("a physical tag");
+    let has_physical = |item: &poe1::item::Item| {
+        item.explicits()
+            .any(|a| data.mod_at(a.roll.m).tags.contains(&physical))
+    };
+    let holds = |applied: &forward::Applied| -> f64 {
+        applied
+            .groups
+            .iter()
+            .filter(|g| matches!(&g.kind, Kind::Item(c) if c.item.explicits().any(|a| a.roll.m == tracked[0].m)))
+            .map(|g| g.p)
+            .sum()
+    };
+    let run = |id: &str| {
+        forward::apply_node(
+            data,
+            &node_of(&foil),
+            method(id),
+            &tracked,
+            forward::seed_for("foil", id),
+        )
+    };
+    let chaos = run("currency/chaos");
+    let harvest = run("harvest/reforge-physical");
+    assert_eq!(harvest.simulated, Some(forward::SIMULATIONS));
+    for group in &harvest.groups {
+        assert!(matches!(group.kind, Kind::Item(_)), "{:?}", group.kind);
+        assert!(group.members.iter().all(|(item, _)| has_physical(item)));
+    }
+    let chaos_physical: f64 = chaos
+        .groups
+        .iter()
+        .map(|g| {
+            g.p * g
+                .members
+                .iter()
+                .filter(|(item, _)| has_physical(item))
+                .map(|(_, w)| w)
+                .sum::<f64>()
+        })
+        .sum();
+    let want = holds(&chaos) / chaos_physical;
+    let got = holds(&harvest);
+    let n = f64::from(forward::SIMULATIONS);
+    let sd = (got * (1.0 - got) / n).sqrt() + (want * (1.0 - want) / n).sqrt() / chaos_physical;
+    assert!(
+        chaos_physical > 0.1 && chaos_physical < 0.95,
+        "{chaos_physical}"
+    );
+    assert!((got - want).abs() < 5.0 * sd, "{got} != {want}");
+}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { AppliedView, InputView, MethodOption, OutcomeView } from '../types'
+import type { AppliedView, InputView, MethodOption, OutcomeView, WatchView } from '../types'
 import { errorText, useFlow, useFlowState } from './context'
 import { percent, range, summary, tries } from './format'
 import { pathChance } from './path'
@@ -37,6 +37,34 @@ function OutcomeRow({ outcome, onPin }: { outcome: OutcomeView; onPin: (key: str
   )
 }
 
+/** What the step gives each watched modifier: the outcome rows split by every tracked slot, so these are their sums. */
+function Watched({ watched }: { watched: WatchView[] }) {
+  return (
+    <table className="steps-table">
+      <thead>
+        <tr>
+          <th>Holds</th>
+          <th>Chance</th>
+          <th>Tries</th>
+        </tr>
+      </thead>
+      <tbody>
+        {watched.map((w) => (
+          <tr key={w.label}>
+            <td>{w.label}</td>
+            <td className="num">
+              {w.interval ? '≈ ' : ''}
+              {percent(w.p)}
+              {range(w.interval)}
+            </td>
+            <td className="num">{w.p > 0 ? tries(w.p) : 'never'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 function Applied({ applied }: { applied: AppliedView }) {
   const { store } = useFlow()
   const rows = applied.outcomes
@@ -52,6 +80,7 @@ function Applied({ applied }: { applied: AppliedView }) {
           Simulated: {applied.simulated} seeded reforges; outcomes rarer than 1 in {applied.simulated} may be missing.
         </p>
       )}
+      {applied.watched.length > 0 && <Watched watched={applied.watched} />}
       <table className="steps-table">
         <thead>
           <tr>

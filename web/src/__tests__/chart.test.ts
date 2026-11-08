@@ -62,7 +62,7 @@ class FakeClient implements Client {
   }
 
   async chartForward() {
-    return { node: 'root', method: 'm', name: 'M', cost: 'none', simulated: null, outcomes: [] }
+    return { node: 'root', method: 'm', name: 'M', cost: 'none', simulated: null, outcomes: [], watched: [] }
   }
 
   async chartMadeBy(node: string) {
