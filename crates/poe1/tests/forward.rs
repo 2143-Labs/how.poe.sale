@@ -326,7 +326,7 @@ fn realise_keeps_the_class() {
     assert!((total - 1.0).abs() < 1e-9, "{total}");
 }
 
-/// A hit on every tracked slot is what the page calls the goal.
+/// A class keeps the tiers it was tracked with, so its key reads back from its spec.
 #[test]
 fn a_class_keeps_the_tiers_it_was_tracked_with() {
     let data = test_data();

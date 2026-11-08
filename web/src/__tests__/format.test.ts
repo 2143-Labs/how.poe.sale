@@ -42,6 +42,7 @@ function edge(from: string, to: string, method: string, name: string): EdgeView 
 describe('percent', () => {
   it('keeps three figures of a chance below 0.01%', () => {
     expect(percent(3.8416 / 200003.8416)).toBe('0.00192%')
+    expect(percent(5e-9)).toBe('0.0000005%')
   })
 
   it('shows two decimals otherwise', () => {

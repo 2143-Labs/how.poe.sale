@@ -154,8 +154,10 @@ fn an_annul_takes_each_modifier_equally() {
 }
 
 /// Untracked slots count toward the chance an untracked modifier was the one the orb took. The
-/// simple page's default holds three prefixes (two untracked) and three suffixes (one tracked,
-/// two untracked), so the prefix bucket is three of the input's six removable modifiers.
+/// target is the Essence of Horror crown (`horror_root` in tests/api.rs): two untracked prefixes
+/// and three suffixes (one tracked, two untracked). Its suffixes are full, so the orb took a prefix
+/// from an input with three, and the prefix bucket is three of that input's six removable
+/// modifiers.
 #[test]
 fn an_annul_counts_untracked_slots() {
     let target = crown(&[], &[HORROR], [2, 2]);

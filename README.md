@@ -33,7 +33,7 @@ nix develop
 bash scripts/fetch-data.sh                                    # pinned repoe files into data/raw/, hash-checked
 cargo run -p cli --release -- bundle --raw data/raw --rules rules --out data/bundle.json
 cargo run -p cli --release -- bundle --raw games/simple/raw --rules games/simple/rules --claims rules/claims.json --out data/simple.json   # the Simple game's data, from games/simple/
-cd web && npm ci && npm run dev                               # builds the wasm, copies the bundle, starts Vite
+cd web && npm ci && npm run dev                               # builds the wasm, copies both bundles, starts Vite
 ```
 
 Tests (CI runs the same):

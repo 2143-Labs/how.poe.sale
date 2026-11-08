@@ -5,13 +5,14 @@
 //! unrevealed veiled modifier, plus a count of the other modifiers per side) and, when it was
 //! reached forward, a weighted sample of the items in that class. Applying a method to every
 //! member gives the classes it can reach with their chances. `apply` answers every method
-//! exactly except a reforge's `Fill`. A reforge that cannot land a tracked or named modifier is
-//! counted exactly (only how many modifiers it adds on each side matters); any other reforge is
-//! simulated with a fixed seed, so the same node and method always give the same numbers, and
-//! its rows carry a 95% range. Claim `reforge.side-first` is the side choice in both; a tag
-//! reforge (a Harvest "reforge with a Physical modifier") repeats until its result holds a
-//! modifier with the tag (claim `reforge.guarantee-present`); and a Veiled Chaos Orb's veil then
-//! replaces one of the modifiers the reforge added (claim `veiled-chaos.replaces-one`).
+//! exactly except a reforge's `Fill`. A reforge that cannot land a tracked or named modifier, and
+//! does not guarantee a tag, is counted exactly (only how many modifiers it adds on each side
+//! matters); any other reforge is simulated with a fixed seed, so the same node and method always
+//! give the same numbers, and its rows carry a 95% range. Claim `reforge.side-first` is the side
+//! choice in both; a tag reforge (a Harvest "reforge with a Physical modifier") repeats until its
+//! result holds a modifier with the tag (claim `reforge.guarantee-present`); and a Veiled Chaos
+//! Orb's veil then replaces one of the modifiers the reforge added (claim
+//! `veiled-chaos.replaces-one`).
 
 use std::collections::{BTreeMap, BTreeSet};
 
