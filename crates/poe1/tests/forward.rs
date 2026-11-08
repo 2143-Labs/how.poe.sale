@@ -1,7 +1,7 @@
 //! Forward steps: applying a method to a node's items, grouped by the modifiers a chart tracks.
 //! The base is an Archdemon Crown at item level 87 with no influence, as in `preimages.rs`.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use poe1::apply::{self};
 use poe1::data::Data;
@@ -216,6 +216,57 @@ fn the_essence_reforge_matches_the_compositions() {
     }
 }
 
+/// The same reforge with life also tracked can land a tracked modifier, so it is simulated. Its
+/// totals per side still land on the six compositions within the simulation's error: this checks
+/// `fill_once`'s side choice against the exact count.
+#[test]
+fn a_simulated_essence_matches_the_compositions() {
+    let data = test_data();
+    let mut normal = crown(&[], &[], [0, 0]);
+    normal.item.rarity = Rarity::Normal;
+    let tracked = [
+        slot(data, HORROR, false),
+        slot(data, "IncreasedLife9", true),
+    ];
+    let applied = forward::apply_node(
+        data,
+        &node_of(&normal),
+        method(ESSENCE),
+        &tracked,
+        forward::seed_for("start", ESSENCE),
+    );
+    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    let mut totals: BTreeMap<[usize; 2], f64> = BTreeMap::new();
+    for group in &applied.groups {
+        let Kind::Item(class) = &group.kind else {
+            panic!("not an item: {:?}", group.kind);
+        };
+        let sides = [
+            class.item.prefixes.len() + usize::from(class.any[0]),
+            class.item.suffixes.len() + usize::from(class.any[1]),
+        ];
+        *totals.entry(sides).or_default() += group.p;
+    }
+    let n = f64::from(forward::SIMULATIONS);
+    let cases: [([usize; 2], f64); 6] = [
+        ([3, 1], 1.0 / 12.0),
+        ([2, 2], 1.0 / 4.0),
+        ([1, 3], 1.0 / 3.0),
+        ([3, 2], 5.0 / 64.0),
+        ([2, 3], 11.0 / 64.0),
+        ([3, 3], 1.0 / 12.0),
+    ];
+    assert_eq!(totals.len(), cases.len(), "{totals:?}");
+    for (sides, want) in cases {
+        let got = totals.get(&sides).copied().unwrap_or(0.0);
+        let tolerance = 4.0 * (want * (1.0 - want) / n).sqrt();
+        assert!(
+            (got - want).abs() < tolerance,
+            "{sides:?}: {got} != {want} in {totals:?}"
+        );
+    }
+}
+
 /// The same reforge, read backwards and forwards with the same seed, is the same number.
 #[test]
 fn backward_and_forward_agree() {
@@ -326,6 +377,49 @@ fn a_veiled_chaos_veils_one_added_modifier() {
         totals[total - 4] += group.p;
     }
     let near = |got: f64, want: f64| (got - want).abs() < 1e-12;
+    for (got, want) in totals.into_iter().zip([8.0 / 12.0, 3.0 / 12.0, 1.0 / 12.0]) {
+        assert!(near(got, want), "{totals:?}");
+    }
+    assert!(near(prefix, 0.5), "veiled prefix {prefix}");
+}
+
+/// The same Veiled Chaos Orb with life tracked is simulated. Its totals and the veil's side still
+/// land on the exact counts within the simulation's error: this checks `veil` and the side choice.
+#[test]
+fn a_simulated_veiled_chaos_matches_the_exact_counts() {
+    let data = test_data();
+    let start = crown(&["IncreasedLife9"], &["FireResist8"], [0, 0]);
+    let tracked = [slot(data, "IncreasedLife9", true)];
+    let applied = forward::apply_node(
+        data,
+        &node_of(&start),
+        method(VEILED_CHAOS),
+        &tracked,
+        forward::seed_for("start", VEILED_CHAOS),
+    );
+    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    let placeholders = apply::VEILED.map(|id| data.mod_by_id(id).expect("a placeholder"));
+    let mut totals = [0.0f64; 3];
+    let mut prefix = 0.0;
+    for group in &applied.groups {
+        let Kind::Item(class) = &group.kind else {
+            panic!("not an item: {:?}", group.kind);
+        };
+        let named: Vec<u32> = class.item.explicits().map(|a| a.roll.m).collect();
+        let veils: Vec<u32> = named
+            .iter()
+            .copied()
+            .filter(|m| placeholders.contains(m))
+            .collect();
+        assert_eq!(veils.len(), 1, "exactly one veil: {named:?}");
+        if veils[0] == placeholders[0] {
+            prefix += group.p;
+        }
+        let total = named.len() + usize::from(class.any[0]) + usize::from(class.any[1]);
+        totals[total - 4] += group.p;
+    }
+    let n = f64::from(forward::SIMULATIONS);
+    let near = |got: f64, want: f64| (got - want).abs() < 4.0 * (want * (1.0 - want) / n).sqrt();
     for (got, want) in totals.into_iter().zip([8.0 / 12.0, 3.0 / 12.0, 1.0 / 12.0]) {
         assert!(near(got, want), "{totals:?}");
     }
