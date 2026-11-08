@@ -742,6 +742,17 @@ pub fn check(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
     apply(data, m, inputs, params).map(|_| ())
 }
 
+/// Whether the inputs meet the method's stated requirements, without running its ops. `check`
+/// can still refuse where only an op finds the problem (nothing left to remove, an empty pool).
+pub fn requirements(
+    data: &Data,
+    m: &Method,
+    inputs: &[Item],
+    params: &Params,
+) -> Result<(), Unmet> {
+    prepare(data, m, inputs, params)
+}
+
 /// Applies a method: checks it, then runs its ops on (a clone of) the first input. `apply`
 /// returns `Err` exactly when `check` does.
 pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<Outcome, Unmet> {

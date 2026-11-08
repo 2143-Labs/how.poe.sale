@@ -5,7 +5,6 @@ mod common;
 
 use common::root;
 use poe1::api;
-use poe1::forward;
 use poe1::test_data;
 
 const METHODS: [&str; 5] = [
@@ -52,7 +51,6 @@ fn a_chart_grows_both_ways() {
         "Socketed Gems deal 30% more Elemental Damage"
     );
     assert_eq!(json["members"], serde_json::Value::Null);
-    assert_eq!(json["goal"], true);
 
     let made = chart.made_by(d, &root.id, &methods()).expect("a view");
     let essence = made
@@ -94,8 +92,8 @@ fn a_chart_grows_both_ways() {
     assert!(again.node.members.is_some(), "{:?}", again.node.members);
 }
 
-/// A reforge's numbers come from a simulation, so the view says how many runs and carries the
-/// range.
+/// A reforge that can land a tracked modifier is simulated, so the view says how many runs and
+/// carries the range: the watched life family is in the essence's pool.
 #[test]
 fn a_reforge_reports_its_simulation() {
     let d = test_data();
@@ -105,7 +103,8 @@ fn a_reforge_reports_its_simulation() {
         "rarity": "normal",
     })
     .to_string();
-    let (mut chart, node) = api::Chart::start(d, &root, "[]").expect("a chart");
+    let watch = serde_json::json!([{ "id": "IncreasedLife9", "orBetter": true }]).to_string();
+    let (mut chart, node) = api::Chart::start(d, &root, &watch).expect("a chart");
     let applied = chart
         .forward(d, &node.id, "essence/essence-of-horror")
         .expect("an outcome");
@@ -224,8 +223,9 @@ fn a_meta_craft_runs_forward() {
     let veiled = chart
         .forward(data, &pinned.node.id, "currency/veiled-chaos")
         .expect("a veiled chaos");
-    assert_eq!(veiled.simulated, Some(forward::SIMULATIONS));
-    let n = f64::from(forward::SIMULATIONS);
+    // Nothing is tracked, so the reforge's counts are exact.
+    assert_eq!(veiled.simulated, None);
+    assert!(!veiled.repeatable);
     let cases = [(0u8, 2.0 / 3.0), (1, 1.0 / 4.0), (2, 1.0 / 12.0)];
     assert_eq!(veiled.outcomes.len(), cases.len());
     for (any, want) in cases {
@@ -238,8 +238,8 @@ fn a_meta_craft_runs_forward() {
         assert_eq!(view.prefixes, ["Veiled Prefix"]);
         assert_eq!(view.suffixes.len(), 3);
         assert_eq!(view.any_suffixes, 0);
-        let tolerance = 4.0 * (want * (1.0 - want) / n).sqrt();
-        assert!((outcome.p - want).abs() < tolerance, "{any}: {}", outcome.p);
+        assert!((outcome.p - want).abs() < 1e-12, "{any}: {}", outcome.p);
+        assert_eq!(outcome.interval, None);
     }
 }
 

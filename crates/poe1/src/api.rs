@@ -58,11 +58,19 @@ pub struct NodeView {
     pub id: String,
     pub spec: AbsSpec,
     pub view: ClassView,
-    /// This is the root's class: the chart has come back to where it started.
-    pub goal: bool,
     /// The items the node stands for, when it has any of its own.
     pub members: Option<usize>,
     pub approx: bool,
+    /// The step whose outcome gave the node its items, when a forward step did.
+    pub source: Option<SourceView>,
+}
+
+/// The forward step a node's items came from: the node it was used on, and the method.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceView {
+    pub from: String,
+    pub method: String,
 }
 
 /// One outcome of a method applied to a node.
@@ -76,7 +84,6 @@ pub struct OutcomeView {
     pub interval: Option<[f64; 2]>,
     pub view: Option<ClassView>,
     pub reason: Option<String>,
-    pub goal: bool,
 }
 
 /// The chance a step's result holds a watched modifier.
@@ -99,6 +106,9 @@ pub struct AppliedView {
     pub cost: String,
     /// The reforges run, when the numbers are simulated.
     pub simulated: Option<u32>,
+    /// The method can be used again on each result with the same odds, so a count of tries
+    /// means something.
+    pub repeatable: bool,
     pub outcomes: Vec<OutcomeView>,
     /// For each watched modifier the chance the result holds it, then, with two or more
     /// watched, the chance it holds at least one: the outcomes split by every tracked slot and
@@ -118,6 +128,8 @@ pub struct InputView {
     pub cost: String,
     pub view: ClassView,
     pub note: Option<String>,
+    /// The method used on this input can be used again on the node with the same odds.
+    pub repeatable: bool,
 }
 
 /// The inputs that could have produced a node, and the methods that show none.
@@ -149,6 +161,8 @@ pub struct EdgeView {
     pub name: String,
     pub p: f64,
     pub interval: Option<[f64; 2]>,
+    /// The method can be used again on the step's result with the same odds.
+    pub repeatable: bool,
 }
 
 /// A node added to the chart, and the edge that added it.
@@ -246,12 +260,12 @@ fn family_rank(family: &str) -> usize {
 /// either direction. A node's id is its class, so a forward step and a backward step that reach
 /// the same class are one node.
 pub struct Chart {
-    /// The root's class: reaching it again is what the page calls the goal.
-    root: String,
     tracked: Vec<Slot>,
     /// The modifiers the page watches for ("Also track"), in its order, less the root's own.
     watched: Vec<u32>,
     nodes: BTreeMap<String, (AbsItem, Option<forward::Node>)>,
+    /// For each node a forward step gave its items: that step's node and method.
+    sources: BTreeMap<String, (String, String)>,
     last: Option<(String, String, forward::Applied)>,
     made_by: Option<(String, Preimages)>,
 }
@@ -292,10 +306,10 @@ impl Chart {
         let mut nodes = BTreeMap::new();
         nodes.insert(id.clone(), (target, members));
         let chart = Chart {
-            root: id.clone(),
             tracked,
             watched,
             nodes,
+            sources: BTreeMap::new(),
             last: None,
             made_by: None,
         };
@@ -397,16 +411,23 @@ impl Chart {
         } else {
             None
         };
-        match self.nodes.get_mut(&id) {
+        let gives = fresh.is_some();
+        let gave = match self.nodes.get_mut(&id) {
             Some((_, slot @ None)) => {
-                if fresh.is_some() {
+                if gives {
                     *slot = fresh;
                 }
+                gives
             }
-            Some(_) => {}
+            Some(_) => false,
             None => {
                 self.nodes.insert(id.clone(), (class.clone(), fresh));
+                gives
             }
+        };
+        if gave {
+            self.sources
+                .insert(id.clone(), (node.to_string(), method.to_string()));
         }
         let name = name_of(data, method);
         Ok(PinnedView {
@@ -418,6 +439,7 @@ impl Chart {
                 name,
                 p: group.p,
                 interval: group.interval,
+                repeatable: applied.repeatable,
             },
         })
     }
@@ -438,6 +460,7 @@ impl Chart {
             .ok_or_else(|| format!("chart: no input \"{key}\" for {method}"))?;
         let class = step.input.clone();
         let id = key.to_string();
+        let repeatable = self.repeats_into(data, &step.method, &class, node);
         if !self.nodes.contains_key(&id) {
             let members = concrete(&class).then(|| forward::Node {
                 members: vec![(class.item.clone(), 1.0)],
@@ -454,8 +477,19 @@ impl Chart {
                 name: step.name.clone(),
                 p: step.p,
                 interval: step.interval,
+                repeatable,
             },
         })
+    }
+
+    /// Whether `method`, used on `input` to reach `node`, can be used again on `node`'s class
+    /// with the same odds (`forward::repeats`).
+    fn repeats_into(&self, data: &Data, method: &str, input: &AbsItem, node: &str) -> bool {
+        let Some((class, _)) = self.nodes.get(node) else {
+            return false;
+        };
+        data.method(method)
+            .is_some_and(|m| forward::repeats(data, m, &input.item, &class.item))
     }
 
     fn node_view(&self, data: &Data, id: &str) -> Result<NodeView, String> {
@@ -467,9 +501,12 @@ impl Chart {
             id: id.to_string(),
             spec: class.to_spec(data),
             view: class_view(data, &self.tracked, class),
-            goal: id == self.root,
             members: members.as_ref().map(|n| n.members.len()),
             approx: members.as_ref().is_some_and(|n| n.approx),
+            source: self.sources.get(id).map(|(from, method)| SourceView {
+                from: from.clone(),
+                method: method.clone(),
+            }),
         })
     }
 
@@ -567,24 +604,18 @@ impl Chart {
                     .unwrap_or_default(),
             ),
             simulated: applied.simulated,
+            repeatable: applied.repeatable,
             outcomes: applied
                 .groups
                 .iter()
                 .map(|group| {
-                    let (kind, view, reason, goal) = match &group.kind {
+                    let (kind, view, reason) = match &group.kind {
                         Kind::Item(class) => {
-                            let id = preimages::abs_key(data, class);
-                            let goal = id == self.root;
-                            (
-                                "item",
-                                Some(class_view(data, &self.tracked, class)),
-                                None,
-                                goal,
-                            )
+                            ("item", Some(class_view(data, &self.tracked, class)), None)
                         }
-                        Kind::Destroyed => ("destroyed", None, None, false),
-                        Kind::Refused(why) => ("refused", None, Some(why.clone()), false),
-                        Kind::NotModelled(why) => ("notModelled", None, Some(why.clone()), false),
+                        Kind::Destroyed => ("destroyed", None, None),
+                        Kind::Refused(why) => ("refused", None, Some(why.clone())),
+                        Kind::NotModelled(why) => ("notModelled", None, Some(why.clone())),
                     };
                     OutcomeView {
                         key: group.kind.key(data),
@@ -593,7 +624,6 @@ impl Chart {
                         interval: group.interval,
                         view,
                         reason,
-                        goal,
                     }
                 })
                 .collect(),
@@ -655,6 +685,7 @@ impl Chart {
                     cost: paid_cost(data, &s.cost),
                     view: class_view(data, &self.tracked, &s.input),
                     note: s.note.clone(),
+                    repeatable: self.repeats_into(data, &s.method, &s.input, node),
                 })
                 .collect(),
             skipped: unmet(data, &found.skipped),

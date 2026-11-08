@@ -180,8 +180,8 @@ fn an_annul_forward_is_uniform() {
     assert!((groups[1].1 - 1.0 / 3.0).abs() < 1e-12, "{}", groups[1].1);
 }
 
-/// The essence's reforge is simulated, and its six compositions land on the exact chances
-/// `compositions` computes (within the simulation's error).
+/// The essence's reforge adds only untracked modifiers around the tracked essence modifier, so
+/// it is counted exactly, and its six compositions are the chances `compositions` computes.
 #[test]
 fn the_essence_reforge_matches_the_compositions() {
     let data = test_data();
@@ -196,7 +196,7 @@ fn the_essence_reforge_matches_the_compositions() {
         &tracked,
         forward::seed_for("start", ESSENCE),
     );
-    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    assert_eq!(applied.simulated, None);
     let cases: [([u8; 2], f64); 6] = [
         ([3, 0], 1.0 / 12.0),
         ([2, 1], 1.0 / 4.0),
@@ -211,8 +211,8 @@ fn the_essence_reforge_matches_the_compositions() {
             .iter()
             .find(|(a, _)| *a == any)
             .unwrap_or_else(|| panic!("{any:?} missing from {groups:?}"));
-        let tolerance = 4.0 * (want * (1.0 - want) / f64::from(forward::SIMULATIONS)).sqrt();
-        assert!((p - want).abs() < tolerance, "{any:?}: {p} != {want}");
+        assert!((p - want).abs() < 1e-12, "{any:?}: {p} != {want}");
+        assert!(applied.groups.iter().all(|g| g.interval.is_none()));
     }
 }
 
@@ -295,7 +295,8 @@ fn a_class_keeps_the_tiers_it_was_tracked_with() {
 /// A Veiled Chaos Orb is a Chaos Orb whose result has one of its added modifiers veiled, on that
 /// modifier's own side (claim `veiled-chaos.replaces-one`): 4, 5 or 6 modifiers at 8:3:1
 /// (claim `chaos.count`), exactly one of them the placeholder, which a class names rather than
-/// counts. With room on both sides the veil is a prefix half the time.
+/// counts. With room on both sides the veil is a prefix half the time. Nothing is tracked, so
+/// the counts are exact.
 #[test]
 fn a_veiled_chaos_veils_one_added_modifier() {
     let data = test_data();
@@ -307,7 +308,7 @@ fn a_veiled_chaos_veils_one_added_modifier() {
         &[],
         forward::seed_for("start", VEILED_CHAOS),
     );
-    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    assert_eq!(applied.simulated, None);
     let placeholders = apply::VEILED.map(|id| data.mod_by_id(id).expect("a placeholder"));
     let mut totals = [0.0f64; 3];
     let mut prefix = 0.0;
@@ -324,12 +325,126 @@ fn a_veiled_chaos_veils_one_added_modifier() {
         let total = 1 + usize::from(class.any[0]) + usize::from(class.any[1]);
         totals[total - 4] += group.p;
     }
-    let n = f64::from(forward::SIMULATIONS);
-    let near = |got: f64, want: f64| (got - want).abs() < 4.0 * (want * (1.0 - want) / n).sqrt();
+    let near = |got: f64, want: f64| (got - want).abs() < 1e-12;
     for (got, want) in totals.into_iter().zip([8.0 / 12.0, 3.0 / 12.0, 1.0 / 12.0]) {
         assert!(near(got, want), "{totals:?}");
     }
     assert!(near(prefix, 0.5), "veiled prefix {prefix}");
+}
+
+/// A chance no run hit still has an upper bound: the Wilson range at 0 of 200,000.
+#[test]
+fn an_outcome_no_run_hit_has_an_upper_bound() {
+    let [low, high] = forward::interval(0.0, 200_000);
+    assert_eq!(low, 0.0);
+    assert!(
+        (high - 3.8416 / (200_000.0 + 3.8416)).abs() < 1e-12,
+        "{high}"
+    );
+}
+
+/// A reforge's members are each in the one form `canonical` gives, so equal items merge.
+#[test]
+fn reforge_members_are_canonical() {
+    let data = test_data();
+    let start = crown(&[], &[], [0, 0]);
+    let tracked = [slot(data, "IncreasedLife9", true)];
+    let applied = forward::apply_node(
+        data,
+        &node_of(&start),
+        method("currency/chaos"),
+        &tracked,
+        forward::seed_for("start", "currency/chaos"),
+    );
+    assert_eq!(applied.simulated, Some(forward::SIMULATIONS));
+    for group in &applied.groups {
+        for (item, _) in &group.members {
+            let mut again = item.clone();
+            again.canonical(data);
+            assert_eq!(*item, again);
+        }
+    }
+}
+
+/// "Tries" needs a step that can be used again on its own result with the same odds: a step
+/// that clears first and leaves the same protected modifiers.
+#[test]
+fn only_a_clearing_step_repeats() {
+    let data = test_data();
+    let mut magic = crown(&["IncreasedLife9"], &[], [0, 0]);
+    magic.item.rarity = Rarity::Magic;
+    let run = |start: &AbsItem, id: &str| {
+        forward::apply_node(
+            data,
+            &node_of(start),
+            method(id),
+            &[],
+            forward::seed_for("start", id),
+        )
+    };
+    assert!(run(&magic, "currency/alteration").repeatable);
+    let rare = crown(&["IncreasedLife9"], &["FireResist8"], [0, 0]);
+    assert!(!run(&rare, EXALT).repeatable);
+
+    // The metacraft: the lock is gone after the reforge, so the result is a different start.
+    const LOCK: &str = "bench/add/DexMasterItemGenerationCannotChangeSuffixes";
+    let mut s = spec(
+        &[],
+        &["FireResist8", "ColdResist8", "LightningResist8"],
+        [0, 0],
+    );
+    s.base = "Slink Boots".into();
+    s.item_level = 86;
+    let boots = AbsItem::from_spec(data, &s).expect("boots");
+    let lock = run(&boots, LOCK);
+    assert_eq!(lock.groups.len(), 1);
+    let locked = forward::child(&lock.groups[0], forward::seed_for("locked", ""));
+    let veiled = forward::apply_node(
+        data,
+        &locked,
+        method(VEILED_CHAOS),
+        &[],
+        forward::seed_for("locked", VEILED_CHAOS),
+    );
+    assert!(!veiled.repeatable);
+    assert_eq!(veiled.simulated, None);
+    let mut p: Vec<f64> = veiled.groups.iter().map(|g| g.p).collect();
+    p.sort_by(|a, b| b.total_cmp(a));
+    assert_eq!(p.len(), 3, "{p:?}");
+    for (got, want) in p.iter().zip([2.0 / 3.0, 1.0 / 4.0, 1.0 / 12.0]) {
+        assert!((got - want).abs() < 1e-12, "{p:?}");
+    }
+}
+
+/// After its clear an Alteration sees only the cleared item, so a class's thousand realised
+/// items give exactly what one of them gives.
+#[test]
+fn an_alteration_from_a_class_matches_one_member() {
+    let data = test_data();
+    let mut class = crown(&[], &[], [1, 1]);
+    class.item.rarity = Rarity::Magic;
+    let tracked = [slot(data, "IncreasedLife9", true)];
+    let realised = forward::realise(data, &class, &tracked, forward::seed_for("class", ""));
+    assert!(realised.members.len() > 1, "{}", realised.members.len());
+    let one = Node {
+        members: vec![(realised.members[0].0.clone(), 1.0)],
+        approx: false,
+    };
+    let alteration = method("currency/alteration");
+    let seed = forward::seed_for("class", "currency/alteration");
+    let groups = |node: &Node| -> Vec<(String, f64)> {
+        forward::apply_node(data, node, alteration, &tracked, seed)
+            .groups
+            .iter()
+            .map(|g| (g.kind.key(data), g.p))
+            .collect()
+    };
+    let (all, single) = (groups(&realised), groups(&one));
+    assert_eq!(all.len(), single.len(), "{all:?} != {single:?}");
+    for ((key, p), (other, q)) in all.iter().zip(&single) {
+        assert_eq!(key, other);
+        assert!((p - q).abs() < 1e-12, "{key}: {p} != {q}");
+    }
 }
 
 /// A Harvest "reforge with a Physical modifier" is a Chaos Orb's reforge that repeats until the

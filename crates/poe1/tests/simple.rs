@@ -88,6 +88,7 @@ fn alteration_spam_on_a_magic_helmet() {
         .expect("the root's class");
     assert_eq!(back.key, node.id);
     assert_eq!(applied.simulated, None);
+    assert!(applied.repeatable);
 }
 
 /// A magic helmet with only a suffix takes an Augmentation: one prefix, +40 to maximum Life at
@@ -103,12 +104,12 @@ fn an_augmentation_fills_the_prefix() {
     let (mut chart, node) = api::Chart::start(d, &root, &watch).expect("a chart");
     let applied = chart.forward(d, &node.id, AUGMENTATION).expect("a step");
     assert_chances(&applied, &[29.0 / 30.0, 1.0 / 30.0]);
+    assert!(!applied.repeatable);
 }
 
 /// The metacraft: lock the three suffixes, then a Veiled Chaos Orb adds one, two or three prefixes
 /// at 8:3:1 (claim `chaos.count`), one of them veiled.
 #[test]
-#[ignore = "exact once Step 3 lands"]
 fn the_veiled_chaos_metacraft() {
     let d = simple();
     let root = serde_json::json!({
@@ -125,6 +126,7 @@ fn the_veiled_chaos_metacraft() {
         .forward(d, &pinned.node.id, "currency/veiled-chaos")
         .expect("a veiled chaos");
     assert_eq!(veiled.simulated, None);
+    assert!(!veiled.repeatable);
     for (any, want) in [(0u8, 2.0 / 3.0), (1, 1.0 / 4.0), (2, 1.0 / 12.0)] {
         let outcome = veiled
             .outcomes
