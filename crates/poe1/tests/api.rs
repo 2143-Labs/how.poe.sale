@@ -81,8 +81,13 @@ fn a_chart_grows_both_ways() {
         .iter()
         .find(|o| o.key == root.id)
         .expect("the root's class");
-    let tolerance = 4.0 * (essence.p * (1.0 - essence.p) / 200_000.0).sqrt();
-    assert!((back.p - essence.p).abs() < tolerance, "{}", back.p);
+    assert_eq!(applied.simulated, None);
+    assert!(
+        (back.p - essence.p).abs() < 1e-12,
+        "{} != {}",
+        back.p,
+        essence.p
+    );
 
     let again = chart
         .pin_forward(d, &pinned.node.id, "essence/essence-of-horror", &root.id)

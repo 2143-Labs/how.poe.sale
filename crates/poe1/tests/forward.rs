@@ -437,6 +437,32 @@ fn an_outcome_no_run_hit_has_an_upper_bound() {
     );
 }
 
+fn assert_spread(got: &BTreeMap<[u8; 2], f64>, want: &[([u8; 2], f64)]) {
+    assert_eq!(got.len(), want.len(), "{got:?}");
+    for (added, p) in want {
+        let g = got.get(added).copied().unwrap_or(-1.0);
+        assert!((g - p).abs() < 1e-12, "{added:?}: {g} != {p} in {got:?}");
+    }
+}
+
+/// Each draw picks a side evenly among those with room and candidates; a draw with neither adds
+/// nothing (claim `reforge.side-first`).
+#[test]
+fn side_first_splits_each_draw_evenly() {
+    assert_spread(
+        &forward::side_first([3, 2], [true, true], 3),
+        &[([3, 0], 1.0 / 8.0), ([2, 1], 3.0 / 8.0), ([1, 2], 0.5)],
+    );
+    assert_spread(
+        &forward::side_first([3, 3], [false, true], 3),
+        &[([0, 3], 1.0)],
+    );
+    assert_spread(
+        &forward::side_first([1, 0], [true, true], 2),
+        &[([1, 0], 1.0)],
+    );
+}
+
 /// A reforge's members are each in the one form `canonical` gives, so equal items merge.
 #[test]
 fn reforge_members_are_canonical() {

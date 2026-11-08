@@ -671,28 +671,17 @@ fn simulated_class(
 /// `placed[side]`: (final counts per side, probability). Claim `reforge.side-first`.
 fn compositions(counts: &[(u8, u32)], placed: [u8; 2], limits: [u8; 2]) -> Vec<([u8; 2], f64)> {
     let total: u32 = counts.iter().map(|(_, w)| *w).sum();
+    let room = [
+        limits[0].saturating_sub(placed[0]),
+        limits[1].saturating_sub(placed[1]),
+    ];
     let mut out: BTreeMap<[u8; 2], f64> = BTreeMap::new();
     for &(n, w) in counts {
         if n < 1 {
             continue;
         }
-        let mut dist: BTreeMap<[u8; 2], f64> = BTreeMap::from([(placed, 1.0)]);
-        for _ in 0..n.saturating_sub(1) {
-            let mut next: BTreeMap<[u8; 2], f64> = BTreeMap::new();
-            for (state, mass) in &dist {
-                let open: Vec<usize> = [0usize, 1]
-                    .into_iter()
-                    .filter(|s| state[*s] < limits[*s])
-                    .collect();
-                for &s in &open {
-                    let mut after = *state;
-                    after[s] += 1;
-                    *next.entry(after).or_default() += mass / open.len() as f64;
-                }
-            }
-            dist = next;
-        }
-        for (state, mass) in dist {
+        for (added, mass) in crate::forward::side_first(room, [true, true], usize::from(n - 1)) {
+            let state = [placed[0] + added[0], placed[1] + added[1]];
             *out.entry(state).or_default() += mass * f64::from(w) / f64::from(total);
         }
     }

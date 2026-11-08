@@ -28,6 +28,10 @@ pub const SIMULATIONS: u32 = 200_000;
 /// The rerolls one simulation may spend on a tag reforge, over all its runs: a tag the reforge
 /// rarely reaches stops the simulation here rather than hold the page.
 const REROLLS: u64 = 20 * SIMULATIONS as u64;
+/// Why a Veiled Chaos Orb's reforge is not modelled. The exact and simulated counts must name an
+/// outcome the same way to agree, so both use these.
+const NO_VEIL_TARGET: &str = "the reforge added no modifier for the veil to replace";
+const NO_PLACEHOLDER: &str = "the bundle lacks a veiled placeholder modifier";
 
 /// The 95% range of a chance `p` measured over `n` runs (Wilson score), which stays honest
 /// near 0 and 1: a chance no run hit still has an upper bound.
@@ -692,11 +696,13 @@ fn exact_split(
             };
             let item = &pending.item;
             let lists = exact_lists(data, item, fill, tracked)?;
+            let room = Side::BOTH.map(|side| item.open(data, side));
+            let can = [!lists[0].is_empty(), !lists[1].is_empty()];
             let base = classify(data, tracked, item);
             for &(n, w) in &fill.counts {
                 let share = mass * f64::from(w) / f64::from(total);
                 let additions = fill.additions(data, item, n);
-                for (added, d) in spread(data, item, &lists, additions) {
+                for (added, d) in side_first(room, can, additions) {
                     for (kind, x) in reforged(data, &base, added, fill.one_veiled) {
                         *out.entry(kind).or_default() += share * d * x;
                     }
@@ -754,23 +760,17 @@ fn exact_lists(data: &Data, item: &Item, fill: &Fill, tracked: &[Slot]) -> Optio
     Some(lists)
 }
 
-/// The chance of each (prefixes, suffixes) count `additions` draws add to `item`: each draw
-/// picks a side evenly among those with room and candidates, and stops when none has both
-/// (claim `reforge.side-first`).
-fn spread(
-    data: &Data,
-    item: &Item,
-    lists: &[Vec<u32>; 2],
-    additions: usize,
-) -> BTreeMap<[u8; 2], f64> {
-    let open = Side::BOTH.map(|side| item.open(data, side));
+/// The chance of each (prefixes, suffixes) count `additions` draws add when each draw picks a side
+/// evenly among those with room left (`room[s]` less what it already added) and candidates
+/// (`can[s]`), and a draw with no such side adds nothing (claim `reforge.side-first`).
+pub fn side_first(room: [u8; 2], can: [bool; 2], additions: usize) -> BTreeMap<[u8; 2], f64> {
     let mut dist: BTreeMap<[u8; 2], f64> = BTreeMap::from([([0, 0], 1.0)]);
     for _ in 0..additions {
         let mut next: BTreeMap<[u8; 2], f64> = BTreeMap::new();
         for (added, p) in dist {
             let sides: Vec<usize> = [0usize, 1]
                 .into_iter()
-                .filter(|&s| open[s] > added[s] && !lists[s].is_empty())
+                .filter(|&s| room[s] > added[s] && can[s])
                 .collect();
             if sides.is_empty() {
                 *next.entry(added).or_default() += p;
@@ -800,8 +800,7 @@ fn reforged(data: &Data, base: &AbsItem, added: [u8; 2], one_veiled: bool) -> Ve
     }
     let total = f64::from(added[0]) + f64::from(added[1]);
     if total == 0.0 {
-        let why = "the reforge added no modifier for the veil to replace";
-        return vec![(Kind::NotModelled(why.into()), 1.0)];
+        return vec![(Kind::NotModelled(NO_VEIL_TARGET.into()), 1.0)];
     }
     Side::BOTH
         .into_iter()
@@ -809,8 +808,7 @@ fn reforged(data: &Data, base: &AbsItem, added: [u8; 2], one_veiled: bool) -> Ve
         .map(|side| {
             let p = f64::from(added[side.index()]) / total;
             let Some(placeholder) = data.mod_by_id(apply::VEILED[side.index()]) else {
-                let why = "the bundle lacks a veiled placeholder modifier";
-                return (Kind::NotModelled(why.into()), p);
+                return (Kind::NotModelled(NO_PLACEHOLDER.into()), p);
             };
             let mut class = plain.clone();
             class.any[side.index()] -= 1;
@@ -944,14 +942,14 @@ fn veil(
     rng: &mut SplitMix64,
 ) -> Result<(), &'static str> {
     if added.is_empty() {
-        return Err("the reforge added no modifier for the veil to replace");
+        return Err(NO_VEIL_TARGET);
     }
     let m = added[rng.below(added.len())];
     let Some(side) = data.mod_at(m).side else {
         return Err("the veiled modifier has no side");
     };
     let Some(placeholder) = data.mod_by_id(apply::VEILED[side.index()]) else {
-        return Err("the bundle lacks a veiled placeholder modifier");
+        return Err(NO_PLACEHOLDER);
     };
     item.affixes_mut(side).retain(|a| a.roll.m != m);
     apply::add_affix(data, item, placeholder);
