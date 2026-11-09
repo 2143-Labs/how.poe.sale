@@ -1,13 +1,17 @@
 import init, { Bridge } from './wasm/pkg/solver.js'
-import type { SolverRequest, SolverResponse } from './protocol'
+import type { InitMessage, SolverRequest, SolverResponse } from './protocol'
 
 let bridge: Promise<Bridge> | null = null
+/** The page's data bundle, named by its `init` message. */
+let bundleUrl: string | null = null
 
 function load(): Promise<Bridge> {
   bridge ??= (async () => {
+    const url = bundleUrl
+    if (url === null) throw new Error('the page named no data bundle')
     await init()
-    const res = await fetch('/data/bundle.json')
-    if (!res.ok) throw new Error(`bundle.json: HTTP ${res.status}`)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
     return new Bridge(await res.text())
   })().catch((error: unknown) => {
     // A failed load is not cached: the next request fetches again.
@@ -24,8 +28,12 @@ function errorText(error: unknown): string {
 }
 
 self.onmessage = async (event: MessageEvent) => {
-  const message = event.data as SolverRequest
+  const message = event.data as SolverRequest | InitMessage
   if (!message || typeof message.type !== 'string') return
+  if (message.type === 'init') {
+    bundleUrl = message.bundle
+    return
+  }
   try {
     const b = await load()
     let response: SolverResponse
@@ -49,11 +57,46 @@ self.onmessage = async (event: MessageEvent) => {
           mods: JSON.parse(b.mods(message.base, message.itemLevel, message.influences.join(','))),
         }
         break
-      case 'preimages':
+      case 'chartStart':
         response = {
-          type: 'preimages',
+          type: 'chartStart',
           id: message.id,
-          result: JSON.parse(b.preimages(message.target, message.methods.join(','))),
+          node: JSON.parse(b.chart_start(message.root, message.watch)),
+        }
+        break
+      case 'chartMethods':
+        response = {
+          type: 'chartMethods',
+          id: message.id,
+          methods: JSON.parse(b.chart_methods(message.node)),
+        }
+        break
+      case 'chartForward':
+        response = {
+          type: 'chartForward',
+          id: message.id,
+          applied: JSON.parse(b.chart_forward(message.node, message.method)),
+        }
+        break
+      case 'chartMadeBy':
+        response = {
+          type: 'chartMadeBy',
+          id: message.id,
+          madeBy: JSON.parse(b.chart_made_by(message.node, message.methods.join(','))),
+        }
+        break
+      case 'chartPinForward':
+        response = {
+          type: 'chartPinForward',
+          id: message.id,
+          pinned: JSON.parse(b.chart_pin_forward(message.node, message.method, message.key)),
+        }
+        break
+      case 'chartPinBackward':
+        response = {
+          type: 'chartPinBackward',
+          id: message.id,
+          pinned: JSON.parse(b.chart_pin_backward(message.node, message.method, message.key)),
         }
         break
     }

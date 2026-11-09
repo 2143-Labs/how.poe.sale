@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)";
+const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)";
 
 /// Parses `--flag value` pairs; any flag not in `names` is an error.
 fn flag_map(
@@ -137,13 +137,22 @@ fn main() -> anyhow::Result<()> {
     let command = args.next().context(USAGE)?;
     match command.as_str() {
         "bundle" => {
-            let [raw, rules, out] =
-                <[PathBuf; 3]>::try_from(flags(args, &["--raw", "--rules", "--out"])?)
-                    .expect("three flags");
+            let mut given = flag_map(args, &["--raw", "--rules", "--claims", "--out"])?;
+            let mut required = |name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let raw = required("--raw")?;
+            let rules = required("--rules")?;
+            let out = required("--out")?;
+            let claims = given
+                .remove("--claims")
+                .unwrap_or_else(|| rules.join("claims.json"));
             if !raw.is_dir() {
                 bail!("--raw {} is not a directory", raw.display());
             }
-            let mut bundle = bundle::build(&raw, &rules)?;
+            let mut bundle = bundle::build(&raw, &rules, &claims)?;
             methods::attach(&mut bundle, &rules)?;
             let text = serde_json::to_string(&bundle).context("serialising bundle")?;
             // The written bundle must load through the same code the library uses.

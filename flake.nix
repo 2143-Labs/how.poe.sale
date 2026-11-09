@@ -60,6 +60,11 @@
           ${cli}/bin/cli bundle --raw ${repoeRaw} --rules ${./rules} --out $out/bundle.json
         '';
 
+        simpleBundle = pkgs.runCommand "how-poe-sale-simple-bundle" { } ''
+          mkdir -p $out
+          ${cli}/bin/cli bundle --raw ${./games/simple/raw} --rules ${./games/simple/rules} --claims ${./rules/claims.json} --out $out/simple.json
+        '';
+
         wasmRaw = naersk-lib.buildPackage {
           name = "how-poe-sale-wasm-raw";
           version = "0.1.0";
@@ -91,6 +96,7 @@
           npmConfigHook = pkgs.importNpmLock.npmConfigHook;
           WASM_PKG = "${wasm}";
           BUNDLE = "${bundle}/bundle.json";
+          SIMPLE_BUNDLE = "${simpleBundle}/simple.json";
           installPhase = ''
             runHook preInstall
             mkdir -p $out
@@ -118,7 +124,7 @@
       in
       {
         packages = {
-          inherit cli server bundle wasmRaw wasm frontend webRoot container;
+          inherit cli server bundle simpleBundle wasmRaw wasm frontend webRoot container;
           default = container;
         };
 

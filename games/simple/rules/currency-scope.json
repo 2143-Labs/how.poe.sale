@@ -1,0 +1,92 @@
+{
+  "rules": [
+    {
+      "names": [
+        "Orb of Transmutation"
+      ],
+      "methods": [
+        "currency/transmutation"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Alteration"
+      ],
+      "methods": [
+        "currency/alteration"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Augmentation"
+      ],
+      "methods": [
+        "currency/augmentation"
+      ]
+    },
+    {
+      "names": [
+        "Regal Orb"
+      ],
+      "methods": [
+        "currency/regal"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Alchemy"
+      ],
+      "methods": [
+        "currency/alchemy"
+      ]
+    },
+    {
+      "names": [
+        "Chaos Orb"
+      ],
+      "methods": [
+        "currency/chaos"
+      ]
+    },
+    {
+      "names": [
+        "Exalted Orb"
+      ],
+      "methods": [
+        "currency/exalted"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Annulment"
+      ],
+      "methods": [
+        "currency/annulment"
+      ]
+    },
+    {
+      "names": [
+        "Orb of Scouring"
+      ],
+      "methods": [
+        "currency/scouring"
+      ]
+    },
+    {
+      "names": [
+        "Veiled Chaos Orb"
+      ],
+      "methods": [
+        "currency/veiled-chaos"
+      ]
+    },
+    {
+      "names": [
+        "Divine Orb"
+      ],
+      "methods": [
+        "currency/divine"
+      ]
+    }
+  ]
+}

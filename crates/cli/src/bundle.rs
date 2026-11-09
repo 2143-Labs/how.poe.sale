@@ -93,9 +93,12 @@ struct ExcludedBase {
 }
 
 pub fn load_json<T: serde::de::DeserializeOwned>(dir: &Path, file: &str) -> anyhow::Result<T> {
-    let path = dir.join(file);
+    load_json_at(&dir.join(file))
+}
+
+pub fn load_json_at<T: serde::de::DeserializeOwned>(path: &Path) -> anyhow::Result<T> {
     let text =
-        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
@@ -300,7 +303,7 @@ fn build_translation(
     }))
 }
 
-pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
+pub fn build(raw: &Path, rules: &Path, claims: &Path) -> anyhow::Result<Bundle> {
     let raw_mods: BTreeMap<String, RawMod> = load_json(raw, "mods.json")?;
     let raw_bases: BTreeMap<String, RawBase> = load_json(raw, "base_items.json")?;
     let raw_classes: BTreeMap<String, RawClass> = load_json(raw, "item_classes.json")?;
@@ -308,7 +311,7 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
     let raw_essences: BTreeMap<String, RawEssence> = load_json(raw, "essences.json")?;
     let raw_fossils: BTreeMap<String, RawFossil> = load_json(raw, "fossils.json")?;
     let class_rules: ItemClassesFile = load_json(rules, "item-classes.json")?;
-    let claims: ClaimsFile = load_json(rules, "claims.json")?;
+    let claims: ClaimsFile = load_json_at(claims)?;
     let excluded_bases: ExcludedBasesFile = load_json(rules, "excluded-bases.json")?;
 
     for c in class_rules.claims.iter().chain(&excluded_bases.claims) {
@@ -971,7 +974,7 @@ pub fn build(raw: &Path, rules: &Path) -> anyhow::Result<Bundle> {
             side: *side,
         });
     }
-    if catalysts.len() != CATALYST_TAGS.len() {
+    if !catalyst_currencies.is_empty() && catalysts.len() != CATALYST_TAGS.len() {
         bail!(
             "found {} catalysts, expected {}",
             catalysts.len(),

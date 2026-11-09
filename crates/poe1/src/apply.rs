@@ -15,8 +15,8 @@ use std::collections::BTreeMap;
 use crate::data::{Category, Cost, Data, Eldritch, ModData, ModKind, Rarity, Side};
 use crate::item::{Affix, Item, MetaMod, Roll};
 use crate::method::{
-    Element, Family, Method, Op, PairRequire, PendingReason, Policy, Pool, RemoveFilter, Require,
-    SideReq, ValueScope, Weighting,
+    Element, Family, Method, Op, PairRequire, PendingReason, Policy, Pool, Protection,
+    RemoveFilter, Require, SideReq, ValueScope, Weighting,
 };
 use crate::pool;
 
@@ -742,6 +742,17 @@ pub fn check(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
     apply(data, m, inputs, params).map(|_| ())
 }
 
+/// Whether the inputs meet the method's stated requirements, without running its ops. `check`
+/// can still refuse where only an op finds the problem (nothing left to remove, an empty pool).
+pub fn requirements(
+    data: &Data,
+    m: &Method,
+    inputs: &[Item],
+    params: &Params,
+) -> Result<(), Unmet> {
+    prepare(data, m, inputs, params)
+}
+
 /// Applies a method: checks it, then runs its ops on (a clone of) the first input. `apply`
 /// returns `Err` exactly when `check` does.
 pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Result<Outcome, Unmet> {
@@ -877,7 +888,7 @@ enum Step {
 
 /// Which affixes can change under a method's protection on one item, decided before the op
 /// touches anything (scouring removes Suffixes Cannot Be Changed yet keeps the suffixes).
-struct Guard {
+pub(crate) struct Guard {
     locked: [bool; 2],
     attack: Option<u16>,
     caster: Option<u16>,
@@ -886,7 +897,7 @@ struct Guard {
 impl Guard {
     /// Fractured modifiers never change; a side a respected lock protects is kept; a modifier
     /// with the tag a respected Cannot Roll metamod names is kept.
-    fn can_change(&self, data: &Data, side: Side, a: &Affix) -> bool {
+    pub(crate) fn can_change(&self, data: &Data, side: Side, a: &Affix) -> bool {
         if a.fractured || self.locked[side.index()] {
             return false;
         }
@@ -896,6 +907,42 @@ impl Guard {
             .flatten()
             .any(|t| tags.contains(&t))
     }
+}
+
+/// The protection `method` gives an `item`'s affixes. A method with no stated protection keeps
+/// nothing (`Policy::Ignore`), which is what a method that changes no explicits needs.
+pub(crate) fn guard_for(data: &Data, method: &Method, item: &Item) -> Guard {
+    let p = method.protect.unwrap_or(Protection::IGNORE_ALL);
+    let locks = p.locks == Policy::Respect;
+    let tags = p.cannot_roll == Policy::Respect;
+    let tag_of = |meta: MetaMod, name: &str| {
+        if tags && item.has_meta(data, meta) {
+            data.tag_by_name(name)
+        } else {
+            None
+        }
+    };
+    Guard {
+        locked: [
+            locks && item.locked(data, Side::Prefix),
+            locks && item.locked(data, Side::Suffix),
+        ],
+        attack: tag_of(MetaMod::NoAttack, "attack"),
+        caster: tag_of(MetaMod::NoCaster, "caster"),
+    }
+}
+
+/// The explicit modifiers per side `method` may remove from `item`: what `Guard` accepts. This
+/// is the count `uniform` removal divides by, so an Orb of Annulment's chance of taking a named
+/// modifier is one over the sum.
+pub(crate) fn changeable(data: &Data, method: &Method, item: &Item) -> [usize; 2] {
+    let guard = guard_for(data, method, item);
+    Side::BOTH.map(|side| {
+        item.affixes(side)
+            .iter()
+            .filter(|a| guard.can_change(data, side, a))
+            .count()
+    })
 }
 
 struct Run<'a> {
@@ -1013,7 +1060,7 @@ fn resistance_ranks(data: &Data, item: &Item, mod_type: &str) -> Vec<u32> {
 
 /// Puts `m` on its side, unrolled; a normal item that gains an explicit turns magic (owner,
 /// Q3, for a bench craft; every add follows it, so no result is a normal item with explicits).
-fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
+pub(crate) fn add_affix(data: &Data, item: &mut Item, m: u32) -> Option<Side> {
     let side = data.mod_at(m).side?;
     item.affixes_mut(side).push(Affix::new(m));
     if item.rarity == Rarity::Normal {
@@ -1051,28 +1098,7 @@ impl Run<'_> {
     }
 
     fn guard(&self, item: &Item) -> Guard {
-        let data = self.data;
-        let p = self
-            .method
-            .protect
-            .expect("validated: a method that changes explicits states its protection");
-        let locks = p.locks == Policy::Respect;
-        let tags = p.cannot_roll == Policy::Respect;
-        let tag_of = |meta: MetaMod, name: &str| {
-            if tags && item.has_meta(data, meta) {
-                data.tag_by_name(name)
-            } else {
-                None
-            }
-        };
-        Guard {
-            locked: [
-                locks && item.locked(data, Side::Prefix),
-                locks && item.locked(data, Side::Suffix),
-            ],
-            attack: tag_of(MetaMod::NoAttack, "attack"),
-            caster: tag_of(MetaMod::NoCaster, "caster"),
-        }
+        guard_for(self.data, self.method, item)
     }
 
     /// An op with nothing to do: refuse the method, or inside a Chance branch (or after a

@@ -437,79 +437,82 @@ fn generated(b: &Bundle) -> anyhow::Result<Vec<Method>> {
         });
     }
 
-    // ---- fossils: one method per resonator kind; the resonator size follows the fossil count
-    for (id, name, rarity, kind) in [
-        (
-            "fossil/chaotic-resonator",
-            "Fossils in a Chaotic Resonator",
-            Rarity::Rare,
-            "Chaotic",
-        ),
-        (
-            "fossil/alchemical-resonator",
-            "Fossils in an Alchemical Resonator",
-            Rarity::Normal,
-            "Alchemical",
-        ),
-    ] {
-        // A fossil reforge only applies to item classes that can be rare.
-        let requires = vec![
-            Require::NotCorrupted,
-            Require::NotMirrored,
-            Require::Category {
-                any_of: vec![
-                    Category::Weapon,
-                    Category::Armour,
-                    Category::Jewellery,
-                    Category::Quiver,
-                    Category::Jewel,
-                    Category::AbyssJewel,
+    // ---- fossils: one method per resonator kind; the resonator size follows the fossil count.
+    // A game without fossils has no resonators either.
+    if !b.fossils.is_empty() {
+        for (id, name, rarity, kind) in [
+            (
+                "fossil/chaotic-resonator",
+                "Fossils in a Chaotic Resonator",
+                Rarity::Rare,
+                "Chaotic",
+            ),
+            (
+                "fossil/alchemical-resonator",
+                "Fossils in an Alchemical Resonator",
+                Rarity::Normal,
+                "Alchemical",
+            ),
+        ] {
+            // A fossil reforge only applies to item classes that can be rare.
+            let requires = vec![
+                Require::NotCorrupted,
+                Require::NotMirrored,
+                Require::Category {
+                    any_of: vec![
+                        Category::Weapon,
+                        Category::Armour,
+                        Category::Jewellery,
+                        Category::Quiver,
+                        Category::Jewel,
+                        Category::AbyssJewel,
+                    ],
+                },
+                Require::Rarity {
+                    any_of: vec![rarity],
+                },
+                Require::Fossils { min: 1, max: 4 },
+                Require::FossilLimits,
+            ];
+            let mut ops = vec![Op::SetRarity {
+                rarity: Rarity::Rare,
+            }];
+            // A rare loses what can change first; a normal item has nothing to lose.
+            if rarity == Rarity::Rare {
+                ops.push(Op::Clear { side: SideReq::Any });
+            }
+            ops.push(Op::Fill {
+                fill: Fill {
+                    counts: counts.clone(),
+                    weighting: Weighting::Fossils,
+                    side: SideReq::Any,
+                    mod_level_max: None,
+                    include: None,
+                    one_veiled: false,
+                },
+            });
+            out.push(Method {
+                id: id.into(),
+                name: name.into(),
+                family: Family::Fossil,
+                inputs: 1,
+                cost: Vec::new(),
+                requires,
+                pair: Vec::new(),
+                protect: Some(FORBIDDEN),
+                ops,
+                claims: vec![
+                    "game-text".into(),
+                    "chaos.count".into(),
+                    "reforge.counts".into(),
+                    "fossil.fractured-limits".into(),
+                    "metamod.multicraft-does-not-block".into(),
                 ],
-            },
-            Require::Rarity {
-                any_of: vec![rarity],
-            },
-            Require::Fossils { min: 1, max: 4 },
-            Require::FossilLimits,
-        ];
-        let mut ops = vec![Op::SetRarity {
-            rarity: Rarity::Rare,
-        }];
-        // A rare loses what can change first; a normal item has nothing to lose.
-        if rarity == Rarity::Rare {
-            ops.push(Op::Clear { side: SideReq::Any });
+                game_text: None,
+                example: None,
+                resonators: resonators(b, kind)?,
+            });
         }
-        ops.push(Op::Fill {
-            fill: Fill {
-                counts: counts.clone(),
-                weighting: Weighting::Fossils,
-                side: SideReq::Any,
-                mod_level_max: None,
-                include: None,
-                one_veiled: false,
-            },
-        });
-        out.push(Method {
-            id: id.into(),
-            name: name.into(),
-            family: Family::Fossil,
-            inputs: 1,
-            cost: Vec::new(),
-            requires,
-            pair: Vec::new(),
-            protect: Some(FORBIDDEN),
-            ops,
-            claims: vec![
-                "game-text".into(),
-                "chaos.count".into(),
-                "reforge.counts".into(),
-                "fossil.fractured-limits".into(),
-                "metamod.multicraft-does-not-block".into(),
-            ],
-            game_text: None,
-            example: None,
-            resonators: resonators(b, kind)?,
-        });
     }
     Ok(out)
 }

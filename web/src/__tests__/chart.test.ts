@@ -1,93 +1,211 @@
 import { describe, expect, it } from 'vitest'
+import type { Client } from '../client'
+import { createFlowStore } from '../flow/store'
 import { SCOPES } from '../flow/scope'
-import { createFlowStore, seedSpec } from '../flow/store'
-import { nodeId, type AbsSpec, type AbsView, type PreimageView, type PreimagesView } from '../types'
+import type { AbsSpec, EdgeView, ItemView, MethodOption, NodeView, PinnedView } from '../types'
 
-const crown: AbsSpec = {
+const root: AbsSpec = {
   base: 'Archdemon Crown',
   itemLevel: 87,
   rarity: 'rare',
-  influences: ['shaper', 'elder'],
-  prefixes: [{ id: 'IncreasedLife9' }, { id: 'IncreasedMana12' }],
-  suffixes: [{ id: 'FireResist8' }, { id: 'ColdResist8' }],
-  anyPrefixes: 1,
-  anySuffixes: 1,
+  influences: [],
+  prefixes: [],
+  suffixes: [],
+  anyPrefixes: 2,
+  anySuffixes: 2,
+  corrupted: false,
 }
 
-function view(spec: AbsSpec): AbsView {
+function nodeOf(id: string): NodeView {
   return {
-    base: spec.base,
-    itemLevel: spec.itemLevel,
-    rarity: spec.rarity,
-    influences: spec.influences,
-    prefixes: spec.prefixes.map((m) => m.id),
-    suffixes: spec.suffixes.map((m) => m.id),
-    anyPrefixes: spec.anyPrefixes,
-    anySuffixes: spec.anySuffixes,
+    id,
+    spec: root,
+    view: {
+      base: root.base,
+      itemLevel: root.itemLevel,
+      rarity: root.rarity,
+      corrupted: false,
+      influences: [],
+      prefixes: [],
+      suffixes: [],
+      anyPrefixes: root.anyPrefixes,
+      anySuffixes: root.anySuffixes,
+    },
+    members: null,
+    approx: false,
+    source: null,
   }
 }
 
-function store() {
-  return createFlowStore(SCOPES.poe1, { hash: '', storage: null, dropHash: () => undefined })
+/** A client whose every chart answer is immediate, so a test can wait one tick and read state. */
+class FakeClient implements Client {
+  pinned: PinnedView[] = []
+
+  async start() {
+    return { version: 'v', examples: [], bases: [] }
+  }
+
+  async parse(text: string): Promise<ItemView> {
+    throw new Error(`unused: ${text}`)
+  }
+
+  async mods() {
+    return []
+  }
+
+  async chartStart() {
+    return nodeOf('root')
+  }
+
+  async chartMethods(): Promise<MethodOption[]> {
+    return []
+  }
+
+  async chartForward() {
+    return {
+      node: 'root',
+      method: 'm',
+      name: 'M',
+      cost: 'none',
+      simulated: null,
+      repeatable: false,
+      outcomes: [],
+      watched: [],
+    }
+  }
+
+  async chartMadeBy(node: string) {
+    return { node, inputs: [], skipped: [] }
+  }
+
+  async chartPinForward(node: string, method: string, key: string) {
+    const edge: EdgeView = { from: node, to: key, method, name: 'M', p: 0.5, interval: null, repeatable: false }
+    const pinned: PinnedView = { node: nodeOf(key), edge }
+    this.pinned.push(pinned)
+    return pinned
+  }
+
+  async chartPinBackward(node: string, method: string, key: string) {
+    const edge: EdgeView = { from: key, to: node, method, name: 'M', p: 0.5, interval: null, repeatable: false }
+    const pinned: PinnedView = { node: nodeOf(key), edge }
+    this.pinned.push(pinned)
+    return pinned
+  }
+
+  dispose(): void {
+    // nothing to release
+  }
 }
 
-describe('node ids', () => {
-  it('do not depend on modifier or influence order', () => {
-    const shuffled: AbsSpec = {
-      ...crown,
-      influences: ['elder', 'shaper'],
-      prefixes: [{ id: 'IncreasedMana12' }, { id: 'IncreasedLife9', values: [140] }],
-      suffixes: [{ id: 'ColdResist8' }, { id: 'FireResist8' }],
-    }
-    expect(nodeId(shuffled)).toBe(nodeId(crown))
-  })
+/** A client whose method lists wait until the test releases them. */
+class SlowMethods extends FakeClient {
+  release: () => void = () => undefined
+  async chartMethods(): Promise<MethodOption[]> {
+    await new Promise<void>((resolve) => {
+      this.release = resolve
+    })
+    return [{ id: 'm', name: 'M', family: 'currency', cost: '1 × M' }]
+  }
+}
 
-  it('change with every field', () => {
-    const changed: AbsSpec[] = [
-      { ...crown, base: 'Hubris Circlet' },
-      { ...crown, itemLevel: 86 },
-      { ...crown, rarity: 'magic' },
-      { ...crown, influences: ['shaper'] },
-      { ...crown, prefixes: [{ id: 'IncreasedLife9' }] },
-      { ...crown, suffixes: [{ id: 'FireResist8' }] },
-      { ...crown, anyPrefixes: 2 },
-      { ...crown, anySuffixes: 0 },
-    ]
-    for (const spec of changed) expect(nodeId(spec)).not.toBe(nodeId(crown))
-  })
-})
+const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+async function store() {
+  const client = new FakeClient()
+  const flow = createFlowStore(SCOPES.simple, { client, hash: '', storage: null, dropHash: () => undefined })
+  await flush()
+  return { flow, client }
+}
 
 describe('the chart', () => {
-  it('pins the same input once', () => {
-    const flow = store()
-    const target = seedSpec(SCOPES.simple)
-    const accepted: PreimagesView = { target: view(target), steps: [], skipped: [] }
-    flow.getState().accept(target, accepted)
-    const root = flow.getState().chart[0].id
+  it('pins the same step once', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    flow.setState({ selected: 'root', method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a'])
+    expect(flow.getState().edges).toHaveLength(1)
+    expect(flow.getState().pins).toHaveLength(2)
+  })
 
-    const input: AbsSpec = { ...target, rarity: 'normal', suffixes: [], anyPrefixes: 0, anySuffixes: 0 }
-    // The engine leaves empty lists and zero counts out of a spec it writes.
-    const step: PreimageView = {
-      method: 'essence/essence-of-horror',
-      name: 'Essence of Horror',
-      p: 11 / 64,
-      cost: '1 × Essence of Horror',
-      input: view(input),
-      inputSpec: { base: input.base, itemLevel: input.itemLevel, rarity: input.rarity },
-      note: null,
-    }
-    flow.getState().pin(root, step)
-    flow.getState().select(root)
-    flow.getState().pin(root, step)
+  it('removes the nodes only a removed node led to', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    flow.setState({ selected: 'a' })
+    flow.getState().pinBackward('essence/essence-of-horror', 'b')
+    await flush()
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a', 'b'])
 
-    const { chart, edges, selected } = flow.getState()
-    expect(chart.map((node) => node.id)).toEqual([root, nodeId(input)])
-    expect(edges).toEqual([{ from: nodeId(input), to: root, method: step.method, name: step.name, p: step.p }])
-    expect(selected).toBe(nodeId(input))
-
-    flow.getState().unpin(nodeId(input))
-    expect(flow.getState().chart.map((node) => node.id)).toEqual([root])
+    flow.getState().unpin('a')
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root'])
     expect(flow.getState().edges).toEqual([])
-    expect(flow.getState().selected).toBe(root)
+    expect(flow.getState().selected).toBe('root')
+  })
+
+  it('keeps a detached node out of the chart when it rejoins', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    flow.setState({ selected: 'root', method: 'm' })
+    flow.getState().pinForward('b')
+    await flush()
+    flow.getState().unpin('b')
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a'])
+  })
+
+  it('pins every outcome and stays on the source', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    await flow.getState().pinAll(['a', 'b', 'a'])
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a', 'b'])
+    expect(flow.getState().edges).toHaveLength(2)
+    expect(flow.getState().selected).toBe('root')
+    expect(flow.getState().pins).toHaveLength(2)
+  })
+
+  it("keeps a method chosen while the next node's methods load", async () => {
+    const client = new SlowMethods()
+    const flow = createFlowStore(SCOPES.simple, { client, hash: '', storage: null, dropHash: () => undefined })
+    await flush()
+    client.release()
+    await flush()
+    expect(flow.getState().methods).toHaveLength(1)
+    flow.setState({ method: 'm' })
+    flow.getState().pinForward('a')
+    await flush()
+    expect(flow.getState().selected).toBe('a')
+    expect(flow.getState().methods).toEqual([])
+    flow.getState().chooseMethod('k')
+    await flush()
+    client.release()
+    await flush()
+    expect(flow.getState().method).toBe('k')
+    expect(flow.getState().applied).not.toBeNull()
+    expect(flow.getState().methods).toHaveLength(1)
+  })
+
+  it('keeps only the pins a reload can replay after a removal', async () => {
+    const { flow } = await store()
+    const pin = async (from: string, key: string) => {
+      flow.setState({ selected: from, method: 'm' })
+      flow.getState().pinForward(key)
+      await flush()
+    }
+    await pin('root', 'a')
+    await pin('a', 'b')
+    await pin('b', 'c')
+    await pin('root', 'b')
+    flow.getState().unpin('a')
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'b', 'c'])
+    expect(flow.getState().pins).toEqual([
+      { dir: 'f', node: 'root', method: 'm', key: 'b' },
+      { dir: 'f', node: 'b', method: 'm', key: 'c' },
+    ])
   })
 })
