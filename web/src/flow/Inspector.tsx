@@ -3,7 +3,7 @@ import type { AppliedView, InputView, NodeView, OutcomeView, WatchView } from '.
 import { chainFrom, type Chain } from './chain'
 import { errorText, useFlow, useFlowState } from './context'
 import { count, percent, range, summary, tries } from './format'
-import { mergeBlocker, mergedInto, resolveId } from './merge'
+import { foldShape, mergedInto, resolveId } from './merge'
 import { pathChance } from './path'
 
 /** The most outcome rows the table shows. */
@@ -239,6 +239,7 @@ export function Inspector() {
   const { store } = useFlow()
   const nodes = useFlowState((state) => state.nodes)
   const edges = useFlowState((state) => state.edges)
+  const rawEdges = useFlowState((state) => state.rawEdges)
   const selected = useFlowState((state) => state.selected)
   const tab = useFlowState((state) => state.tab)
   const methods = useFlowState((state) => state.methods)
@@ -250,7 +251,11 @@ export function Inspector() {
 
   const node = nodes.find((n) => n.id === selected) ?? nodes[0] ?? null
   const rootId = nodes[0]?.id ?? null
-  const targets = node && node.id !== rootId ? nodes.filter((other) => other.id !== node.id && mergeBlocker(node, other) === null) : []
+  const planned = (id: string) => rawEdges.some((edge) => edge.from === id)
+  const targets =
+    node && node.id !== rootId
+      ? nodes.filter((other) => other.id !== node.id && foldShape(node, other, planned) === null)
+      : []
   const chain = node && rootId ? pathChance(edges, node.id, rootId) : null
   const totals = useMemo(() => (node ? chainFrom(edges, node.id) : null), [edges, node])
   const list = useMemo(() => {
@@ -292,7 +297,7 @@ export function Inspector() {
             className="tab"
             value=""
             onChange={(event) => {
-              if (event.target.value) store.getState().merge(node.id, event.target.value)
+              if (event.target.value) void store.getState().merge(node.id, event.target.value)
             }}
           >
             <option value="">Merge into…</option>

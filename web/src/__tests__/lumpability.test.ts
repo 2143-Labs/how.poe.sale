@@ -1,11 +1,11 @@
 /// <reference types="node" />
-// Adversarial checks on the claim behind merging: two cards may share one node only when the
-// method followed next cannot tell them apart. The test is the Kemeny-Snell condition read off
-// the engine: for the cards a merge would fold, the chance of landing in every target group must
-// agree. Where it does not agree, the merge would be a lie, and the numbers below are the proof.
+// The rule behind folding two cards: they may share one node only when the method followed next
+// cannot tell them apart. That is the Kemeny-Snell condition on the chart's Markov chain, and the
+// engine answers it directly: compare the two cards' rows, class by class.
 import { expect, it } from 'vitest'
 import type { Client } from '../client'
-import { mergeBlocker } from '../flow/merge'
+import { basicsBlocker, mergeBlocker } from '../flow/merge'
+import { rowsDiffer, rowsOf, type Row } from '../flow/rows'
 import type { AbsSpec, NodeView } from '../types'
 import { simpleClient } from './bridge'
 
@@ -24,42 +24,18 @@ const root: AbsSpec = {
   corrupted: false,
 }
 
-/** A row of outcomes keyed by class, so two cards' rows line up. */
-async function row(client: Client, node: string, method: string) {
-  const applied = await client.chartForward(node, method)
-  const out = new Map<string, { p: number; width: number }>()
-  for (const outcome of applied.outcomes) {
-    if (outcome.kind !== 'item' || !outcome.view) continue
-    const { prefixes, suffixes, anyPrefixes, anySuffixes } = outcome.view
-    const key = JSON.stringify([prefixes, suffixes, anyPrefixes, anySuffixes])
-    const width = outcome.interval ? (outcome.interval[1] - outcome.interval[0]) / 2 : 0
-    const seen = out.get(key)
-    out.set(key, { p: (seen?.p ?? 0) + outcome.p, width: Math.max(seen?.width ?? 0, width) })
-  }
-  return out
-}
-
-/** The largest gap between two rows, over the classes either row has. */
-function gap(a: Map<string, { p: number }>, b: Map<string, { p: number }>) {
-  let worst = 0
-  let at = ''
-  for (const key of new Set([...a.keys(), ...b.keys()])) {
-    const d = Math.abs((a.get(key)?.p ?? 0) - (b.get(key)?.p ?? 0))
-    if (d > worst) {
-      worst = d
-      at = key
-    }
-  }
-  return { worst, at }
-}
-
 const countsOf = (node: NodeView) => [
   node.view.prefixes.length + node.view.anyPrefixes,
   node.view.suffixes.length + node.view.anySuffixes,
 ]
 const namesOf = (node: NodeView) => [...node.view.prefixes, ...node.view.suffixes]
+const hasLife = (node: NodeView) => namesOf(node).includes('+40 to maximum Life')
 
-/** Everything Chaos leaves from the root: the root, five other lock-free cards, six Life hits. */
+async function rowOf(client: Client, node: string, method: string): Promise<Row> {
+  return rowsOf(await client.chartForward(node, method))
+}
+
+/** Everything Chaos leaves from the root, deduplicated by class. */
 async function chaosBoard(client: Client) {
   const start = await client.chartStart(root, [{ id: LIFE }])
   const applied = await client.chartForward(start.id, 'currency/chaos')
@@ -72,65 +48,70 @@ async function chaosBoard(client: Client) {
   return { start, nodes }
 }
 
-it('Chaos cannot tell apart two cards it reforges the same way', { timeout: 120_000 }, async () => {
+it('the six cards Chaos leaves are one card as far as Chaos can tell', { timeout: 120_000 }, async () => {
   const client = await simpleClient()
-  const { start, nodes } = await chaosBoard(client)
-  expect(nodes).toHaveLength(12)
+  const { nodes } = await chaosBoard(client)
   const plain = nodes.filter((node) => namesOf(node).length === 0)
   expect(plain).toHaveLength(6)
 
-  // A full reforge only sees base, item level, rarity and the mods that survive it: with none of
-  // those differing, every card Chaos leaves behaves like the root under another Chaos. That is
-  // what makes a miss a legitimate place to loop back from.
-  const base = await row(client, start.id, 'currency/chaos')
-  for (const node of plain) {
-    const other = await row(client, node.id, 'currency/chaos')
-    const { worst } = gap(base, other)
-    expect(worst).toBeLessThan(0.01)
+  // A full reforge only sees the mods that survive it, so the counts are invisible to Chaos: every
+  // pair of these cards gives the same row, within sampling noise.
+  const rows = await Promise.all(plain.map((node) => rowOf(client, node.id, 'currency/chaos')))
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      const diff = rowsDiffer(rows[i], rows[j])
+      expect(diff === null || diff.gap < 0.01).toBe(true)
+    }
   }
 
-  // The six cards have six different count shapes, so the merge rule refuses all of them anyway.
+  // Yet no two of them are the same item, so the item rule would keep all six apart: only the
+  // engine's own answer lets them fold.
   expect(new Set(plain.map((node) => countsOf(node).join('/'))).size).toBe(6)
+  for (const a of plain) {
+    for (const b of plain) {
+      if (a.id !== b.id) expect(mergeBlocker(a, b)).toMatch(/^different number of (prefixes|suffixes)$/)
+      expect(basicsBlocker(a, b)).toBeNull()
+    }
+  }
   client.dispose()
 })
 
-it('a crafted metamod breaks the claim, so no merge may drop one', { timeout: 120_000 }, async () => {
+it('the engine, not the items, refuses the fold once a card has a plan', { timeout: 120_000 }, async () => {
   const client = await simpleClient()
   const { start, nodes } = await chaosBoard(client)
   const applied = await client.chartForward(start.id, LOCK_PREFIXES)
   const lock = await client.chartPinForward(start.id, LOCK_PREFIXES, applied.outcomes[0].key)
-  // Same counts as one of the plain cards: two prefixes, three suffixes.
-  expect(countsOf(lock.node)).toEqual([2, 3])
-  const plain = nodes.find((node) => namesOf(node).length === 0 && countsOf(node).join('/') === '2/3')
-  expect(plain).toBeDefined()
+  const plain = nodes.find((node) => namesOf(node).length === 0 && countsOf(node).join('/') === '2/3')!
 
-  // With the lock, Chaos keeps the prefix side and reforges the suffixes; without it, the prefixes
-  // move too. Two cards this far apart must never share a node, which is why the guard refuses it.
-  const withLock = await row(client, lock.node.id, 'currency/chaos')
-  const without = await row(client, plain!.id, 'currency/chaos')
-  const chaosGap = gap(withLock, without)
-  expect(chaosGap.worst).toBeGreaterThan(0.25)
-  expect(chaosGap.at).toBeTruthy()
+  // Same base, same counts, nothing the shape test can object to.
+  expect(basicsBlocker(lock.node, plain)).toBeNull()
+  expect(mergeBlocker(lock.node, plain)).toBe('only one carries a crafted metamod')
 
-  // Annulment tells them apart as well: it may not take a protected modifier freely.
-  const annulLock = await row(client, lock.node.id, 'currency/annulment')
-  const annulPlain = await row(client, plain!.id, 'currency/annulment')
-  expect(gap(annulLock, annulPlain).worst).toBeGreaterThan(0.2)
-
-  expect(mergeBlocker(lock.node, plain!)).toBe('only one carries a crafted metamod')
-  expect(mergeBlocker(plain!, lock.node)).toBe('the target names a modifier this item lacks')
+  // The engine sees the lock freeze the prefix side.
+  const chaos = rowsDiffer(await rowOf(client, lock.node.id, 'currency/chaos'), await rowOf(client, plain.id, 'currency/chaos'))
+  expect(chaos!.gap).toBeGreaterThan(0.25)
+  const annul = rowsDiffer(
+    await rowOf(client, lock.node.id, 'currency/annulment'),
+    await rowOf(client, plain.id, 'currency/annulment'),
+  )
+  expect(annul!.gap).toBeGreaterThan(0.2)
+  expect(chaos!.at).toBeTruthy()
+  expect(annul!.at).toBeTruthy()
   client.dispose()
 })
 
-it('refuses every fold among the six cards Chaos leaves', { timeout: 120_000 }, async () => {
+it('a destination is not a state: two different hits stay two cards', { timeout: 120_000 }, async () => {
   const client = await simpleClient()
   const { nodes } = await chaosBoard(client)
-  const plain = nodes.filter((node) => namesOf(node).length === 0)
-  for (const a of plain) {
-    for (const b of plain) {
-      if (a.id === b.id) continue
-      expect(mergeBlocker(a, b)).toMatch(/^different number of (prefixes|suffixes)$/)
-    }
-  }
+  const hits = nodes.filter(hasLife)
+  expect(hits).toHaveLength(6)
+
+  // Every card's row is the same under Chaos, hits included, so the row test alone would let a hit
+  // fold into a miss and the craft would carry on where the player meant to stop. Destinations are
+  // held to the item rule instead.
+  const a = await rowOf(client, hits[0].id, 'currency/chaos')
+  const b = await rowOf(client, hits[1].id, 'currency/chaos')
+  expect(rowsDiffer(a, b)).toBeNull()
+  expect(mergeBlocker(hits[0], hits[1])).toMatch(/^different number of (prefixes|suffixes)$/)
   client.dispose()
 })

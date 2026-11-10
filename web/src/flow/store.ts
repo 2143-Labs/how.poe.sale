@@ -1,7 +1,8 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Client } from '../client'
 import { parseShareHash } from '../share'
-import { applyMerges, autoTarget, mergeBlocker, mergesOf, resolveId } from './merge'
+import { applyMerges, autoOrder, foldShape, mergesOf, resolveId } from './merge'
+import { rowsDiffer, rowsOf, type Row } from './rows'
 import {
   normalizeSpec,
   type AbsSpec,
@@ -63,8 +64,11 @@ export interface FlowState {
   pinBackward: (method: string, key: string) => void
   /** Takes a node off the chart, with every node only it led to. */
   unpin: (id: string) => void
-  /** Folds the card `from` into the card `into` when the merge rule allows it; otherwise sets `error`. */
-  merge: (from: string, into: string) => void
+  /**
+   * Folds the card `from` into the card `into` when the cards, and where the fold gives a card a
+   * plan to follow the engine, agree; otherwise sets `error`.
+   */
+  merge: (from: string, into: string) => Promise<void>
   clearChart: () => void
   setError: (message: string | null) => void
   setNotice: (message: string | null) => void
@@ -240,16 +244,92 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
       })
     }
 
-    /** Folds `from` into `into`, or says why it cannot. */
-    const tryMerge = (from: string, into: string): string | null => {
-      const { nodes, rawNodes, rawEdges, merges } = get()
+    /** The cards the chart still has steps pinned from: the ones a craft goes on from. */
+    const planned = (id: string) => get().rawEdges.some((edge) => edge.from === id)
+
+    /** Why the chart cannot fold `from` into `into` at all, from the cards alone. */
+    const shapeError = (from: string, into: string): string | null => {
+      const { nodes } = get()
       if (nodes.length > 0 && nodes[0].id === from) return 'The root cannot be merged into another item.'
       const a = nodes.find((node) => node.id === from)
       const b = nodes.find((node) => node.id === into)
       if (!a || !b || from === into) return 'Only two different items on the chart can be merged.'
-      const reason = mergeBlocker(a, b)
-      if (reason) return `These items cannot be merged: ${reason}.`
+      const shape = foldShape(a, b, planned)
+      return shape ? `These items cannot be merged: ${shape}.` : null
+    }
+
+    /** Folds `from` into `into`. Only called once the rules allow it. */
+    const foldNow = (from: string, into: string) => {
+      const { rawNodes, rawEdges, merges } = get()
       set(shown(rawNodes, rawEdges, [...merges, { from, into }]))
+    }
+
+    /** The rows a method leaves from a card, fetched once per card and method. */
+    const fetched = new Map<string, Promise<Row>>()
+    const rowsFor = (node: string, method: string) => {
+      const key = `${node} ${method}`
+      let pending = fetched.get(key)
+      if (!pending) {
+        pending = env.client.chartForward(node, method).then(rowsOf)
+        pending.catch(() => fetched.delete(key))
+        fetched.set(key, pending)
+      }
+      return pending
+    }
+
+    /**
+     * Why the engine says the two cards differ, or `null` when their odds agree under every method
+     * the chart uses on either: the test that makes a fold exact rather than a claim.
+     */
+    const rowsError = async (from: string, into: string): Promise<string | null> => {
+      const { rawEdges } = get()
+      const methods = [...new Set(rawEdges.filter((e) => e.from === from || e.from === into).map((e) => e.method))]
+      for (const method of methods) {
+        const name = rawEdges.find((edge) => edge.method === method)?.name ?? method
+        try {
+          // One at a time: the page's client answers only the newest forward, so a pair in flight
+          // together would cancel each other.
+          const left = await rowsFor(from, method)
+          const right = await rowsFor(into, method)
+          const diff = rowsDiffer(left, right)
+          if (diff) {
+            return `These items cannot be merged: under ${name} their odds differ by ${(diff.gap * 100).toFixed(1)} points at ${diff.at}.`
+          }
+        } catch {
+          return `These items cannot be merged: ${name} could not be compared.`
+        }
+      }
+      return null
+    }
+
+    /** Why the fold would drop a modifier the chart tracks, or `null` when it drops none. */
+    const trackedError = (from: string, into: string): string | null => {
+      const { nodes, root, watch } = get()
+      const tracked = new Set([...root.prefixes, ...root.suffixes, ...watch].map((slot) => slot.id))
+      if (tracked.size === 0) return null
+      const own = normalizeSpec(nodes.find((node) => node.id === from)?.spec)
+      const target = normalizeSpec(nodes.find((node) => node.id === into)?.spec)
+      if (!own || !target) return null
+      const on = (side: SlotSpec[], slot: SlotSpec) => side.some((other) => other.id === slot.id)
+      const lost =
+        own.prefixes.some((slot) => tracked.has(slot.id) && !on(target.prefixes, slot)) ||
+        own.suffixes.some((slot) => tracked.has(slot.id) && !on(target.suffixes, slot))
+      return lost ? 'These items cannot be merged: it would drop a modifier the chart tracks.' : null
+    }
+
+    /** Folds `from` into `into` once the cards and, where it matters, the engine agree. */
+    const tryMerge = async (from: string, into: string): Promise<string | null> => {
+      const shape = shapeError(from, into)
+      if (shape) return shape
+      const lost = trackedError(from, into)
+      if (lost) return lost
+      // Two cards nothing is pinned from are destinations: they must be the same item, and no odds
+      // are involved. Anything else gives a card a plan to follow, and that plan has to be the same.
+      if (planned(from) || planned(into)) {
+        const differ = await rowsError(from, into)
+        if (differ) return differ
+      }
+      foldNow(from, into)
       return null
     }
 
@@ -320,7 +400,15 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         fail(reason)
         return
       }
-      const dropped = merges.filter((merge) => tryMerge(merge.from, merge.into) !== null).length
+      // Saved merges were checked against the engine when they were made; a forward costs 60 to
+      // 300 ms, so a reload only checks the cards, not the odds. A link from an older build keeps
+      // its folds until one is made again.
+      const dropped = merges.filter((merge) => {
+        const shape = shapeError(merge.from, merge.into)
+        if (shape) return true
+        foldNow(merge.from, merge.into)
+        return false
+      }).length
       if (dropped > 0) {
         set({
           notice: `${dropped} saved ${dropped === 1 ? 'merge no longer applies and was' : 'merges no longer apply and were'} dropped.`,
@@ -415,8 +503,9 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         for (const id of fresh ?? []) {
           const node = get().nodes.find((known) => known.id === id)
           if (!node) continue
-          const target = autoTarget(node, get().nodes, tracked)
-          if (target) tryMerge(node.id, target.id)
+          for (const target of autoOrder(node, get().nodes, tracked)) {
+            if ((await tryMerge(node.id, target.id)) === null) break
+          }
         }
       },
       pinBackward: (method, key) => {
@@ -453,10 +542,10 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         set({ ...next, pins: kept, ...moveTo(stay) })
         if (stay !== selected) void refresh(stay)
       },
-      merge: (from, into) => {
-        const error = tryMerge(from, into)
+      merge: async (from, into) => {
+        const error = await tryMerge(from, into)
         if (error) {
-          get().setError(error)
+          set({ error })
           return
         }
         if (get().selected === from) {

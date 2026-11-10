@@ -25,11 +25,8 @@ function names(side: SlotSpec[], slot: SlotSpec): boolean {
  */
 const metamod = (slot: SlotSpec) => slot.id.includes('MasterItemGeneration')
 
-/**
- * Why `from` cannot be merged into `into`, or `null` when it can: the same item apart from
- * modifiers `from` names and `into` counts as any.
- */
-export function mergeBlocker(from: NodeView, into: NodeView): string | null {
+/** Why two cards cannot be the same item at all, or `null` when they can. */
+export function basicsBlocker(from: NodeView, into: NodeView): string | null {
   const a = normalizeSpec(from.spec)
   const b = normalizeSpec(into.spec)
   if (!a || !b) return 'an item could not be read'
@@ -38,6 +35,18 @@ export function mergeBlocker(from: NodeView, into: NodeView): string | null {
   if (a.rarity !== b.rarity) return 'different rarity'
   if ([...a.influences].sort().join(',') !== [...b.influences].sort().join(',')) return 'different influences'
   if (a.corrupted !== b.corrupted) return 'only one is corrupted'
+  return null
+}
+
+/**
+ * Why two cards are not the same destination, or `null` when they are: the same counts, and
+ * `from` names no modifier `into` does not. Two ends can only be one card when they are one item.
+ */
+export function mergeBlocker(from: NodeView, into: NodeView): string | null {
+  const basics = basicsBlocker(from, into)
+  if (basics) return basics
+  const a = normalizeSpec(from.spec)!
+  const b = normalizeSpec(into.spec)!
   if (a.prefixes.length + a.anyPrefixes !== b.prefixes.length + b.anyPrefixes) return 'different number of prefixes'
   if (a.suffixes.length + a.anySuffixes !== b.suffixes.length + b.anySuffixes) return 'different number of suffixes'
   const lostMetamod =
@@ -51,29 +60,41 @@ export function mergeBlocker(from: NodeView, into: NodeView): string | null {
 }
 
 /**
- * The most specific card `from` can merge into without dropping a tracked modifier, or `null`.
- * Ties go to the earliest candidate.
+ * Whether a fold is worth checking at all, before the engine is asked: the two cards are the same
+ * item, and the fold does not stop a card the chart still has steps pinned from.
  */
-export function autoTarget(from: NodeView, candidates: NodeView[], tracked: Set<string>): NodeView | null {
+export function foldShape(from: NodeView, into: NodeView, planned: (id: string) => boolean): string | null {
+  const basics = basicsBlocker(from, into)
+  if (basics) return basics
+  if (planned(from.id) && !planned(into.id)) return 'one still has steps pinned from it'
+  if (!planned(from.id) && !planned(into.id)) return mergeBlocker(from, into)
+  return null
+}
+
+/**
+ * The cards `from` may fold into, best first: cards it shares the most modifiers with, then cards
+ * that name the least it does not, and never one that would drop a tracked modifier it names.
+ */
+export function autoOrder(from: NodeView, candidates: NodeView[], tracked: Set<string>): NodeView[] {
   const own = normalizeSpec(from.spec)
-  if (!own) return null
-  let best: NodeView | null = null
-  let bestNamed = -1
-  for (const candidate of candidates) {
-    if (candidate.id === from.id || mergeBlocker(from, candidate) !== null) continue
+  if (!own) return []
+  const scored = candidates.flatMap((candidate, index) => {
+    if (candidate.id === from.id || basicsBlocker(from, candidate) !== null) return []
     const spec = normalizeSpec(candidate.spec)
-    if (!spec) continue
+    if (!spec) return []
     const keepsTracked =
       own.prefixes.every((slot) => !tracked.has(slot.id) || spec.prefixes.some((s) => s.id === slot.id)) &&
       own.suffixes.every((slot) => !tracked.has(slot.id) || spec.suffixes.some((s) => s.id === slot.id))
-    if (!keepsTracked) continue
-    const named = spec.prefixes.length + spec.suffixes.length
-    if (named > bestNamed) {
-      best = candidate
-      bestNamed = named
-    }
-  }
-  return best
+    if (!keepsTracked) return []
+    const shared = [...own.prefixes, ...own.suffixes].filter(
+      (slot) => names(spec.prefixes, slot) || names(spec.suffixes, slot),
+    ).length
+    const extra = spec.prefixes.length + spec.suffixes.length - shared
+    return [{ candidate, shared, extra, index }]
+  })
+  return scored
+    .sort((left, right) => right.shared - left.shared || left.extra - right.extra || left.index - right.index)
+    .map((entry) => entry.candidate)
 }
 
 /**

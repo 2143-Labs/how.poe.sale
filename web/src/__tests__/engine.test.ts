@@ -92,8 +92,8 @@ it('loops, merges and folds on the simple game', { timeout: 120_000 }, async () 
     expect(hasLife(into)).toBe(hasLife(from))
   }
 
-  // 4. By hand: the bench lock has the plain card's counts, and folding it in is refused, because
-  // Chaos would keep the locked side and give one item two different sets of odds.
+  // 4. By hand. The plain card already has Chaos pinned from step 2, so it has a plan: the lock is
+  // refused because the engine can tell them apart, and the other way round because it would stop.
   const [lockKey] = await pinAll(rootId, LOCK)
   const lock = flow.getState().nodes.find((n) => n.id === lockKey)!
   expect(spec(lock)).toMatchObject({ prefixes: [], anyPrefixes: 2, anySuffixes: 2 })
@@ -105,13 +105,53 @@ it('loops, merges and folds on the simple game', { timeout: 120_000 }, async () 
       return named(n).length === 0 && s.anyPrefixes === 2 && s.anySuffixes === 3
     })!
   const before = flow.getState().merges
-  flow.getState().merge(lock.id, plain.id)
-  expect(flow.getState().error).toBe('These items cannot be merged: only one carries a crafted metamod.')
-  flow.getState().merge(plain.id, lock.id)
-  expect(flow.getState().error).toBe('These items cannot be merged: the target names a modifier this item lacks.')
+  await flow.getState().merge(lock.id, plain.id)
+  expect(flow.getState().error).toMatch(
+    /^These items cannot be merged: under Chaos Orb their odds differ by 2\d\.\d points at /,
+  )
+  await flow.getState().merge(plain.id, lock.id)
+  expect(flow.getState().error).toBe('These items cannot be merged: one still has steps pinned from it.')
   expect(flow.getState().merges).toBe(before)
   expect(flow.getState().nodes.some((n) => n.id === lock.id)).toBe(true)
 
+  client.dispose()
+})
+
+it('folds the six Chaos misses into the root, and the totals hold', { timeout: 120_000 }, async () => {
+  const client = await simpleClient()
+  const flow = createFlowStore(SCOPES.simple, {
+    client,
+    hash: `#s=${encodeShare('simple', { root, watch: [{ id: LIFE }], pins: [], merges: [] })}`,
+    storage: null,
+    dropHash: () => undefined,
+  })
+  await until(() => flow.getState().nodes.length === 1)
+  const rootId = flow.getState().nodes[0].id
+
+  const applied = await client.chartForward(rootId, 'currency/chaos')
+  const keys = applied.outcomes.filter((o) => o.kind === 'item').map((o) => o.key)
+  flow.setState({ selected: rootId, method: 'currency/chaos' })
+  await flow.getState().pinAllMerging(keys)
+
+  const state = flow.getState()
+  // The five other misses fold into the root (it is not a fresh card); the hits are destinations
+  // that name Life, so they stay apart. The root's own row is unchanged, so 7 cards read the same
+  // as 12 did.
+  expect(state.nodes).toHaveLength(7)
+  expect(state.merges).toHaveLength(5)
+  expect(state.merges.every((merge) => merge.into === rootId)).toBe(true)
+  expect(state.nodes.filter(hasLife)).toHaveLength(6)
+  const loop = state.edges.find((e) => e.from === rootId && e.to === rootId)
+  expect(loop?.p).toBeGreaterThan(0.92)
+  expect(loop?.p).toBeLessThan(0.93)
+
+  const chain = chainFrom(state.edges, rootId)
+  if (chain.kind !== 'totals') throw new Error(`expected totals, got ${chain.kind}`)
+  expect(chain.off).toBeLessThan(1e-6)
+  expect(chain.ends).toHaveLength(6)
+  expect(chain.ends.reduce((sum, end) => sum + end.p, 0)).toBeCloseTo(1, 6)
+  expect(chain.uses[0].n).toBeGreaterThan(12)
+  expect(chain.uses[0].n).toBeLessThan(15)
   client.dispose()
 })
 
@@ -144,7 +184,7 @@ it('folds one card by hand on a real chart', { timeout: 120_000 }, async () => {
   const target = state.nodes.find(
     (n) => n.id !== veiled.id && named(n).every((id) => !VEILED.includes(id)) && mergeBlocker(veiled, n) === null,
   )!
-  flow.getState().merge(veiled.id, target.id)
+  await flow.getState().merge(veiled.id, target.id)
   expect(flow.getState().error).toBeNull()
   expect(flow.getState().merges).toEqual([{ from: veiled.id, into: target.id }])
   expect(flow.getState().nodes.some((n) => n.id === veiled.id)).toBe(false)
