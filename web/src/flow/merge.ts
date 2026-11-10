@@ -20,6 +20,12 @@ function names(side: SlotSpec[], slot: SlotSpec): boolean {
 }
 
 /**
+ * A crafted metamod ("Prefixes Cannot Be Changed", "Cannot roll Attack modifiers"): it changes
+ * what a reforge does, so an item that has one never behaves as one without it.
+ */
+const metamod = (slot: SlotSpec) => slot.id.includes('MasterItemGeneration')
+
+/**
  * Why `from` cannot be merged into `into`, or `null` when it can: the same item apart from
  * modifiers `from` names and `into` counts as any.
  */
@@ -34,6 +40,10 @@ export function mergeBlocker(from: NodeView, into: NodeView): string | null {
   if (a.corrupted !== b.corrupted) return 'only one is corrupted'
   if (a.prefixes.length + a.anyPrefixes !== b.prefixes.length + b.anyPrefixes) return 'different number of prefixes'
   if (a.suffixes.length + a.anySuffixes !== b.suffixes.length + b.anySuffixes) return 'different number of suffixes'
+  const lostMetamod =
+    a.prefixes.some((slot) => metamod(slot) && !names(b.prefixes, slot)) ||
+    a.suffixes.some((slot) => metamod(slot) && !names(b.suffixes, slot))
+  if (lostMetamod) return 'only one carries a crafted metamod'
   if (!b.prefixes.every((slot) => names(a.prefixes, slot)) || !b.suffixes.every((slot) => names(a.suffixes, slot))) {
     return 'the target names a modifier this item lacks'
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyMerges, autoTarget, mergeBlocker, mergesOf, resolveId } from '../flow/merge'
+import { applyMerges, autoTarget, mergeBlocker, mergedInto, mergesOf, resolveId } from '../flow/merge'
 import type { AbsSpec, EdgeView, NodeView, SlotSpec } from '../types'
 
 const base: AbsSpec = {
@@ -115,5 +115,51 @@ describe('merging cards', () => {
       { from: 'a', into: 'b' },
     ])
     expect(mergesOf('nope')).toEqual([])
+  })
+
+  it('never drops a crafted metamod', () => {
+    const lock: SlotSpec = { id: 'StrMasterItemGenerationCannotChangePrefixes' }
+    const locked = card('locked', { suffixes: [lock], anyPrefixes: 2, anySuffixes: 2 })
+    const plain = card('plain', { anyPrefixes: 2, anySuffixes: 3 })
+    // Same counts, and the target names nothing: without the guard this fold looked allowed.
+    expect(mergeBlocker(locked, plain)).toBe('only one carries a crafted metamod')
+    // A card that keeps the lock is still a legitimate target.
+    const same = card('same', { suffixes: [lock], anyPrefixes: 2, anySuffixes: 2 })
+    expect(mergeBlocker(locked, same)).toBeNull()
+  })
+
+  it('reads influences without caring for their order', () => {
+    const a = card('a', { influences: ['shaper', 'elder'], anyPrefixes: 2, anySuffixes: 2 })
+    const b = card('b', { influences: ['elder', 'shaper'], anyPrefixes: 2, anySuffixes: 2 })
+    const c = card('c', { influences: ['shaper'], anyPrefixes: 2, anySuffixes: 2 })
+    expect(mergeBlocker(a, b)).toBeNull()
+    expect(mergeBlocker(a, c)).toBe('different influences')
+  })
+
+  it('will not fold a family slot into an exact one', () => {
+    const family = card('family', { prefixes: [{ id: 'SimpleLife4', orBetter: true }], anyPrefixes: 1, anySuffixes: 2 })
+    const exact = card('exact', { prefixes: [life], anyPrefixes: 1, anySuffixes: 2 })
+    expect(mergeBlocker(exact, family)).toBe('the target names a modifier this item lacks')
+    expect(mergeBlocker(family, exact)).toBe('the target names a modifier this item lacks')
+    expect(mergeBlocker(family, card('two', { anyPrefixes: 2, anySuffixes: 2 }))).toBeNull()
+  })
+
+  it('follows a chain of folds to the card at its end', () => {
+    const nodes = [card('R', {}), card('A', {}), card('B', {}), card('C', {})]
+    const edges = [edge('R', 'A', 1), edge('A', 'B', 1), edge('B', 'C', 1)]
+    const merges = [
+      { from: 'A', into: 'B' },
+      { from: 'B', into: 'C' },
+    ]
+    const shown = applyMerges(nodes, edges, merges)
+    expect(shown.nodes.map((node) => node.id)).toEqual(['R', 'C'])
+    // The step from R survives, and the steps between the folded cards become a loop on C.
+    expect(shown.edges.map((e) => [e.from, e.to])).toEqual([
+      ['R', 'C'],
+      ['C', 'C'],
+    ])
+    expect(mergedInto(nodes, merges, 'C').map((node) => node.id)).toEqual(['A', 'B'])
+    // Nothing resolves to `B`: it is a link in the chain, not the end of one.
+    expect(mergedInto(nodes, merges, 'B')).toEqual([])
   })
 })

@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { expect, it } from 'vitest'
 import { chainFrom } from '../flow/chain'
+import { mergeBlocker } from '../flow/merge'
 import { SCOPES } from '../flow/scope'
 import { createFlowStore } from '../flow/store'
 import { encodeShare } from '../share'
@@ -91,7 +92,8 @@ it('loops, merges and folds on the simple game', { timeout: 120_000 }, async () 
     expect(hasLife(into)).toBe(hasLife(from))
   }
 
-  // 4. By hand: the bench lock folds into the plain card with the same counts, not the other way round.
+  // 4. By hand: the bench lock has the plain card's counts, and folding it in is refused, because
+  // Chaos would keep the locked side and give one item two different sets of odds.
   const [lockKey] = await pinAll(rootId, LOCK)
   const lock = flow.getState().nodes.find((n) => n.id === lockKey)!
   expect(spec(lock)).toMatchObject({ prefixes: [], anyPrefixes: 2, anySuffixes: 2 })
@@ -103,12 +105,49 @@ it('loops, merges and folds on the simple game', { timeout: 120_000 }, async () 
       return named(n).length === 0 && s.anyPrefixes === 2 && s.anySuffixes === 3
     })!
   const before = flow.getState().merges
-  flow.getState().merge(plain.id, lock.id)
-  expect(flow.getState().error).toMatch(/^These items cannot be merged:/)
-  expect(flow.getState().merges).toBe(before)
   flow.getState().merge(lock.id, plain.id)
-  expect(flow.getState().nodes.some((n) => n.id === lock.id)).toBe(false)
-  expect(flow.getState().merges).toHaveLength(24)
+  expect(flow.getState().error).toBe('These items cannot be merged: only one carries a crafted metamod.')
+  flow.getState().merge(plain.id, lock.id)
+  expect(flow.getState().error).toBe('These items cannot be merged: the target names a modifier this item lacks.')
+  expect(flow.getState().merges).toBe(before)
+  expect(flow.getState().nodes.some((n) => n.id === lock.id)).toBe(true)
 
+  client.dispose()
+})
+
+it('folds one card by hand on a real chart', { timeout: 120_000 }, async () => {
+  const client = await simpleClient()
+  const flow = createFlowStore(SCOPES.simple, {
+    client,
+    hash: `#s=${encodeShare('simple', { root, watch: [{ id: LIFE }], pins: [], merges: [] })}`,
+    storage: null,
+    dropHash: () => undefined,
+  })
+  await until(() => flow.getState().nodes.length === 1)
+  const rootId = flow.getState().nodes[0].id
+
+  // A Chaos chart first, so there are plain cards for a veiled card to fold into.
+  const pick = async (method: string) => {
+    const applied = await client.chartForward(rootId, method)
+    const keys = applied.outcomes.filter((o) => o.kind === 'item').map((o) => o.key)
+    flow.setState({ selected: rootId, method })
+    await flow.getState().pinAll(keys)
+  }
+  await pick('currency/chaos')
+  expect(flow.getState().nodes).toHaveLength(12)
+  await pick('currency/veiled-chaos')
+  const state = flow.getState()
+  expect(state.nodes).toHaveLength(35)
+  expect(state.merges).toEqual([])
+
+  const veiled = state.nodes.find((n) => named(n).some((id) => VEILED.includes(id)))!
+  const target = state.nodes.find(
+    (n) => n.id !== veiled.id && named(n).every((id) => !VEILED.includes(id)) && mergeBlocker(veiled, n) === null,
+  )!
+  flow.getState().merge(veiled.id, target.id)
+  expect(flow.getState().error).toBeNull()
+  expect(flow.getState().merges).toEqual([{ from: veiled.id, into: target.id }])
+  expect(flow.getState().nodes.some((n) => n.id === veiled.id)).toBe(false)
+  expect(flow.getState().rawNodes.some((n) => n.id === veiled.id)).toBe(true)
   client.dispose()
 })

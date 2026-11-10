@@ -113,8 +113,8 @@ function Applied({ applied }: { applied: AppliedView }) {
       )}
       {folded > 0 && (
         <p className="hint">
-          This card also stands for {folded} merged {folded === 1 ? 'card' : 'cards'}; the odds below come from its own
-          items.
+          This card also stands for {folded} merged {folded === 1 ? 'card' : 'cards'}; each odds row below is one
+          card's own, never a mix.
         </p>
       )}
       {items.length > 1 && items.length <= 20 && (
