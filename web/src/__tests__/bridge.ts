@@ -5,9 +5,13 @@ import type { Client } from '../client'
 import type { AppliedView, MadeByView, MethodOption, NodeView, PinnedView } from '../types'
 import init, { Bridge } from '../wasm/pkg/solver.js'
 
+/** The wasm module once loaded: a second client reuses it and starts its own engine. */
+let loaded: Promise<unknown> | null = null
+
 /** The engine over the simple game's bundle; both are staged by `npm run build`. */
 export async function simpleClient(): Promise<Client> {
-  await init({ module_or_path: readFileSync(new URL('../wasm/pkg/solver_bg.wasm', import.meta.url)) })
+  loaded ??= init({ module_or_path: readFileSync(new URL('../wasm/pkg/solver_bg.wasm', import.meta.url)) })
+  await loaded
   const bridge = new Bridge(readFileSync(new URL('../../public/data/simple.json', import.meta.url), 'utf8'))
   return {
     start: async () => ({
