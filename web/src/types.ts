@@ -196,6 +196,12 @@ export interface Pin {
   key: string
 }
 
+/** A card folded into another: `from` is shown as `into` from then on. */
+export interface Merge {
+  from: string
+  into: string
+}
+
 const RARITIES: readonly string[] = ['normal', 'magic', 'rare', 'unique']
 
 function isRarity(raw: unknown): raw is Rarity {
