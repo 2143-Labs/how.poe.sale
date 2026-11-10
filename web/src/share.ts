@@ -1,5 +1,6 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import { normalizeSpec, type AbsSpec, type Pin, type SlotSpec } from './types'
+import { mergesOf } from './flow/merge'
+import { normalizeSpec, type AbsSpec, type Merge, type Pin, type SlotSpec } from './types'
 
 export const SHARE_PREFIX = '#s='
 
@@ -16,6 +17,7 @@ export interface ChartShare {
   root: AbsSpec
   watch: SlotSpec[]
   pins: Pin[]
+  merges: Merge[]
 }
 
 export type ShareParse =
@@ -74,6 +76,7 @@ export function parseShareHash(hash: string): ShareParse {
       root,
       watch: slotsOf(value.watch),
       pins: pinsOf(value.pins),
+      merges: mergesOf(value.merges),
     }
   } catch {
     return { kind: 'invalid' }

@@ -208,4 +208,49 @@ describe('the chart', () => {
       { dir: 'f', node: 'b', method: 'm', key: 'c' },
     ])
   })
+
+  it('folds a merged card into the card it merged into', async () => {
+    const { flow } = await store()
+    flow.setState({ selected: 'root', method: 'm' })
+    await flow.getState().pinAll(['a', 'b'])
+    flow.getState().merge('b', 'a')
+    const state = flow.getState()
+    expect(state.nodes.map((node) => node.id)).toEqual(['root', 'a'])
+    expect(state.edges).toHaveLength(1)
+    expect(state.edges[0]).toMatchObject({ from: 'root', to: 'a', p: 1 })
+    expect(state.rawNodes).toHaveLength(3)
+    expect(state.merges).toEqual([{ from: 'b', into: 'a' }])
+
+    flow.setState({ selected: 'root', method: 'n' })
+    await flow.getState().pinAll(['b'])
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root', 'a'])
+
+    flow.getState().merge('root', 'a')
+    expect(flow.getState().error).toBe('The root cannot be merged into another item.')
+
+    flow.getState().unpin('a')
+    expect(flow.getState().nodes.map((node) => node.id)).toEqual(['root'])
+    expect(flow.getState().merges).toEqual([])
+    expect(flow.getState().pins).toEqual([])
+  })
+
+  it('saves merges and opens them again', async () => {
+    const saved = new Map<string, string>()
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => void saved.set(key, value),
+    }
+    const flow = createFlowStore(SCOPES.simple, { client: new FakeClient(), hash: '', storage, dropHash: () => undefined })
+    await flush()
+    flow.setState({ selected: 'root', method: 'm' })
+    await flow.getState().pinAll(['a', 'b'])
+    flow.getState().merge('b', 'a')
+    expect(saved.get(SCOPES.simple.storageKey)).toContain('"merges":[{"from":"b","into":"a"}]')
+
+    const again = createFlowStore(SCOPES.simple, { client: new FakeClient(), hash: '', storage, dropHash: () => undefined })
+    // the replay is fire-and-forget: wait for its last step, the merge, to land
+    for (let tick = 0; tick < 100 && again.getState().merges.length === 0; tick++) await flush()
+    expect(again.getState().nodes.map((node) => node.id)).toEqual(['root', 'a'])
+    expect(again.getState().notice).toBeNull()
+  })
 })

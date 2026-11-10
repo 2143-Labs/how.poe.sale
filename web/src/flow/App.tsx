@@ -39,7 +39,11 @@ export function App() {
 
   function share() {
     const state = store.getState()
-    const url = buildShareUrl(scope.id, { root: state.root, watch: state.watch, pins: state.pins }, window.location.origin)
+    const url = buildShareUrl(
+      scope.id,
+      { root: state.root, watch: state.watch, pins: state.pins, merges: state.merges },
+      window.location.origin,
+    )
     navigator.clipboard
       .writeText(url)
       .then(() => {

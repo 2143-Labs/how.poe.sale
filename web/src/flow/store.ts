@@ -1,6 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Client } from '../client'
 import { parseShareHash } from '../share'
+import { applyMerges, autoTarget, mergeBlocker, mergesOf, resolveId } from './merge'
 import {
   normalizeSpec,
   type AbsSpec,
@@ -10,6 +11,7 @@ import {
   type MethodOption,
   type ModOption,
   type NodeView,
+  type Merge,
   type Pin,
   type SlotSpec,
 } from '../types'
@@ -22,9 +24,15 @@ export interface FlowState {
   root: AbsSpec
   /** The modifiers tracked on top of the root's own. */
   watch: SlotSpec[]
-  /** The root first, then every node pinned since. */
+  /** The root first, then every node pinned since, as shown: merged cards folded into the card they merged into. */
   nodes: NodeView[]
+  /** The pinned steps as shown, between the shown nodes. */
   edges: EdgeView[]
+  /** Every node the engine made for this chart, merged or not, in pin order. */
+  rawNodes: NodeView[]
+  /** Every pinned step between raw nodes. */
+  rawEdges: EdgeView[]
+  merges: Merge[]
   /** The pinned steps, in order, so a reload can replay them. */
   pins: Pin[]
   selected: string | null
@@ -49,10 +57,14 @@ export interface FlowState {
   pinForward: (key: string) => void
   /** Pins each outcome of the method shown for the selected node, in order, keeping the selection. */
   pinAll: (keys: string[]) => Promise<void>
+  /** Like `pinAll`, then merges each new card into the most specific card the rule and the guard allow. */
+  pinAllMerging: (keys: string[]) => Promise<void>
   /** Pins an input a method could have started from, above the selected node. */
   pinBackward: (method: string, key: string) => void
   /** Takes a node off the chart, with every node only it led to. */
   unpin: (id: string) => void
+  /** Folds the card `from` into the card `into` when the merge rule allows it; otherwise sets `error`. */
+  merge: (from: string, into: string) => void
   clearChart: () => void
   setError: (message: string | null) => void
   setNotice: (message: string | null) => void
@@ -90,6 +102,7 @@ interface Saved {
   root: AbsSpec
   watch: SlotSpec[]
   pins: Pin[]
+  merges: Merge[]
 }
 
 /** A pinned step, when it reads back as one. */
@@ -125,7 +138,7 @@ function load(scope: Scope, storage: StoreEnv['storage']): Saved | null {
     const value = JSON.parse(raw) as Record<string, unknown> | null
     const root = normalizeSpec(value?.root)
     if (!value || !root) return null
-    return { root, watch: watchOf(value.watch), pins: pinsOf(value.pins) }
+    return { root, watch: watchOf(value.watch), pins: pinsOf(value.pins), merges: mergesOf(value.merges) }
   } catch {
     return null
   }
@@ -133,7 +146,8 @@ function load(scope: Scope, storage: StoreEnv['storage']): Saved | null {
 
 /** The state a page opens with, and a notice when a share link could not be used. */
 function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null } {
-  const saved = (): Saved => load(scope, env.storage) ?? { root: seedRoot(scope), watch: [], pins: [] }
+  const saved = (): Saved =>
+    load(scope, env.storage) ?? { root: seedRoot(scope), watch: [], pins: [], merges: [] }
   const share = parseShareHash(env.hash)
   switch (share.kind) {
     case 'ok':
@@ -141,7 +155,7 @@ function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null }
       if (share.scope !== scope.id) {
         return { ...saved(), notice: 'This share link is for another page.' }
       }
-      return { root: share.root, watch: share.watch, pins: share.pins, notice: null }
+      return { root: share.root, watch: share.watch, pins: share.pins, merges: share.merges, notice: null }
     case 'legacy':
       return { ...saved(), notice: 'This link was made by the previous version of how.poe.sale and cannot be opened.' }
     case 'invalid':
@@ -151,13 +165,13 @@ function initial(scope: Scope, env: StoreEnv): Saved & { notice: string | null }
   }
 }
 
-/** Every node still joined to the root by pinned steps. */
-function reachable(nodes: NodeView[], edges: EdgeView[]): Set<string> {
+/** Every node still joined to the root by pinned steps or merges. */
+function reachable(nodes: NodeView[], links: { from: string; to: string }[]): Set<string> {
   const keep = new Set<string>(nodes.length > 0 ? [nodes[0].id] : [])
   let grew = true
   while (grew) {
     grew = false
-    for (const edge of edges) {
+    for (const edge of links) {
       if (keep.has(edge.to) !== keep.has(edge.from)) {
         keep.add(edge.from)
         keep.add(edge.to)
@@ -199,18 +213,66 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
     const moveTo = (id: string): Partial<FlowState> =>
       get().selected === id ? { selected: id } : { selected: id, methods: [], method: null, applied: null, madeBy: null }
 
-    /** Adds a pinned node and edge, when they are new, and selects the node unless told not to. */
+    /** The chart lists after a change: the raw ones as given, and the shown ones made from them. */
+    const shown = (
+      rawNodes: NodeView[],
+      rawEdges: EdgeView[],
+      merges: Merge[],
+    ): Pick<FlowState, 'rawNodes' | 'rawEdges' | 'merges' | 'nodes' | 'edges'> => ({
+      rawNodes,
+      rawEdges,
+      merges,
+      ...applyMerges(rawNodes, rawEdges, merges),
+    })
+
+    /** Adds a pinned node and edge, when they are new, and selects the card the node is shown as unless told not to. */
     const keep = (node: NodeView, edge: EdgeView, select = true) => {
-      const { nodes, edges } = get()
+      const { rawNodes, rawEdges, merges } = get()
       set({
-        nodes: nodes.some((known) => known.id === node.id) ? nodes : [...nodes, node],
-        edges: edges.some(
-          (known) => known.from === edge.from && known.to === edge.to && known.method === edge.method,
-        )
-          ? edges
-          : [...edges, edge],
-        ...(select ? moveTo(node.id) : {}),
+        ...shown(
+          rawNodes.some((known) => known.id === node.id) ? rawNodes : [...rawNodes, node],
+          rawEdges.some((known) => known.from === edge.from && known.to === edge.to && known.method === edge.method)
+            ? rawEdges
+            : [...rawEdges, edge],
+          merges,
+        ),
+        ...(select ? moveTo(resolveId(merges, node.id)) : {}),
       })
+    }
+
+    /** Folds `from` into `into`, or says why it cannot. */
+    const tryMerge = (from: string, into: string): string | null => {
+      const { nodes, rawNodes, rawEdges, merges } = get()
+      if (nodes.length > 0 && nodes[0].id === from) return 'The root cannot be merged into another item.'
+      const a = nodes.find((node) => node.id === from)
+      const b = nodes.find((node) => node.id === into)
+      if (!a || !b || from === into) return 'Only two different items on the chart can be merged.'
+      const reason = mergeBlocker(a, b)
+      if (reason) return `These items cannot be merged: ${reason}.`
+      set(shown(rawNodes, rawEdges, [...merges, { from, into }]))
+      return null
+    }
+
+    /**
+     * Pins each outcome of `method` from `node` that is not pinned yet, in order, keeping the
+     * selection. Gives the nodes that were new to the chart, or `null` when a pin failed.
+     */
+    const pinEach = async (node: string, method: string, keys: string[]): Promise<string[] | null> => {
+      const fresh: string[] = []
+      for (const key of keys) {
+        const pinned = get().rawEdges.some((e) => e.from === node && e.to === key && e.method === method)
+        if (pinned) continue
+        try {
+          const step = await env.client.chartPinForward(node, method, key)
+          if (!get().rawNodes.some((known) => known.id === step.node.id)) fresh.push(step.node.id)
+          keep(step.node, step.edge, false)
+          set({ pins: [...get().pins, { dir: 'f', node, method, key }] })
+        } catch (reason) {
+          fail(reason)
+          return null
+        }
+      }
+      return fresh
     }
 
     /** The methods the selected node can be pushed through, and its inputs when it shows them. */
@@ -229,12 +291,22 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
       }
     }
 
-    /** Starts the engine's chart afresh from `root` and `watch`, then replays `pins`. */
-    const restart = async (root: AbsSpec, watch: SlotSpec[], pins: Pin[]) => {
-      set({ root, watch, pins: [], nodes: [], edges: [], selected: null, methods: [], method: null, applied: null, madeBy: null })
+    /** Starts the engine's chart afresh from `root` and `watch`, then replays `pins` and `merges`. */
+    const restart = async (root: AbsSpec, watch: SlotSpec[], pins: Pin[], merges: Merge[]) => {
+      set({
+        root,
+        watch,
+        pins: [],
+        ...shown([], [], []),
+        selected: null,
+        methods: [],
+        method: null,
+        applied: null,
+        madeBy: null,
+      })
       try {
         const node = await env.client.chartStart(root, watch)
-        set({ nodes: [node], selected: node.id })
+        set({ ...shown([node], [], []), selected: node.id })
         for (const pin of pins) {
           const pinned =
             pin.dir === 'f'
@@ -248,17 +320,30 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
         fail(reason)
         return
       }
+      const dropped = merges.filter((merge) => tryMerge(merge.from, merge.into) !== null).length
+      if (dropped > 0) {
+        set({
+          notice: `${dropped} saved ${dropped === 1 ? 'merge no longer applies and was' : 'merges no longer apply and were'} dropped.`,
+        })
+      }
       const selected = get().selected
-      if (selected) await refresh(selected)
+      if (selected) {
+        const at = resolveId(get().merges, selected)
+        if (at !== selected) set(moveTo(at))
+        await refresh(at)
+      }
     }
 
-    void restart(start.root, start.watch, start.pins)
+    void restart(start.root, start.watch, start.pins, start.merges)
 
     return {
       root: start.root,
       watch: start.watch,
       nodes: [],
       edges: [],
+      rawNodes: [],
+      rawEdges: [],
+      merges: [],
       pins: [],
       selected: null,
       tab: 'forward',
@@ -272,10 +357,10 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
       mods: [],
 
       setRoot: (root) => {
-        void restart(root, get().watch, [])
+        void restart(root, get().watch, [], [])
       },
       setWatch: (watch) => {
-        void restart(get().root, watch, [])
+        void restart(get().root, watch, [], [])
       },
       select: (id) => {
         set({ ...moveTo(id), method: null, applied: null, madeBy: null })
@@ -313,24 +398,25 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
           .then((pinned) => {
             keep(pinned.node, pinned.edge)
             set({ pins: [...get().pins, { dir: 'f', node: selected, method, key }] })
-            void refresh(pinned.node.id)
+            void refresh(resolveId(get().merges, pinned.node.id))
           })
           .catch(fail)
       },
       pinAll: async (keys) => {
         const { selected, method } = get()
         if (!selected || !method) return
-        for (const key of keys) {
-          const pinned = get().edges.some((e) => e.from === selected && e.to === key && e.method === method)
-          if (pinned) continue
-          try {
-            const step = await env.client.chartPinForward(selected, method, key)
-            keep(step.node, step.edge, false)
-            set({ pins: [...get().pins, { dir: 'f', node: selected, method, key }] })
-          } catch (reason) {
-            fail(reason)
-            return
-          }
+        await pinEach(selected, method, keys)
+      },
+      pinAllMerging: async (keys) => {
+        const { selected, method, root, watch } = get()
+        if (!selected || !method) return
+        const tracked = new Set([...root.prefixes, ...root.suffixes, ...watch].map((slot) => slot.id))
+        const fresh = await pinEach(selected, method, keys)
+        for (const id of fresh ?? []) {
+          const node = get().nodes.find((known) => known.id === id)
+          if (!node) continue
+          const target = autoTarget(node, get().nodes, tracked)
+          if (target) tryMerge(node.id, target.id)
         }
       },
       pinBackward: (method, key) => {
@@ -341,31 +427,54 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
           .then((pinned) => {
             keep(pinned.node, pinned.edge)
             set({ pins: [...get().pins, { dir: 'b', node: selected, method, key }] })
-            void refresh(pinned.node.id)
+            void refresh(resolveId(get().merges, pinned.node.id))
           })
           .catch(fail)
       },
       unpin: (id) => {
-        const { nodes, edges, selected, pins } = get()
-        if (nodes.length === 0 || nodes[0].id === id) return
-        const rest = nodes.filter((node) => node.id !== id)
-        const left = edges.filter((edge) => edge.from !== id && edge.to !== id)
-        const kept = replayable(pins, nodes[0].id, reachable(rest, left))
-        const made = new Set([nodes[0].id, ...kept.map((pin) => pin.key)])
-        const next = selected && made.has(selected) ? selected : nodes[0].id
-        set({
-          nodes: rest.filter((node) => made.has(node.id)),
-          edges: left.filter((edge) => made.has(edge.from) && made.has(edge.to)),
-          pins: kept,
-          ...moveTo(next),
-        })
-        if (next !== selected) void refresh(next)
+        const { rawNodes, rawEdges, merges, selected, pins } = get()
+        if (rawNodes.length === 0 || rawNodes[0].id === id) return
+        const root = rawNodes[0].id
+        const gone = new Set([id, ...rawNodes.filter((node) => resolveId(merges, node.id) === id).map((node) => node.id)])
+        const rest = rawNodes.filter((node) => !gone.has(node.id))
+        const left = rawEdges.filter((edge) => !gone.has(edge.from) && !gone.has(edge.to))
+        const folds = merges.filter((merge) => !gone.has(merge.from) && !gone.has(merge.into))
+        // a merge joins its two cards as surely as a pinned step does
+        const joined = reachable(rest, [...left, ...folds.map((merge) => ({ from: merge.from, to: merge.into }))])
+        const kept = replayable(pins, root, joined)
+        const made = new Set([root, ...kept.map((pin) => pin.key)])
+        const next = shown(
+          rest.filter((node) => made.has(node.id)),
+          left.filter((edge) => made.has(edge.from) && made.has(edge.to)),
+          folds.filter((merge) => made.has(merge.from) && made.has(merge.into)),
+        )
+        const at = selected ? resolveId(next.merges, selected) : root
+        const stay = next.nodes.some((node) => node.id === at) ? at : root
+        set({ ...next, pins: kept, ...moveTo(stay) })
+        if (stay !== selected) void refresh(stay)
+      },
+      merge: (from, into) => {
+        const error = tryMerge(from, into)
+        if (error) {
+          get().setError(error)
+          return
+        }
+        if (get().selected === from) {
+          set(moveTo(into))
+          void refresh(into)
+        }
       },
       clearChart: () => {
-        const { nodes } = get()
-        if (nodes.length === 0) return
-        set({ nodes: nodes.slice(0, 1), edges: [], pins: [], ...moveTo(nodes[0].id), method: null, applied: null })
-        void refresh(nodes[0].id)
+        const { rawNodes } = get()
+        if (rawNodes.length === 0) return
+        set({
+          ...shown(rawNodes.slice(0, 1), [], []),
+          pins: [],
+          ...moveTo(rawNodes[0].id),
+          method: null,
+          applied: null,
+        })
+        void refresh(rawNodes[0].id)
       },
       setError: (error) => set({ error }),
       setNotice: (notice) => set({ notice }),
@@ -377,11 +486,19 @@ export function createFlowStore(scope: Scope, env: StoreEnv): FlowStore {
   if (env.storage) {
     const storage = env.storage
     store.subscribe((state, previous) => {
-      if (state.root === previous.root && state.watch === previous.watch && state.pins === previous.pins) {
+      if (
+        state.root === previous.root &&
+        state.watch === previous.watch &&
+        state.pins === previous.pins &&
+        state.merges === previous.merges
+      ) {
         return
       }
       try {
-        storage.setItem(scope.storageKey, JSON.stringify({ root: state.root, watch: state.watch, pins: state.pins }))
+        storage.setItem(
+          scope.storageKey,
+          JSON.stringify({ root: state.root, watch: state.watch, pins: state.pins, merges: state.merges }),
+        )
       } catch {
         // storage full or unavailable: the chart still lives for this visit
       }
