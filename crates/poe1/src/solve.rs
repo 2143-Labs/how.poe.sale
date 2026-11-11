@@ -4,8 +4,8 @@
 //! A step is weighed from its own outcome. `apply` runs it, `pattern::lift` reads every leaf at
 //! the pattern's level of detail, and a leaf scores as the share of the pattern's slot value it
 //! holds (`1.0` once the item matches, `0` when it fails the pattern's filter). A slot's value is
-//! the grade of the class that fills it — a desired class is worth three, good and middling two
-//! and one, a neutral class one, a bad class nothing — so an item that lands the veiled prefix is
+//! the grade of the class that fills it — a desired class is worth three, a good class two, a
+//! middling or neutral class one, a bad class nothing — so an item that lands the veiled prefix is
 //! counted further along than one that lands the crafted slot the pattern asks for, and an item
 //! whose third prefix is a bad class is not credited for it at all.
 //!
@@ -23,6 +23,8 @@
 //! compare costs across currencies (an Exalted Orb and a Chaos Orb can only be compared with a
 //! price table the bundle does not have).
 
+use std::cmp::Ordering;
+
 use crate::apply::{self, Params, Unmet};
 use crate::data::{Cost, Data, Side};
 use crate::item::Item;
@@ -32,6 +34,25 @@ use crate::pattern::{self, Grade, Lifted, LiftedLeaf, Pattern, PatternState};
 /// Two probabilities closer than this are the same number when deciding whether a step gained or
 /// lost ground.
 const EPS: f64 = 1e-9;
+
+/// A number on the report's grid: rounding noise below `EPS` lands on the same step. Comparing
+/// these, rather than testing `|a - b| < EPS`, keeps the order total (`sort_by` needs that; a
+/// tolerance alone would make `a ≈ b ≈ c` with `a ≠ c`). Adding zero turns `-0.0` into `0.0`,
+/// which `total_cmp` would otherwise rank below it.
+fn level(x: f64) -> f64 {
+    (x / EPS).round() + 0.0
+}
+
+/// Best first, at the report's tolerance: two numbers the report cannot tell apart compare equal,
+/// so a later tie-break decides.
+fn cmp_desc(a: f64, b: f64) -> Ordering {
+    level(b).total_cmp(&level(a))
+}
+
+/// Least first, at the same tolerance.
+fn cmp_asc(a: f64, b: f64) -> Ordering {
+    level(a).total_cmp(&level(b))
+}
 
 /// `f64` sums start at `-0.0`, which prints as `-0.000`; a chance of nothing is zero.
 fn zero(x: f64) -> f64 {
@@ -95,14 +116,22 @@ pub fn item_progress(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
         .sum()
 }
 
-/// Whether a side is full while a slot the pattern wants is empty: something has to be removed
-/// (or rerolled) before that slot can be filled.
-pub fn blocked(state: &PatternState) -> bool {
+/// Whether a slot the pattern wants is empty and no step can fill it as the item stands: a side
+/// is full, or the slot takes crafted modifiers only and the item already holds as many crafted
+/// modifiers as it can. Something has to be removed (or rerolled) before that slot can be filled.
+pub fn blocked(pattern: &Pattern, state: &PatternState) -> bool {
     state.item_ok
         && !state.matches
         && Side::BOTH.into_iter().any(|side| {
             let i = side.index();
-            !state.missing[i].is_empty() && state.open[i] == 0
+            let full = !state.missing[i].is_empty() && state.open[i] == 0;
+            let crafted_out = state.crafted[0] >= state.crafted[1]
+                && state.missing[i].iter().any(|&slot| {
+                    pattern.slots[i][slot as usize]
+                        .iter()
+                        .all(|&c| pattern.classes[c as usize].crafted())
+                });
+            full || crafted_out
         })
 }
 
@@ -207,7 +236,7 @@ impl Now {
             blocked: zero(
                 states
                     .iter()
-                    .filter(|(_, s)| blocked(s))
+                    .filter(|(_, s)| blocked(pattern, s))
                     .map(|(p, _)| p)
                     .sum(),
             ),
@@ -332,7 +361,7 @@ impl Part {
     }
 
     fn add_state(&mut self, pattern: &Pattern, p: f64, s: &PatternState, base: f64) {
-        self.add(p, state_progress(pattern, s), blocked(s), base);
+        self.add(p, state_progress(pattern, s), blocked(pattern, s), base);
     }
 }
 
@@ -399,14 +428,14 @@ impl Assessment {
     /// The order the report shows: the best chance of finishing, then the expected goal, then the
     /// least chance of losing ground, then the least chance of ending blocked, then the method id
     /// so a report is reproducible.
-    pub fn rank(&self, other: &Assessment) -> std::cmp::Ordering {
+    pub fn rank(&self, other: &Assessment) -> Ordering {
         let (a, b) = (&self.weighed, &other.weighed);
         self.stands()
             .cmp(&other.stands())
-            .then_with(|| b.finish.total_cmp(&a.finish))
-            .then_with(|| b.goal.total_cmp(&a.goal))
-            .then_with(|| a.worse.total_cmp(&b.worse))
-            .then_with(|| a.blocked.total_cmp(&b.blocked))
+            .then_with(|| cmp_desc(a.finish, b.finish))
+            .then_with(|| cmp_desc(a.goal, b.goal))
+            .then_with(|| cmp_asc(a.worse, b.worse))
+            .then_with(|| cmp_asc(a.blocked, b.blocked))
             .then_with(|| self.method.cmp(&other.method))
     }
 }

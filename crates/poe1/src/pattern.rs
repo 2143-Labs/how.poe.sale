@@ -235,6 +235,16 @@ impl Class {
             .iter()
             .any(|m| matches!(m, Matcher::Any(true) | Matcher::Crafted(_)))
     }
+
+    /// Whether this class takes crafted modifiers only (`{"crafted": true}`): a slot that needs it
+    /// cannot be filled while the item holds as many crafted modifiers as it can.
+    pub fn crafted(&self) -> bool {
+        !self.matchers.is_empty()
+            && self
+                .matchers
+                .iter()
+                .all(|m| matches!(m, Matcher::Crafted(true)))
+    }
 }
 
 /// A compiled pattern.

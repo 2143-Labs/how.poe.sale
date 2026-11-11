@@ -331,7 +331,7 @@ fn blocked_is_a_full_side_with_an_empty_slot() {
         "crown-d2-scbc-fractured",
         "crown-l2",
     ] {
-        assert!(solve::blocked(&read(name)), "{name} should be stuck");
+        assert!(solve::blocked(&shaper, &read(name)), "{name} should be stuck");
     }
     for name in [
         "crown-a",
@@ -342,7 +342,7 @@ fn blocked_is_a_full_side_with_an_empty_slot() {
         "crown-ideal",
         "crown-l1",
     ] {
-        assert!(!solve::blocked(&read(name)), "{name} should be open");
+        assert!(!solve::blocked(&shaper, &read(name)), "{name} should be open");
     }
 }
 
@@ -419,7 +419,7 @@ impl Hand {
         let v = solve::state_progress(pattern, s);
         self.mass += p;
         self.goal += p * v;
-        if solve::blocked(s) {
+        if solve::blocked(pattern, s) {
             self.blocked += p;
         }
         if s.matches {
@@ -585,4 +585,97 @@ fn every_step_conserves_its_mass() {
             assert!(!why.is_empty(), "{pname} / {name} / {id}: empty reason");
         }
     }
+}
+
+/// The ranking reads numbers the way the report prints them: two steps that differ only by
+/// rounding noise on finish, goal and worse are ordered by the one real difference, `blocked`.
+#[test]
+fn rank_ignores_rounding_noise() {
+    let at = |method: &str, noise: f64, blocked: f64| solve::Assessment {
+        method: method.to_string(),
+        name: method.to_string(),
+        params: Params::default(),
+        cost: Vec::new(),
+        weighed: solve::Weighed {
+            computed: 1.0,
+            finish: noise,
+            goal: 0.75 + noise,
+            worse: noise,
+            blocked,
+            model: Model::Exact,
+            ..Default::default()
+        },
+    };
+    // `a` sorts first by id and carries a sliver more goal; only `blocked` really differs.
+    let stuck = at("a", 1e-12, 1.0);
+    let free = at("b", 0.0, 0.0);
+    assert_eq!(free.rank(&stuck), std::cmp::Ordering::Less);
+    assert_eq!(stuck.rank(&free), std::cmp::Ordering::Greater);
+    let mut steps = [stuck, free];
+    steps.sort_by(solve::Assessment::rank);
+    assert_eq!(steps[0].method, "b");
+}
+
+/// On `crown-l1` the step named best does not leave the item blocked when a step that holds it
+/// just as well leaves it open: the Divine Orb, not the slam that fills the last prefix.
+#[test]
+fn crown_l1_best_step_is_not_blocked() {
+    let data = test_data();
+    let report = solve::next_steps(data, &pattern("crown-shaper"), &item("crown-l1"));
+    let best = report.exact.first().expect("an exact step");
+    assert_eq!(best.method, "currency/divine");
+    assert!(close(best.weighed.blocked, 0.0), "{:?}", best.weighed);
+}
+
+/// `crown-a` with two suffixes: the Hypothermia it wants and a resistance, crafted or not. Its
+/// prefix side is empty and has room.
+fn crown_with_resist(crafted: bool) -> poe1::item::Item {
+    let mut s = common::spec("crown-a");
+    s.suffixes.truncate(1);
+    s.suffixes.push(poe1::item::AffixSpec {
+        id: if crafted {
+            "EinharMasterFireResist3_"
+        } else {
+            "FireResist4"
+        }
+        .into(),
+        values: None,
+        fractured: false,
+    });
+    poe1::item::Item::from_spec(test_data(), &s).expect("a legal item")
+}
+
+/// A crafted suffix the pattern does not want uses the item's one crafted modifier, so the
+/// pattern's crafted prefix slot can never be filled: the item is blocked although both sides
+/// have room. The same item with a natural resistance is not.
+#[test]
+fn blocked_counts_a_crafted_slot_the_cap_has_used_up() {
+    let data = test_data();
+    let shaper = pattern("crown-shaper");
+    let read = |it: &poe1::item::Item| {
+        pattern::evaluate(data, &shaper, it)
+            .into_iter()
+            .find(|(p, s)| *p > 0.0 && s.item_ok)
+            .map(|(_, s)| s)
+            .expect("an accepted state")
+    };
+    let stuck = read(&crown_with_resist(true));
+    assert_eq!(stuck.crafted, [1, 1]);
+    assert!(stuck.open.iter().all(|&o| o > 0), "{stuck:?}");
+    assert!(solve::blocked(&shaper, &stuck), "{stuck:?}");
+    let free = read(&crown_with_resist(false));
+    assert_eq!(free.crafted, [0, 1]);
+    assert!(!solve::blocked(&shaper, &free), "{free:?}");
+}
+
+/// Removing the crafted suffix frees the crafted slot: the bench step unblocks the item.
+#[test]
+fn removing_the_crafted_suffix_unblocks() {
+    let data = test_data();
+    let report = solve::next_steps(data, &pattern("crown-shaper"), &crown_with_resist(true));
+    assert!(close(report.now.blocked, 1.0), "{:?}", report.now);
+    let remove = step(&report, "bench/remove-crafted");
+    assert_eq!(remove.stands(), solve::Stands::Unblocks, "{:?}", remove.weighed);
+    assert!(close(remove.weighed.blocked_before, 1.0));
+    assert!(close(remove.weighed.blocked, 0.0));
 }
