@@ -1433,9 +1433,10 @@ impl Run<'_> {
                     return Err("needs a crafted modifier".into());
                 }
                 let mut it = item.clone();
+                // A fractured modifier cannot be modified, and that includes removing it.
                 for s in Side::BOTH {
                     it.affixes_mut(s)
-                        .retain(|a| data.mod_at(a.roll.m).kind != ModKind::Crafted);
+                        .retain(|a| a.fractured || data.mod_at(a.roll.m).kind != ModKind::Crafted);
                 }
                 one(it)
             }

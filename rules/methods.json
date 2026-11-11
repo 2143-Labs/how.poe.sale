@@ -1744,6 +1744,7 @@
         {"name": "Mirror of Kalandra", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "notUnique"}
       ],
