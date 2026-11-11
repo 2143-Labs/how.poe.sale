@@ -1,0 +1,26 @@
+Item Class: Bows
+Rarity: Rare
+Loath Wind
+Synthesised Spine Bow
+--------
+Quality: +30% (augmented)
+--------
+Item Level: 87
+--------
+8% increased Explicit Physical Modifier magnitudes
+--------
+Adds 9 to 13 Physical Damage
+8% increased Attack Speed
+Enemies you Kill have a 25% chance to Explode, dealing a tenth of their maximum Life as Physical Damage
+Item sells for much more to vendors
+--------
+278% increased Physical Damage
+Adds 50 to 88 Physical Damage
++28 to Strength and Intelligence
+19% increased Attack Speed
+29% increased Critical Strike Chance
+Bow Attacks fire 2 additional Arrows
++207 to Accuracy Rating
+--------
+Mirrored
+Split

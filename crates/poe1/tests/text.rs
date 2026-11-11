@@ -47,6 +47,13 @@ fn parsed(name: &str) -> (Item, Vec<String>) {
     (item, parsed.warnings)
 }
 
+/// A tooltip kept verbatim, for a paste the reader cannot finish: `fixtures/text` holds the web
+/// examples, which must all read.
+fn paste(name: &str) -> String {
+    let path = common::root().join(format!("fixtures/pastes/{name}.txt"));
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
 fn ids(data: &Data, rolls: &[Roll]) -> Vec<String> {
     rolls.iter().map(|r| data.mod_at(r.m).id.clone()).collect()
 }
@@ -207,6 +214,146 @@ fn parse_synthesised_ring() {
     assert_eq!(implicit.values, Some(vec![6]));
     assert_eq!(affix_ids(data, &item.prefixes).len(), 2);
     assert_eq!(affix_ids(data, &item.suffixes).len(), 3);
+}
+
+/// Every roll of a paste, by id and in id order, so a test states which modifiers were read without
+/// encoding the order the game happened to print them in.
+fn rolls(data: &Data, rolls: &[Roll]) -> Vec<(String, Option<Vec<i32>>)> {
+    let mut out: Vec<(String, Option<Vec<i32>>)> = rolls
+        .iter()
+        .map(|r| (data.mod_at(r.m).id.clone(), r.values.clone()))
+        .collect();
+    out.sort();
+    out
+}
+
+/// The item from the owner's screenshot, pasted the way the game prints it: the type line carries
+/// the "Synthesised" prefix and no flag section repeats it, and the blocks hold the enchantment,
+/// the implicits and the explicits in that order.
+///
+/// The Heist enchantment magnifies the printed figures of explicit physical modifiers, so `278%`,
+/// `Adds 50 to 88` and `+207` are the magnified prints of `179 + 78`, `46.3-81.5` and `191.7`; the
+/// reader has no boost model, so those lines match no tier. `+207` is the worst of the three,
+/// because 207 does fall inside the natural bow accuracy suffix tier `LocalIncreasedAccuracyNew2`
+/// (131-215): it reads as a fourth suffix and the item is refused, which
+/// `real_tooltip_over_fills_with_the_magnified_accuracy` pins. Dropping that one line is the only
+/// change needed to read the rest of the item.
+#[test]
+fn parse_synthesised_bow_from_a_real_tooltip() {
+    let data = test_data();
+    let text = paste("synthesised-bow").replace("+207 to Accuracy Rating\n", "");
+    let parsed = parse(data, &text).unwrap_or_else(|e| panic!("{e}"));
+    let item = Item::from_spec(data, &parsed.spec).unwrap_or_else(|e| panic!("{e}"));
+    assert!(item.synthesised, "the type line says Synthesised");
+    assert_eq!(item.item_level, 87);
+    assert_eq!(
+        rolls(data, &item.enchants),
+        vec![(
+            "WeaponEnchantmentHeistPhysicalEffect1".to_string(),
+            Some(vec![8])
+        )]
+    );
+    assert_eq!(
+        rolls(data, &item.implicits),
+        vec![
+            (
+                "SynthesisImplicitExplosionChance2__".to_string(),
+                Some(vec![25])
+            ),
+            (
+                "SynthesisImplicitLocalAddedPhysicalDamageTwoHand5".to_string(),
+                Some(vec![9, 13])
+            ),
+            (
+                "SynthesisImplicitLocalAttackSpeed3".to_string(),
+                Some(vec![8])
+            ),
+        ]
+    );
+    assert!(item.prefixes.is_empty(), "no tier matches a magnified line");
+    assert_eq!(
+        rolls(
+            data,
+            &item
+                .suffixes
+                .iter()
+                .map(|a| a.roll.clone())
+                .collect::<Vec<_>>()
+        ),
+        vec![
+            ("AdditionalArrowBow2_".to_string(), Some(vec![2])),
+            (
+                "JunMasterVeiledLocalCriticalStrikeChanceStrengthIntelligence__".to_string(),
+                Some(vec![29, 28])
+            ),
+            ("LocalIncreasedAttackSpeed5".to_string(), Some(vec![19])),
+        ]
+    );
+    let mut unexplained: Vec<&str> = parsed
+        .warnings
+        .iter()
+        .filter(|w| w.starts_with("not understood: "))
+        .map(String::as_str)
+        .collect();
+    unexplained.sort_unstable();
+    assert_eq!(
+        unexplained,
+        [
+            "not understood: \"278% increased Physical Damage\"",
+            "not understood: \"Adds 50 to 88 Physical Damage\"",
+            "not understood: \"Item sells for much more to vendors\"",
+        ],
+        "{:?}",
+        parsed.warnings
+    );
+}
+
+/// The magnified accuracy print over-fills the suffixes, because it reads as the natural bow
+/// accuracy suffix. This pins the residual: reading it as the second line of the `Dictator's`
+/// physical prefix needs a model of the enchantment's magnitude boost, which the reader lacks.
+#[test]
+fn real_tooltip_over_fills_with_the_magnified_accuracy() {
+    let data = test_data();
+    match parse(data, &paste("synthesised-bow")) {
+        Ok(_) => panic!("the magnified accuracy line should fill a fourth suffix"),
+        Err(e) => assert!(e.to_string().contains("too many suffixes"), "{e}"),
+    }
+}
+
+/// A paste with no "Item Level:" line reads at item level 1 and says so. Every modifier line used
+/// to be dropped in silence, because the level line is what opens the modifier sections.
+#[test]
+fn parse_without_item_level_warns() {
+    let data = test_data();
+    let text = paste("synthesised-bow")
+        .replace("+207 to Accuracy Rating\n", "")
+        .replace("--------\nItem Level: 87\n", "");
+    let parsed = parse(data, &text).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(parsed.spec.item_level, 1);
+    assert!(
+        parsed.spec.synthesised,
+        "the type line still says Synthesised"
+    );
+    let expected = "no \"Item Level:\" line; read as item level 1";
+    assert!(
+        parsed.warnings.contains(&expected.to_string()),
+        "{:?}",
+        parsed.warnings
+    );
+    assert_eq!(
+        parsed
+            .spec
+            .implicits
+            .iter()
+            .map(|r| r.id.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "SynthesisImplicitLocalAddedPhysicalDamageTwoHand5",
+            "SynthesisImplicitLocalAttackSpeed3",
+            "SynthesisImplicitExplosionChance2__",
+        ],
+        "the modifier lines still read without the level line"
+    );
 }
 
 /// The owner's unveil step: the Zombies blocker reads from its two crafted lines, and the stat the

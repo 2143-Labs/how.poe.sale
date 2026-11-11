@@ -1386,6 +1386,8 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
             rarity = parse_rarity(rest.trim())?;
         }
     }
+    // The game marks a synthesised item by prefixing its type line; `base_line` already strips it.
+    let synthesised = header.iter().any(|line| line.starts_with("Synthesised "));
 
     let mut item = Item {
         base: 0,
@@ -1403,7 +1405,7 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
         corrupted: false,
         mirrored: false,
         split: false,
-        synthesised: false,
+        synthesised,
         foreseen: false,
         memory_strands: 0,
         intangibility: 0,
@@ -1417,15 +1419,23 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
     let mut enchant_lines: Vec<String> = Vec::new();
     // Tagged lines go straight to their pool.
     let mut implicit_lines: Vec<String> = Vec::new();
-    // Everything before the item level line describes the base, not its modifiers.
-    let mut level_section: Option<usize> = None;
+    // Everything before the item level line describes the base, not its modifiers: a utility flask
+    // prints its base effect among the properties there. Finding that line up front keeps those
+    // properties out of the pools, and lets a paste with no such line read its modifier sections
+    // instead of none.
+    let level_section = sections.iter().enumerate().find_map(|(index, section)| {
+        section
+            .iter()
+            .any(|line| matches!(classify(line), Line::ItemLevel(_)))
+            .then_some(index)
+    });
 
     for (index, section) in sections.iter().enumerate() {
         let mut untagged: Vec<String> = Vec::new();
         for line in section {
             match classify(line) {
                 Line::Mod(text) => {
-                    if index == 0 || level_section.is_none_or(|level| index < level) {
+                    if index == 0 || level_section.is_some_and(|level| index < level) {
                         continue;
                     }
                     match split_tag(&text) {
@@ -1439,10 +1449,7 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
                     }
                 }
                 Line::Unidentified => return Err(ParseError::Unidentified),
-                Line::ItemLevel(level) => {
-                    item.item_level = level;
-                    level_section = Some(index);
-                }
+                Line::ItemLevel(level) => item.item_level = level,
                 Line::Quality(label, quality) => {
                     item.quality = quality;
                     if let Some(label) = label {
@@ -1469,6 +1476,16 @@ pub fn parse(data: &Data, text: &str) -> Result<Parsed, ParseError> {
         if !untagged.is_empty() {
             untagged_blocks.push(untagged);
         }
+    }
+
+    if level_section.is_none()
+        && (!implicit_lines.is_empty()
+            || !crafted_lines.is_empty()
+            || !fractured_lines.is_empty()
+            || !enchant_lines.is_empty()
+            || untagged_blocks.iter().any(|block| !block.is_empty()))
+    {
+        warnings.push("no \"Item Level:\" line; read as item level 1".to_string());
     }
 
     // One modifier can print on two lines; read those lines as one.

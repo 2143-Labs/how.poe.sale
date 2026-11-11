@@ -168,6 +168,16 @@ fn mod_kind(id: &str, m: &RawMod, base_implicits: &BTreeSet<&str>) -> Option<Mod
         // Weapon` and `Enchant a Melee Weapon` (claim `harvest.list`). They carry no spawn weight,
         // so no random enchant pool can draw them.
         (_, "unique") if id.starts_with("HarvestAlternate") => ModKind::Enchant,
+        // Heist weapon and armour enchantments (`8% increased Explicit Physical Modifier magnitudes`
+        // and the rest) are `unique` generation in the export but are placed by the Tempering and
+        // Tailoring Orbs, not held by a unique item, so they are enchantments and never enter an
+        // affix pool.
+        (_, "unique")
+            if id.starts_with("WeaponEnchantmentHeist")
+                || id.starts_with("ArmourEnchantmentHeist") =>
+        {
+            ModKind::Enchant
+        }
         (_, "flask_enchantment_enkindling") => ModKind::FlaskEnkindling,
         (_, "flask_enchantment_instilling") => ModKind::FlaskInstilling,
         (_, "unique") if base_implicits.contains(id) => ModKind::BaseImplicit,
