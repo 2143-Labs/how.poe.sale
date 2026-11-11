@@ -280,3 +280,60 @@ fn sources_group_by_pattern_state() {
     sorted.sort_by(|a, b| b.total_cmp(a));
     assert_eq!(bests, sorted);
 }
+
+/// A removal can have taken any modifier the item could hold, not only a natural one: `crown-c2`
+/// could be the item that held the veiled gem-level prefix and lost it to a Veiled Exalted Orb.
+#[test]
+fn a_removed_unveiled_modifier_is_a_source() {
+    let d = test_data();
+    let pat = pattern("crown-shaper");
+    let desired = pat
+        .classes
+        .iter()
+        .position(|c| c.id == "desired-veiled")
+        .expect("the pattern's veiled class") as u16;
+    let inversion = invert::sources(d, &pat, &item("crown-c2"));
+    let had_it: Vec<&str> = inversion
+        .groups
+        .iter()
+        .filter(|g| g.state.prefixes.iter().any(|a| a.class == desired))
+        .flat_map(|g| g.sources.iter().map(|s| s.method.as_str()))
+        .collect();
+    assert!(
+        had_it.contains(&"currency/veiled-exalted"),
+        "no input held the veiled prefix: {had_it:?}"
+    );
+}
+
+/// Every input the inverse offers is an item the game can hold: no magic item with more than one
+/// prefix or suffix ahead of a Regal Orb.
+#[test]
+fn every_source_is_a_legal_item() {
+    let d = test_data();
+    let pat = pattern("crown-shaper");
+    for name in [
+        "crown-actual",
+        "crown-l2",
+        "crown-d2-scbc",
+        "crown-d2-scbc-fractured",
+    ] {
+        let inversion = invert::sources(d, &pat, &item(name));
+        for source in inversion.groups.iter().flat_map(|g| &g.sources) {
+            let input = &source.input;
+            assert!(
+                input.rarity != poe1::data::Rarity::Magic
+                    || (input.prefixes.len() <= 1 && input.suffixes.len() <= 1),
+                "{name} / {}: a magic input with {} prefixes and {} suffixes",
+                source.method,
+                input.prefixes.len(),
+                input.suffixes.len()
+            );
+            assert!(
+                input.validate(d).is_ok(),
+                "{name} / {}: {:?}",
+                source.method,
+                input.validate(d)
+            );
+        }
+    }
+}
