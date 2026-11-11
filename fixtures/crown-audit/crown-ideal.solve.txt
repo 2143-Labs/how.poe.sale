@@ -1,0 +1,81 @@
+## `crown-ideal` → `crown-shaper`
+
+**Now:** 1.000 of the goal; 1.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [desired-veiled, ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `bench/add/EinharMasterIncreasedLife4` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/shapers-exalted` at 0.1429, `beast/influence-slam-shaper` at 0.1429, `currency/exalted` at 0.0176
+- prefixes [desired-veiled, ok-prefix, any-crafted-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 1 slot it wants still missing — `currency/shapers-exalted` at 0.0808, `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+- prefixes [desired-veiled, ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 1 slot it wants still missing — `currency/shapers-exalted` at 0.0635, `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
+
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
+**Exact steps:** every outcome is computed.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|finishes|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|1.000|1.000|0.000|0.000|0.000|
+|2|sets back|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.833|0.000|1.000|0.000|
+|3|sets back|Orb of Dominance — `currency/orb-of-dominance`|1 × Orb of Dominance|0.000|0.778|0.000|1.000|0.000|
+|4|sets back|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.764|0.000|1.000|0.000|
+|5|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.764|0.000|1.000|1.000|
+|6|sets back|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.000|0.000|1.000|0.000|
+
+What those steps do:
+
+- **Divine Orb** (`currency/divine`): rerolls the values of the modifiers that can change and are not crafted.
+- **Bench: remove crafted modifiers** (`bench/remove-crafted`): removes every crafted modifier.
+- **Orb of Dominance** (`currency/orb-of-dominance`): removes one influenced modifier that can change and upgrades another one tier.
+- **Orb of Annulment** (`currency/annulment`): removes one random modifier that can change.
+- **Veiled Exalted Orb** (`currency/veiled-exalted`): removes one random modifier that can change; adds a veiled modifier on a side with room (half each when both have room).
+- **Orb of Scouring** (`currency/scouring`): removes every modifier that can change (nothing left: normal; only fractured left: magic for one, rare for more; a side a metamod kept leaves the rarity).
+
+**Certain part only:** the random rest of these steps is not modelled yet, so their numbers come from what the step certainly does.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|sets back|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.167|0.000|1.000|0.000|
+|2|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
+|3|sets back|84 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+82 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.000|0.000|1.000|0.000|
+
+What those steps do:
+
+- **Essence of Horror** (`essence/essence-of-horror`): sets the rarity to rare; removes every modifier that can change; adds Essence of Horror's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
+- **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
+- **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
+
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+
+**Does not apply:** 972 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +87 more reasons)
+
+Others that do exactly the same: Mirror of Kalandra — `currency/mirror`; Sacred Orb — `currency/sacred`.
+
+**Best exact step:** Divine Orb — `currency/divine`
+
+p = 1.000000
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> (7-9)% increased Area of Effect
+> Socketed Gems are Supported by Level 16 Increased Area of Effect
+> (8-10)% increased Area of Effect
+> +2 to Level of Socketed AoE Gems
+> (13-16)% increased Effect of Cold Ailments
+> Socketed Gems are Supported by Level 18 Hypothermia
+> +65 to maximum Life (crafted)
+> --------
+> Shaper Item
+> ```

@@ -1,0 +1,10 @@
+## `crown-shaper-elder-ideal` → `crown-shaper-elder`
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [desired-veiled, very-good-prefix], suffixes [hypothermia, essence-elemental, good-spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `bench/add/EinharMasterIncreasedLife4` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [desired-veiled, very-good-prefix, any-crafted-prefix], suffixes [essence-elemental, good-spell-crit], none open / 1 open suffix, 1 slot it wants still missing — `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0088
+- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, good-spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `beast/influence-slam-elder` at 0.0645, `currency/exalted` at 0.0138
+- prefixes [desired-veiled, very-good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 1 slot it wants still missing — `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0048
+
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).

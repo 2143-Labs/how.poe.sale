@@ -1,0 +1,139 @@
+## `crown-d2-scbc-corrupted` → `crown-shaper`
+
+**Now:** 0.000 of the goal; 0.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 1 slot it wants still missing — `currency/vaal` at 0.2500 (3 of 4 branches cannot be undone)
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0090
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0025
+
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
+**Exact steps:** every outcome is computed.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|holds|Tainted Exalted Orb — `currency/tainted-exalted-orb`|1 × Tainted Exalted Orb|0.000|0.000|0.000|0.000|0.000|
+
+What those steps do:
+
+- **Tainted Exalted Orb** (`currency/tainted-exalted-orb`): by chance, one of: 50%: adds one random modifier (any, either side); 50%: removes one random modifier that can change.
+
+**Certain part only:** the random rest of these steps is not modelled yet, so their numbers come from what the step certainly does.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|holds|Tainted Chaos Orb — `currency/tainted-chaos-orb`|1 × Tainted Chaos Orb|0.000|0.000|0.000|0.000|0.000|
+
+What those steps do:
+
+- **Tainted Chaos Orb** (`currency/tainted-chaos-orb`): by chance, one of: 50%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1); 50%: removes every modifier that can change (nothing left: normal; only fractured left: magic for one, rare for more; a side a metamod kept leaves the rarity).
+
+**Not computed:** `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/kisharas-ducat`, `currency/magmatic-ore`, `currency/tainted-armourers-scrap`, `currency/tainted-divine-teardrop`, `currency/tainted-mythic-orb` (the model stops before their result).
+
+**Does not apply:** 1070 methods (`the item is corrupted` ×1025, `only works on: weapons` ×12, `the item has no sockets` ×9, +14 more reasons)
+
+**Best exact step:** Tainted Exalted Orb — `currency/tainted-exalted-orb`
+
+p = 0.500000
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> Suffixes Cannot Be Changed (crafted)
+> --------
+> Shaper Item
+> Corrupted
+> ```
+
+p = 0.166667
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> Socketed Gems are Supported by Level 18 Hypothermia
+> Socketed Gems deal 30% more Elemental Damage
+> Socketed Spells have +3% to Critical Strike Chance
+> +137 to maximum Life
+> 14% additional Physical Damage Reduction while Focused
+> 15% increased Effect of Cold Ailments
+> --------
+> Shaper Item
+> Corrupted
+> ```

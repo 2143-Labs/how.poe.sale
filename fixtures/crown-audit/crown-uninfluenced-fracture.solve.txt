@@ -1,0 +1,161 @@
+## `crown-uninfluenced-fracture` → `crown-shaper`
+
+**Now:** 0.000 of the goal; 0.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [good-prefix, any-other-prefix], suffixes [any-other-suffix], 1 open prefix / 2 open suffixes, 5 slots it wants still missing — `bench/add/EinharMasterArmourPercent3_` at 1.0000 (the added modifier's values are not the ones the craft gives)
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [any-other-suffix, any-other-suffix], none open / 1 open suffix, 4 slots it wants still missing — `currency/annulment` at 0.5000, `currency/annulment` at 0.2000, `currency/annulment` at 0.2000 (the item carries Cannot Roll, which narrows the removal and this pass does not count)
+- prefixes [good-prefix, any-crafted-prefix], suffixes [any-other-suffix, any-other-suffix], 1 open prefix / 1 open suffix, 4 slots it wants still missing — `currency/veiled-exalted` at 0.2500, `currency/veiled-exalted` at 0.1250, `currency/veiled-exalted` at 0.1250 (the item carries Cannot Roll, which narrows the removal and this pass does not count)
+- prefixes [good-prefix, any-crafted-prefix, any-crafted-prefix], suffixes [any-other-suffix], none open / 2 open suffixes, 4 slots it wants still missing — `currency/veiled-exalted` at 0.1667, `currency/veiled-exalted` at 0.1250
+- … 5 more inputs
+
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+
+**Exact steps:** every outcome is computed.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|advances|Shaper's Exalted Orb — `currency/shapers-exalted`|1 × Shaper's Exalted Orb|0.000|0.304|1.000|0.000|1.000|
+|2|holds|33 steps: Beastcraft: add Aspect of the Avian — `beast/aspect-avian`, `beast/aspect-cat` (+31 more)|1 × Saqawal (beast), 3 × Yellow Beast (beast) for `beast/aspect-avian`; the others in this row cost something else|0.000|0.000|0.000|0.000|0.000|
+
+What those steps do:
+
+- **Shaper's Exalted Orb** (`currency/shapers-exalted`): adds Shaper influence; adds one random modifier (Shaper influence, either side).
+- **Beastcraft: add Aspect of the Avian** (`beast/aspect-avian`): adds Grants Level 20 Aspect of the Avian Skill (`GrantsBirdAspectCrafted`; a normal item turns magic).
+
+**Certain part only:** the random rest of these steps is not modelled yet, so their numbers come from what the step certainly does.
+
+|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
+|---|---|---|---|---|---|---|---|---|
+|1|holds|83 steps: Chaos Orb — `currency/chaos`, `currency/vaal` (+81 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.000|0.000|0.000|0.000|
+
+What those steps do:
+
+- **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
+
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/brinehooks-ducat` (+8 more) (the model stops before their result).
+
+**Does not apply:** 947 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `the item already has as many crafted modifiers as it can hold` ×76, `needs an open prefix` ×72, +92 more reasons)
+
+**Best exact step:** Shaper's Exalted Orb — `currency/shapers-exalted`
+
+p = 0.072072
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> +35 to Intelligence
+> +137 to maximum Life
+> Regenerate (3-5) Mana per second
+> 60% increased Armour (crafted)
+> Veiled Prefix
+> --------
+> Shaper Item
+> ```
+
+p = 0.072072
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> +35 to Intelligence
+> +137 to maximum Life
+> Regenerate (6-8) Mana per second
+> 60% increased Armour (crafted)
+> Veiled Prefix
+> --------
+> Shaper Item
+> ```
+
+p = 0.072072
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> +35 to Intelligence
+> +137 to maximum Life
+> (8-12)% increased Effect of Cold Ailments
+> Socketed Gems are Supported by Level 16 Hypothermia
+> 60% increased Armour (crafted)
+> Veiled Prefix
+> --------
+> Shaper Item
+> ```
+
+p = 0.072072
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> +35 to Intelligence
+> +137 to maximum Life
+> (13-16)% increased Effect of Cold Ailments
+> Socketed Gems are Supported by Level 18 Hypothermia
+> 60% increased Armour (crafted)
+> Veiled Prefix
+> --------
+> Shaper Item
+> ```
+
+p = 0.072072
+
+> ```text
+> Item Class: Helmets
+> Rarity: Rare
+> Archdemon Crown
+> --------
+> Quality: +20% (augmented)
+> --------
+> Item Level: 87
+> --------
+> -2 to Level of Socketed Support Gems
+> +2 to Level of Socketed Skill Gems
+> --------
+> +35 to Intelligence
+> +137 to maximum Life
+> (17-20)% increased Effect of Cold Ailments
+> Socketed Gems are Supported by Level 20 Hypothermia
+> 60% increased Armour (crafted)
+> Veiled Prefix
+> --------
+> Shaper Item
+> ```
+
+… 15 more outcomes (total p = 0.639640)
