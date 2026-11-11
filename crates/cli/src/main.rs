@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>)";
+const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]";
 
 /// Parses `--flag value` pairs; any flag not in `names` is an error.
 fn flag_map(
@@ -60,11 +60,20 @@ struct Loaded {
     pattern_name: String,
     item_name: String,
     item: poe1::item::Item,
+    /// `--all`: print every row and name rather than the report's usual share.
+    caps: poe1::catalog::Caps,
 }
 
 fn load(args: impl Iterator<Item = String>) -> anyhow::Result<Loaded> {
+    // `--all` is the one flag without a value.
+    let (all, args): (Vec<String>, Vec<String>) = args.partition(|a| a == "--all");
+    let caps = if all.is_empty() {
+        poe1::catalog::Caps::default()
+    } else {
+        poe1::catalog::Caps::all()
+    };
     let mut given = flag_map(
-        args,
+        args.into_iter(),
         &["--bundle", "--fixtures", "--pattern", "--item", "--paste"],
     )?;
     let mut required = |name: &str| {
@@ -129,6 +138,7 @@ fn load(args: impl Iterator<Item = String>) -> anyhow::Result<Loaded> {
         pattern_name,
         item_name,
         item,
+        caps,
     })
 }
 
@@ -195,6 +205,7 @@ fn main() -> anyhow::Result<()> {
                 &loaded.item,
                 &loaded.pattern_name,
                 pattern,
+                loaded.caps,
             );
             println!("{}", lines.join("\n"));
             Ok(())
@@ -209,7 +220,8 @@ fn main() -> anyhow::Result<()> {
                     pattern,
                     &loaded.item_name,
                     &loaded.pattern_name,
-                    &inversion
+                    &inversion,
+                    loaded.caps,
                 )
             );
             Ok(())

@@ -331,7 +331,10 @@ fn blocked_is_a_full_side_with_an_empty_slot() {
         "crown-d2-scbc-fractured",
         "crown-l2",
     ] {
-        assert!(solve::blocked(&shaper, &read(name)), "{name} should be stuck");
+        assert!(
+            solve::blocked(&shaper, &read(name)),
+            "{name} should be stuck"
+        );
     }
     for name in [
         "crown-a",
@@ -342,7 +345,10 @@ fn blocked_is_a_full_side_with_an_empty_slot() {
         "crown-ideal",
         "crown-l1",
     ] {
-        assert!(!solve::blocked(&shaper, &read(name)), "{name} should be open");
+        assert!(
+            !solve::blocked(&shaper, &read(name)),
+            "{name} should be open"
+        );
     }
 }
 
@@ -675,7 +681,12 @@ fn removing_the_crafted_suffix_unblocks() {
     let report = solve::next_steps(data, &pattern("crown-shaper"), &crown_with_resist(true));
     assert!(close(report.now.blocked, 1.0), "{:?}", report.now);
     let remove = step(&report, "bench/remove-crafted");
-    assert_eq!(remove.stands(), solve::Stands::Unblocks, "{:?}", remove.weighed);
+    assert_eq!(
+        remove.stands(),
+        solve::Stands::Unblocks,
+        "{:?}",
+        remove.weighed
+    );
     assert!(close(remove.weighed.blocked_before, 1.0));
     assert!(close(remove.weighed.blocked, 0.0));
 }

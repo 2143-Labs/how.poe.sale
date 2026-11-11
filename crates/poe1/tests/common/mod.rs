@@ -80,6 +80,10 @@ pub fn pairs() -> Vec<(String, String)> {
 pub fn all_pairs() -> Vec<(String, String)> {
     pattern_names()
         .into_iter()
-        .flat_map(|pname| fixture_names().into_iter().map(move |name| (pname.clone(), name)))
+        .flat_map(|pname| {
+            fixture_names()
+                .into_iter()
+                .map(move |name| (pname.clone(), name))
+        })
         .collect()
 }

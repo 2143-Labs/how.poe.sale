@@ -1420,17 +1420,67 @@ pub(crate) fn stands_word(s: crate::solve::Stands) -> &'static str {
     }
 }
 
+/// How much of a report is printed. `Caps::default()` is the report's usual length and
+/// `Caps::all()` prints everything; a list cut short always says how many it left out.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Caps {
+    /// Rows per step table.
+    pub rows: usize,
+    /// Input lines under "Could have come from".
+    pub groups: usize,
+    /// Names per list: the methods in a step-table row, on an input line or tied with the first
+    /// step, the reasons a method does not apply, the methods that cannot be walked back.
+    pub methods: usize,
+    /// Sources taken from each input state before states that read alike share a line.
+    pub per_state: usize,
+    /// Methods named under "Not computed".
+    pub listed: usize,
+}
+
+impl Default for Caps {
+    fn default() -> Caps {
+        Caps {
+            rows: 6,
+            groups: 4,
+            methods: 3,
+            per_state: 2,
+            listed: 8,
+        }
+    }
+}
+
+impl Caps {
+    /// No cap at all.
+    pub fn all() -> Caps {
+        Caps {
+            rows: usize::MAX,
+            groups: usize::MAX,
+            methods: usize::MAX,
+            per_state: usize::MAX,
+            listed: usize::MAX,
+        }
+    }
+}
+
+/// ` (+3 more)` when a list of `total` shows `shown`, nothing when it shows them all.
+fn more(total: usize, shown: usize) -> String {
+    match total.saturating_sub(shown) {
+        0 => String::new(),
+        n => format!(" (+{n} more)"),
+    }
+}
+
 /// A step table: one row per distinct outcome, with the number of steps that reach it. A step
 /// that does exactly as much as the row above it is counted there rather than repeated, because
-/// the ranking's only say between them is their id.
-fn step_table(data: &Data, group: &[crate::solve::Assessment], rows: usize) -> String {
+/// the ranking's only say between them is their id; the row names them, up to `caps.methods`.
+fn step_table(data: &Data, group: &[crate::solve::Assessment], caps: Caps) -> String {
     let mut lines = vec![
         "|#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|".to_string(),
         "|---|---|---|---|---|---|---|---|---|".to_string(),
     ];
     let mut shown = 0;
     let mut i = 0;
-    while i < group.len() && shown < rows {
+    while i < group.len() && shown < caps.rows {
         let mut j = i + 1;
         while j < group.len() && group[i].tied(&group[j]) {
             j += 1;
@@ -1441,19 +1491,33 @@ fn step_table(data: &Data, group: &[crate::solve::Assessment], rows: usize) -> S
         let same_cost = group[i..j].iter().all(|a| a.cost == first.cost);
         let what = match n {
             1 => format!("{} — `{}`", first.name.replace('|', "\\|"), first.method),
-            _ => format!(
-                "{n} steps, e.g. {} — `{}`",
-                first.name.replace('|', "\\|"),
-                first.method
-            ),
+            _ => {
+                // Every member when they fit; otherwise one fewer, so the count takes the last place.
+                let named = if n <= caps.methods {
+                    n
+                } else {
+                    caps.methods.saturating_sub(1).max(1)
+                };
+                let ids: Vec<String> = group[i..j]
+                    .iter()
+                    .take(named)
+                    .map(|a| format!("`{}`", a.method))
+                    .collect();
+                format!(
+                    "{n} steps: {} — {}{}",
+                    first.name.replace('|', "\\|"),
+                    ids.join(", "),
+                    more(n, named)
+                )
+            }
         };
         let cost = if same_cost {
             paid_cost(data, &first.cost)
         } else {
             format!(
-                "{} (and {} others in this row differ in cost)",
+                "{} for `{}`; the others in this row cost something else",
                 paid_cost(data, &first.cost),
-                n - 1
+                first.method
             )
         };
         lines.push(format!(
@@ -1510,14 +1574,21 @@ fn tie_examples(group: &[crate::solve::Assessment], n: usize) -> String {
         Some(f) => f,
         None => return String::new(),
     };
-    let mut names: Vec<String> = Vec::new();
-    for a in group.iter().skip(1).take_while(|a| first.tied(a)).take(n) {
-        names.push(format!("{} — `{}`", a.name.replace('|', "\\|"), a.method));
-    }
+    let tied: Vec<&crate::solve::Assessment> =
+        group.iter().skip(1).take_while(|a| first.tied(a)).collect();
+    let names: Vec<String> = tied
+        .iter()
+        .take(n)
+        .map(|a| format!("{} — `{}`", a.name.replace('|', "\\|"), a.method))
+        .collect();
     if names.is_empty() {
         String::new()
     } else {
-        format!("Others that do exactly the same: {}.", names.join("; "))
+        format!(
+            "Others that do exactly the same: {}{}.",
+            names.join("; "),
+            more(tied.len(), names.len())
+        )
     }
 }
 
@@ -1565,7 +1636,7 @@ pub(crate) fn state_phrase(pattern: &Pattern, state: &PatternState) -> String {
 
 /// What the inverse solver found: the inputs that could have produced the item, best first, and
 /// the methods it could not walk backwards.
-fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<String> {
+fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion, caps: Caps) -> Vec<String> {
     let mut out = vec!["**Could have come from:** the inputs one step short of this item.".into()];
     if inversion.groups.is_empty() {
         out.push("None found.".into());
@@ -1574,18 +1645,20 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<St
     out.push(String::new());
     // Two states can read the same in this one line while differing in something the pattern does
     // not show; one line, with the sources of both, says more than two lines that look the same.
+    // Per line: the source texts the per-state cap keeps, and the texts it leaves out. Sources
+    // that read alike are one text, so a count of what is hidden counts texts too.
     let mut order: Vec<String> = Vec::new();
-    let mut merged: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut merged: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
     for group in &inversion.groups {
         let head = state_phrase(pattern, &group.state);
-        let entry = match merged.get_mut(&head) {
+        let (entry, hidden) = match merged.get_mut(&head) {
             Some(entry) => entry,
             None => {
                 order.push(head.clone());
                 merged.entry(head.clone()).or_default()
             }
         };
-        for source in group.sources.iter().take(2) {
+        for (k, source) in group.sources.iter().enumerate() {
             let text = format!(
                 "`{}` at {:.4}{}",
                 source.method,
@@ -1596,15 +1669,20 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<St
                     .map(|n| format!(" ({n})"))
                     .unwrap_or_default()
             );
-            if !entry.contains(&text) {
-                entry.push(text);
+            let list = if k < caps.per_state {
+                &mut *entry
+            } else {
+                &mut *hidden
+            };
+            if !list.contains(&text) {
+                list.push(text);
             }
         }
     }
-    for head in order.iter().take(4) {
-        let sources = &merged[head];
-        let shown: Vec<&String> = sources.iter().take(3).collect();
-        let rest = sources.len().saturating_sub(shown.len());
+    for head in order.iter().take(caps.groups) {
+        let (sources, hidden) = &merged[head];
+        let hidden = hidden.iter().filter(|t| !sources.contains(t)).count();
+        let shown: Vec<&String> = sources.iter().take(caps.methods).collect();
         out.push(format!(
             "- {head} — {}{}",
             shown
@@ -1612,18 +1690,17 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion) -> Vec<St
                 .map(|s| s.as_str())
                 .collect::<Vec<_>>()
                 .join(", "),
-            if rest > 0 {
-                format!(" and {rest} more")
-            } else {
-                String::new()
-            }
+            more(sources.len() + hidden, shown.len())
         ));
+    }
+    if order.len() > caps.groups {
+        out.push(format!("- … {} more inputs", order.len() - caps.groups));
     }
     if !inversion.skipped.is_empty() {
         let shown: Vec<String> = inversion
             .skipped
             .iter()
-            .take(3)
+            .take(caps.methods)
             .map(|(id, why)| format!("`{id}` ({why})"))
             .collect();
         out.push(String::new());
@@ -1644,6 +1721,7 @@ pub fn next_steps_section(
     item: &Item,
     pattern_name: &str,
     pattern: &Pattern,
+    caps: Caps,
 ) -> Vec<String> {
     let report = crate::solve::next_steps(data, pattern, item);
     let mut out = vec![
@@ -1658,18 +1736,18 @@ pub fn next_steps_section(
     ];
     // What the item could have come from is about the item as it stands, so it sits with "Now".
     let inversion = crate::invert::sources(data, pattern, item);
-    out.extend(sources_md(pattern, &inversion));
+    out.extend(sources_md(pattern, &inversion, caps));
     out.extend([
         String::new(),
         "**Exact steps:** every outcome is computed.".into(),
         String::new(),
-        step_table(data, &report.exact, 6),
+        step_table(data, &report.exact, caps),
     ]);
     if !report.exact.is_empty() {
         out.push(String::new());
         out.push("What those steps do:".into());
         out.push(String::new());
-        out.extend(effect_lines(data, &report.exact, 6));
+        out.extend(effect_lines(data, &report.exact, caps.rows));
     }
     if !report.certain.is_empty() {
         out.push(String::new());
@@ -1679,23 +1757,24 @@ pub fn next_steps_section(
                 .into(),
         );
         out.push(String::new());
-        out.push(step_table(data, &report.certain, 6));
+        out.push(step_table(data, &report.certain, caps));
         out.push(String::new());
         out.push("What those steps do:".into());
         out.push(String::new());
-        out.extend(effect_lines(data, &report.certain, 6));
+        out.extend(effect_lines(data, &report.certain, caps.rows));
     }
     if !report.blind.is_empty() {
         out.push(String::new());
         let ids: Vec<String> = report
             .blind
             .iter()
-            .take(8)
+            .take(caps.listed)
             .map(|a| format!("`{}`", a.method))
             .collect();
         out.push(format!(
-            "**Not computed:** {} (the model stops before their result).",
-            ids.join(", ")
+            "**Not computed:** {}{} (the model stops before their result).",
+            ids.join(", "),
+            more(report.blind.len(), ids.len())
         ));
     }
     if !report.unmet.is_empty() {
@@ -1707,17 +1786,21 @@ pub fn next_steps_section(
         top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         let shown: Vec<String> = top
             .iter()
-            .take(3)
+            .take(caps.methods)
             .map(|(r, n)| format!("`{r}` ×{n}"))
             .collect();
         out.push(String::new());
         out.push(format!(
-            "**Does not apply:** {} methods ({})",
+            "**Does not apply:** {} methods ({}{})",
             report.unmet.len(),
-            shown.join(", ")
+            shown.join(", "),
+            match top.len().saturating_sub(shown.len()) {
+                0 => String::new(),
+                n => format!(", +{n} more reasons"),
+            }
         ));
     }
-    let ties = tie_examples(&report.exact, 3);
+    let ties = tie_examples(&report.exact, caps.methods);
     if !ties.is_empty() {
         out.push(String::new());
         out.push(ties);
@@ -1745,12 +1828,13 @@ pub fn sources_report(
     item_name: &str,
     pattern_name: &str,
     inversion: &crate::invert::Inversion,
+    caps: Caps,
 ) -> String {
     let mut out = vec![
         format!("## `{item_name}` → `{pattern_name}`"),
         String::new(),
     ];
-    out.extend(sources_md(pattern, inversion));
+    out.extend(sources_md(pattern, inversion, caps));
     out.push(String::new());
     out.join("\n")
 }
@@ -1775,7 +1859,14 @@ fn next_steps_md(data: &Data, fx: &Fixtures) -> String {
                 continue;
             }
             out.push(String::new());
-            out.extend(next_steps_section(data, iname, item, pname, pattern));
+            out.extend(next_steps_section(
+                data,
+                iname,
+                item,
+                pname,
+                pattern,
+                Caps::default(),
+            ));
         }
     }
     out.join("\n")

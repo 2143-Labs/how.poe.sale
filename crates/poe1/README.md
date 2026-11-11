@@ -92,11 +92,14 @@ number computed from all of it, so the report keeps them apart:
 
 **What a step can do.** Each step is placed in one bucket, in this order: `finishes` (it can complete
 the pattern), `advances` (it can bring the item further along), `unblocks` (it cannot, but it can free
-a side that is full while a slot is still missing), `holds` (it leaves the goal where it is), and
+a side that is full while a slot is still missing, or the crafted modifier a crafted-only slot
+needs), `holds` (it leaves the goal where it is), and
 `sets back` (all it can do is lose ground). Inside a bucket the order is: the chance of finishing,
 the expected score, the least chance of losing ground, the least chance of ending blocked, then the
-method id, so a report is reproducible. A step that does exactly as much as another (`Assessment::tied`)
-shows once with the count, because the ranking's only say between them is the id.
+method id, so a report is reproducible; numbers are compared at the tolerance the report prints, so
+rounding noise in one never outranks a real difference in the next. A step that does exactly as much
+as another (`Assessment::tied`) shares its row, which gives the count and names the members, because
+the ranking's only say between them is the id.
 
 **What it reports per step.** The cost as a list of currencies (not compared: an Exalted Orb against
 a Chaos Orb needs a price table the bundle does not have), the chance of finishing, the expected
@@ -111,8 +114,9 @@ modifier that was added; for a removal, one over the number of modifiers that re
 taken from that input, which a metamod narrows to the side it lets through; for a fracture, one over
 the candidates; for a corruption, the branch's chance. Multiplying down the op list gives the
 whole step's chance, and `check` rejects an input the method would not accept, so a preimage the
-answering engine would refuse never appears. Two filters keep the answers honest: an item already at
-its affix limit cannot have lost a modifier of that side, and a step that leaves the item exactly as
+answering engine would refuse never appears. Three filters keep the answers honest: an input `Item::validate`
+refuses (a magic item with five affixes) is no input, an item already at its affix limit cannot have
+lost a modifier of that side, and a step that leaves the item exactly as
 it is (a value reroll on an item whose values are unknown) is not reported, because the input and
 the result are the same state.
 
@@ -121,7 +125,8 @@ inputs collapse into the handful of states the question is asked in. A method wh
 information away (a clearance could have started from anything) or whose result the model does not
 compute (a reforge's fill, a socket table) is reported as not invertible with the op that stopped it,
 never guessed at. `catalog/next-steps.md` prints the top few groups under each item, and
-`cli sources` prints one item's.
+`cli sources` prints one item's. Every list a report cuts short says how many it left out, and
+`cli solve --all` / `cli sources --all` print everything.
 
 **What it cannot do yet, and why that is next.** A reforge's random rest — the 4/5/6 modifier draw
 and its weighted, group-exclusive picks — is the missing piece, and it is what turns "a Chaos Orb

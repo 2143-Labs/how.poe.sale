@@ -264,8 +264,7 @@ fn every_source_is_a_real_source() {
                     assert!(
                         known,
                         "{at} claims {:.6}, the forward run gives {:.6}",
-                        source.p,
-                        found
+                        source.p, found
                     );
                     miscounted.insert((name.clone(), source.method.clone()));
                 }
@@ -285,7 +284,10 @@ fn every_source_is_a_real_source() {
             !accepted.iter().any(|(_, n)| n == name),
             "{name} is accepted"
         );
-        assert!(walked.get(name).copied().unwrap_or(0) > 0, "{name}: {walked:?}");
+        assert!(
+            walked.get(name).copied().unwrap_or(0) > 0,
+            "{name}: {walked:?}"
+        );
     }
     // A known miscount that no longer shows has been fixed: take it off the list.
     for (name, method, why) in KNOWN_MISCOUNTS {
