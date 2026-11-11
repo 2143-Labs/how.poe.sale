@@ -3,6 +3,7 @@ import type { AppliedView, InputView, NodeView, OutcomeView, WatchView } from '.
 import { chainFrom, type Chain } from './chain'
 import { errorText, useFlow, useFlowState } from './context'
 import { count, percent, range, summary, tries } from './format'
+import { foldShape, mergedInto, resolveId } from './merge'
 import { pathChance } from './path'
 
 /** The most outcome rows the table shows. */
@@ -90,10 +91,13 @@ function Watched({
 function Applied({ applied }: { applied: AppliedView }) {
   const { store } = useFlow()
   const nodes = useFlowState((state) => state.nodes)
+  const rawNodes = useFlowState((state) => state.rawNodes)
+  const merges = useFlowState((state) => state.merges)
   const rows = applied.outcomes
   const shown = rows.slice(0, ROWS)
   const rest = rows.slice(ROWS)
   const items = rows.filter((o) => o.kind === 'item')
+  const folded = mergedInto(rawNodes, merges, applied.node).length
   return (
     <>
       <p className="hint">
@@ -107,9 +111,20 @@ function Applied({ applied }: { applied: AppliedView }) {
       {applied.watched.length > 0 && (
         <Watched watched={applied.watched} simulated={applied.simulated} repeatable={applied.repeatable} />
       )}
+      {folded > 0 && (
+        <p className="hint">
+          This card also stands for {folded} merged {folded === 1 ? 'card' : 'cards'}; each odds row below is one
+          card's own, never a mix.
+        </p>
+      )}
       {items.length > 1 && items.length <= 20 && (
         <button type="button" onClick={() => void store.getState().pinAll(items.map((o) => o.key))}>
           Pin all {items.length}
+        </button>
+      )}
+      {items.length > 1 && items.length <= 50 && (
+        <button type="button" onClick={() => void store.getState().pinAllMerging(items.map((o) => o.key))}>
+          Pin all {items.length}, merging alike
         </button>
       )}
       <table className="steps-table">
@@ -127,7 +142,7 @@ function Applied({ applied }: { applied: AppliedView }) {
               key={outcome.key}
               outcome={outcome}
               repeatable={applied.repeatable}
-              onChart={nodes.some((n) => n.id === outcome.key)}
+              onChart={nodes.some((n) => n.id === resolveId(merges, outcome.key))}
               onPin={(key) => store.getState().pinForward(key)}
             />
           ))}
@@ -224,6 +239,7 @@ export function Inspector() {
   const { store } = useFlow()
   const nodes = useFlowState((state) => state.nodes)
   const edges = useFlowState((state) => state.edges)
+  const rawEdges = useFlowState((state) => state.rawEdges)
   const selected = useFlowState((state) => state.selected)
   const tab = useFlowState((state) => state.tab)
   const methods = useFlowState((state) => state.methods)
@@ -235,6 +251,11 @@ export function Inspector() {
 
   const node = nodes.find((n) => n.id === selected) ?? nodes[0] ?? null
   const rootId = nodes[0]?.id ?? null
+  const planned = (id: string) => rawEdges.some((edge) => edge.from === id)
+  const targets =
+    node && node.id !== rootId
+      ? nodes.filter((other) => other.id !== node.id && foldShape(node, other, planned) === null)
+      : []
   const chain = node && rootId ? pathChance(edges, node.id, rootId) : null
   const totals = useMemo(() => (node ? chainFrom(edges, node.id) : null), [edges, node])
   const list = useMemo(() => {
@@ -270,6 +291,22 @@ export function Inspector() {
           <button type="button" className="tab row-actions" onClick={() => store.getState().unpin(node.id)}>
             Remove
           </button>
+        )}
+        {targets.length > 0 && (
+          <select
+            className="tab"
+            value=""
+            onChange={(event) => {
+              if (event.target.value) void store.getState().merge(node.id, event.target.value)
+            }}
+          >
+            <option value="">Merge into…</option>
+            {targets.map((other) => (
+              <option key={other.id} value={other.id}>
+                {summary(other.view)}
+              </option>
+            ))}
+          </select>
         )}
       </div>
 

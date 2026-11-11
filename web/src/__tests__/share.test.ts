@@ -22,7 +22,12 @@ const pins: Pin[] = [
 
 describe('share links', () => {
   it.each<ShareScope>(['poe1', 'simple'])('round-trips a %s chart', (scope) => {
-    const url = buildShareUrl(scope, { root, watch: [{ id: 'ColdResist6', orBetter: true }], pins }, 'https://how.poe.sale')
+    const merges = [{ from: 'x', into: 'y' }]
+    const url = buildShareUrl(
+      scope,
+      { root, watch: [{ id: 'ColdResist6', orBetter: true }], pins, merges },
+      'https://how.poe.sale',
+    )
     expect(url.startsWith(`https://how.poe.sale/${scope}/#s=`)).toBe(true)
     expect(parseShareHash(url.slice(url.indexOf('#')))).toEqual({
       kind: 'ok',
@@ -30,7 +35,13 @@ describe('share links', () => {
       root,
       watch: [{ id: 'ColdResist6', orBetter: true }],
       pins,
+      merges,
     })
+  })
+
+  it('opens a link made before merges with none', () => {
+    const hash = compressToEncodedURIComponent(JSON.stringify({ v: 3, scope: 'simple', root, watch: [], pins }))
+    expect(parseShareHash(`#s=${hash}`)).toMatchObject({ kind: 'ok', pins, merges: [] })
   })
 
   it('tells an old link from a broken one', () => {

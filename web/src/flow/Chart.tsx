@@ -4,7 +4,8 @@ import type { Edge, EdgeTypes, Node, NodeProps, NodeTypes, ReactFlowInstance } f
 import type { EdgeView, NodeView } from '../types'
 import { Card } from './Card'
 import { useFlow, useFlowState } from './context'
-import { itemsFrom, percent, range, tries } from './format'
+import { itemsFrom, percent, range, summary, tries } from './format'
+import { mergedInto } from './merge'
 import { NODE_WIDTH, layoutGraph, type LayoutPositions } from './layout'
 import { LoopEdge } from './LoopEdge'
 import { pathChance } from './path'
@@ -18,6 +19,8 @@ type ItemNodeData = {
   chain: string | null
   /** Where a node reached by several steps got its items. */
   from: string | null
+  /** One line per card merged into this one. */
+  merged: string[]
 }
 
 type ItemFlowNode = Node<ItemNodeData, 'item'>
@@ -26,7 +29,7 @@ function estimateHeight(data: ItemNodeData): number {
   const view = data.node.view
   const chips =
     view.prefixes.length + view.suffixes.length + (view.anyPrefixes > 0 ? 1 : 0) + (view.anySuffixes > 0 ? 1 : 0)
-  return 64 + chips * 20 + data.in.length * 16 + (data.from ? 16 : 0)
+  return 64 + chips * 20 + data.in.length * 16 + (data.from ? 16 : 0) + data.merged.length * 16
 }
 
 function ItemCard({ data, selected }: NodeProps<ItemFlowNode>) {
@@ -39,6 +42,7 @@ function ItemCard({ data, selected }: NodeProps<ItemFlowNode>) {
   )
   if (data.chain) footer.push(data.chain)
   if (data.from) footer.push(data.from)
+  footer.push(...data.merged)
   return <Card view={data.node.view} badges={badges} footer={footer} selected={selected} root={data.root} />
 }
 
@@ -50,6 +54,8 @@ export function Chart() {
   const { store } = useFlow()
   const nodes = useFlowState((state) => state.nodes)
   const edges = useFlowState((state) => state.edges)
+  const rawNodes = useFlowState((state) => state.rawNodes)
+  const merges = useFlowState((state) => state.merges)
   const selected = useFlowState((state) => state.selected)
   const [positions, setPositions] = useState<LayoutPositions>({})
   const [instance, setInstance] = useState<ReactFlowInstance<ItemFlowNode, Edge> | null>(null)
@@ -68,9 +74,10 @@ export function Chart() {
               ? `path to the root · ${percent(chain.p)}${chain.approx ? ' ≈' : ''} over ${chain.steps} steps`
               : null,
           from: itemsFrom(node, nodes, edges),
+          merged: mergedInto(rawNodes, merges, node.id).map((other) => `merged: ${summary(other.view)}`),
         }
       }),
-    [nodes, edges, rootId],
+    [nodes, edges, rootId, rawNodes, merges],
   )
   const flowEdges = useMemo<Edge[]>(
     () =>
