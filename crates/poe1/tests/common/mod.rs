@@ -43,9 +43,8 @@ pub fn pattern(name: &str) -> poe1::pattern::Pattern {
         .unwrap_or_else(|e| panic!("{name}: {e}"))
 }
 
-/// Every (pattern, fixture) the pattern accepts: the pairs the catalog reports.
-pub fn pairs() -> Vec<(String, String)> {
-    let data = test_data();
+/// Every pattern name, sorted.
+pub fn pattern_names() -> Vec<String> {
     let mut patterns: Vec<String> = std::fs::read_dir(root().join("fixtures/patterns"))
         .expect("fixtures/patterns")
         .filter_map(|e| {
@@ -54,8 +53,14 @@ pub fn pairs() -> Vec<(String, String)> {
         })
         .collect();
     patterns.sort();
+    patterns
+}
+
+/// Every (pattern, fixture) the pattern accepts: the pairs the catalog reports.
+pub fn pairs() -> Vec<(String, String)> {
+    let data = test_data();
     let mut out = Vec::new();
-    for pname in patterns {
+    for pname in pattern_names() {
         let pat = pattern(&pname);
         for name in fixture_names() {
             let it = item(&name);
@@ -68,4 +73,13 @@ pub fn pairs() -> Vec<(String, String)> {
         }
     }
     out
+}
+
+/// Every (pattern, fixture), whether the pattern accepts the fixture or not: the corrupted and
+/// uninfluenced fixtures still have sources, and those must be true too.
+pub fn all_pairs() -> Vec<(String, String)> {
+    pattern_names()
+        .into_iter()
+        .flat_map(|pname| fixture_names().into_iter().map(move |name| (pname.clone(), name)))
+        .collect()
 }
