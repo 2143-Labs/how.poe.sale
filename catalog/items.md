@@ -302,8 +302,8 @@ Shaper Item
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|yes|any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 1 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|yes|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-c2-blocked`
 
@@ -362,8 +362,8 @@ Shaper Item
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|yes|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-d2-scbc-corrupted`
 
@@ -393,8 +393,8 @@ Corrupted
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|no|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-d2-scbc-fractured`
 
@@ -424,8 +424,8 @@ Fractured Item
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|yes|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-ideal`
 
@@ -484,8 +484,8 @@ Shaper Item
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|yes|good-prefix, any-crafted-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-l2`
 
@@ -514,8 +514,8 @@ Shaper Item
 
 |Pattern|p|Item fits|Prefix classes|Suffix classes|Missing slots (prefix / suffix)|Matches|
 |---|---|---|---|---|---|---|
-|`crown-shaper`|1.000000|yes|good-prefix, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0 / none|no|
-|`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
+|`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
 
 ## `crown-shaper-elder-ideal`
 

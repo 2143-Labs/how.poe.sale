@@ -7,7 +7,7 @@
 - prefixes [good-prefix, any-other-prefix], suffixes [any-other-suffix], 1 open prefix / 2 open suffixes, 5 slots it wants still missing — `bench/add/EinharMasterArmourPercent3_` at 1.0000 (the added modifier's values are not the ones the craft gives)
 - prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [any-other-suffix, any-other-suffix], none open / 1 open suffix, 4 slots it wants still missing — `currency/annulment` at 0.5000, `currency/annulment` at 0.2000, `currency/annulment` at 0.2000 (the item carries Cannot Roll, which narrows the removal and this pass does not count)
 - prefixes [good-prefix, any-crafted-prefix], suffixes [any-other-suffix, any-other-suffix], 1 open prefix / 1 open suffix, 4 slots it wants still missing — `currency/veiled-exalted` at 0.2500, `currency/veiled-exalted` at 0.1250, `currency/veiled-exalted` at 0.1250 (the item carries Cannot Roll, which narrows the removal and this pass does not count)
-- prefixes [good-prefix, any-crafted-prefix, any-crafted-prefix], suffixes [any-other-suffix], none open / 2 open suffixes, 4 slots it wants still missing — `currency/veiled-exalted` at 0.1667, `currency/veiled-exalted` at 0.1250
+- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [any-other-suffix], none open / 2 open suffixes, 4 slots it wants still missing — `currency/veiled-exalted` at 0.1667, `currency/veiled-exalted` at 0.1250
 - … 5 more inputs
 
 298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).

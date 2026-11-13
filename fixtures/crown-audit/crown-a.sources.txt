@@ -2,7 +2,7 @@
 
 **Could have come from:** the inputs one step short of this item.
 
-- prefixes [any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 1.0000, `currency/annulment` at 0.2500
+- prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `currency/annulment` at 1.0000, `currency/annulment` at 0.2500
 - prefixes [desired-veiled], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 0.2500
 - prefixes [good-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 0.2500
 - prefixes [ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/annulment` at 0.2500

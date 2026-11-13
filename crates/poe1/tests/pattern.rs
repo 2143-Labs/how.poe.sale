@@ -34,6 +34,7 @@ fn big_life_pattern(d: &Data) -> Pattern {
             matchers: vec![MatcherSpec::Mod {
                 r#mod: "IncreasedLife9".into(),
                 min: Some(vec![Some(137)]),
+                or_better: false,
             }],
         },
     );
@@ -133,6 +134,7 @@ fn value_threshold_splits() {
             matchers: vec![MatcherSpec::Mod {
                 r#mod: "IncreasedLife9".into(),
                 min: Some(vec![Some(137)]),
+                or_better: false,
             }],
         },
     );
@@ -180,10 +182,12 @@ fn union_of_threshold_matchers() {
                 MatcherSpec::Mod {
                     r#mod: "IncreasedLife9".into(),
                     min: Some(vec![Some(144)]),
+                    or_better: false,
                 },
                 MatcherSpec::Mod {
                     r#mod: "IncreasedLife9".into(),
                     min: Some(vec![Some(137)]),
+                    or_better: false,
                 },
             ],
         },
@@ -224,6 +228,7 @@ fn catch_all_matcher_wins_over_threshold() {
                 MatcherSpec::Mod {
                     r#mod: "IncreasedLife9".into(),
                     min: Some(vec![Some(144)]),
+                    or_better: false,
                 },
                 MatcherSpec::Any { any: true },
             ],
@@ -273,6 +278,7 @@ fn implicit_threshold_splits() {
     s.implicits = vec![MatcherSpec::Mod {
         r#mod: "IntelligenceImplicitAmulet1".into(),
         min: Some(vec![Some(26)]),
+        or_better: false,
     }];
     let p = Pattern::compile(d, &s).unwrap();
     let states = evaluate(d, &p, &item("lapis-amulet-normal"));
@@ -312,6 +318,7 @@ fn threshold_uses_shown_value() {
             matchers: vec![MatcherSpec::Mod {
                 r#mod: "AdditionalCritWithAttacksInfluence1_".into(),
                 min: Some(vec![Some(1)]),
+                or_better: false,
             }],
         },
     );
@@ -352,6 +359,7 @@ fn missing_prefers_flexible_slot() {
             matchers: vec![MatcherSpec::Mod {
                 r#mod: "IncreasedLife9".into(),
                 min: None,
+                or_better: false,
             }],
         },
     );
@@ -365,6 +373,7 @@ fn missing_prefers_flexible_slot() {
             matchers: vec![MatcherSpec::Mod {
                 r#mod: "AreaOfEffectSupportedUber1_".into(),
                 min: None,
+                or_better: false,
             }],
         },
     );
@@ -500,7 +509,7 @@ fn fractured_and_locks_split_states() {
     let lift_of = |name: &str| lift(d, &p, &single(Leaf::Item(item(name))));
     assert_ne!(lift_of("crown-d2-scbc"), lift_of("crown-d2-scbc-fractured"));
     // Suffixes Cannot Be Changed shows as a lock and a metamod; a crafted mana prefix in its
-    // place reads as the same class but no lock.
+    // place has neither, and fills the crafted class the metamod does not.
     assert_eq!(a.locks, [false, true]);
     assert_eq!(a.metamods, [MetaMod::LockSuffixes]);
     let l1 = &evaluate(d, &p, &item("crown-l1"))[0].1;
@@ -513,19 +522,27 @@ fn fractured_and_locks_split_states() {
         fractured: false,
     });
     let mana = &evaluate(d, &p, &Item::from_spec(d, &s).unwrap())[0].1;
-    assert_eq!(class_ids(&p, &l1.prefixes), class_ids(&p, &mana.prefixes));
     assert_ne!(l1, mana);
     assert_eq!(mana.locks, [false, false]);
-    // The crafted class is a catch-all: it carries the mod groups, which differ.
+    // Both classes are catch-alls and carry the mod groups; the metamod lands in the plain
+    // catch-all, the bench craft in the crafted class.
     let crafted = p.class_index("any-crafted-prefix").unwrap();
-    let groups = |s: &poe1::pattern::PatternState| {
+    let other = p.class_index("any-other-prefix").unwrap();
+    let held = |s: &poe1::pattern::PatternState, class: u16| {
         s.prefixes
             .iter()
-            .find(|a| a.class == crafted)
-            .map(|a| a.groups.clone())
-            .unwrap()
+            .find(|a| a.class == class)
+            .map(|a| (a.crafted, a.groups.clone()))
     };
-    assert_ne!(groups(l1), groups(mana));
+    assert!(
+        held(l1, crafted).is_none(),
+        "the metamod filled the crafted class"
+    );
+    assert_eq!(held(l1, other).map(|(crafted, _)| crafted), Some(true));
+    let (is_crafted, mana_groups) = held(mana, crafted).expect("the crafted class");
+    assert!(is_crafted);
+    let (_, metamod_groups) = held(l1, other).expect("the catch-all");
+    assert_ne!(mana_groups, metamod_groups);
 }
 
 /// The lift of a real outcome is flat and carries all its mass.
@@ -575,6 +592,7 @@ fn compile_errors() {
     s.classes[0].matchers.push(MatcherSpec::Mod {
         r#mod: "NoSuchMod".into(),
         min: None,
+        or_better: false,
     });
     assert_eq!(
         err(s),
@@ -626,6 +644,7 @@ fn compile_rejects_more() {
         matchers: vec![MatcherSpec::Mod {
             r#mod: "IncreasedChillEffectSupportedUber2".into(),
             min: None,
+            or_better: false,
         }],
     });
     assert_eq!(
@@ -723,4 +742,75 @@ fn a_target_scores_by_its_own_slots() {
     let pat = Pattern::compile(d, &spec).expect("compiles");
     let progress = poe1::solve::item_progress(d, &pat, &item("crown-a"));
     assert!((progress - 9.0 / 15.0).abs() < 1e-12, "{progress}");
+}
+
+/// A metamod is a crafted modifier, but not the modifier `{"crafted": true}` is looking for: it is
+/// a tool the bench removes for one scour. So a Crown whose only crafted prefix is Suffixes
+/// Cannot Be Changed does not fill `any-crafted-prefix`, while one with a real bench craft does.
+#[test]
+fn a_metamod_does_not_fill_a_crafted_class() {
+    let d = test_data();
+    let p = pattern("crown-shaper");
+    let crafted = p
+        .classes
+        .iter()
+        .position(|c| c.id == "any-crafted-prefix")
+        .expect("the crafted class") as u16;
+    let classes = |name: &str| {
+        let it = item(name);
+        it.prefixes
+            .iter()
+            .filter(|a| d.mod_at(a.roll.m).kind == poe1::data::ModKind::Crafted)
+            .flat_map(|a| classify(d, &p, &it, Side::Prefix, a))
+            .map(|(c, _)| c)
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        !classes("crown-c2").contains(&crafted),
+        "Suffixes Cannot Be Changed filled the crafted class"
+    );
+    assert!(
+        classes("crown-a-mana").contains(&crafted),
+        "the crafted mana prefix did not fill it"
+    );
+}
+
+/// `orBetter` takes the named tier and every higher tier of the same family, and nothing lower:
+/// the Hypothermia ladder is Level 16, 18, 20, and an elevated 25.
+#[test]
+fn or_better_takes_the_family_at_this_tier_and_above() {
+    let d = test_data();
+    let mut s = pattern_spec("crown-shaper");
+    let hypo = s
+        .classes
+        .iter_mut()
+        .find(|c| c.id == "hypothermia")
+        .expect("the hypothermia class");
+    hypo.matchers = vec![MatcherSpec::Mod {
+        r#mod: "IncreasedChillEffectSupportedUber3".into(),
+        min: None,
+        or_better: true,
+    }];
+    let p = Pattern::compile(d, &s).expect("a pattern");
+    let hypo = p
+        .classes
+        .iter()
+        .position(|c| c.id == "hypothermia")
+        .expect("the class") as u16;
+    let takes = |id: &str| {
+        let mut it = spec("crown-a");
+        it.suffixes = vec![AffixSpec {
+            id: id.into(),
+            values: None,
+            fractured: false,
+        }];
+        let it = Item::from_spec(d, &it).expect("an item");
+        classify(d, &p, &it, Side::Suffix, &it.suffixes[0])
+            .iter()
+            .any(|(c, _)| *c == hypo)
+    };
+    assert!(!takes("IncreasedChillEffectSupportedUber1"), "Level 16");
+    assert!(!takes("IncreasedChillEffectSupportedUber2"), "Level 18");
+    assert!(takes("IncreasedChillEffectSupportedUber3"), "Level 20");
+    assert!(takes("IncreasedChillEffectSupportedUberMaven"), "Level 25");
 }

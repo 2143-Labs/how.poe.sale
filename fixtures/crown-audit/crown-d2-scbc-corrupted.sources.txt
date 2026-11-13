@@ -2,9 +2,9 @@
 
 **Could have come from:** the inputs one step short of this item.
 
-- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 1 slot it wants still missing — `currency/vaal` at 0.2500 (3 of 4 branches cannot be undone)
-- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0090
-- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
-- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0025
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/vaal` at 0.2500 (3 of 4 branches cannot be undone)
+- prefixes [any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0090
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0025
 
 298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).

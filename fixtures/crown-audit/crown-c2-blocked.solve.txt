@@ -5,8 +5,8 @@
 **Could have come from:** the inputs one step short of this item.
 
 - prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `bench/add/JunMaster2MaximumZombieAndSkeleton1_` at 1.0000 (the added modifier's values are not the ones the craft gives)
-- prefixes [any-crafted-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000, `currency/veiled-exalted` at 0.2000
-- prefixes [any-crafted-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/annulment` at 0.3333, `currency/annulment` at 0.1667
+- prefixes [any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000, `currency/veiled-exalted` at 0.2000
+- prefixes [any-crafted-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], none open / none open, 2 slots it wants still missing — `currency/annulment` at 0.3333, `currency/annulment` at 0.1667
 - prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.2000
 - … 19 more inputs
 

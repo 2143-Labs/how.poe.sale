@@ -3,9 +3,9 @@
 **Could have come from:** the inputs one step short of this item.
 
 - prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
-- prefixes [desired-veiled, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.5000
-- prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.5000
-- prefixes [ok-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/veiled-exalted` at 0.5000
+- prefixes [desired-veiled, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000
+- prefixes [ok-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `currency/veiled-exalted` at 0.5000
 - … 19 more inputs
 
 298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).

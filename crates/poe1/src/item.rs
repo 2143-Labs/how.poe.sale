@@ -245,6 +245,18 @@ impl MetaMod {
     }
 }
 
+/// Whether `m` is one of the bench's meta-crafting modifiers (`Suffixes Cannot Be Changed`, and
+/// the rest of `MetaMod::ALL`). A metamod is a crafted modifier, but it is a tool rather than a
+/// modifier a pattern wants: it occupies an affix slot, costs one Orb of Scouring to remove and
+/// about one bench craft to put back.
+pub fn is_metamod(data: &Data, m: u32) -> bool {
+    let md = data.mod_at(m);
+    MetaMod::ALL
+        .iter()
+        .filter_map(|meta| data.group_by_name(meta.group()))
+        .any(|g| md.groups.contains(&g))
+}
+
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ItemError {
     #[error("unknown base \"{0}\"")]

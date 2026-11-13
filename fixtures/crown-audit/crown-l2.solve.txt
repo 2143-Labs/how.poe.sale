@@ -1,14 +1,13 @@
 ## `crown-l2` → `crown-shaper`
 
-**Now:** 0.750 of the goal; 0.000 chance it is finished; 1.000 chance a side is full with a slot the pattern wants still empty.
+**Now:** 0.667 of the goal; 0.000 chance it is finished; 1.000 chance a side is full with a slot the pattern wants still empty.
 
 **Could have come from:** the inputs one step short of this item.
 
-- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives)
-- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0808, `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
-- prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0635, `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
-- prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/exalted` at 0.0220
-- … 1 more inputs
+- prefixes [good-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 2 slots it wants still missing — `beast/suffixes-cannot-be-changed` at 1.0000 (the added modifier's values are not the ones the craft gives), `bench/add/DexMasterItemGenerationCannotChangeSuffixes` at 1.0000 (the added modifier's values are not the ones the craft gives), `currency/exalted` at 0.0220
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 3 slots it wants still missing — `currency/shapers-exalted` at 0.0808, `beast/influence-slam-shaper` at 0.0808, `currency/exalted` at 0.0095
+- prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 3 slots it wants still missing — `currency/shapers-exalted` at 0.0635, `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
+- prefixes [any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 3 slots it wants still missing — `currency/exalted` at 0.0207
 
 298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
 
@@ -16,16 +15,16 @@
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|unblocks|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.667|0.000|0.667|0.000|
-|2|unblocks|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.667|0.000|1.000|0.000|
+|1|unblocks|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.667|0.000|0.000|0.000|
+|2|unblocks|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.611|0.000|0.333|0.667|
 |3|unblocks|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.500|0.000|1.000|0.000|
-|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.750|0.000|0.000|1.000|
-|5|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.667|0.000|0.667|1.000|
+|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.667|0.000|0.000|1.000|
+|5|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.611|0.000|0.333|1.000|
 
 What those steps do:
 
-- **Orb of Annulment** (`currency/annulment`): removes one random modifier that can change.
 - **Bench: remove crafted modifiers** (`bench/remove-crafted`): removes every crafted modifier.
+- **Orb of Annulment** (`currency/annulment`): removes one random modifier that can change.
 - **Orb of Scouring** (`currency/scouring`): removes every modifier that can change (nothing left: normal; only fractured left: magic for one, rare for more; a side a metamod kept leaves the rarity).
 - **Divine Orb** (`currency/divine`): rerolls the values of the modifiers that can change and are not crafted.
 - **Veiled Exalted Orb** (`currency/veiled-exalted`): removes one random modifier that can change; adds a veiled modifier on a side with room (half each when both have room).
@@ -50,57 +49,9 @@ What those steps do:
 
 **Does not apply:** 973 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +88 more reasons)
 
-**Best exact step:** Orb of Annulment — `currency/annulment`
+**Best exact step:** Bench: remove crafted modifiers — `bench/remove-crafted`
 
-p = 0.333333
-
-> ```text
-> Item Class: Helmets
-> Rarity: Rare
-> Archdemon Crown
-> --------
-> Quality: +20% (augmented)
-> --------
-> Item Level: 87
-> --------
-> -2 to Level of Socketed Support Gems
-> +2 to Level of Socketed Skill Gems
-> --------
-> Socketed Gems are Supported by Level 18 Hypothermia
-> Socketed Gems deal 30% more Elemental Damage
-> Socketed Spells have +3% to Critical Strike Chance
-> +137 to maximum Life
-> 15% increased Effect of Cold Ailments
-> Suffixes Cannot Be Changed (crafted)
-> --------
-> Shaper Item
-> ```
-
-p = 0.333333
-
-> ```text
-> Item Class: Helmets
-> Rarity: Rare
-> Archdemon Crown
-> --------
-> Quality: +20% (augmented)
-> --------
-> Item Level: 87
-> --------
-> -2 to Level of Socketed Support Gems
-> +2 to Level of Socketed Skill Gems
-> --------
-> Socketed Gems are Supported by Level 18 Hypothermia
-> Socketed Gems deal 30% more Elemental Damage
-> Socketed Spells have +3% to Critical Strike Chance
-> 33% increased Armour and Energy Shield
-> 15% increased Effect of Cold Ailments
-> Suffixes Cannot Be Changed (crafted)
-> --------
-> Shaper Item
-> ```
-
-p = 0.333333
+p = 1.000000
 
 > ```text
 > Item Class: Helmets
