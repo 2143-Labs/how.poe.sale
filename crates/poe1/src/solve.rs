@@ -4,8 +4,8 @@
 //! A step is weighed from its own outcome. `apply` runs it, `pattern::lift` reads every leaf at
 //! the pattern's level of detail, and a leaf scores as the share of the pattern's slot value it
 //! holds (`1.0` once the item matches, `0` when it fails the pattern's filter). A slot's value is
-//! the grade of the class that fills it — a desired class is worth three, a good class two, a
-//! middling or neutral class one, a bad class nothing — so an item that lands the veiled prefix is
+//! the grade of the class that fills it — a best-possible class is worth two, a good-enough class
+//! one, a bad class nothing — so an item that lands the veiled prefix is
 //! counted further along than one that lands the crafted slot the pattern asks for, and an item
 //! whose third prefix is a bad class is not credited for it at all.
 //!
@@ -60,11 +60,13 @@ fn zero(x: f64) -> f64 {
 }
 
 /// What one slot of a pattern is worth when it holds a class of this grade.
+/// The three categories a score uses: the best possible (2), good enough (1), not good enough (0).
+/// The pattern's five grades are authoring vocabulary — they say *why* a class is only good
+/// enough — and collapse onto these three.
 pub fn grade_value(grade: Grade) -> u8 {
     match grade {
-        Grade::Desired => 3,
-        Grade::Good => 2,
-        Grade::Middling | Grade::Neutral => 1,
+        Grade::Desired => 2,
+        Grade::Good | Grade::Middling | Grade::Neutral => 1,
         Grade::Bad => 0,
     }
 }
@@ -116,23 +118,86 @@ pub fn item_progress(data: &Data, pattern: &Pattern, item: &Item) -> f64 {
         .sum()
 }
 
+/// Why a slot the pattern wants is empty and no step can fill it as the item stands. The kinds
+/// cost the player very differently, which is why the report names them: a fractured modifier
+/// cannot be removed at all, a metamod comes off for one Orb of Scouring, and a full side of
+/// ordinary modifiers is an annulment's gamble.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Blocker {
+    /// A metamod holds the crafted slot the pattern wants: one Orb of Scouring frees it.
+    Metamod(Side),
+    /// A crafted modifier holds that slot: the bench removes it for a scour.
+    Crafted(Side),
+    /// The side is full of modifiers that can be removed, at some cost.
+    Side(Side),
+    /// A fractured modifier sits in the way and cannot be removed.
+    Fractured(Side),
+}
+
+impl Blocker {
+    /// The reason in the report's words.
+    pub fn phrase(self) -> String {
+        match self {
+            Blocker::Metamod(side) => format!(
+                "a metamod holds the crafted {} slot; one Orb of Scouring frees it",
+                side.name()
+            ),
+            Blocker::Crafted(side) => format!(
+                "a bench craft holds the crafted {} slot; removing it costs one scour",
+                side.name()
+            ),
+            Blocker::Side(side) => format!(
+                "the {} side is full of modifiers a removal could take",
+                side.name()
+            ),
+            Blocker::Fractured(side) => {
+                format!("a fractured {} modifier cannot be removed", side.name())
+            }
+        }
+    }
+}
+
+/// Why the item cannot reach the pattern as it stands. Empty when nothing is stuck.
+pub fn blockers(pattern: &Pattern, state: &PatternState) -> Vec<Blocker> {
+    let mut out = Vec::new();
+    if !state.item_ok || state.matches {
+        return out;
+    }
+    for side in Side::BOTH {
+        let i = side.index();
+        if state.missing[i].is_empty() {
+            continue;
+        }
+        let crafted_out = state.crafted[0] >= state.crafted[1]
+            && state.missing[i].iter().any(|&slot| {
+                pattern.slots[i][slot as usize]
+                    .iter()
+                    .all(|&c| pattern.classes[c as usize].crafted())
+            });
+        if crafted_out {
+            out.push(if state.metamods.is_empty() {
+                Blocker::Crafted(side)
+            } else {
+                Blocker::Metamod(side)
+            });
+        }
+        if state.open[i] == 0 {
+            let fractured = affixes(state, side).iter().any(|a| a.fractured);
+            out.push(if fractured {
+                Blocker::Fractured(side)
+            } else {
+                Blocker::Side(side)
+            });
+        }
+    }
+    out
+}
+
 /// Whether a slot the pattern wants is empty and no step can fill it as the item stands: a side
 /// is full, or the slot takes crafted modifiers only and the item already holds as many crafted
 /// modifiers as it can. Something has to be removed (or rerolled) before that slot can be filled.
 pub fn blocked(pattern: &Pattern, state: &PatternState) -> bool {
-    state.item_ok
-        && !state.matches
-        && Side::BOTH.into_iter().any(|side| {
-            let i = side.index();
-            let full = !state.missing[i].is_empty() && state.open[i] == 0;
-            let crafted_out = state.crafted[0] >= state.crafted[1]
-                && state.missing[i].iter().any(|&slot| {
-                    pattern.slots[i][slot as usize]
-                        .iter()
-                        .all(|&c| pattern.classes[c as usize].crafted())
-                });
-            full || crafted_out
-        })
+    !blockers(pattern, state).is_empty()
 }
 
 fn affixes(state: &PatternState, side: Side) -> &[pattern::AffixState] {
@@ -256,6 +321,8 @@ pub struct Report {
     pub blind: Vec<Assessment>,
     /// (method id, reason it does not apply), in method order.
     pub unmet: Vec<(String, String)>,
+    /// Why the item is stuck as it stands, each kind once.
+    pub blockers: Vec<Blocker>,
 }
 
 /// Sums one lifted outcome against a pattern.
@@ -477,12 +544,24 @@ fn assess_with(
 pub fn next_steps(data: &Data, pattern: &Pattern, item: &Item) -> Report {
     let params = Params::default();
     let now = Now::of(data, pattern, item);
+    let mut reasons: Vec<Blocker> = Vec::new();
+    for (p, s) in pattern::evaluate(data, pattern, item) {
+        if p <= 0.0 {
+            continue;
+        }
+        for b in blockers(pattern, &s) {
+            if !reasons.contains(&b) {
+                reasons.push(b);
+            }
+        }
+    }
     let mut report = Report {
         now,
         exact: Vec::new(),
         certain: Vec::new(),
         blind: Vec::new(),
         unmet: Vec::new(),
+        blockers: reasons,
     };
     for method in data.methods.iter().filter(|m| m.inputs == 1) {
         match assess_with(data, pattern, item, method, &params, &now) {

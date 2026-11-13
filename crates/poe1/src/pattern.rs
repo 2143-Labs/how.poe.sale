@@ -57,8 +57,10 @@ pub struct ClassSpec {
     pub matchers: Vec<MatcherSpec>,
 }
 
-/// Data only in this pass: nothing reads it. ("A middling class opens a cheaper follow-up" is a
-/// route-solver rule, not part of this pass.)
+/// How much a class is worth in its slot, in three categories: `Desired` is the best possible,
+/// `Good`, `Middling` and `Neutral` are good enough, and `Bad` is not good enough. The five names
+/// are kept so a pattern can say *why* a class is only good enough; `solve::grade_value` collapses
+/// them to the three the score uses.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum Grade {
@@ -87,7 +89,7 @@ pub enum MatcherSpec {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         min: Option<Vec<Option<i32>>>,
         /// `orBetter: true` takes any tier of the same family at this tier or higher.
-        #[serde(default, skip_serializing_if = "is_false")]
+        #[serde(rename = "orBetter", default, skip_serializing_if = "is_false")]
         or_better: bool,
     },
     Crafted {

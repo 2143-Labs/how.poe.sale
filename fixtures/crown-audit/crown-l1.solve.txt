@@ -1,6 +1,6 @@
 ## `crown-l1` → `crown-shaper`
 
-**Now:** 0.667 of the goal; 0.000 chance it is finished; 1.000 chance a side is full with a slot the pattern wants still empty.
+**Now:** 0.500 of the goal; 0.000 chance it is finished; 1.000 chance a side is full with a slot the pattern wants still empty (a metamod holds the crafted prefix slot; one Orb of Scouring frees it).
 
 **Could have come from:** the inputs one step short of this item.
 
@@ -16,10 +16,10 @@
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|unblocks|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.667|0.000|0.000|0.000|
-|2|unblocks|2 steps: Orb of Annulment — `currency/annulment`, `currency/veiled-exalted`|1 × Orb of Annulment for `currency/annulment`; the others in this row cost something else|0.000|0.583|0.000|0.500|0.500|
-|3|unblocks|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.500|0.000|1.000|0.000|
-|4|holds|6 steps: Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`, `beast/suffix-to-prefix` (+4 more)|1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast) for `beast/influence-slam-shaper`; the others in this row cost something else|0.000|0.667|0.000|0.000|1.000|
+|1|unblocks|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.500|0.000|0.000|0.000|
+|2|unblocks|2 steps: Orb of Annulment — `currency/annulment`, `currency/veiled-exalted`|1 × Orb of Annulment for `currency/annulment`; the others in this row cost something else|0.000|0.438|0.000|0.500|0.500|
+|3|unblocks|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.375|0.000|1.000|0.000|
+|4|holds|6 steps: Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`, `beast/suffix-to-prefix` (+4 more)|1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast) for `beast/influence-slam-shaper`; the others in this row cost something else|0.000|0.500|0.000|0.000|1.000|
 
 What those steps do:
 
@@ -32,8 +32,8 @@ What those steps do:
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.500|0.000|1.000|0.000|
-|2|unblocks|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.167|0.000|1.000|0.000|
+|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.375|0.000|1.000|0.000|
+|2|unblocks|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.125|0.000|1.000|0.000|
 |3|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
 |4|sets back|64 steps: Deafening Essence of Anger — `essence/deafening-essence-of-anger`, `essence/deafening-essence-of-anguish` (+62 more)|1 × Deafening Essence of Anger for `essence/deafening-essence-of-anger`; the others in this row cost something else|0.000|0.000|0.000|1.000|0.000|
 

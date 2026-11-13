@@ -1,6 +1,6 @@
 ## `crown-c2-blocked` → `crown-shaper`
 
-**Now:** 0.583 of the goal; 0.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
+**Now:** 0.500 of the goal; 0.000 chance it is finished; 0.000 chance a side is full with a slot the pattern wants still empty.
 
 **Could have come from:** the inputs one step short of this item.
 
@@ -16,12 +16,12 @@
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|advances|Unveil — `unveil`|none|0.000|0.764|0.722|0.000|0.000|
-|2|advances|Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`|1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast)|0.000|0.619|0.429|0.000|1.000|
-|3|advances|Exalted Orb — `currency/exalted`|1 × Exalted Orb|0.000|0.593|0.079|0.000|1.000|
-|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.583|0.000|0.000|0.000|
-|5|sets back|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.500|0.000|1.000|0.000|
-|6|sets back|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.467|0.000|0.800|0.000|
+|1|advances|Unveil — `unveil`|none|0.000|0.680|0.722|0.000|0.000|
+|2|advances|Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`|1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast)|0.000|0.554|0.429|0.000|1.000|
+|3|advances|Exalted Orb — `currency/exalted`|1 × Exalted Orb|0.000|0.510|0.079|0.000|1.000|
+|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.500|0.000|0.000|0.000|
+|5|sets back|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.400|0.000|0.800|0.000|
+|6|sets back|Beastcraft: remove a suffix, add a prefix — `beast/suffix-to-prefix`|1 × Farric Wolf Alpha (beast), 3 × Yellow Beast (beast)|0.000|0.385|0.000|0.921|1.000|
 |…||3 more steps, in further outcomes of their own|||||
 
 What those steps do:
@@ -30,14 +30,14 @@ What those steps do:
 - **Beastcraft: add a Shaper modifier** (`beast/influence-slam-shaper`): adds one random modifier (Shaper influence, either side).
 - **Exalted Orb** (`currency/exalted`): adds one random modifier (any, either side).
 - **Divine Orb** (`currency/divine`): rerolls the values of the modifiers that can change and are not crafted.
-- **Bench: remove crafted modifiers** (`bench/remove-crafted`): removes every crafted modifier.
 - **Orb of Annulment** (`currency/annulment`): removes one random modifier that can change.
+- **Beastcraft: remove a suffix, add a prefix** (`beast/suffix-to-prefix`): removes one random modifier that can change (suffix); with none that can change it removes nothing; adds one random modifier (any, prefix).
 
 **Certain part only:** the random rest of these steps is not modelled yet, so their numbers come from what the step certainly does.
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|sets back|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.167|0.000|1.000|0.000|
+|1|sets back|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.125|0.000|1.000|0.000|
 |2|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
 |3|sets back|84 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+82 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.000|0.000|1.000|0.000|
 

@@ -1729,8 +1729,23 @@ pub fn next_steps_section(
         String::new(),
         format!(
             "**Now:** {:.3} of the goal; {:.3} chance it is finished; {:.3} chance a side is full \
-             with a slot the pattern wants still empty.",
-            report.now.progress, report.now.matches, report.now.blocked
+             with a slot the pattern wants still empty{}.",
+            report.now.progress,
+            report.now.matches,
+            report.now.blocked,
+            if report.blockers.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    " ({})",
+                    report
+                        .blockers
+                        .iter()
+                        .map(|b| b.phrase())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )
+            }
         ),
         String::new(),
     ];

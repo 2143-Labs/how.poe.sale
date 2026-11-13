@@ -88,22 +88,25 @@
       ]
     },
     {
+      "id": "hypothermia-best",
+      "label": "Supported by the elevated Hypothermia (Level 25)",
+      "side": "suffix",
+      "grade": "desired",
+      "matchers": [
+        {
+          "mod": "IncreasedChillEffectSupportedUberMaven"
+        }
+      ]
+    },
+    {
       "id": "hypothermia",
-      "label": "Supported by Hypothermia",
+      "label": "Supported by Level 18 Hypothermia or better",
       "side": "suffix",
       "grade": "good",
       "matchers": [
         {
-          "mod": "IncreasedChillEffectSupportedUber1"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUber2"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUber3"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUberMaven"
+          "mod": "IncreasedChillEffectSupportedUber2",
+          "orBetter": true
         }
       ]
     },
@@ -164,6 +167,7 @@
   ],
   "suffixes": [
     [
+      "hypothermia-best",
       "hypothermia"
     ],
     [
@@ -174,6 +178,6 @@
     ]
   ],
   "notes": [
-    "The owner lists 'Supported by Level 22 Hypothermia [elevated]'; the data's elevated tier IncreasedChillEffectSupportedUberMaven supports Level 25. Which is right?"
+    "The Hypothermia ladder is Level 16, 18, 20 and an elevated Level 25; there is no Level 22 (repoe 3.29.3.3, poedb, Craft of Exile all agree, and 3.30.0 announced nothing). The owner's 'Level 22 [elevated]' is most likely the Level 22 Blastchain Mine modifier, which shares the 'of Shaping' name. The elevated tier is best possible and Level 18 or better is good enough."
   ]
 }

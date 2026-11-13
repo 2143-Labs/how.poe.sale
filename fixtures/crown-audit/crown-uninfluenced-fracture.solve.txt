@@ -16,7 +16,7 @@
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|advances|Shaper's Exalted Orb — `currency/shapers-exalted`|1 × Shaper's Exalted Orb|0.000|0.304|1.000|0.000|1.000|
+|1|advances|Shaper's Exalted Orb — `currency/shapers-exalted`|1 × Shaper's Exalted Orb|0.000|0.282|1.000|0.000|1.000|
 |2|holds|33 steps: Beastcraft: add Aspect of the Avian — `beast/aspect-avian`, `beast/aspect-cat` (+31 more)|1 × Saqawal (beast), 3 × Yellow Beast (beast) for `beast/aspect-avian`; the others in this row cost something else|0.000|0.000|0.000|0.000|0.000|
 
 What those steps do:

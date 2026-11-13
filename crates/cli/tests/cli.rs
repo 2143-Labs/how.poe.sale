@@ -50,7 +50,7 @@ fn solve_reports_a_fixture() {
     let text = stdout(&out);
     for want in [
         "## `crown-a` → `crown-shaper`",
-        "**Now:** 0.500 of the goal",
+        "**Now:** 0.375 of the goal",
         "**Exact steps:**",
         "**Could have come from:**",
         "|1|advances|",
@@ -98,7 +98,7 @@ fn solve_reads_a_paste() {
     ]));
     assert!(out.status.success(), "{}", stderr(&out));
     assert!(
-        stdout(&out).contains("**Now:** 0.833 of the goal"),
+        stdout(&out).contains("**Now:** 0.750 of the goal"),
         "{}",
         stdout(&out)
     );

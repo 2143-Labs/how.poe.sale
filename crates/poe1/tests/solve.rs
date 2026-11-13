@@ -39,15 +39,15 @@ fn bench_craft_is_the_best_exact_step() {
     let shaper = pattern("crown-shaper");
     let report = solve::next_steps(data, &shaper, &crown);
     assert_eq!(report.now.matches, 0.0);
-    assert!(close(report.now.progress, 0.5), "{}", report.now.progress);
+    assert!(
+        close(report.now.progress, 3.0 / 8.0),
+        "{}",
+        report.now.progress
+    );
     let best = report.exact.first().expect("an exact step");
     assert!(close(best.weighed.finish, 0.0));
-    // The crafted slot is worth 1 of the prefixes' 6 and all three suffixes are good (6 of 12).
-    assert!(
-        close(best.weighed.goal, 7.0 / 12.0),
-        "{}",
-        best.weighed.goal
-    );
+    // The crafted slot is worth 1 of the prefixes' 4 and each suffix is worth 1 (4 of 7).
+    assert!(close(best.weighed.goal, 4.0 / 8.0), "{}", best.weighed.goal);
     assert!(close(best.weighed.better, 1.0));
     assert!(close(best.weighed.worse, 0.0));
     assert!(close(best.weighed.blocked, 0.0));
@@ -99,7 +99,7 @@ fn annulment_trades_progress_for_room() {
     let shaper = pattern("crown-shaper");
     let report = solve::next_steps(data, &shaper, &crown);
     assert!(
-        close(report.now.progress, 10.0 / 12.0),
+        close(report.now.progress, 6.0 / 8.0),
         "{}",
         report.now.progress
     );
@@ -279,7 +279,7 @@ fn assessment_keeps_its_params() {
 }
 
 /// The score is the share of the goal's slot value the item already holds: of `crown-shaper`'s
-/// twelve twelfths (3 + 2 + 1 on the prefix side, 2 + 2 + 2 on the suffix side), read off each
+/// eight eighths (2 + 1 + 1 on the prefix side, 2 + 1 + 1 on the suffix side), read off each
 /// fixture's modifiers, not off the catalog. A metamod is a tool, not the modifier `any-crafted-
 /// prefix` is looking for, so the slot it sits in earns nothing: a Crown whose only crafted
 /// prefix is Suffixes Cannot Be Changed stays at its natural modifiers' share.
@@ -288,22 +288,22 @@ fn progress_is_the_grade_weighted_share() {
     let data = test_data();
     let shaper = pattern("crown-shaper");
     // A crafted modifier fills `any-crafted-prefix` (1) unless it is a metamod; a Veiled
-    // placeholder fills `desired-veiled` (3) while it stands and is worth nothing once unveiled
+    // placeholder fills `desired-veiled` (2) while it stands and is worth nothing once unveiled
     // into a modifier the pattern does not list; a natural modifier the pattern does not list
     // fills no slot.
     let expected = [
-        ("crown-a", 6.0 / 12.0),          // three good suffixes
-        ("crown-a-mana", 7.0 / 12.0),     // crafted mana + three good suffixes
-        ("crown-actual", 10.0 / 12.0),    // veiled AoE (3) + its natural tier (1) + suffixes
-        ("crown-c1", 8.0 / 12.0),         // T1 life (2) + three suffixes
-        ("crown-c2", 6.0 / 12.0), // Suffixes Cannot Be Changed is a tool: nothing + suffixes
-        ("crown-c2-blocked", 7.0 / 12.0), // a real crafted prefix (1) + three suffixes
-        ("crown-d2-scbc", 8.0 / 12.0), // T1 life (2) + a metamod (0) + suffixes
-        ("crown-d2-scbc-fractured", 8.0 / 12.0),
+        ("crown-a", 3.0 / 8.0),          // three good suffixes
+        ("crown-a-mana", 4.0 / 8.0),     // crafted mana + three good suffixes
+        ("crown-actual", 6.0 / 8.0),     // veiled AoE (2) + its natural tier (1) + suffixes
+        ("crown-c1", 4.0 / 8.0),         // T1 life (1) + three suffixes
+        ("crown-c2", 3.0 / 8.0),         // Suffixes Cannot Be Changed is a tool: nothing + suffixes
+        ("crown-c2-blocked", 4.0 / 8.0), // a real crafted prefix (1) + three suffixes
+        ("crown-d2-scbc", 4.0 / 8.0),    // T1 life (1) + a metamod (0) + suffixes
+        ("crown-d2-scbc-fractured", 4.0 / 8.0),
         // It matches, so it is finished however much of the goal its modifiers happen to hold.
         ("crown-ideal", 1.0),
-        ("crown-l1", 8.0 / 12.0),
-        ("crown-l2", 8.0 / 12.0),
+        ("crown-l1", 4.0 / 8.0),
+        ("crown-l2", 4.0 / 8.0),
     ];
     for (name, want) in expected {
         let got = solve::item_progress(data, &shaper, &item(name));
@@ -385,30 +385,31 @@ fn numbers_match_an_independent_recount() {
         "{}",
         exalt.better
     );
-    let want = 0.5 + 2000.0 / 55375.0 * (2.0 / 12.0) + 2400.0 / 55375.0 * (1.0 / 12.0);
+    // Both prefix classes are good enough in the same slot, so each hit is worth one eighth.
+    let want = 3.0 / 8.0 + (2000.0 + 2400.0) / 55375.0 * (1.0 / 8.0);
     assert!((exalt.goal - want).abs() < 1e-12, "{}", exalt.goal);
     assert_eq!(exalt.finish, 0.0);
     assert_eq!(exalt.worse, 0.0);
 
     // Six explicit modifiers, one removal each: five of the six lose ground (the armour prefix
-    // leaves the item where it was but frees the side). Summing the six results in twelfths,
-    // (7 + 9 + 10 + 8 + 8 + 8) / 6 / 12 = 50/72; half the removals leave the prefix side full
-    // with the crafted slot still missing.
+    // leaves the item where it was but frees the side). Summing the six results in eighths,
+    // (4 + 5 + 6 + 5 + 5 + 5) / 6 / 8 = 5/8; half the removals leave the prefix side full with
+    // the crafted slot still missing.
     let annul = weigh("crown-actual", "currency/annulment");
     assert!((annul.worse - 5.0 / 6.0).abs() < 1e-12, "{}", annul.worse);
     assert_eq!(annul.better, 0.0);
     assert!((annul.blocked - 0.5).abs() < 1e-12, "{}", annul.blocked);
-    assert!((annul.goal - 50.0 / 72.0).abs() < 1e-12, "{}", annul.goal);
+    assert!((annul.goal - 5.0 / 8.0).abs() < 1e-12, "{}", annul.goal);
 
     // The unveil's pool is 9 veiled prefixes weighing 12000; the two the `desired-veiled` class
     // accepts weigh 1500 each. Enumerating every three-set as ordered draws without replacement
     // gives 0.637176497393216 of the draws at least one of them. The player keeps the best
-    // option, so that is `better`, and `goal` is 6/12 without the veiled prefix and 9/12 with
+    // option, so that is `better`, and `goal` is 3/8 without the veiled prefix and 5/8 with
     // one: the Suffixes Cannot Be Changed the item holds fills no slot.
     let unveil = weigh("crown-c2", "unveil");
     let p = 0.637_176_497_393_216;
     assert!((unveil.better - p).abs() < 1e-12, "{}", unveil.better);
-    let want = 6.0 / 12.0 * (1.0 - p) + 9.0 / 12.0 * p;
+    let want = 3.0 / 8.0 * (1.0 - p) + 5.0 / 8.0 * p;
     assert!((unveil.goal - want).abs() < 1e-12, "{}", unveil.goal);
 }
 
@@ -704,4 +705,40 @@ fn removing_the_crafted_suffix_unblocks() {
     );
     assert!(close(remove.weighed.blocked_before, 1.0));
     assert!(close(remove.weighed.blocked, 0.0));
+}
+
+/// A blocked item says why, in the report's words: the three kinds cost the player very
+/// differently, and the report used to print the same sentence for all of them.
+#[test]
+fn a_blocker_names_its_kind() {
+    let data = test_data();
+    let shaper = pattern("crown-shaper");
+    let reasons = |name: &str| {
+        solve::next_steps(data, &shaper, &item(name))
+            .blockers
+            .iter()
+            .map(|b| b.phrase())
+            .collect::<Vec<_>>()
+    };
+    // One scour frees the crafted slot: the metamod is a tool, not a wall.
+    assert_eq!(
+        reasons("crown-l1"),
+        vec!["a metamod holds the crafted prefix slot; one Orb of Scouring frees it"]
+    );
+    // A side full of ordinary modifiers is an annulment's gamble, and says so.
+    assert_eq!(
+        reasons("crown-actual"),
+        vec!["the prefix side is full of modifiers a removal could take"]
+    );
+    // A fractured modifier cannot be removed at all, which is the one permanent blocker here.
+    let fractured = reasons("crown-d2-scbc-fractured");
+    assert!(
+        fractured
+            .iter()
+            .any(|r| r == "a fractured prefix modifier cannot be removed"),
+        "{fractured:?}"
+    );
+    // A Crown that is not stuck says nothing.
+    assert!(reasons("crown-a").is_empty());
+    assert!(reasons("crown-ideal").is_empty());
 }

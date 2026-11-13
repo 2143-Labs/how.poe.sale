@@ -775,29 +775,16 @@ fn a_metamod_does_not_fill_a_crafted_class() {
     );
 }
 
-/// `orBetter` takes the named tier and every higher tier of the same family, and nothing lower:
-/// the Hypothermia ladder is Level 16, 18, 20, and an elevated 25.
+/// The Hypothermia ladder as the pattern ships it: `orBetter` takes the named tier and every
+/// higher tier of the same family and nothing lower, so Level 18 or better is good enough and the
+/// elevated Level 25 is best possible. There is no Level 22 tier.
 #[test]
 fn or_better_takes_the_family_at_this_tier_and_above() {
     let d = test_data();
-    let mut s = pattern_spec("crown-shaper");
-    let hypo = s
-        .classes
-        .iter_mut()
-        .find(|c| c.id == "hypothermia")
-        .expect("the hypothermia class");
-    hypo.matchers = vec![MatcherSpec::Mod {
-        r#mod: "IncreasedChillEffectSupportedUber3".into(),
-        min: None,
-        or_better: true,
-    }];
-    let p = Pattern::compile(d, &s).expect("a pattern");
-    let hypo = p
-        .classes
-        .iter()
-        .position(|c| c.id == "hypothermia")
-        .expect("the class") as u16;
-    let takes = |id: &str| {
+    let p = pattern("crown-shaper");
+    let class = |id: &str| p.classes.iter().position(|c| c.id == id).expect(id) as u16;
+    let (good, best) = (class("hypothermia"), class("hypothermia-best"));
+    let takes = |id: &str, want: u16| {
         let mut it = spec("crown-a");
         it.suffixes = vec![AffixSpec {
             id: id.into(),
@@ -807,10 +794,30 @@ fn or_better_takes_the_family_at_this_tier_and_above() {
         let it = Item::from_spec(d, &it).expect("an item");
         classify(d, &p, &it, Side::Suffix, &it.suffixes[0])
             .iter()
-            .any(|(c, _)| *c == hypo)
+            .any(|(c, _)| *c == want)
     };
-    assert!(!takes("IncreasedChillEffectSupportedUber1"), "Level 16");
-    assert!(!takes("IncreasedChillEffectSupportedUber2"), "Level 18");
-    assert!(takes("IncreasedChillEffectSupportedUber3"), "Level 20");
-    assert!(takes("IncreasedChillEffectSupportedUberMaven"), "Level 25");
+    assert!(
+        !takes("IncreasedChillEffectSupportedUber1", good),
+        "Level 16"
+    );
+    assert!(
+        !takes("IncreasedChillEffectSupportedUber1", best),
+        "Level 16"
+    );
+    assert!(
+        takes("IncreasedChillEffectSupportedUber2", good),
+        "Level 18"
+    );
+    assert!(
+        takes("IncreasedChillEffectSupportedUber3", good),
+        "Level 20"
+    );
+    assert!(
+        takes("IncreasedChillEffectSupportedUberMaven", best),
+        "Level 25"
+    );
+    assert!(
+        !takes("IncreasedChillEffectSupportedUberMaven", good),
+        "Level 25 took the good-enough class as well"
+    );
 }
