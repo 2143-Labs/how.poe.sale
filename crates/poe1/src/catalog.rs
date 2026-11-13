@@ -1719,6 +1719,22 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion, caps: Cap
     out
 }
 
+/// The line that says a strand count changed the odds below it, and the blank after it. Empty
+/// when the item holds none (claim `memory-strands.rollable-tiers`).
+pub fn strands_line(item: &Item) -> Vec<String> {
+    if item.memory_strands == 0 {
+        return Vec::new();
+    }
+    vec![
+        format!(
+            "**Memory Strands:** {} — every random draw keeps only the top tiers of its table \
+             (claim `memory-strands.rollable-tiers`).",
+            item.memory_strands
+        ),
+        String::new(),
+    ]
+}
+
 /// One item weighed against one pattern: where it stands, every step in its group, and the best
 /// exact step's outcome in full.
 pub fn next_steps_section(
@@ -1755,16 +1771,7 @@ pub fn next_steps_section(
         ),
         String::new(),
     ];
-    // A strand count cuts the tiers every random draw can reach (claim
-    // `memory-strands.rollable-tiers`), so the odds below are the cut ones and the report says so.
-    if item.memory_strands > 0 {
-        out.push(format!(
-            "**Memory Strands:** {} — every random draw keeps only the top tiers of its table \
-             (claim `memory-strands.rollable-tiers`).",
-            item.memory_strands
-        ));
-        out.push(String::new());
-    }
+    out.extend(strands_line(item));
     // What the item could have come from is about the item as it stands, so it sits with "Now".
     let inversion = crate::invert::sources(data, pattern, item);
     out.extend(sources_md(pattern, &inversion, caps));
@@ -1887,16 +1894,7 @@ pub fn sources_report(
         format!("## `{item_name}` → `{pattern_name}`"),
         String::new(),
     ];
-    // The backward pass prices an added modifier from the same pool a draw uses, so a strand
-    // count changes these odds too, and the report says it does.
-    if item.memory_strands > 0 {
-        out.push(format!(
-            "**Memory Strands:** {} — every random draw keeps only the top tiers of its table \
-             (claim `memory-strands.rollable-tiers`).",
-            item.memory_strands
-        ));
-        out.push(String::new());
-    }
+    out.extend(strands_line(item));
     out.extend(sources_md(pattern, inversion, caps));
     out.push(String::new());
     out.join("\n")

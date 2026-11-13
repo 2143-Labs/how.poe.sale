@@ -630,3 +630,30 @@ fn a_strand_count_is_stated_in_the_report() {
     );
     assert!(!lines.iter().any(|l| l.contains("Memory Strands")));
 }
+
+/// Both reports state the count, through the one function they share.
+#[test]
+fn a_strand_count_reaches_the_sources_report_too() {
+    let d = test_data();
+    let pattern = common::pattern("crown-shaper");
+    let mut spec = common::spec("crown-a");
+    spec.memory_strands = 30;
+    let stranded = poe1::item::Item::from_spec(d, &spec).expect("an item");
+    let inversion = poe1::invert::sources(d, &pattern, &stranded);
+    let report = poe1::catalog::sources_report(
+        &pattern,
+        "crown-a",
+        &stranded,
+        "crown-shaper",
+        &inversion,
+        poe1::catalog::Caps::default(),
+    );
+    assert!(
+        report.contains("**Memory Strands:** 30"),
+        "the sources report does not state the count"
+    );
+    assert!(poe1::catalog::strands_line(&stranded).len() == 2);
+    spec.memory_strands = 0;
+    let plain = poe1::item::Item::from_spec(d, &spec).expect("an item");
+    assert!(poe1::catalog::strands_line(&plain).is_empty());
+}
