@@ -353,12 +353,13 @@ fn tier_floors(data: &Data, stratum: &[(u32, Side)], count: u8) -> BTreeMap<Tier
         .collect()
 }
 
-/// The weighted candidate mods `AddRandom` draws from, at item level, with the attack and
-/// caster mods a Cannot Roll metamod bars left out (claim `metamod.cannot-roll`). `ignore_limits`
-/// keeps a mod whose side has no room, and `ignore_groups` keeps a mod whose group the item
-/// already holds: a requirement asks whether the modifier can roll on the item at all, before the
-/// reforge clears it, while an add must respect both. An add draws from this list after
-/// `add_candidates` picks the side.
+/// The modifier pool at item level, with the attack and caster mods a Cannot Roll metamod bars left
+/// out (claim `metamod.cannot-roll`): the question "what can roll on this item", which is not
+/// "what will one draw see" — that is `draw_candidates`, the same pool with the Memory Strands
+/// cut (claim `memory-strands.rollable-tiers`). `ignore_limits` keeps a mod whose side has no room,
+/// and `ignore_groups` keeps a mod whose group the item already holds: a requirement asks whether
+/// the modifier can roll on the item at all, before the reforge clears it, while an add respects
+/// both.
 pub fn pool_candidates(
     data: &Data,
     item: &Item,
