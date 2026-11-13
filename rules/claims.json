@@ -1136,6 +1136,15 @@
       "quote": "Side first, like the Exalted Orb.",
       "patch": "3.29",
       "checked": true
+    },
+    {
+      "id": "memory-strands.rollable-tiers",
+      "statement": "A random draw on an item holding one or more Memory Strands reaches only the highest tiers of a modifier's tier table: of the T tiers that pass the draw's level gate it keeps the K best, K = floor(100 (T - 1) / (2.5 s + 147.5)) + 1, the tiers being the distinct required levels counted from the highest. The cut is made on the pool before the item's own modifiers block their families, and on a draw only: a fixed modifier (an essence's guaranteed mod, a crafted or fractured modifier, a bench craft) is never cut. The Foulborn orb's +75 to modifier tier rating is not modelled.",
+      "sourceKind": "experiment",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1wr9445/329_everything_you_need_to_know_about_memory/",
+      "quote": "at 82 strands, a modifier with 8 tiers (like elemental resistances on most bases), rollable_tiers = floor((100/(2.5 * 82 + 147.5)) * (8 - 1)) + 1 = 2",
+      "patch": "3.29",
+      "checked": true
     }
   ]
 }

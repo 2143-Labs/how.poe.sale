@@ -3010,3 +3010,60 @@ fn oil_rancour_and_rune_costs() {
         "only works on: weapons"
     );
 }
+
+/// Claim `memory-strands.rollable-tiers`: a strand count cuts the tiers a draw can reach, and a
+/// requirement asking whether a modifier can roll at all is not a draw, so it is not cut.
+#[test]
+fn strands_keep_only_the_top_tiers_of_a_draw() {
+    let d = test_data();
+    let plain_spec = spec("crown-a");
+    let plain = Item::from_spec(d, &plain_spec).expect("an item");
+    let mut stranded_spec = plain_spec.clone();
+    stranded_spec.memory_strands = 100;
+    let stranded = Item::from_spec(d, &stranded_spec).expect("an item");
+    let draw = |item: &Item, ignore_limits: bool| {
+        poe1::apply::pool_candidates(d, item, &Pool::Natural, SideReq::Any, ignore_limits, false)
+    };
+    let before = draw(&plain, false);
+    let after = draw(&stranded, false);
+    assert!(!before.is_empty(), "the item has a natural pool");
+    assert!(
+        after.len() < before.len(),
+        "100 strands must drop tiers: {} mods before, {} after",
+        before.len(),
+        after.len()
+    );
+    // The cut removes and never adds.
+    let had: std::collections::BTreeSet<u32> = before.iter().map(|(i, _)| *i).collect();
+    assert!(after.iter().all(|(i, _)| had.contains(i)));
+    // Every surviving tier table keeps no more tiers than the formula allows.
+    let tables = |c: &[(u32, f64)]| {
+        type TierKey = (u16, Vec<(u16, u32)>);
+        let mut m: std::collections::BTreeMap<TierKey, std::collections::BTreeSet<u8>> =
+            Default::default();
+        for (i, _) in c {
+            let md = d.mod_at(*i);
+            m.entry((md.mod_type, md.generation.clone()))
+                .or_default()
+                .insert(md.level);
+        }
+        m
+    };
+    let (b, a) = (tables(&before), tables(&after));
+    for (key, tiers) in &a {
+        let all = b.get(key).expect("a surviving table was a table before");
+        let allowed = poe1::strands::rollable_tiers(all.len(), 100);
+        assert!(
+            tiers.len() <= allowed,
+            "table {key:?}: {} tiers kept, the formula allows {allowed} of {}",
+            tiers.len(),
+            all.len()
+        );
+    }
+    // A requirement asks whether a modifier can exist on the item, which is not a draw.
+    assert_eq!(
+        draw(&plain, true).len(),
+        draw(&stranded, true).len(),
+        "a requirement query must not be cut"
+    );
+}

@@ -17,6 +17,7 @@ pub mod pool;
 pub mod preimages;
 pub mod render;
 pub mod solve;
+pub mod strands;
 pub mod text;
 
 static DATA: LazyLock<data::Data> = LazyLock::new(load_data);

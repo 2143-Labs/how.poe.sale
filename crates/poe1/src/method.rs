@@ -602,6 +602,19 @@ pub enum PendingReason {
 }
 
 impl PendingReason {
+    /// The reason as a label a count can be put in front of, for the report's summary.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            PendingReason::MultiDraw => "multi-draw reforge",
+            PendingReason::MultiDrawVeiled => "veiled multi-draw reforge",
+            PendingReason::Sockets => "socket outcome table",
+            PendingReason::Unverified => "unconfirmed rule",
+            PendingReason::NeedsData { .. } => "needs data",
+            PendingReason::NotModelled { .. } => "not modelled",
+            PendingReason::TooLarge => "too many outcomes",
+        }
+    }
+
     /// The catalog's text for this reason.
     pub fn text(&self) -> String {
         match self {

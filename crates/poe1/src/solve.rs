@@ -28,7 +28,7 @@ use std::cmp::Ordering;
 use crate::apply::{self, Params, Unmet};
 use crate::data::{Cost, Data, Side};
 use crate::item::Item;
-use crate::method::Method;
+use crate::method::{Method, PendingReason};
 use crate::pattern::{self, Grade, Lifted, LiftedLeaf, Pattern, PatternState};
 
 /// Two probabilities closer than this are the same number when deciding whether a step gained or
@@ -268,6 +268,9 @@ pub struct Assessment {
     pub params: Params,
     pub cost: Vec<Cost>,
     pub weighed: Weighed,
+    /// Why the model stopped before this step's result, when it did and said one reason. `None`
+    /// for a computed step and for one whose leaves stop for several reasons.
+    pub pending: Option<PendingReason>,
 }
 
 /// The item as it stands.
@@ -529,6 +532,20 @@ fn assess_with(
     now: &Now,
 ) -> Result<Assessment, Unmet> {
     let outcome = apply::apply(data, method, std::slice::from_ref(item), params)?;
+    // The reason the model stopped, when the leaves that stopped agree on it. A choice's option
+    // is not looked into: the step is described by what its own leaves say.
+    let mut reasons: Vec<&PendingReason> = Vec::new();
+    for (_, leaf) in &outcome.leaves {
+        if let apply::Leaf::Pending(p) = leaf {
+            reasons.push(&p.reason);
+        }
+    }
+    reasons.sort();
+    reasons.dedup();
+    let pending = match reasons.as_slice() {
+        [one] => Some((*one).clone()),
+        _ => None,
+    };
     let cost = apply::cost(data, method, params)?;
     let lifted = pattern::lift(data, pattern, &outcome);
     Ok(Assessment {
@@ -537,6 +554,7 @@ fn assess_with(
         params: params.clone(),
         cost,
         weighed: weigh(pattern, &lifted, now),
+        pending,
     })
 }
 

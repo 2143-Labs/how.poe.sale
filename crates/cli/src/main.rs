@@ -219,6 +219,7 @@ fn main() -> anyhow::Result<()> {
                 poe1::catalog::sources_report(
                     pattern,
                     &loaded.item_name,
+                    &loaded.item,
                     &loaded.pattern_name,
                     &inversion,
                     loaded.caps,
