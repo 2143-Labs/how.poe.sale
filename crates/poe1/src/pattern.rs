@@ -57,8 +57,10 @@ pub struct ClassSpec {
     pub matchers: Vec<MatcherSpec>,
 }
 
-/// Data only in this pass: nothing reads it. ("A middling class opens a cheaper follow-up" is a
-/// route-solver rule, not part of this pass.)
+/// How much a class is worth in its slot, in three categories: `Desired` is the best possible,
+/// `Good`, `Middling` and `Neutral` are good enough, and `Bad` is not good enough. The five names
+/// are kept so a pattern can say *why* a class is only good enough; `solve::grade_value` collapses
+/// them to the three the score uses.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum Grade {
@@ -67,6 +69,11 @@ pub enum Grade {
     Middling,
     Neutral,
     Bad,
+}
+
+/// `serde` helper: omit a false flag from serialised patterns.
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 /// What a class accepts. `{"mod": id, "min": [..]}` takes one modifier id, with an optional
@@ -81,6 +88,9 @@ pub enum MatcherSpec {
         r#mod: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         min: Option<Vec<Option<i32>>>,
+        /// `orBetter: true` takes any tier of the same family at this tier or higher.
+        #[serde(rename = "orBetter", default, skip_serializing_if = "is_false")]
+        or_better: bool,
     },
     Crafted {
         crafted: bool,
@@ -213,6 +223,7 @@ enum Matcher {
     Mod {
         m: u32,
         min: Option<Vec<Option<i32>>>,
+        or_better: bool,
     },
     Crafted(bool),
     Any(bool),
@@ -234,6 +245,17 @@ impl Class {
         self.matchers
             .iter()
             .any(|m| matches!(m, Matcher::Any(true) | Matcher::Crafted(_)))
+    }
+
+    /// Whether this class takes crafted modifiers only (`{"crafted": true}`, which never accepts a
+    /// metamod): a slot that needs it cannot be filled while the item holds as many crafted
+    /// modifiers as it can, or while the slot holds a metamod that the class does not count.
+    pub fn crafted(&self) -> bool {
+        !self.matchers.is_empty()
+            && self
+                .matchers
+                .iter()
+                .all(|m| matches!(m, Matcher::Crafted(true)))
     }
 }
 
@@ -262,7 +284,11 @@ impl Pattern {
         }
         let matcher = |m: &MatcherSpec| -> Result<Matcher, PatternError> {
             Ok(match m {
-                MatcherSpec::Mod { r#mod, min } => Matcher::Mod {
+                MatcherSpec::Mod {
+                    r#mod,
+                    min,
+                    or_better,
+                } => Matcher::Mod {
                     m: data
                         .mod_by_id(r#mod)
                         .ok_or_else(|| PatternError::UnknownMod {
@@ -270,6 +296,7 @@ impl Pattern {
                             id: r#mod.clone(),
                         })?,
                     min: min.clone(),
+                    or_better: *or_better,
                 },
                 MatcherSpec::Crafted { crafted } => Matcher::Crafted(*crafted),
                 MatcherSpec::Any { any } => Matcher::Any(*any),
@@ -443,6 +470,7 @@ pub fn from_item(data: &Data, target: &Item) -> PatternSpec {
                 matchers: vec![MatcherSpec::Mod {
                     r#mod: m.id.clone(),
                     min: None,
+                    or_better: false,
                 }],
             });
             slots[side.index()].push(vec![id]);
@@ -510,6 +538,37 @@ fn grid_share(data: &Data, stat: u16, lo: i32, hi: i32, threshold: i32, effect: 
     ok as f64 / f64::from(hi - lo + 1)
 }
 
+/// Whether `m` fills a matcher that names `want`: the same modifier, or — with `or_better` — its
+/// family at the same tier or higher. A family is one mod type, kind and influence: an essence
+/// tier shares a type with the natural tiers and sits at a high level while rolling lower, and a
+/// Shaper tier must not stand for a Crusader one.
+fn mod_matches(data: &Data, want: u32, or_better: bool, m: u32) -> bool {
+    if m == want {
+        return true;
+    }
+    if !or_better {
+        return false;
+    }
+    let (a, b) = (data.mod_at(want), data.mod_at(m));
+    b.side == a.side
+        && b.mod_type == a.mod_type
+        && b.level >= a.level
+        && b.kind == a.kind
+        && b.influence == a.influence
+}
+
+/// Whether a `{"crafted": true|false}` matcher accepts `m`. A metamod is crafted, but it is a
+/// tool rather than a modifier a pattern wants: it sits in a slot, costs one Orb of Scouring to
+/// remove and one bench craft to put back, so a crafted class must not count it as what it wants.
+fn crafted_match(data: &Data, want: bool, m: u32) -> bool {
+    let kind = data.mod_at(m).kind;
+    if want {
+        kind == ModKind::Crafted && !crate::item::is_metamod(data, m)
+    } else {
+        kind != ModKind::Crafted
+    }
+}
+
 /// The chance a single matcher accepts an affix: `None` when it does not apply at all. A value
 /// threshold splits the roll grid; several stats are taken as independent.
 fn matcher_chance(
@@ -522,13 +581,17 @@ fn matcher_chance(
     let m = data.mod_at(affix.roll.m);
     match matcher {
         Matcher::Any(any) => Some(if *any { 1.0 } else { 0.0 }),
-        Matcher::Crafted(crafted) => Some(if *crafted == (m.kind == ModKind::Crafted) {
+        Matcher::Crafted(crafted) => Some(if crafted_match(data, *crafted, affix.roll.m) {
             1.0
         } else {
             0.0
         }),
-        Matcher::Mod { m: want, min } => {
-            if *want != affix.roll.m {
+        Matcher::Mod {
+            m: want,
+            min,
+            or_better,
+        } => {
+            if !mod_matches(data, *want, *or_better, affix.roll.m) {
                 return None;
             }
             let Some(min) = min else { return Some(1.0) };
@@ -611,10 +674,14 @@ fn class_chance(
             }
             Matcher::Crafted(crafted) => {
                 applies = true;
-                certain |= *crafted == (m.kind == ModKind::Crafted);
+                certain |= crafted_match(data, *crafted, affix.roll.m);
             }
-            Matcher::Mod { m: want, min } => {
-                if *want != affix.roll.m {
+            Matcher::Mod {
+                m: want,
+                min,
+                or_better,
+            } => {
+                if !mod_matches(data, *want, *or_better, affix.roll.m) {
                     continue;
                 }
                 applies = true;

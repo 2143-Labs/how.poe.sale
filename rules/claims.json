@@ -118,6 +118,17 @@
       "checked": true
     },
     {
+      "id": "beast.slam-influence",
+      "statement": "A beastcraft influence slam (Craicic Maw, Fenumal Devourer and two yellow beasts on an influenced rare) adds one modifier from that influence's pool, so it never adds an uninfluenced modifier. Maxroll's Beastcrafting guide says the slam is functionally an Exalted Orb that does not guarantee an influenced modifier; the owner ruled the influence-pool encoding correct for 3.29.",
+      "sourceKind": "owner",
+      "url": "",
+      "quote": "2026-11-11: the beastcraft Shaper slam stays Shaper-pool only.",
+      "patch": "3.29",
+      "checked": true,
+      "deferred": false,
+      "value": null
+    },
+    {
       "id": "bench.normal-to-magic",
       "statement": "A bench craft that adds a modifier on a normal item turns it magic.",
       "sourceKind": "owner",

@@ -488,6 +488,32 @@ fn remove_crafted() {
     assert_eq!(ids(d, &out.item().unwrap().prefixes), ["VeiledPrefix"]);
 }
 
+/// A fractured modifier cannot be modified, and that includes removing it: the bench takes the
+/// plain crafted prefix and leaves the fractured one.
+#[test]
+fn remove_crafted_leaves_a_fractured_one() {
+    let d = test_data();
+    let crown = edited("crown-a", |s| {
+        s.prefixes = vec![
+            fractured("EinharMasterIncreasedLife4"),
+            affix("EinharMasterIncreasedMana2", None),
+        ];
+    });
+    let out = run("bench/remove-crafted", &crown);
+    let left = out.item().expect("one result");
+    assert_eq!(ids(d, &left.prefixes), ["EinharMasterIncreasedLife4"]);
+    assert!(left.prefixes[0].fractured);
+}
+
+/// Mirroring needs an item that is neither unique nor corrupted.
+#[test]
+fn mirror_refuses_a_corrupted_item() {
+    let d = test_data();
+    let mirror = method("currency/mirror");
+    assert!(check(d, mirror, &[item("crown-a")], &Params::default()).is_ok());
+    assert!(!reason("currency/mirror", &item("crown-a-corrupted")).is_empty());
+}
+
 /// A1/E3: one item reached through different draw orders is one leaf; the side is picked first,
 /// then the modifier on that side by weight (claim `add.side-first`). Recount:
 ///

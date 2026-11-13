@@ -50,7 +50,7 @@ fn solve_reports_a_fixture() {
     let text = stdout(&out);
     for want in [
         "## `crown-a` → `crown-shaper`",
-        "**Now:** 0.500 of the goal",
+        "**Now:** 0.375 of the goal",
         "**Exact steps:**",
         "**Could have come from:**",
         "|1|advances|",
@@ -98,7 +98,7 @@ fn solve_reads_a_paste() {
     ]));
     assert!(out.status.success(), "{}", stderr(&out));
     assert!(
-        stdout(&out).contains("**Now:** 0.833 of the goal"),
+        stdout(&out).contains("**Now:** 0.750 of the goal"),
         "{}",
         stdout(&out)
     );
@@ -119,4 +119,47 @@ fn solve_needs_a_pattern() {
         "{}",
         stderr(&out)
     );
+}
+
+/// A report says what it left out, and `--all` leaves nothing out: on `crown-a` the exact table
+/// stops at six rows with a count of the rest, and with `--all` it shows every row and names
+/// every member of a tied row.
+#[test]
+fn all_prints_what_the_caps_hide() {
+    let report = |extra: &[&str]| {
+        let mut a = vec!["solve", "--pattern", "crown-shaper", "--item", "crown-a"];
+        a.extend(extra);
+        let out = run(&args(&a));
+        assert!(out.status.success(), "{}", stderr(&out));
+        stdout(&out)
+    };
+    let exact = |text: &str| {
+        let table = text
+            .split("**Exact steps:**")
+            .nth(1)
+            .and_then(|t| t.split("What those steps do").next())
+            .expect("an exact table")
+            .to_string();
+        let rows = table
+            .lines()
+            .filter(|l| l.starts_with("|") && l[1..].starts_with(char::is_numeric))
+            .count();
+        (table, rows)
+    };
+    let capped = report(&[]);
+    let (table, rows) = exact(&capped);
+    assert_eq!(rows, 6, "{table}");
+    assert!(table.contains("more steps, in further outcomes"), "{table}");
+    assert!(
+        capped.contains("more)"),
+        "a capped list says how many it hid"
+    );
+    let all = report(&["--all"]);
+    let (table, rows) = exact(&all);
+    assert!(rows > 6, "{table}");
+    assert!(
+        !table.contains("more steps, in further outcomes"),
+        "{table}"
+    );
+    assert!(!all.contains("more)"), "nothing is hidden with --all");
 }

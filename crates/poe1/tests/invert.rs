@@ -167,17 +167,75 @@ fn corruption_is_one_branch_of_the_vaal_orb() {
     );
 }
 
+/// Sources whose chance the inverse is known to miscount, found once the walk took in every
+/// fixture rather than only those the patterns accept: (fixture, method, why). Each is a defect
+/// of the backward pass, listed so that a new miscount still fails and a fixed one is noticed.
+const KNOWN_MISCOUNTS: &[(&str, &str, &str)] = &[
+    (
+        "cobalt-jewel-magic",
+        "harvest/add-attack-remove-random",
+        "the removal's keepLastAdded is not undone: the added modifier is counted as removable",
+    ),
+    (
+        "cogwork-ring-fire",
+        "harvest/add-attack-remove-random",
+        "keepLastAdded is not undone",
+    ),
+    (
+        "cogwork-ring-fire",
+        "harvest/add-fire-remove-random",
+        "keepLastAdded is not undone",
+    ),
+    (
+        "talisman-rare-four",
+        "harvest/add-attack-remove-random",
+        "keepLastAdded is not undone",
+    ),
+    (
+        "talisman-rare-four",
+        "harvest/add-physical-remove-random",
+        "keepLastAdded is not undone",
+    ),
+    (
+        "crown-uninfluenced-fracture",
+        "harvest/add-life-remove-random",
+        "keepLastAdded is not undone",
+    ),
+    (
+        "cogwork-ring-fire",
+        "currency/annulment",
+        "Cannot Roll narrows the removal; the source's note says this pass does not count it",
+    ),
+    (
+        "talisman-rare-four",
+        "currency/annulment",
+        "Cannot Roll narrows the removal; the source's note says this pass does not count it",
+    ),
+    (
+        "tincture-magic",
+        "currency/transmutation",
+        "a two-modifier result is reached in two draw orders and only one is counted",
+    ),
+];
+
 /// Everything the inverse says is true forwards: running the method on the input it found gives
-/// the item back, with the chance it claimed, for every item and pattern the catalog covers.
+/// the item back, with the chance it claimed, for every item under every pattern, including the
+/// corrupted and uninfluenced fixtures the catalog leaves out.
 #[test]
 fn every_source_is_a_real_source() {
     let d = test_data();
+    let accepted = common::pairs();
     let mut checked = 0;
-    for (pname, name) in common::pairs() {
+    let mut walked: std::collections::BTreeMap<String, usize> = Default::default();
+    let mut miscounted: std::collections::BTreeSet<(String, String)> = Default::default();
+    for (pname, name) in common::all_pairs() {
         let pat = pattern(&pname);
         let target = item(&name);
         let inversion = invert::sources(d, &pat, &target);
-        assert!(inversion.found > 0, "{pname} / {name}: nothing found");
+        if accepted.contains(&(pname.clone(), name.clone())) {
+            assert!(inversion.found > 0, "{pname} / {name}: nothing found");
+        }
+        *walked.entry(name.clone()).or_default() += inversion.found;
         for group in &inversion.groups {
             for source in &group.sources {
                 let at = format!("{pname} / {name} / {}", source.method);
@@ -199,17 +257,45 @@ fn every_source_is_a_real_source() {
                     .filter(|(_, leaf)| matches!(leaf, Leaf::Item(i) if same_mods(i, &target)))
                     .map(|(p, _)| *p)
                     .sum::<f64>();
-                assert!(
-                    (found - source.p).abs() < 1e-12,
-                    "{at} claims {:.6}, the forward run gives {:.6}",
-                    source.p,
-                    found
-                );
+                if (found - source.p).abs() >= 1e-12 {
+                    let known = KNOWN_MISCOUNTS
+                        .iter()
+                        .any(|(n, m, _)| *n == name && *m == source.method);
+                    assert!(
+                        known,
+                        "{at} claims {:.6}, the forward run gives {:.6}",
+                        source.p, found
+                    );
+                    miscounted.insert((name.clone(), source.method.clone()));
+                }
                 checked += 1;
             }
         }
     }
     assert!(checked > 100, "only {checked} sources checked");
+    // The fixtures `pairs` leaves out are walked, and have sources to check.
+    for name in [
+        "crown-a-corrupted",
+        "crown-actual-corrupted",
+        "crown-d2-scbc-corrupted",
+        "crown-uninfluenced-fracture",
+    ] {
+        assert!(
+            !accepted.iter().any(|(_, n)| n == name),
+            "{name} is accepted"
+        );
+        assert!(
+            walked.get(name).copied().unwrap_or(0) > 0,
+            "{name}: {walked:?}"
+        );
+    }
+    // A known miscount that no longer shows has been fixed: take it off the list.
+    for (name, method, why) in KNOWN_MISCOUNTS {
+        assert!(
+            miscounted.contains(&(name.to_string(), method.to_string())),
+            "{name} / {method} now round-trips ({why}); remove it from KNOWN_MISCOUNTS"
+        );
+    }
 }
 
 /// Every claimed source is a probability of a method that really applies, the group's best is
@@ -279,4 +365,56 @@ fn sources_group_by_pattern_state() {
     let mut sorted = bests.clone();
     sorted.sort_by(|a, b| b.total_cmp(a));
     assert_eq!(bests, sorted);
+}
+
+/// A removal can have taken any modifier the item could hold, not only a natural one: `crown-c2`
+/// could be the item that held the veiled gem-level prefix and lost it to a Veiled Exalted Orb.
+#[test]
+fn a_removed_unveiled_modifier_is_a_source() {
+    let d = test_data();
+    let pat = pattern("crown-shaper");
+    let desired = pat
+        .classes
+        .iter()
+        .position(|c| c.id == "desired-veiled")
+        .expect("the pattern's veiled class") as u16;
+    let inversion = invert::sources(d, &pat, &item("crown-c2"));
+    let had_it: Vec<&str> = inversion
+        .groups
+        .iter()
+        .filter(|g| g.state.prefixes.iter().any(|a| a.class == desired))
+        .flat_map(|g| g.sources.iter().map(|s| s.method.as_str()))
+        .collect();
+    assert!(
+        had_it.contains(&"currency/veiled-exalted"),
+        "no input held the veiled prefix: {had_it:?}"
+    );
+}
+
+/// Every input the inverse offers is an item the game can hold: no magic item with more than one
+/// prefix or suffix ahead of a Regal Orb. Every pair the patterns accept, not a sample of them.
+#[test]
+fn every_source_is_a_legal_item() {
+    let d = test_data();
+    for (pname, name) in common::pairs() {
+        let pat = pattern(&pname);
+        let inversion = invert::sources(d, &pat, &item(&name));
+        for source in inversion.groups.iter().flat_map(|g| &g.sources) {
+            let input = &source.input;
+            assert!(
+                input.rarity != poe1::data::Rarity::Magic
+                    || (input.prefixes.len() <= 1 && input.suffixes.len() <= 1),
+                "{pname} / {name} / {}: a magic input with {} prefixes and {} suffixes",
+                source.method,
+                input.prefixes.len(),
+                input.suffixes.len()
+            );
+            assert!(
+                input.validate(d).is_ok(),
+                "{pname} / {name} / {}: {:?}",
+                source.method,
+                input.validate(d)
+            );
+        }
+    }
 }

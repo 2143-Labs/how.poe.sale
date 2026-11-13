@@ -1,0 +1,11 @@
+## `crown-a-corrupted` → `crown-shaper`
+
+**Could have come from:** the inputs one step short of this item.
+
+- prefixes [any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.5000, `currency/tainted-exalted-orb` at 0.1250
+- prefixes [none], suffixes [hypothermia, essence-elemental, spell-crit], 3 open prefixes / none open, 3 slots it wants still missing — `currency/vaal` at 0.2500 (3 of 4 branches cannot be undone)
+- prefixes [desired-veiled], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.1250
+- prefixes [good-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 2 open prefixes / none open, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.1250
+- … 4 more inputs
+
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).

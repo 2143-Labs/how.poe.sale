@@ -160,6 +160,11 @@ fn undo_method(
         if item == canonical {
             continue;
         }
+        // An input the game cannot hold (a magic item with five affixes, a normal one with any)
+        // is no source, whatever the method would make of it.
+        if item.validate(data).is_err() {
+            continue;
+        }
         if apply::check(data, method, std::slice::from_ref(&item), params).is_err() {
             continue;
         }
@@ -441,6 +446,9 @@ fn undo_add_veiled(data: &Data, target: &Item) -> Vec<(Item, f64, Option<String>
 
 /// Every modifier that could sit as an explicit on this item: the natural pool, and the crafted,
 /// essence, delve, unveiled, veiled, mercenary and ducat modifiers that can spawn on its tags.
+/// Only the natural and essence modifiers carry an item domain (`item`, `flask`, ...) to test
+/// against the base; the others sit in a source domain of their own (`crafted`, `veiled`, ...),
+/// as `Item::validate` reads them, and the spawn test below decides them.
 fn eligible(data: &Data, item: &Item) -> Vec<u32> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
@@ -465,10 +473,11 @@ fn eligible(data: &Data, item: &Item) -> Vec<u32> {
         ModKind::Mercenary,
         ModKind::Ducat,
     ] {
+        let item_domain = matches!(kind, ModKind::Natural | ModKind::EssenceOnly);
         for &m in data.mods_of_kind(kind) {
             let md = data.mod_at(m);
             if md.side.is_none()
-                || (kind != ModKind::Ducat && md.domain != base.domain.repoe())
+                || (item_domain && md.domain != base.domain.repoe())
                 || md.level > item.item_level
                 || md.groups.iter().any(|g| groups.contains(g))
             {

@@ -72,22 +72,26 @@
       ]
     },
     {
+      "id": "hypothermia-best",
+      "label": "Supported by Level 20 Hypothermia, elevated or not",
+      "side": "suffix",
+      "grade": "desired",
+      "matchers": [
+        {
+          "mod": "IncreasedChillEffectSupportedUber3",
+          "orBetter": true
+        }
+      ]
+    },
+    {
       "id": "hypothermia",
-      "label": "Supported by Hypothermia",
+      "label": "Supported by Level 18 Hypothermia or better",
       "side": "suffix",
       "grade": "good",
       "matchers": [
         {
-          "mod": "IncreasedChillEffectSupportedUber1"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUber2"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUber3"
-        },
-        {
-          "mod": "IncreasedChillEffectSupportedUberMaven"
+          "mod": "IncreasedChillEffectSupportedUber2",
+          "orBetter": true
         }
       ]
     },
@@ -144,6 +148,7 @@
   ],
   "suffixes": [
     [
+      "hypothermia-best",
       "hypothermia"
     ],
     [

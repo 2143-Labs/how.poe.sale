@@ -45,6 +45,8 @@ cargo test --workspace --release
 cd web && npm run build && npm test
 ```
 
+A chart page can be kept as a test: press Share, save the copied link as `web/src/__tests__/charts/<name>.link`, and `npm test` replays it — the root, watch, pins and merges are all in the link — comparing the cards, the pinned steps and the chain's totals with its snapshot. `npm test -- -u` accepts a new snapshot once the diff has been read.
+
 Container image: `nix build .#container` writes a gzipped image tarball to `./result` (`podman load -i result`). The server reads `PORT` (default 8080) and `STATIC_DIR` (default `./web/dist`).
 
 ## Refreshing game data

@@ -215,7 +215,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "crusader"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"]
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"]
     },
     {
       "id": "beast/influence-slam-elder",
@@ -236,7 +236,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "elder"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"]
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"]
     },
     {
       "id": "beast/influence-slam-hunter",
@@ -257,7 +257,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "hunter"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"]
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"]
     },
     {
       "id": "beast/influence-slam-redeemer",
@@ -278,7 +278,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "redeemer"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"]
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"]
     },
     {
       "id": "beast/influence-slam-shaper",
@@ -299,7 +299,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "shaper"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"],
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"],
       "example": "crown-a-mana"
     },
     {
@@ -321,7 +321,7 @@
       "ops": [
         {"op": "addRandom", "pool": {"kind": "influence", "influence": "warlord"}, "side": "any"}
       ],
-      "claims": ["add.side-first", "beast.list"]
+      "claims": ["add.side-first", "beast.list", "beast.slam-influence"]
     },
     {
       "id": "beast/maximum-links",
@@ -1744,6 +1744,7 @@
         {"name": "Mirror of Kalandra", "amount": 1}
       ],
       "requires": [
+        {"kind": "notCorrupted"},
         {"kind": "notMirrored"},
         {"kind": "notUnique"}
       ],
