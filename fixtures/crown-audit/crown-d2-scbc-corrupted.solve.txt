@@ -31,7 +31,7 @@ What those steps do:
 
 - **Tainted Chaos Orb** (`currency/tainted-chaos-orb`): by chance, one of: 50%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1); 50%: removes every modifier that can change (nothing left: normal; only fractured left: magic for one, rare for more; a side a metamod kept leaves the rarity).
 
-**Not computed:** `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/kisharas-ducat`, `currency/magmatic-ore`, `currency/tainted-armourers-scrap`, `currency/tainted-divine-teardrop`, `currency/tainted-mythic-orb` (the model stops before their result).
+**Not computed:** `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/kisharas-ducat`, `currency/magmatic-ore`, `currency/tainted-armourers-scrap`, `currency/tainted-divine-teardrop`, `currency/tainted-mythic-orb` — 4 × needs data; 3 × socket outcome table; 1 × unconfirmed rule (the model stops before their result).
 
 **Does not apply:** 1070 methods (`the item is corrupted` ×1025, `only works on: weapons` ×12, `the item has no sockets` ×9, +14 more reasons)
 

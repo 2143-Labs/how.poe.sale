@@ -3010,3 +3010,74 @@ fn oil_rancour_and_rune_costs() {
         "only works on: weapons"
     );
 }
+
+/// Claim `memory-strands.rollable-tiers`: a strand count cuts the tiers a draw can reach, and a
+/// question about what can exist on the item is not a draw, so it is not cut.
+#[test]
+fn strands_keep_only_the_top_tiers_of_a_draw() {
+    let d = test_data();
+    let plain_spec = spec("crown-a");
+    let plain = Item::from_spec(d, &plain_spec).expect("an item");
+    let mut stranded_spec = plain_spec.clone();
+    stranded_spec.memory_strands = 100;
+    let stranded = Item::from_spec(d, &stranded_spec).expect("an item");
+    // The pool a draw reaches, with the item's own modifiers out of the way, which is how the
+    // chart asks: `ignore_limits` is not what decides the cut.
+    let draw = |item: &Item| {
+        poe1::apply::draw_candidates(d, item, &Pool::Natural, SideReq::Any, true, true)
+    };
+    // What can exist on the item, which is not a draw.
+    let possible = |item: &Item| {
+        poe1::apply::pool_candidates(d, item, &Pool::Natural, SideReq::Any, true, true)
+    };
+    let before = draw(&plain);
+    let after = draw(&stranded);
+    assert!(!before.is_empty(), "the item has a natural pool");
+    assert_eq!(
+        possible(&plain).len(),
+        possible(&stranded).len(),
+        "a question about what can roll must not be cut"
+    );
+    assert_eq!(possible(&plain).len(), before.len(), "no strands is no cut");
+    assert!(
+        after.len() < before.len(),
+        "100 strands must drop tiers: {} mods before, {} after",
+        before.len(),
+        after.len()
+    );
+    // The cut removes and never adds.
+    let had: std::collections::BTreeSet<u32> = before.iter().map(|(i, _)| *i).collect();
+    assert!(after.iter().all(|(i, _)| had.contains(i)));
+    // Every surviving tier table keeps no more tiers than the formula allows.
+    let tables = |c: &[(u32, f64)]| {
+        type TierKey = (u16, Vec<(u16, u32)>);
+        let mut m: std::collections::BTreeMap<TierKey, std::collections::BTreeSet<u8>> =
+            Default::default();
+        for (i, _) in c {
+            let md = d.mod_at(*i);
+            m.entry((md.mod_type, md.generation.clone()))
+                .or_default()
+                .insert(md.level);
+        }
+        m
+    };
+    let (b, a) = (tables(&before), tables(&after));
+    let mut shrank = false;
+    for (key, tiers) in &a {
+        let all = b.get(key).expect("a surviving table was a table before");
+        assert!(tiers.len() <= all.len(), "table {key:?} gained a tier");
+        shrank |= tiers.len() < all.len();
+        // The cut keeps a prefix of the table counted from the highest, so no tier survives with a
+        // higher one missing.
+        let mut kept: Vec<u8> = tiers.iter().copied().collect();
+        kept.sort_unstable_by(|x, y| y.cmp(x));
+        let mut every: Vec<u8> = all.iter().copied().collect();
+        every.sort_unstable_by(|x, y| y.cmp(x));
+        assert_eq!(
+            kept[..],
+            every[..kept.len()],
+            "table {key:?} does not keep the highest tiers: {kept:?} of {every:?}"
+        );
+    }
+    assert!(shrank, "no tier table lost a tier at 100 strands");
+}

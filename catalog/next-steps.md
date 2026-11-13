@@ -51,7 +51,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 897 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `only works on: Two Hand Axes, Two Hand Maces, Two Hand Swords, Staves, Warstaves` ×68, +87 more reasons)
 
@@ -131,7 +131,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 968 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72, +86 more reasons)
 
@@ -307,7 +307,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/colours/NN`, `bench/colours/NNN`, `bench/colours/NNNN`, `bench/links/2`, `bench/links/3`, `bench/links/4`, `bench/reroll-rare-mods/1` (+17 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/colours/NN`, `bench/colours/NNN`, `bench/colours/NNNN`, `bench/links/2`, `bench/links/3`, `bench/links/4`, `bench/reroll-rare-mods/1` (+17 more) — 12 × socket outcome table; 10 × needs data; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 962 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +87 more reasons)
 
@@ -504,7 +504,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 904 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `only works on: Two Hand Axes, Two Hand Maces, Two Hand Swords, Staves, Warstaves` ×68, +87 more reasons)
 
@@ -558,7 +558,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Deafening Essence of Anger** (`essence/deafening-essence-of-anger`): sets the rarity to rare; removes every modifier that can change; adds Deafening Essence of Anger's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 969 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72, +87 more reasons)
 
@@ -611,7 +611,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 968 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72, +86 more reasons)
 
@@ -662,7 +662,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Deafening Essence of Anger** (`essence/deafening-essence-of-anger`): sets the rarity to rare; removes every modifier that can change; adds Deafening Essence of Anger's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) — 7 × needs data; 4 × socket outcome table; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 973 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +88 more reasons)
 
@@ -734,7 +734,7 @@ What those steps do:
 - **Deafening Essence of Anger** (`essence/deafening-essence-of-anger`): sets the rarity to rare; removes every modifier that can change; adds Deafening Essence of Anger's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) — 7 × needs data; 4 × socket outcome table; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 976 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +90 more reasons)
 
@@ -814,7 +814,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) — 7 × needs data; 4 × socket outcome table; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 972 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +87 more reasons)
 
@@ -895,7 +895,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Deafening Essence of Anger** (`essence/deafening-essence-of-anger`): sets the rarity to rare; removes every modifier that can change; adds Deafening Essence of Anger's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+7 more) — 7 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 969 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `the item already has as many crafted modifiers as it can hold` ×72, +87 more reasons)
 
@@ -971,7 +971,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Deafening Essence of Anger** (`essence/deafening-essence-of-anger`): sets the rarity to rare; removes every modifier that can change; adds Deafening Essence of Anger's modifier for the item's class; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) — 7 × needs data; 4 × socket outcome table; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 973 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +88 more reasons)
 
@@ -1048,7 +1048,7 @@ What those steps do:
 - **Vaal Orb** (`currency/vaal`): corrupts the item; by chance, one of: 25%: nothing else; 25%: replaces one random implicit with a random corrupted implicit (with none, adds one); 25%: turns a random white socket non-white (3.29); 25%: sets the rarity to rare, then removes every modifier that can change, then fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 - **Chaos Orb** (`currency/chaos`): sets the rarity to rare; removes every modifier that can change; fills the rest of the reforge with random modifiers (4 / 5 / 6 explicit modifiers in total at 8:3:1).
 
-**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) (the model stops before their result).
+**Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/cyaxans-ducat` (+6 more) — 7 × needs data; 4 × socket outcome table; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
 **Does not apply:** 972 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +86 more reasons)
 

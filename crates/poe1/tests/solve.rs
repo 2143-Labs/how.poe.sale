@@ -617,6 +617,7 @@ fn rank_ignores_rounding_noise() {
             model: Model::Exact,
             ..Default::default()
         },
+        pending: None,
     };
     // `a` sorts first by id and carries a sliver more goal; only `blocked` really differs.
     let stuck = at("a", 1e-12, 1.0);

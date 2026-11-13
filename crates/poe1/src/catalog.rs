@@ -1719,6 +1719,22 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion, caps: Cap
     out
 }
 
+/// The line that says a strand count changed the odds below it, and the blank after it. Empty
+/// when the item holds none (claim `memory-strands.rollable-tiers`).
+pub fn strands_line(item: &Item) -> Vec<String> {
+    if item.memory_strands == 0 {
+        return Vec::new();
+    }
+    vec![
+        format!(
+            "**Memory Strands:** {} — every random draw keeps only the top tiers of its table \
+             (claim `memory-strands.rollable-tiers`).",
+            item.memory_strands
+        ),
+        String::new(),
+    ]
+}
+
 /// One item weighed against one pattern: where it stands, every step in its group, and the best
 /// exact step's outcome in full.
 pub fn next_steps_section(
@@ -1755,6 +1771,7 @@ pub fn next_steps_section(
         ),
         String::new(),
     ];
+    out.extend(strands_line(item));
     // What the item could have come from is about the item as it stands, so it sits with "Now".
     let inversion = crate::invert::sources(data, pattern, item);
     out.extend(sources_md(pattern, &inversion, caps));
@@ -1792,10 +1809,31 @@ pub fn next_steps_section(
             .take(caps.listed)
             .map(|a| format!("`{}`", a.method))
             .collect();
+        // Why the model stopped, since that is the difference between "a reforge we cannot draw"
+        // and "a rule nobody has written down yet".
+        let mut kinds: BTreeMap<&str, usize> = BTreeMap::new();
+        for a in &report.blind {
+            let kind = a
+                .pending
+                .as_ref()
+                .map_or("reason not recorded", |r| r.kind());
+            *kinds.entry(kind).or_default() += 1;
+        }
+        let mut top: Vec<(&str, usize)> = kinds.into_iter().collect();
+        top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        let mut reasons: Vec<String> = top
+            .iter()
+            .take(caps.methods)
+            .map(|(kind, n)| format!("{n} × {kind}"))
+            .collect();
+        if top.len() > reasons.len() {
+            reasons.push(format!("{} more reasons", top.len() - reasons.len()));
+        }
         out.push(format!(
-            "**Not computed:** {}{} (the model stops before their result).",
+            "**Not computed:** {}{} — {} (the model stops before their result).",
             ids.join(", "),
-            more(report.blind.len(), ids.len())
+            more(report.blind.len(), ids.len()),
+            reasons.join("; ")
         ));
     }
     if !report.unmet.is_empty() {
@@ -1847,6 +1885,7 @@ pub fn next_steps_section(
 pub fn sources_report(
     pattern: &Pattern,
     item_name: &str,
+    item: &Item,
     pattern_name: &str,
     inversion: &crate::invert::Inversion,
     caps: Caps,
@@ -1855,6 +1894,7 @@ pub fn sources_report(
         format!("## `{item_name}` → `{pattern_name}`"),
         String::new(),
     ];
+    out.extend(strands_line(item));
     out.extend(sources_md(pattern, inversion, caps));
     out.push(String::new());
     out.join("\n")

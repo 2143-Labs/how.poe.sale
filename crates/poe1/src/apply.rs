@@ -19,6 +19,7 @@ use crate::method::{
     RemoveFilter, Require, SideReq, ValueScope, Weighting,
 };
 use crate::pool;
+use crate::strands;
 
 /// More states or leaves than this and `apply` reports `Pending { reason: TooLarge }`.
 pub const MAX_BRANCHES: usize = 100_000;
@@ -331,12 +332,34 @@ fn pool_empty_text(pool: &Pool) -> String {
     }
 }
 
-/// The weighted candidate mods `AddRandom` draws from, at item level, with the attack and
-/// caster mods a Cannot Roll metamod bars left out (claim `metamod.cannot-roll`). `ignore_limits`
-/// keeps a mod whose side has no room, and `ignore_groups` keeps a mod whose group the item
-/// already holds: a requirement asks whether the modifier can roll on the item at all, before the
-/// reforge clears it, while an add must respect both. An add draws from this list after
-/// `add_candidates` picks the side.
+/// One tier table: the modifiers of one mod type and generation-weight set. The domain is already
+/// fixed by the caller, which keeps only the base's own from the table.
+type TierKey = (u16, Vec<(u16, u32)>);
+
+fn tier_key(m: &ModData) -> TierKey {
+    (m.mod_type, m.generation.clone())
+}
+
+/// For each tier table in `stratum`, the lowest level a strand count still rolls.
+fn tier_floors(data: &Data, stratum: &[(u32, Side)], count: u8) -> BTreeMap<TierKey, u8> {
+    let mut levels: BTreeMap<TierKey, Vec<u8>> = BTreeMap::new();
+    for &(i, _) in stratum {
+        let m = data.mod_at(i);
+        levels.entry(tier_key(m)).or_default().push(m.level);
+    }
+    levels
+        .into_iter()
+        .filter_map(|(k, l)| strands::kept_floor(l, count).map(|floor| (k, floor)))
+        .collect()
+}
+
+/// The modifier pool at item level, with the attack and caster mods a Cannot Roll metamod bars left
+/// out (claim `metamod.cannot-roll`): the question "what can roll on this item", which is not
+/// "what will one draw see" — that is `draw_candidates`, the same pool with the Memory Strands
+/// cut (claim `memory-strands.rollable-tiers`). `ignore_limits` keeps a mod whose side has no room,
+/// and `ignore_groups` keeps a mod whose group the item already holds: a requirement asks whether
+/// the modifier can roll on the item at all, before the reforge clears it, while an add respects
+/// both.
 pub fn pool_candidates(
     data: &Data,
     item: &Item,
@@ -344,6 +367,32 @@ pub fn pool_candidates(
     side: SideReq,
     ignore_limits: bool,
     ignore_groups: bool,
+) -> Vec<(u32, f64)> {
+    candidates(data, item, pool, side, ignore_limits, ignore_groups, false)
+}
+
+/// The pool one random draw reaches: `pool_candidates` with the Memory Strands cut applied.
+/// A draw is the only thing that is cut — a question about what can exist on the item, which is
+/// what `pool_candidates` answers, is not a draw (claim `memory-strands.rollable-tiers`).
+pub fn draw_candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+) -> Vec<(u32, f64)> {
+    candidates(data, item, pool, side, ignore_limits, ignore_groups, true)
+}
+
+fn candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+    cut: bool,
 ) -> Vec<(u32, f64)> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
@@ -371,7 +420,9 @@ pub fn pool_candidates(
     if matches!(pool, Pool::Tag { .. } | Pool::Ducat { .. }) && tag.is_none() {
         return Vec::new();
     }
-    let mut weighted = Vec::new();
+    // The pool a draw reaches, before the item's own modifiers block their families. The Memory
+    // Strands cut is made on this set, so it does not depend on what the item holds.
+    let mut stratum: Vec<(u32, Side)> = Vec::new();
     for &i in data.mods_of_kind(kind) {
         let m = data.mod_at(i);
         let Some(s) = m.side else { continue };
@@ -385,9 +436,25 @@ pub fn pool_candidates(
             || (kind != ModKind::Ducat && m.domain != base.domain.repoe())
             || m.level > level_cap
             || !allowed.contains(&s)
-            || (!ignore_limits && open[s.index()] == 0)
+        {
+            continue;
+        }
+        stratum.push((i, s));
+    }
+    let floors = if cut && item.memory_strands > 0 {
+        tier_floors(data, &stratum, item.memory_strands)
+    } else {
+        BTreeMap::new()
+    };
+    let mut weighted = Vec::new();
+    for (i, s) in stratum {
+        let m = data.mod_at(i);
+        if (!ignore_limits && open[s.index()] == 0)
             || (!ignore_groups && m.groups.iter().any(|g| groups.contains(g)))
             || barred.iter().any(|t| m.tags.contains(t))
+            || floors
+                .get(&tier_key(m))
+                .is_some_and(|floor| m.level < *floor)
         {
             continue;
         }
@@ -413,7 +480,7 @@ pub fn add_candidates(
 ) -> Vec<(u32, f64)> {
     side_first(
         data,
-        pool_candidates(data, item, pool, side, ignore_limits, false),
+        draw_candidates(data, item, pool, side, ignore_limits, false),
     )
 }
 
