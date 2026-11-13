@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|---|
 |1|unblocks|2 steps: Bench: remove crafted modifiers — `bench/remove-crafted`, `currency/scouring`|1 × Orb of Scouring|0.000|0.500|0.000|0.000|0.000|
 |2|unblocks|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.500|0.000|0.000|0.500|
-|3|holds|4 steps: Divine Orb — `currency/divine`, `currency/mirror` (+2 more)|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.500|0.000|0.000|1.000|
+|3|holds|4 steps: Divine Orb — `currency/divine`, `currency/mirror` (+2 more)|1 × Divine Orb for `currency/divine`; 3 others cost something else|0.000|0.500|0.000|0.000|1.000|
 
 What those steps do:
 
@@ -28,9 +28,9 @@ What those steps do:
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.500|0.000|0.000|0.000|
+|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; 19 others cost something else|0.000|0.500|0.000|0.000|0.000|
 |2|unblocks|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.250|0.000|1.000|0.000|
-|3|unblocks|61 steps: Deafening Essence of Anger — `essence/deafening-essence-of-anger`, `essence/deafening-essence-of-anguish` (+59 more)|1 × Deafening Essence of Anger for `essence/deafening-essence-of-anger`; the others in this row cost something else|0.000|0.125|0.000|1.000|0.000|
+|3|unblocks|61 steps: Deafening Essence of Anger — `essence/deafening-essence-of-anger`, `essence/deafening-essence-of-anguish` (+59 more)|1 × Deafening Essence of Anger for `essence/deafening-essence-of-anger`; 60 others cost something else|0.000|0.125|0.000|1.000|0.000|
 |4|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
 
 What those steps do:

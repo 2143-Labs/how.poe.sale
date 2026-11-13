@@ -84,7 +84,8 @@ fn crown_audit_reports_are_unchanged() {
         root.join("data/bundle.json").is_file(),
         "data/bundle.json is missing; build it from the repository root with: {BUNDLE}"
     );
-    let bless = std::env::var_os("BLESS").is_some();
+    // `BLESS=0` is off, not on: a value that says "do not" must not rewrite the files.
+    let bless = matches!(std::env::var("BLESS").as_deref(), Ok(v) if !v.is_empty() && v != "0");
     let dir = root.join("fixtures/crown-audit");
     if bless {
         std::fs::create_dir_all(&dir).expect("creating fixtures/crown-audit");

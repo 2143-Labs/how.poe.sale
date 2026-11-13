@@ -18,7 +18,7 @@
 |1|unblocks|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.500|0.000|0.000|0.000|
 |2|unblocks|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.458|0.000|0.333|0.667|
 |3|unblocks|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.375|0.000|1.000|0.000|
-|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|0.000|0.500|0.000|0.000|1.000|
+|4|holds|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; 2 others cost something else|0.000|0.500|0.000|0.000|1.000|
 |5|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.458|0.000|0.333|1.000|
 
 What those steps do:
@@ -33,10 +33,10 @@ What those steps do:
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.375|0.000|1.000|0.000|
+|1|unblocks|20 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+18 more)|1 × Chaos Orb for `currency/chaos`; 19 others cost something else|0.000|0.375|0.000|1.000|0.000|
 |2|unblocks|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.125|0.000|1.000|0.000|
 |3|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
-|4|sets back|64 steps: Deafening Essence of Anger — `essence/deafening-essence-of-anger`, `essence/deafening-essence-of-anguish` (+62 more)|1 × Deafening Essence of Anger for `essence/deafening-essence-of-anger`; the others in this row cost something else|0.000|0.000|0.000|1.000|0.000|
+|4|sets back|64 steps: Deafening Essence of Anger — `essence/deafening-essence-of-anger`, `essence/deafening-essence-of-anguish` (+62 more)|1 × Deafening Essence of Anger for `essence/deafening-essence-of-anger`; 63 others cost something else|0.000|0.000|0.000|1.000|0.000|
 
 What those steps do:
 

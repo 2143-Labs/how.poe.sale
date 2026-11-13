@@ -1515,9 +1515,14 @@ fn step_table(data: &Data, group: &[crate::solve::Assessment], caps: Caps) -> St
             paid_cost(data, &first.cost)
         } else {
             format!(
-                "{} for `{}`; the others in this row cost something else",
+                "{} for `{}`; {}",
                 paid_cost(data, &first.cost),
-                first.method
+                first.method,
+                if n == 2 {
+                    "1 other costs something else".to_string()
+                } else {
+                    format!("{} others cost something else", n - 1)
+                }
             )
         };
         lines.push(format!(

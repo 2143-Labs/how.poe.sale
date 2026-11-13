@@ -15,15 +15,17 @@
 
 |#|Can|Steps|Cost|Finish|Goal|Better|Worse|Blocked|
 |---|---|---|---|---|---|---|---|---|
-|1|finishes|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; the others in this row cost something else|1.000|1.000|0.000|0.000|0.000|
-|2|sets back|2 steps: Bench: remove crafted modifiers — `bench/remove-crafted`, `currency/orb-of-dominance`|1 × Orb of Scouring for `bench/remove-crafted`; the others in this row cost something else|0.000|0.750|0.000|1.000|0.000|
-|3|sets back|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.729|0.000|1.000|0.000|
-|4|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.729|0.000|1.000|1.000|
-|5|sets back|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.000|0.000|1.000|0.000|
+|1|finishes|3 steps: Divine Orb — `currency/divine`, `currency/mirror`, `currency/sacred`|1 × Divine Orb for `currency/divine`; 2 others cost something else|1.000|1.000|0.000|0.000|0.000|
+|2|sets back|Orb of Dominance — `currency/orb-of-dominance`|1 × Orb of Dominance|0.000|0.792|0.000|1.000|0.000|
+|3|sets back|Bench: remove crafted modifiers — `bench/remove-crafted`|1 × Orb of Scouring|0.000|0.750|0.000|1.000|0.000|
+|4|sets back|Orb of Annulment — `currency/annulment`|1 × Orb of Annulment|0.000|0.729|0.000|1.000|0.000|
+|5|sets back|Veiled Exalted Orb — `currency/veiled-exalted`|1 × Veiled Exalted Orb|0.000|0.729|0.000|1.000|1.000|
+|6|sets back|Orb of Scouring — `currency/scouring`|1 × Orb of Scouring|0.000|0.000|0.000|1.000|0.000|
 
 What those steps do:
 
 - **Divine Orb** (`currency/divine`): rerolls the values of the modifiers that can change and are not crafted.
+- **Orb of Dominance** (`currency/orb-of-dominance`): removes one influenced modifier that can change and upgrades another one tier.
 - **Bench: remove crafted modifiers** (`bench/remove-crafted`): removes every crafted modifier.
 - **Orb of Annulment** (`currency/annulment`): removes one random modifier that can change.
 - **Veiled Exalted Orb** (`currency/veiled-exalted`): removes one random modifier that can change; adds a veiled modifier on a side with room (half each when both have room).
@@ -35,7 +37,7 @@ What those steps do:
 |---|---|---|---|---|---|---|---|---|
 |1|sets back|Essence of Horror — `essence/essence-of-horror`|1 × Essence of Horror|0.000|0.125|0.000|1.000|0.000|
 |2|sets back|Vaal Orb — `currency/vaal`|1 × Vaal Orb|0.000|0.000|0.000|0.750|0.000|
-|3|sets back|84 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+82 more)|1 × Chaos Orb for `currency/chaos`; the others in this row cost something else|0.000|0.000|0.000|1.000|0.000|
+|3|sets back|84 steps: Chaos Orb — `currency/chaos`, `currency/veiled-chaos` (+82 more)|1 × Chaos Orb for `currency/chaos`; 83 others cost something else|0.000|0.000|0.000|1.000|0.000|
 
 What those steps do:
 

@@ -392,31 +392,26 @@ fn a_removed_unveiled_modifier_is_a_source() {
 }
 
 /// Every input the inverse offers is an item the game can hold: no magic item with more than one
-/// prefix or suffix ahead of a Regal Orb.
+/// prefix or suffix ahead of a Regal Orb. Every pair the patterns accept, not a sample of them.
 #[test]
 fn every_source_is_a_legal_item() {
     let d = test_data();
-    let pat = pattern("crown-shaper");
-    for name in [
-        "crown-actual",
-        "crown-l2",
-        "crown-d2-scbc",
-        "crown-d2-scbc-fractured",
-    ] {
-        let inversion = invert::sources(d, &pat, &item(name));
+    for (pname, name) in common::pairs() {
+        let pat = pattern(&pname);
+        let inversion = invert::sources(d, &pat, &item(&name));
         for source in inversion.groups.iter().flat_map(|g| &g.sources) {
             let input = &source.input;
             assert!(
                 input.rarity != poe1::data::Rarity::Magic
                     || (input.prefixes.len() <= 1 && input.suffixes.len() <= 1),
-                "{name} / {}: a magic input with {} prefixes and {} suffixes",
+                "{pname} / {name} / {}: a magic input with {} prefixes and {} suffixes",
                 source.method,
                 input.prefixes.len(),
                 input.suffixes.len()
             );
             assert!(
                 input.validate(d).is_ok(),
-                "{name} / {}: {:?}",
+                "{pname} / {name} / {}: {:?}",
                 source.method,
                 input.validate(d)
             );

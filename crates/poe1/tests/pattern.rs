@@ -776,8 +776,9 @@ fn a_metamod_does_not_fill_a_crafted_class() {
 }
 
 /// The Hypothermia ladder as the pattern ships it: `orBetter` takes the named tier and every
-/// higher tier of the same family and nothing lower, so Level 18 or better is good enough and the
-/// elevated Level 25 is best possible. There is no Level 22 tier.
+/// higher tier of the same family and nothing lower, so Level 18 or better is good enough and
+/// Level 20 or better, elevated included, is best possible. There is no Level 22 tier, and the
+/// elevated Level 25 is worth only a few percent over Level 20, so it shares Level 20's band.
 #[test]
 fn or_better_takes_the_family_at_this_tier_and_above() {
     let d = test_data();
@@ -796,20 +797,24 @@ fn or_better_takes_the_family_at_this_tier_and_above() {
             .iter()
             .any(|(c, _)| *c == want)
     };
-    assert!(
-        !takes("IncreasedChillEffectSupportedUber1", good),
-        "Level 16"
-    );
-    assert!(
-        !takes("IncreasedChillEffectSupportedUber1", best),
-        "Level 16"
-    );
+    for tier in [
+        "IncreasedChillEffectSupportedUber1",
+        "IncreasedChillEffectSupportedUber2",
+        "IncreasedChillEffectSupportedUber3",
+        "IncreasedChillEffectSupportedUberMaven",
+    ] {
+        assert_eq!(
+            takes(tier, good) || takes(tier, best),
+            tier != "IncreasedChillEffectSupportedUber1",
+            "{tier}"
+        );
+    }
     assert!(
         takes("IncreasedChillEffectSupportedUber2", good),
         "Level 18"
     );
     assert!(
-        takes("IncreasedChillEffectSupportedUber3", good),
+        takes("IncreasedChillEffectSupportedUber3", best),
         "Level 20"
     );
     assert!(
@@ -817,7 +822,7 @@ fn or_better_takes_the_family_at_this_tier_and_above() {
         "Level 25"
     );
     assert!(
-        !takes("IncreasedChillEffectSupportedUberMaven", good),
-        "Level 25 took the good-enough class as well"
+        !takes("IncreasedChillEffectSupportedUber3", good),
+        "Level 20 took the good-enough class as well"
     );
 }

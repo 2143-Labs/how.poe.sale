@@ -73,12 +73,13 @@
     },
     {
       "id": "hypothermia-best",
-      "label": "Supported by the elevated Hypothermia (Level 25)",
+      "label": "Supported by Level 20 Hypothermia, elevated or not",
       "side": "suffix",
       "grade": "desired",
       "matchers": [
         {
-          "mod": "IncreasedChillEffectSupportedUberMaven"
+          "mod": "IncreasedChillEffectSupportedUber3",
+          "orBetter": true
         }
       ]
     },
