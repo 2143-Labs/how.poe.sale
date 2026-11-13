@@ -2,17 +2,19 @@
 // A `Client` that calls the engine in this process, with the arguments the worker passes it.
 import { readFileSync } from 'node:fs'
 import type { Client } from '../client'
+import { SCOPES, type Scope } from '../flow/scope'
 import type { AppliedView, MadeByView, MethodOption, NodeView, PinnedView } from '../types'
 import init, { Bridge } from '../wasm/pkg/solver.js'
 
 /** The wasm module once loaded: a second client reuses it and starts its own engine. */
 let loaded: Promise<unknown> | null = null
 
-/** The engine over the simple game's bundle; both are staged by `npm run build`. */
-export async function simpleClient(): Promise<Client> {
+/** The engine over one page's bundle; the wasm and both bundles are staged by `npm run build`. */
+export async function clientFor(scope: Scope['id']): Promise<Client> {
   loaded ??= init({ module_or_path: readFileSync(new URL('../wasm/pkg/solver_bg.wasm', import.meta.url)) })
   await loaded
-  const bridge = new Bridge(readFileSync(new URL('../../public/data/simple.json', import.meta.url), 'utf8'))
+  const bundle = new URL(`../../public${SCOPES[scope].bundle}`, import.meta.url)
+  const bridge = new Bridge(readFileSync(bundle, 'utf8'))
   return {
     start: async () => ({
       version: bridge.version(),
@@ -33,4 +35,9 @@ export async function simpleClient(): Promise<Client> {
       JSON.parse(bridge.chart_pin_backward(node, method, key)),
     dispose: () => bridge.free(),
   }
+}
+
+/** The engine over the simple game's bundle. */
+export function simpleClient(): Promise<Client> {
+  return clientFor('simple')
 }
