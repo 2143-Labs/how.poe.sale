@@ -853,7 +853,7 @@ fn reforge(
 /// the fill's level cap. `None` when the item holds none and none can roll into its open slots,
 /// so the reforge could never stop.
 fn include_set(data: &Data, item: &Item, fill: &Fill, pool: &Pool) -> Option<BTreeSet<u32>> {
-    let set: BTreeSet<u32> = apply::pool_candidates(data, item, pool, fill.side, true, true)
+    let set: BTreeSet<u32> = apply::draw_candidates(data, item, pool, fill.side, true, true)
         .into_iter()
         .map(|(m, _)| m)
         .filter(|m| {
@@ -964,7 +964,7 @@ fn data_sides(data: &Data, item: &Item, fill: &Fill) -> [Weighted; 2] {
 
 /// The fill's weighted candidates on `item` for each side, within its level cap.
 fn side_entries(data: &Data, item: &Item, fill: &Fill) -> [Vec<(u32, f64)>; 2] {
-    let entries = apply::pool_candidates(data, item, &Pool::Natural, fill.side, true, true);
+    let entries = apply::draw_candidates(data, item, &Pool::Natural, fill.side, true, true);
     Side::BOTH.map(|side| {
         entries
             .iter()
@@ -1040,7 +1040,7 @@ pub fn realise(data: &Data, abs: &AbsItem, tracked: &[Slot], seed: u64) -> Node 
     base.quality = 0;
     base.catalyst = None;
     base.defences = None;
-    let pool = apply::pool_candidates(data, &base, &Pool::Natural, SideReq::Any, true, true);
+    let pool = apply::draw_candidates(data, &base, &Pool::Natural, SideReq::Any, true, true);
     let mut rng = SplitMix64::new(seed);
     let mut out: BTreeMap<Item, f64> = BTreeMap::new();
     let step = 1.0 / MEMBER_CAP as f64;

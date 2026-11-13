@@ -367,6 +367,32 @@ pub fn pool_candidates(
     ignore_limits: bool,
     ignore_groups: bool,
 ) -> Vec<(u32, f64)> {
+    candidates(data, item, pool, side, ignore_limits, ignore_groups, false)
+}
+
+/// The pool one random draw reaches: `pool_candidates` with the Memory Strands cut applied.
+/// A draw is the only thing that is cut — a question about what can exist on the item, which is
+/// what `pool_candidates` answers, is not a draw (claim `memory-strands.rollable-tiers`).
+pub fn draw_candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+) -> Vec<(u32, f64)> {
+    candidates(data, item, pool, side, ignore_limits, ignore_groups, true)
+}
+
+fn candidates(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+    cut: bool,
+) -> Vec<(u32, f64)> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
     let groups = item.explicit_groups(data);
@@ -394,9 +420,7 @@ pub fn pool_candidates(
         return Vec::new();
     }
     // The pool a draw reaches, before the item's own modifiers block their families. The Memory
-    // Strands cut is made on this set, so it does not depend on what the item holds (claim
-    // `memory-strands.rollable-tiers`), and it is made on a draw only: a requirement asking
-    // whether a modifier can roll at all is not a draw (`ignore_limits` is set there).
+    // Strands cut is made on this set, so it does not depend on what the item holds.
     let mut stratum: Vec<(u32, Side)> = Vec::new();
     for &i in data.mods_of_kind(kind) {
         let m = data.mod_at(i);
@@ -416,7 +440,7 @@ pub fn pool_candidates(
         }
         stratum.push((i, s));
     }
-    let floors = if item.memory_strands > 0 && !ignore_limits {
+    let floors = if cut && item.memory_strands > 0 {
         tier_floors(data, &stratum, item.memory_strands)
     } else {
         BTreeMap::new()
@@ -455,7 +479,7 @@ pub fn add_candidates(
 ) -> Vec<(u32, f64)> {
     side_first(
         data,
-        pool_candidates(data, item, pool, side, ignore_limits, false),
+        draw_candidates(data, item, pool, side, ignore_limits, false),
     )
 }
 

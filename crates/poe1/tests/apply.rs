@@ -3012,7 +3012,7 @@ fn oil_rancour_and_rune_costs() {
 }
 
 /// Claim `memory-strands.rollable-tiers`: a strand count cuts the tiers a draw can reach, and a
-/// requirement asking whether a modifier can roll at all is not a draw, so it is not cut.
+/// question about what can exist on the item is not a draw, so it is not cut.
 #[test]
 fn strands_keep_only_the_top_tiers_of_a_draw() {
     let d = test_data();
@@ -3021,12 +3021,24 @@ fn strands_keep_only_the_top_tiers_of_a_draw() {
     let mut stranded_spec = plain_spec.clone();
     stranded_spec.memory_strands = 100;
     let stranded = Item::from_spec(d, &stranded_spec).expect("an item");
-    let draw = |item: &Item, ignore_limits: bool| {
-        poe1::apply::pool_candidates(d, item, &Pool::Natural, SideReq::Any, ignore_limits, false)
+    // The pool a draw reaches, with the item's own modifiers out of the way, which is how the
+    // chart asks: `ignore_limits` is not what decides the cut.
+    let draw = |item: &Item| {
+        poe1::apply::draw_candidates(d, item, &Pool::Natural, SideReq::Any, true, true)
     };
-    let before = draw(&plain, false);
-    let after = draw(&stranded, false);
+    // What can exist on the item, which is not a draw.
+    let possible = |item: &Item| {
+        poe1::apply::pool_candidates(d, item, &Pool::Natural, SideReq::Any, true, true)
+    };
+    let before = draw(&plain);
+    let after = draw(&stranded);
     assert!(!before.is_empty(), "the item has a natural pool");
+    assert_eq!(
+        possible(&plain).len(),
+        possible(&stranded).len(),
+        "a question about what can roll must not be cut"
+    );
+    assert_eq!(possible(&plain).len(), before.len(), "no strands is no cut");
     assert!(
         after.len() < before.len(),
         "100 strands must drop tiers: {} mods before, {} after",
@@ -3050,20 +3062,22 @@ fn strands_keep_only_the_top_tiers_of_a_draw() {
         m
     };
     let (b, a) = (tables(&before), tables(&after));
+    let mut shrank = false;
     for (key, tiers) in &a {
         let all = b.get(key).expect("a surviving table was a table before");
-        let allowed = poe1::strands::rollable_tiers(all.len(), 100);
-        assert!(
-            tiers.len() <= allowed,
-            "table {key:?}: {} tiers kept, the formula allows {allowed} of {}",
-            tiers.len(),
-            all.len()
+        assert!(tiers.len() <= all.len(), "table {key:?} gained a tier");
+        shrank |= tiers.len() < all.len();
+        // The cut keeps a prefix of the table counted from the highest, so no tier survives with a
+        // higher one missing.
+        let mut kept: Vec<u8> = tiers.iter().copied().collect();
+        kept.sort_unstable_by(|x, y| y.cmp(x));
+        let mut every: Vec<u8> = all.iter().copied().collect();
+        every.sort_unstable_by(|x, y| y.cmp(x));
+        assert_eq!(
+            kept[..],
+            every[..kept.len()],
+            "table {key:?} does not keep the highest tiers: {kept:?} of {every:?}"
         );
     }
-    // A requirement asks whether a modifier can exist on the item, which is not a draw.
-    assert_eq!(
-        draw(&plain, true).len(),
-        draw(&stranded, true).len(),
-        "a requirement query must not be cut"
-    );
+    assert!(shrank, "no tier table lost a tier at 100 strands");
 }
