@@ -10,7 +10,7 @@
 - prefixes [desired-veiled, ok-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 2 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
 - … 1 more inputs
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).
 
 **Exact steps:** every outcome is computed.
 

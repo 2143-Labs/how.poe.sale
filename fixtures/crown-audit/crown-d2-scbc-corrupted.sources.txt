@@ -7,4 +7,4 @@
 - prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
 - prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0025
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).

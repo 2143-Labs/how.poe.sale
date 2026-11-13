@@ -8,4 +8,4 @@
 - prefixes [good-prefix, any-crafted-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/annulment` at 0.2000
 - … 14 more inputs
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).

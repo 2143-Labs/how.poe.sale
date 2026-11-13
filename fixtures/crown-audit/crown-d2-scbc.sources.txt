@@ -7,4 +7,4 @@
 - prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 3 slots it wants still missing — `currency/shapers-exalted` at 0.0635, `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
 - prefixes [any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 3 slots it wants still missing — `currency/exalted` at 0.0181
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).

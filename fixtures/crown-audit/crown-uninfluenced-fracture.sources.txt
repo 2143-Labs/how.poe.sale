@@ -8,4 +8,4 @@
 - prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [any-other-suffix], none open / 2 open suffixes, 4 slots it wants still missing — `currency/veiled-exalted` at 0.1667, `currency/veiled-exalted` at 0.1250
 - … 5 more inputs
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`).
+298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).

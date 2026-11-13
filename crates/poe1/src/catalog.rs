@@ -1705,9 +1705,10 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion, caps: Cap
             .collect();
         out.push(String::new());
         out.push(format!(
-            "{} methods cannot be walked backwards in this pass, e.g. {}.",
+            "{} methods cannot be walked backwards in this pass, e.g. {}{}.",
             inversion.skipped.len(),
-            shown.join(", ")
+            shown.join(", "),
+            more(inversion.skipped.len(), shown.len())
         ));
     }
     out
