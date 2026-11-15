@@ -1146,14 +1146,15 @@ fn orb_of_conflict_removes_a_lowered_lesser() {
     assert_eq!(kinds, [(0.5, ModKind::Exarch, 5), (0.5, ModKind::Eater, 5)]);
 }
 
-/// R5: a Vaal Orb replaces one random implicit. Recount: corrupted implicits (domain item,
-/// level ≤ 84) with spawn on the eldritch boots' tags: 25, weight 21500; each of the two
-/// implicits is replaced with 1/2, so 50 results share the quarter.
+/// R5 (3.30): a Vaal Orb **adds** a corrupted implicit while the item holds fewer than two of
+/// them, and leaves the base implicits alone. Recount: corrupted implicits (domain item, level
+/// ≤ 84) with spawn on the eldritch boots' tags: 25, weight 21500, and the quarter is shared
+/// among them with no slot choice.
 #[test]
-fn vaal_replaces_one_implicit() {
+fn vaal_adds_a_corrupted_implicit() {
     let eldritch = item("slink-boots-eldritch");
     let out = run("currency/vaal", &eldritch);
-    let replaced: Vec<(f64, &Item)> = out
+    let added: Vec<(f64, &Item)> = out
         .leaves
         .iter()
         .filter_map(|(p, l)| match l {
@@ -1161,17 +1162,67 @@ fn vaal_replaces_one_implicit() {
             _ => None,
         })
         .collect();
-    assert_eq!(replaced.len(), 50);
+    assert_eq!(added.len(), 25, "one result per corrupted implicit");
+    let total: f64 = added.iter().map(|(p, _)| p).sum();
+    assert!(close(total, 0.25, 1e-12), "{total}");
+    for (_, it) in &added {
+        assert_eq!(
+            it.implicits.len(),
+            3,
+            "two base implicits and the added one"
+        );
+        assert!(
+            eldritch.implicits.iter().all(|r| it.implicits.contains(r)),
+            "a base implicit is never replaced"
+        );
+    }
+}
+
+/// R5 (3.30): once the item holds two Vaal implicits, one of those two is replaced — never a
+/// base implicit — and either of them equally likely.
+#[test]
+fn vaal_replaces_one_of_two_vaal_implicits() {
+    let d = test_data();
+    let mut two = item("slink-boots-eldritch");
+    let domain = d.base_at(two.base).domain.repoe().to_string();
+    let pairs: Vec<u32> = d
+        .mods_of_kind(poe1::data::ModKind::CorruptedImplicit)
+        .iter()
+        .copied()
+        .filter(|m| d.mod_at(*m).domain == domain)
+        .take(2)
+        .collect();
+    assert_eq!(
+        pairs.len(),
+        2,
+        "the data has corrupted implicits for this domain"
+    );
+    two.implicits = pairs
+        .iter()
+        .map(|m| poe1::item::Roll {
+            m: *m,
+            values: None,
+        })
+        .collect();
+    let out = run("currency/vaal", &two);
+    let replaced: Vec<(f64, &Item)> = out
+        .leaves
+        .iter()
+        .filter_map(|(p, l)| match l {
+            Leaf::Item(i) if i.implicits != two.implicits => Some((*p, i)),
+            _ => None,
+        })
+        .collect();
     let total: f64 = replaced.iter().map(|(p, _)| p).sum();
     assert!(close(total, 0.25, 1e-12), "{total}");
     for (_, it) in &replaced {
-        assert_eq!(it.implicits.len(), 2);
+        assert_eq!(it.implicits.len(), 2, "replaced, not added to");
         let kept = it
             .implicits
             .iter()
-            .filter(|r| eldritch.implicits.contains(r))
+            .filter(|r| two.implicits.contains(r))
             .count();
-        assert_eq!(kept, 1, "exactly one implicit replaced");
+        assert_eq!(kept, 1, "exactly one of the two Vaal implicits replaced");
     }
 }
 

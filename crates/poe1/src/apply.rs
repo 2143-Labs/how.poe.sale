@@ -1642,18 +1642,32 @@ impl Run<'_> {
                 if candidates.is_empty() {
                     return Err("no corrupted implicit can roll on this item".into());
                 }
-                // One random implicit is replaced (maxroll, corruption); with none, one is added.
-                let n = item.implicits.len().max(1);
+                // 3.30: the outcome adds a corrupted implicit, and replaces one only once the
+                // item already holds two Vaal implicits — never a base implicit, and with two,
+                // either of them equally likely (claim `vaal.one-implicit`).
+                let corrupted: Vec<usize> = item
+                    .implicits
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, r)| data.mod_at(r.m).kind == ModKind::CorruptedImplicit)
+                    .map(|(i, _)| i)
+                    .collect();
+                let (slots, share): (Vec<Option<usize>>, f64) = if corrupted.len() < 2 {
+                    (vec![None], 1.0)
+                } else {
+                    let n = corrupted.len() as f64;
+                    (corrupted.into_iter().map(Some).collect(), 1.0 / n)
+                };
                 let mut out = Vec::new();
-                for slot in 0..n {
+                for slot in slots {
                     for &(m, p) in &candidates {
                         let mut it = item.clone();
                         let roll = Roll { m, values: None };
-                        match it.implicits.get_mut(slot) {
+                        match slot.and_then(|s| it.implicits.get_mut(s)) {
                             Some(r) => *r = roll,
                             None => it.implicits.push(roll),
                         }
-                        out.push((p / n as f64, it, None));
+                        out.push((p * share, it, None));
                     }
                 }
                 Ok(out)

@@ -41,7 +41,7 @@ pub const HARVEST_TAGS: [&str; 16] = [
 ];
 
 /// The exclusion reasons a scope rule may give.
-pub const EXCLUSION_REASONS: [&str; 7] = [
+pub const EXCLUSION_REASONS: [&str; 8] = [
     "placeholder",
     "shard",
     "maps-atlas",
@@ -49,6 +49,10 @@ pub const EXCLUSION_REASONS: [&str; 7] = [
     "other-item-class",
     "cost-only",
     "not-used-on-items",
+    // The game no longer hands it out, and its existing orbs still work. 3.30: the Orb of
+    // Binding. Nothing in the model can say "unobtainable", so its method is gone and the
+    // currency is scoped out here instead.
+    "unobtainable",
 ];
 
 #[derive(Deserialize)]

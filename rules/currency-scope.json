@@ -106,14 +106,6 @@
     },
     {
       "names": [
-        "Orb of Binding"
-      ],
-      "methods": [
-        "currency/binding"
-      ]
-    },
-    {
-      "names": [
         "Mirror of Kalandra"
       ],
       "methods": [
@@ -1027,6 +1019,12 @@
       ],
       "excluded": "cost-only",
       "note": "Both are craft costs: Crystallised Rancour is spent at the Horticrafting bench and Dead Man's Sulphur as part of Allflame Crafting."
+    },
+    {
+      "names": [
+        "Orb of Binding"
+      ],
+      "excluded": "unobtainable"
     }
   ]
 }

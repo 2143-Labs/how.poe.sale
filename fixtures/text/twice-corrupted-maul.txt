@@ -1,0 +1,30 @@
+Item Class: Two Hand Maces
+Rarity: Rare
+Glyph Mangler
+Plated Maul
+--------
+Two Handed Mace
+Physical Damage: 72-108
+Critical Strike Chance: 6.00% (augmented)
+Attacks per Second: 1.39 (augmented)
+Weapon Range: 1.3 metres
+--------
+Requirements:
+Level: 51
+Str: 164
+--------
+Sockets: W-W-W 
+--------
+Item Level: 54
+--------
+Socketed Gems are Supported by Level 10 ​Momentum Support
+Socketed Gems are Supported by Level 10 ​Rage Support
+--------
++1 to Level of Socketed Gems
+16% increased Attack Speed
+20% increased Critical Strike Chance
+30% increased Stun Duration on Enemies
+--------
+Twice Corrupted
+--------
+Note: ~b/o 1 alch

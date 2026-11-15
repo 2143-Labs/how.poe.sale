@@ -9,7 +9,7 @@ use poe1::item::Influence;
 use wasm_bindgen::prelude::*;
 
 /// Every paste in `fixtures/text`, by file stem, sorted.
-const EXAMPLES: [(&str, &str); 13] = [
+const EXAMPLES: [(&str, &str); 14] = [
     (
         "archdemon-crown",
         include_str!("../../../fixtures/text/archdemon-crown.txt"),
@@ -57,6 +57,10 @@ const EXAMPLES: [(&str, &str); 13] = [
     (
         "synthesised-paua-ring",
         include_str!("../../../fixtures/text/synthesised-paua-ring.txt"),
+    ),
+    (
+        "twice-corrupted-maul",
+        include_str!("../../../fixtures/text/twice-corrupted-maul.txt"),
     ),
     (
         "two-stone-ring",
