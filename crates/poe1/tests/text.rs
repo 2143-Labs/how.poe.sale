@@ -90,6 +90,35 @@ fn parse_demo_crown() {
     assert_eq!(got, expected);
 }
 
+/// 3.30 prints `Item Tier: N` on Magic and Rare items generated in Act 6 and later. The tier is a
+/// property of the drop, not a modifier, and its value is deliberately not modelled (the data pin
+/// is 3.29 and nothing simulates identification): the line must be dropped without changing what
+/// the reader recovers.
+#[test]
+fn parse_item_tier_is_a_property() {
+    let data = test_data();
+    let plain_text = demo("archdemon-crown");
+    let tiered_text = plain_text.replacen(
+        "Item Level: 87\n--------\n",
+        "Item Level: 87\n--------\nItem Tier: 5\n--------\n",
+        1,
+    );
+    assert_ne!(tiered_text, plain_text, "the tier line was inserted");
+
+    let plain = parse(data, &plain_text).expect("the 3.29 paste parses");
+    let parsed = parse(data, &tiered_text).expect("a 3.30 paste parses");
+
+    // The line is a property, so it is not an unexplained modifier line either.
+    assert!(
+        parsed.warnings.iter().all(|w| !w.contains("Item Tier")),
+        "{:?}",
+        parsed.warnings
+    );
+    assert_eq!(parsed.warnings, plain.warnings);
+    assert_eq!(parsed.spec, plain.spec);
+    Item::from_spec(data, &parsed.spec).expect("the tiered paste builds the same item");
+}
+
 #[test]
 fn render_demo_crown() {
     let data = test_data();

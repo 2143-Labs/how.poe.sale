@@ -108,9 +108,11 @@ pub struct Protection {
     /// Prefixes Cannot Be Changed and Suffixes Cannot Be Changed: respected, every modifier on
     /// the side they lock stays.
     pub locks: Policy,
-    /// Cannot Roll Attack Modifiers and Cannot Roll Caster Modifiers: respected, a modifier with
-    /// the tag they name is never removed or changed. Every op that adds a random modifier leaves
-    /// that tag out whatever the policy (claim `metamod.cannot-roll`).
+    /// Cannot Roll Attack Modifiers and Cannot Roll Caster Modifiers. Since 3.30 no PoE 1
+    /// currency's removal respects them, so every method of the PoE 1 rules states `Ignore` here
+    /// (claims `metamod.cannot-roll` and `remove.cannot-roll-scope`); `Respect` would keep a
+    /// tagged modifier from being removed. Every op that adds a random modifier still leaves the
+    /// tag out whatever the policy.
     pub cannot_roll: Policy,
 }
 

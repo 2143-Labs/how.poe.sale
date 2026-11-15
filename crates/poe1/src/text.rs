@@ -370,8 +370,12 @@ fn strip_markup(line: &str) -> String {
     out
 }
 
-/// Weapon and armour property lines: values of the base, not modifiers.
-const PROPERTY_PREFIXES: [&str; 16] = [
+/// Weapon and armour property lines, plus the item tier line: item properties, not modifiers.
+///
+/// `Item Tier:` is printed on Magic and Rare items generated in Act 6 and later (3.30). Its value
+/// is dropped on purpose: the model is pinned to 3.29 data and does not simulate identification,
+/// so there is no field a tier would feed.
+const PROPERTY_PREFIXES: [&str; 17] = [
     "Physical Damage:",
     "Elemental Damage:",
     "Chaos Damage:",
@@ -388,6 +392,7 @@ const PROPERTY_PREFIXES: [&str; 16] = [
     "Int:",
     "Sockets:",
     "Stack Size:",
+    "Item Tier:",
 ];
 
 /// Whether `needle` occurs in `hay` on word boundaries.

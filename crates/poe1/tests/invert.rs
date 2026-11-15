@@ -202,16 +202,6 @@ const KNOWN_MISCOUNTS: &[(&str, &str, &str)] = &[
         "keepLastAdded is not undone",
     ),
     (
-        "cogwork-ring-fire",
-        "currency/annulment",
-        "Cannot Roll narrows the removal; the source's note says this pass does not count it",
-    ),
-    (
-        "talisman-rare-four",
-        "currency/annulment",
-        "Cannot Roll narrows the removal; the source's note says this pass does not count it",
-    ),
-    (
         "tincture-magic",
         "currency/transmutation",
         "a two-modifier result is reached in two draw orders and only one is counted",
