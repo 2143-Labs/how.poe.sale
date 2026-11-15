@@ -119,7 +119,7 @@
     },
     {
       "id": "beast.slam-influence",
-      "statement": "A beastcraft influence slam (Craicic Maw, Fenumal Devourer and two yellow beasts on an influenced rare) adds one modifier from that influence's pool, so it never adds an uninfluenced modifier. Maxroll's Beastcrafting guide says the slam is functionally an Exalted Orb that does not guarantee an influenced modifier; the owner ruled the influence-pool encoding correct for 3.29.",
+      "statement": "A beastcraft influence slam (Craicic Maw and Fenumal Devourer on an influenced rare) adds one modifier from that influence's pool, so it never adds an uninfluenced modifier. Maxroll's Beastcrafting guide says the slam is functionally an Exalted Orb that does not guarantee an influenced modifier; the owner ruled the influence-pool encoding correct for 3.29.",
       "sourceKind": "owner",
       "url": "",
       "quote": "2026-11-11: the beastcraft Shaper slam stays Shaper-pool only.",
@@ -1112,11 +1112,11 @@
     },
     {
       "id": "beast.yellow",
-      "statement": "Most Bestiary recipes require a red beast and 3 yellow beasts.",
-      "sourceKind": "guide",
-      "url": "https://maxroll.gg/poe/crafting/beastcrafting",
-      "quote": "Most recipes require a Red beast and 3 Yellow beasts found through engaging with the Bestiary League mechanic.",
-      "patch": "3.29",
+      "statement": "Yellow beasts are no longer captured, and since 3.30 no Beastcrafting recipe requires them: the recipes that used to cost yellow beasts now cost only the red beast each names.",
+      "sourceKind": "patch-notes",
+      "url": "",
+      "quote": "Yellow beasts in your Maps are no longer captured by Einhar... As Yellow Beasts are no longer captured, they are no longer a requirement for any Beastcrafting Recipe.",
+      "patch": "3.30",
       "checked": true
     },
     {

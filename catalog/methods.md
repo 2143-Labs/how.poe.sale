@@ -2051,38 +2051,38 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: add Aspect of the Avian — `beast/aspect-avian`
 
-- Cost: 1 × Saqawal (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Saqawal (beast)
 - Needs: not corrupted; not mirrored; an open suffix; no GrantedSkill modifier yet; a magic or rare item
 - Does: adds Grants Level 20 Aspect of the Avian Skill (`GrantsBirdAspectCrafted`; a normal item turns magic).
 - Sources: `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.aspect-level` (checked, owner)
 
 ### Beastcraft: add Aspect of the Cat — `beast/aspect-cat`
 
-- Cost: 1 × Farrul (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Farrul (beast)
 - Needs: not corrupted; not mirrored; an open suffix; no GrantedSkill modifier yet; a magic or rare item
 - Does: adds Grants Level 20 Aspect of the Cat Skill (`GrantsCatAspectCrafted`; a normal item turns magic).
 - Sources: `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.aspect-level` (checked, owner)
 
 ### Beastcraft: add Aspect of the Crab — `beast/aspect-crab`
 
-- Cost: 1 × Craiceann (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Craiceann (beast)
 - Needs: not corrupted; not mirrored; an open suffix; no GrantedSkill modifier yet; a magic or rare item
 - Does: adds Grants Level 20 Aspect of the Crab Skill (`GrantsCrabAspectCrafted`; a normal item turns magic).
 - Sources: `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.aspect-level` (checked, owner)
 
 ### Beastcraft: add Aspect of the Spider — `beast/aspect-spider`
 
-- Cost: 1 × Fenumus (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Fenumus (beast)
 - Needs: not corrupted; not mirrored; an open suffix; no GrantedSkill modifier yet; a magic or rare item
 - Does: adds Grants Level 20 Aspect of the Spider Skill (`GrantsSpiderAspectCrafted`; a normal item turns magic).
 - Sources: `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.aspect-level` (checked, owner)
 
 ### Beastcraft: create a unique Talisman — `beast/create-talisman`
 
-- Cost: 1 × Black Mórrigan (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Black Mórrigan (beast)
 - Needs: not corrupted; not mirrored
 - Does: is not modelled yet (needs data: the Talisman base table is not in the RePoE export).
-- Sources: `beast.talisman-create` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
+- Sources: `beast.talisman-create` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, patch-notes)
 
 ### Beastcraft: fracture a modifier on a rare Talisman — `beast/fracture-talisman`
 
@@ -2100,7 +2100,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: foresee the next result — `beast/hinekoras-lock`
 
-- Cost: 1 × Craicic Croaker (beast), 1 × Black Mórrigan (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Craicic Croaker (beast), 1 × Black Mórrigan (beast)
 - Needs: a magic item; not already foreseeing
 - Does: is not modelled yet (not modelled yet: the lock lets you hover as many currencies as you want before you pick one (owner)).
 - On `cobalt-jewel-magic`: not computed: not modelled yet: the lock lets you hover as many currencies as you want before you pick one (owner)
@@ -2108,7 +2108,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: imprint — `beast/imprint`
 
-- Cost: 1 × Craicic Croaker (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Craicic Croaker (beast)
 - Needs: a magic item; no fractured modifier
 - Does: stores an imprint of the item.
 - On `cobalt-jewel-magic`: 1 exact outcome
@@ -2116,42 +2116,42 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: imprint a rare Talisman — `beast/imprint-talisman`
 
-- Cost: 3 × Yellow Beast (beast)
+- Cost: none
 - Needs: not corrupted; not mirrored; a rare item; a base with the talisman tag
-- Does: stores an imprint of the item.
-- Sources: `beast.talisman` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
+- Does: is not modelled yet (needs data: the 3.30 Talisman imprint ingredient is not published; the 3.29 recipe cost 3 yellow beasts, which are no longer captured).
+- Sources: `beast.talisman` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, patch-notes)
 
 ### Beastcraft: add a Crusader modifier — `beast/influence-slam-crusader`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Farric Goliath (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Farric Goliath (beast)
 - Needs: not corrupted; not mirrored; a rare item; Crusader influence; an open affix
 - Does: adds one random modifier (Crusader influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.slam-influence` (checked, owner)
 
 ### Beastcraft: add an Elder modifier — `beast/influence-slam-elder`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Saqawine Blood Viper (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Saqawine Blood Viper (beast)
 - Needs: not corrupted; not mirrored; a rare item; Elder influence; an open affix
 - Does: adds one random modifier (Elder influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.slam-influence` (checked, owner)
 
 ### Beastcraft: add a Hunter modifier — `beast/influence-slam-hunter`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Craicic Watcher (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Craicic Watcher (beast)
 - Needs: not corrupted; not mirrored; a rare item; Hunter influence; an open affix
 - Does: adds one random modifier (Hunter influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.slam-influence` (checked, owner)
 
 ### Beastcraft: add a Redeemer modifier — `beast/influence-slam-redeemer`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Queen (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Queen (beast)
 - Needs: not corrupted; not mirrored; a rare item; Redeemer influence; an open affix
 - Does: adds one random modifier (Redeemer influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.slam-influence` (checked, owner)
 
 ### Beastcraft: add a Shaper modifier — `beast/influence-slam-shaper`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Devourer (beast)
 - Needs: not corrupted; not mirrored; a rare item; Shaper influence; an open affix
 - Does: adds one random modifier (Shaper influence, either side).
 - On `crown-a-mana`: 11 exact outcomes
@@ -2159,14 +2159,14 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: add a Warlord modifier — `beast/influence-slam-warlord`
 
-- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Scrabbler (beast), 2 × Yellow Beast (beast)
+- Cost: 1 × Craicic Maw (beast), 1 × Fenumal Scrabbler (beast)
 - Needs: not corrupted; not mirrored; a rare item; Warlord influence; an open affix
 - Does: adds one random modifier (Warlord influence, either side).
 - Sources: `add.side-first` (checked, owner); `beast.list` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting); `beast.slam-influence` (checked, owner)
 
 ### Beastcraft: maximum links — `beast/maximum-links`
 
-- Cost: 1 × Craicic Sand Spitter (beast), 1 × Black Mórrigan (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Craicic Sand Spitter (beast), 1 × Black Mórrigan (beast)
 - Needs: not corrupted; not mirrored; sockets
 - Does: links every socket.
 - On `crown-actual`: does not apply: every socket is already linked
@@ -2174,7 +2174,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: remove a prefix, add a suffix — `beast/prefix-to-suffix`
 
-- Cost: 1 × Farric Lynx Alpha (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Farric Lynx Alpha (beast)
 - Needs: not corrupted; not mirrored; a magic or rare item; an open suffix
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: removes one random modifier that can change (prefix); with none that can change it removes nothing; then adds one random modifier (any, suffix).
@@ -2183,10 +2183,10 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: reroll a Talisman base type — `beast/reroll-talisman-base`
 
-- Cost: 3 × Yellow Beast (beast)
+- Cost: none
 - Needs: not corrupted; not mirrored; a rare item; a base with the talisman tag
-- Does: is not modelled yet (needs data: the Talisman base table is not in the RePoE export).
-- Sources: `beast.talisman` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, guide: https://maxroll.gg/poe/crafting/beastcrafting)
+- Does: is not modelled yet (needs data: the 3.30 Talisman reroll ingredient is not published and the Talisman base table is not in the RePoE export; the 3.29 recipe cost 3 yellow beasts, which are no longer captured).
+- Sources: `beast.talisman` (checked, patch-notes: https://maxroll.gg/poe/news/3-29-curse-of-the-allflame-patch-notes); `beast.yellow` (checked, patch-notes)
 
 ### Beastcraft: restore an imprint — `beast/restore-imprint`
 
@@ -2197,7 +2197,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: remove a suffix, add a prefix — `beast/suffix-to-prefix`
 
-- Cost: 1 × Farric Wolf Alpha (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Farric Wolf Alpha (beast)
 - Needs: not corrupted; not mirrored; a magic or rare item; an open prefix
 - Metamods: it keeps the side Prefixes/Suffixes Cannot Be Changed locks; removes or changes attack and caster modifiers even with Cannot Roll Attack/Caster Modifiers.
 - Does: removes one random modifier that can change (suffix); with none that can change it removes nothing; then adds one random modifier (any, prefix).
@@ -2206,7 +2206,7 @@ Each essence in this table costs one of itself and needs: the rarity listed; a c
 
 ### Beastcraft: add Suffixes Cannot Be Changed — `beast/suffixes-cannot-be-changed`
 
-- Cost: 1 × Wild Bristle Matron (beast), 3 × Yellow Beast (beast)
+- Cost: 1 × Wild Bristle Matron (beast)
 - Needs: not corrupted; not mirrored; one of: armour; full suffixes; an open prefix; room for another crafted modifier; no ItemGenerationCannotChangeSuffixes modifier yet; not unique
 - Does: adds Suffixes Cannot Be Changed (`DexMasterItemGenerationCannotChangeSuffixes`; a normal item turns magic).
 - On `crown-a`: 1 exact outcome

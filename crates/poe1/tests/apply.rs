@@ -43,7 +43,7 @@ use common::{item, pattern, spec};
 use poe1::apply::{Leaf, Outcome, Params, Pending, apply, check, cost};
 use poe1::data::{Data, Influence, ModKind, Rarity, Side};
 use poe1::item::{AffixSpec, Item, ItemSpec, ModSpec};
-use poe1::method::{Fill, Method, Op, PendingReason, Pool, Require, SideReq, Weighting};
+use poe1::method::{Family, Fill, Method, Op, PendingReason, Pool, Require, SideReq, Weighting};
 use poe1::pattern::{LiftedLeaf, lift};
 use poe1::test_data;
 
@@ -2715,26 +2715,41 @@ fn aspect_needs_magic_or_rare() {
     );
 }
 
-/// R23: every beast recipe pays its yellow beasts (maxroll's beastcrafting guide).
+/// R23: 3.30 captures no yellow beasts, so no Beastcrafting recipe requires them. The two
+/// Talisman recipes whose 3.29 cost was three yellow beasts and nothing else are unmodelled
+/// instead of paid for with a beast that no longer exists.
 #[test]
-fn beast_costs_include_yellow_beasts() {
+fn beast_costs_name_no_yellow_beasts() {
     let d = test_data();
-    for id in [
-        "beast/aspect-avian",
-        "beast/imprint",
-        "beast/prefix-to-suffix",
-        "beast/influence-slam-shaper",
-        "beast/suffixes-cannot-be-changed",
-        "beast/create-talisman",
-    ] {
-        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+    let mut beasts = 0;
+    for m in &d.methods {
+        if m.family != Family::Beast {
+            continue;
+        }
+        beasts += 1;
         assert!(
-            m.cost.iter().any(|c| c.name == "beast:Yellow Beast"),
-            "{id} pays no yellow beasts"
+            !m.cost.iter().any(|c| c.name == "beast:Yellow Beast"),
+            "{} still pays yellow beasts",
+            m.id
         );
         assert!(
             !m.cost.iter().any(|c| c.name.contains("Chimeral")),
-            "{id} still names Craicic Chimeral"
+            "{} still names Craicic Chimeral",
+            m.id
+        );
+    }
+    assert!(beasts > 0, "no beast methods");
+    for id in ["beast/imprint-talisman", "beast/reroll-talisman-base"] {
+        let m = d.method(id).unwrap_or_else(|| panic!("{id} missing"));
+        assert!(m.cost.is_empty(), "{id} still lists a cost");
+        assert!(
+            matches!(
+                m.ops.as_slice(),
+                [Op::Unmodelled {
+                    reason: PendingReason::NeedsData { .. }
+                }]
+            ),
+            "{id} is modelled"
         );
     }
 }
@@ -2867,7 +2882,8 @@ fn ducats_are_allflame() {
     }
 }
 
-/// R15: the Talisman crafts exist and key on the base tag.
+/// R15: the Talisman crafts exist and key on the base tag. The imprint is unmodelled in 3.30:
+/// its 3.29 ingredient was three yellow beasts, so the step stops before the item changes.
 #[test]
 fn talisman_crafts() {
     let d = test_data();
@@ -2880,13 +2896,14 @@ fn talisman_crafts() {
         s.base = "Metadata/Items/Amulets/Talismans/TalismanChieftain".into();
         s.rarity = Rarity::Rare;
     });
+    let out = run("beast/imprint-talisman", &talisman);
+    let p = pending(&out.leaves[0].1);
     assert!(
-        run("beast/imprint-talisman", &talisman)
-            .item()
-            .unwrap()
-            .imprint
-            .is_some()
+        matches!(p.reason, PendingReason::NeedsData { .. }),
+        "{:?}",
+        p.reason
     );
+    assert_eq!(p.item, talisman);
     for id in ["beast/reroll-talisman-base", "beast/create-talisman"] {
         assert!(d.method(id).is_some(), "{id} missing");
     }
