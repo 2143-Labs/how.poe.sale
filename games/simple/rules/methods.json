@@ -175,7 +175,7 @@
       ],
       "protect": {
         "locks": "respect",
-        "cannotRoll": "respect"
+        "cannotRoll": "ignore"
       },
       "ops": [
         {

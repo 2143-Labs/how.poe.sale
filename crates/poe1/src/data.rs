@@ -594,6 +594,14 @@ pub fn translation_key(s: &str) -> String {
 }
 
 impl Data {
+    /// Whether this bundle is on the 3.29 patch line, the only line that publishes the Memory
+    /// Strands tier cut (`crate::strands`). 3.30 reworked Modifier Tier Rating, removing the
+    /// breakpoints without publishing a replacement formula, so the cut must not be applied to
+    /// another patch's data (claim `memory-strands.rollable-tiers`).
+    pub fn cuts_memory_strands(&self) -> bool {
+        self.patch.starts_with("3.29")
+    }
+
     pub fn from_json(text: &str) -> Result<Data, DataError> {
         Data::from_bundle(serde_json::from_str(text)?)
     }

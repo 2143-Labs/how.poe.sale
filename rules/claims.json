@@ -410,11 +410,11 @@
     },
     {
       "id": "metamod.cannot-roll",
-      "statement": "Cannot Roll Attack/Caster Modifiers keep mods with the `attack` / `caster` tag from being added or removed.",
-      "sourceKind": "guide",
-      "url": "https://maxroll.gg/poe/crafting/metacrafting",
-      "quote": "Crafting Cannot Roll Attack Modifiers or Cannot Roll Caster Modifiers prevents mods of that specific tag from being added or removed from that item (e.g. an Attack modifier cannot be Annuled from an item if Cannot Roll Attack Modifiers is present).",
-      "patch": "3.29",
+      "statement": "Cannot Roll Attack/Caster Modifiers keep mods with the `attack` / `caster` tag out of every random addition; since 3.30 they no longer stop a currency from removing those modifiers.",
+      "sourceKind": "patch-notes",
+      "url": "",
+      "quote": "The Cannot roll Caster Modifiers meta-crafted Modifier no longer prevents some Currencies that remove Modifiers, such as Orbs of Annulment, from removing Caster Modifiers (likewise for the Cannot roll Attack Modifiers meta-crafted modifier).",
+      "patch": "3.30",
       "checked": true
     },
     {
@@ -686,11 +686,11 @@
     },
     {
       "id": "remove.cannot-roll-scope",
-      "statement": "Cannot Roll Attack/Caster Modifiers keep tagged modifiers from being removed only by the Orb of Annulment, the Eldritch Orb of Annulment and the Tainted Exalted Orb; the Orb of Scouring, the reforges, the Veiled Exalted Orb, Harvest add-remove, the Farric beastcrafts and the Orb of Dominance remove or change them regardless. Every method that adds a random modifier still leaves the tag out.",
-      "sourceKind": "coe",
-      "url": "https://www.craftofexile.com/metamods",
-      "quote": "Annulment orb … Protects attack mods from removal … Protects caster mods from removal … Harvest … Augment … Does not apply to the remove part … Prefix > Suffix … Will not protects attack mods from removal",
-      "patch": "3.29",
+      "statement": "Since 3.30 no currency's removal respects Cannot Roll Attack/Caster Modifiers: the Orb of Annulment, the Eldritch Orb of Annulment and the Tainted Exalted Orb remove tagged modifiers like any other, as the Orb of Scouring, the reforges, the Veiled Exalted Orb, Harvest add-remove, the Farric beastcrafts and the Orb of Dominance already did. Every method that adds a random modifier still leaves the tag out.",
+      "sourceKind": "patch-notes",
+      "url": "",
+      "quote": "The Cannot roll Caster Modifiers meta-crafted Modifier no longer prevents some Currencies that remove Modifiers, such as Orbs of Annulment, from removing Caster Modifiers (likewise for the Cannot roll Attack Modifiers meta-crafted modifier).",
+      "patch": "3.30",
       "checked": true
     },
     {
@@ -1139,7 +1139,7 @@
     },
     {
       "id": "memory-strands.rollable-tiers",
-      "statement": "A random draw on an item holding one or more Memory Strands reaches only the highest tiers of a modifier's tier table: of the T tiers that pass the draw's level gate it keeps the K best, K = floor(100 (T - 1) / (2.5 s + 147.5)) + 1, the tiers being the distinct required levels counted from the highest. The cut is made on the pool before the item's own modifiers block their families, and on a draw only: a fixed modifier (an essence's guaranteed mod, a crafted or fractured modifier, a bench craft) is never cut. The Foulborn orb's +75 to modifier tier rating is not modelled.",
+      "statement": "A random draw on an item holding one or more Memory Strands reaches only the highest tiers of a modifier's tier table: of the T tiers that pass the draw's level gate it keeps the K best, K = floor(100 (T - 1) / (2.5 s + 147.5)) + 1, the tiers being the distinct required levels counted from the highest. The cut is made on the pool before the item's own modifiers block their families, and on a draw only: a fixed modifier (an essence's guaranteed mod, a crafted or fractured modifier, a bench craft) is never cut. The Foulborn orb's +75 to modifier tier rating is not modelled. The formula is the 3.29 rule: 3.30 removed the tier-rating breakpoints without publishing a replacement, so the cut is not applied to another patch's data.",
       "sourceKind": "experiment",
       "url": "https://www.reddit.com/r/pathofexile/comments/1wr9445/329_everything_you_need_to_know_about_memory/",
       "quote": "at 82 strands, a modifier with 8 tiers (like elemental resistances on most bases), rollable_tiers = floor((100/(2.5 * 82 + 147.5)) * (8 - 1)) + 1 = 2",

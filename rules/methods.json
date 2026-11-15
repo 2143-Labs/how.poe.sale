@@ -509,7 +509,7 @@
         {"kind": "rarity", "anyOf": ["magic", "rare"]},
         {"kind": "minExplicits", "n": 1}
       ],
-      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "removeRandom", "filter": {"kind": "any"}}
       ],
@@ -1170,7 +1170,7 @@
         {"kind": "eldritchDominant"},
         {"kind": "minExplicits", "n": 1}
       ],
-      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "removeRandom", "filter": {"kind": "side", "side": "dominant"}}
       ],
@@ -2359,7 +2359,7 @@
         {"kind": "notMirrored"},
         {"kind": "rarity", "anyOf": ["rare"]}
       ],
-      "protect": {"locks": "respect", "cannotRoll": "respect"},
+      "protect": {"locks": "respect", "cannotRoll": "ignore"},
       "ops": [
         {"op": "chance", "branches": [{"p": 0.5, "ops": [{"op": "addRandom", "pool": {"kind": "natural"}, "side": "any"}]}, {"p": 0.5, "ops": [{"op": "removeRandom", "filter": {"kind": "any"}}]}]}
       ],

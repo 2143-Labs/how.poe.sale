@@ -1,4 +1,8 @@
-//! Memory Strands: one strand or more cuts the tiers a random draw can reach.
+//! Memory Strands: one strand or more cuts the tiers a random draw can reach. **This is the 3.29
+//! rule, and only the 3.29 rule**: patch 3.30 reworked Modifier Tier Rating, so there are no
+//! longer breakpoints where a large effect is noticed and the type distribution is no longer
+//! distorted, and the notes publish no replacement formula. The cut is therefore applied only to
+//! a bundle on the 3.29 patch line (`Data::cuts_memory_strands`, `crate::data`).
 //!
 //! Claim `memory-strands.rollable-tiers`. On an item holding `s >= 1` strands, a random draw sees
 //! only the highest tiers of a modifier's tier table: of the `T` tiers that pass the draw's level

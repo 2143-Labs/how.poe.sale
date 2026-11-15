@@ -441,7 +441,7 @@ fn candidates(
         }
         stratum.push((i, s));
     }
-    let floors = if cut && item.memory_strands > 0 {
+    let floors = if cut && item.memory_strands > 0 && data.cuts_memory_strands() {
         tier_floors(data, &stratum, item.memory_strands)
     } else {
         BTreeMap::new()
@@ -963,7 +963,8 @@ pub(crate) struct Guard {
 
 impl Guard {
     /// Fractured modifiers never change; a side a respected lock protects is kept; a modifier
-    /// with the tag a respected Cannot Roll metamod names is kept.
+    /// with the tag a respected Cannot Roll metamod names is kept (no PoE 1 method states that
+    /// policy since 3.30: every removal ignores the metamods, claim `remove.cannot-roll-scope`).
     pub(crate) fn can_change(&self, data: &Data, side: Side, a: &Affix) -> bool {
         if a.fractured || self.locked[side.index()] {
             return false;
@@ -1027,8 +1028,10 @@ struct Run<'a> {
 /// anything that feeds them changes (explicits, implicits, quality, catalyst), so within one
 /// method they are a function of the rest of the item and never split equal states; foresight
 /// goes once the item changes at all (game text: "Modifying the item in any way removes the
-/// ability to foresee").
-fn settle(before: &Item, after: &mut Item) {
+/// ability to foresee"), except under `keeps_foresight`: the 3.30 patch notes say creating an
+/// Imprint or Mirroring is no longer Modifying the item, so those steps and the imprint restore
+/// leave it alone.
+fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
     let fed = before.prefixes != after.prefixes
         || before.suffixes != after.suffixes
         || before.implicits != after.implicits
@@ -1037,7 +1040,7 @@ fn settle(before: &Item, after: &mut Item) {
     if fed {
         after.defences = None;
     }
-    if after.foreseen {
+    if after.foreseen && !keeps_foresight {
         let mut same = before.clone();
         same.defences = after.defences;
         if same != *after {
@@ -1312,9 +1315,13 @@ impl Run<'_> {
                 if let Some(r) = reason {
                     return self.nothing(conditional, state, r.into());
                 }
-                // The imprint comes back as it was, defence figures included.
+                // The imprint comes back as it was, defence figures included. Restoring an
+                // imprint is not Modifying the item either (3.30 patch notes), so the Foreseeing
+                // effect on the item being restored stays.
+                let foreseen = item.foreseen;
                 let mut item = state.item.imprint.clone().map(|b| *b).unwrap_or(state.item);
                 item.imprint = None;
+                item.foreseen = foreseen;
                 return Ok(Step::Go(vec![(
                     1.0,
                     State {
@@ -1335,7 +1342,7 @@ impl Run<'_> {
                 .into_iter()
                 .map(|(p, mut item, added)| {
                     item.canonical(data);
-                    settle(&before, &mut item);
+                    settle(&before, &mut item, matches!(op, Op::Imprint));
                     let last_added = added.or(state.last_added);
                     (p, State { item, last_added })
                 })
@@ -1956,7 +1963,7 @@ impl Run<'_> {
                     fractured,
                 };
                 it.canonical(data);
-                settle(item, &mut it);
+                settle(item, &mut it, false);
                 self.in_choice += 1;
                 let leaves = self.exec(
                     vec![(

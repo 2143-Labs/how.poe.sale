@@ -1719,20 +1719,29 @@ fn sources_md(pattern: &Pattern, inversion: &crate::invert::Inversion, caps: Cap
     out
 }
 
-/// The line that says a strand count changed the odds below it, and the blank after it. Empty
-/// when the item holds none (claim `memory-strands.rollable-tiers`).
-pub fn strands_line(item: &Item) -> Vec<String> {
+/// The line that says what a strand count does to the odds below it, and the blank after it.
+/// Empty when the item holds none (claim `memory-strands.rollable-tiers`). The cut is the 3.29
+/// rule; on any other patch the line says the count is not modelled rather than implying the
+/// cut shaped the odds.
+pub fn strands_line(data: &Data, item: &Item) -> Vec<String> {
     if item.memory_strands == 0 {
         return Vec::new();
     }
-    vec![
+    let text = if data.cuts_memory_strands() {
         format!(
             "**Memory Strands:** {} — every random draw keeps only the top tiers of its table \
              (claim `memory-strands.rollable-tiers`).",
             item.memory_strands
-        ),
-        String::new(),
-    ]
+        )
+    } else {
+        format!(
+            "**Memory Strands:** {} — not modelled: the tier cut is a 3.29 rule, and 3.30 removed \
+             the breakpoints without publishing a replacement (claim \
+             `memory-strands.rollable-tiers`).",
+            item.memory_strands
+        )
+    };
+    vec![text, String::new()]
 }
 
 /// One item weighed against one pattern: where it stands, every step in its group, and the best
@@ -1771,7 +1780,7 @@ pub fn next_steps_section(
         ),
         String::new(),
     ];
-    out.extend(strands_line(item));
+    out.extend(strands_line(data, item));
     // What the item could have come from is about the item as it stands, so it sits with "Now".
     let inversion = crate::invert::sources(data, pattern, item);
     out.extend(sources_md(pattern, &inversion, caps));
@@ -1883,6 +1892,7 @@ pub fn next_steps_section(
 /// The inverse solver's report for one item: the heading, where it stands, and the inputs one step
 /// short of it.
 pub fn sources_report(
+    data: &Data,
     pattern: &Pattern,
     item_name: &str,
     item: &Item,
@@ -1894,7 +1904,7 @@ pub fn sources_report(
         format!("## `{item_name}` → `{pattern_name}`"),
         String::new(),
     ];
-    out.extend(strands_line(item));
+    out.extend(strands_line(data, item));
     out.extend(sources_md(pattern, inversion, caps));
     out.push(String::new());
     out.join("\n")

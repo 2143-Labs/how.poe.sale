@@ -1184,6 +1184,35 @@ fn foresight_ends_with_any_change() {
     }
 }
 
+/// 3.30: creating an Imprint or Mirroring is no longer "Modifying the item", so neither ends the
+/// Foreseeing effect; restoring an imprint does not end it either, while a step that really
+/// changes the item still does.
+#[test]
+fn imprint_and_restore_keep_foresight() {
+    let jewel = item("cobalt-jewel-magic");
+    let mut foreseen = jewel.clone();
+    foreseen.foreseen = true;
+    let imprinted = run("beast/imprint", &foreseen).item().unwrap().clone();
+    assert!(imprinted.foreseen, "an imprint is not a modification");
+    for it in run("currency/mirror", &foreseen).items() {
+        assert!(it.foreseen, "mirroring is not a modification");
+    }
+
+    // An imprint taken while the item was not foreseen, restored once it is: the effect is on
+    // the item being restored, so it stays.
+    let plain_imprint = run("beast/imprint", &jewel).item().unwrap().clone();
+    let mut later = plain_imprint.clone();
+    later.foreseen = true;
+    let restored = run("beast/restore-imprint", &later).item().unwrap().clone();
+    assert_eq!(restored, foreseen, "the item comes back with its foresight");
+
+    // A modification that really changes the item still ends the effect.
+    for (_, l) in &run("currency/augmentation", &imprinted).leaves {
+        assert!(!leaf_item(l).foreseen, "augmentation changes the item");
+    }
+    assert!(imprinted.foreseen, "the input itself is untouched");
+}
+
 #[test]
 fn imprint_restore() {
     let d = test_data();
@@ -1327,8 +1356,12 @@ fn metamod_filters_on_adds() {
     }
 }
 
+/// 3.30: Cannot Roll Attack/Caster Modifiers no longer stop a currency from removing a tagged
+/// modifier, so an Orb of Annulment takes any of the item's three removable modifiers at a third
+/// each, the attack-tagged accuracy included. The metamods still keep the tag out of every random
+/// *addition* (`metamod_filters_on_adds`), which the patch notes did not change.
 #[test]
-fn annul_cannot_roll() {
+fn annul_ignores_cannot_roll() {
     let d = test_data();
     let it = edited("crown-a", |s| {
         s.prefixes = vec![affix("IncreasedLife9", Some(vec![137]))];
@@ -1340,12 +1373,12 @@ fn annul_cannot_roll() {
     let accuracy = d.mod_by_id("IncreasedAccuracyNew6").unwrap();
     let has_accuracy = |i: &Item| i.suffixes.iter().any(|a| a.roll.m == accuracy);
     let out = run("currency/annulment", &it);
-    assert_eq!(out.leaves.len(), 2);
-    for (p, l) in &out.leaves {
-        assert_eq!(*p, 0.5);
-        assert!(has_accuracy(leaf_item(l)));
+    assert_eq!(out.leaves.len(), 3);
+    for (p, _) in &out.leaves {
+        assert_eq!(*p, 1.0 / 3.0);
     }
-    // Claim remove.cannot-roll-scope: the Veiled Exalted Orb's removal ignores the metamod.
+    // Claim remove.cannot-roll-scope: every removal ignores the metamod, the Veiled Exalted
+    // Orb's included.
     let out = run("currency/veiled-exalted", &it);
     let without = mass(&out, |l| !has_accuracy(leaf_item(l)));
     assert!(close(without, 1.0 / 3.0, 1e-12), "{without}");
@@ -3080,4 +3113,33 @@ fn strands_keep_only_the_top_tiers_of_a_draw() {
         );
     }
     assert!(shrank, "no tier table lost a tier at 100 strands");
+}
+
+/// The Memory Strands cut is the 3.29 rule. 3.30 removed the breakpoints without publishing a
+/// replacement, so a bundle on another patch must not apply it (claim
+/// `memory-strands.rollable-tiers`).
+#[test]
+fn the_strand_cut_is_not_applied_off_the_3_29_patch() {
+    let d = test_data();
+    let mut bundle = d.bundle.clone();
+    assert!(
+        bundle.patch.starts_with("3.29"),
+        "the pinned bundle is 3.29"
+    );
+    bundle.patch = "3.30.0".into();
+    let newer = Data::from_bundle(bundle).expect("a valid 3.30 bundle");
+    assert!(!newer.cuts_memory_strands());
+    let plain_spec = spec("crown-a");
+    let mut stranded_spec = plain_spec.clone();
+    stranded_spec.memory_strands = 100;
+    let plain = Item::from_spec(&newer, &plain_spec).expect("an item");
+    let stranded = Item::from_spec(&newer, &stranded_spec).expect("an item");
+    let draw = |item: &Item| {
+        poe1::apply::draw_candidates(&newer, item, &Pool::Natural, SideReq::Any, true, true)
+    };
+    assert_eq!(
+        draw(&stranded),
+        draw(&plain),
+        "3.30 has no published tier cut to apply"
+    );
 }

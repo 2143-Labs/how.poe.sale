@@ -22,7 +22,7 @@ use std::collections::BTreeMap;
 
 use crate::apply::{self, Params};
 use crate::data::{Cost, Data, ModKind, Rarity, Side};
-use crate::item::{Affix, Item, MetaMod, Roll};
+use crate::item::{Affix, Item, Roll};
 use crate::method::{Method, Op, Pool, SideReq};
 use crate::pattern::{self, Pattern, PatternState};
 
@@ -524,13 +524,9 @@ fn undo_removal(
         if removable == 0 {
             continue;
         }
-        let note = (before.has_meta(data, MetaMod::NoAttack)
-            || before.has_meta(data, MetaMod::NoCaster))
-        .then(|| {
-            "the item carries Cannot Roll, which narrows the removal and this pass does not count"
-                .to_string()
-        });
-        out.push((before, 1.0 / removable as f64, note));
+        // Since 3.30 no removal respects Cannot Roll Attack/Caster Modifiers, so the count is
+        // the whole set of explicits a removal can take (claim `remove.cannot-roll-scope`).
+        out.push((before, 1.0 / removable as f64, None));
     }
     out
 }

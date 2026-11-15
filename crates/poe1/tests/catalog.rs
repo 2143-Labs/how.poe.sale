@@ -148,7 +148,9 @@ fn bad_methods_do_not_load() {
 }
 
 /// R1: each method's metamod policy, from Craft of Exile's metamod table (checked against
-/// maxroll's metacrafting guide and vhpg's Prefixes Cannot Be Changed table).
+/// maxroll's metacrafting guide and vhpg's Prefixes Cannot Be Changed table). The Cannot Roll
+/// column is the 3.30 rule: no removal respects the metamods (patch note), so the annulment and
+/// the eldritch annulment state `ignore` like every other removal.
 #[test]
 fn protection_policies_follow_the_sources() {
     use Policy::{Forbid, Ignore, Respect};
@@ -161,8 +163,8 @@ fn protection_policies_follow_the_sources() {
         ("currency/alteration", Respect, Ignore),
         ("harvest/fire-to-cold", Respect, Ignore),
         ("currency/eldritch-chaos", Ignore, Ignore),
-        ("currency/annulment", Respect, Respect),
-        ("currency/eldritch-annulment", Respect, Respect),
+        ("currency/annulment", Respect, Ignore),
+        ("currency/eldritch-annulment", Respect, Ignore),
         ("currency/scouring", Respect, Ignore),
         ("currency/veiled-exalted", Respect, Ignore),
         ("harvest/add-life-remove-random", Respect, Ignore),
@@ -641,6 +643,7 @@ fn a_strand_count_reaches_the_sources_report_too() {
     let stranded = poe1::item::Item::from_spec(d, &spec).expect("an item");
     let inversion = poe1::invert::sources(d, &pattern, &stranded);
     let report = poe1::catalog::sources_report(
+        d,
         &pattern,
         "crown-a",
         &stranded,
@@ -652,8 +655,28 @@ fn a_strand_count_reaches_the_sources_report_too() {
         report.contains("**Memory Strands:** 30"),
         "the sources report does not state the count"
     );
-    assert!(poe1::catalog::strands_line(&stranded).len() == 2);
+    assert!(poe1::catalog::strands_line(d, &stranded).len() == 2);
     spec.memory_strands = 0;
     let plain = poe1::item::Item::from_spec(d, &spec).expect("an item");
-    assert!(poe1::catalog::strands_line(&plain).is_empty());
+    assert!(poe1::catalog::strands_line(d, &plain).is_empty());
+}
+
+/// Off the 3.29 patch the tier cut is not modelled at all, so the report says that instead of
+/// implying the cut shaped the odds below it (claim `memory-strands.rollable-tiers`).
+#[test]
+fn a_strand_count_off_the_3_29_patch_says_it_is_not_modelled() {
+    let d = test_data();
+    let mut bundle = d.bundle.clone();
+    bundle.patch = "3.30.0".into();
+    let newer = Data::from_bundle(bundle).expect("a valid 3.30 bundle");
+    let mut spec = common::spec("crown-a");
+    spec.memory_strands = 30;
+    let stranded = poe1::item::Item::from_spec(&newer, &spec).expect("an item");
+    let line = poe1::catalog::strands_line(&newer, &stranded).join("\n");
+    assert!(line.contains("not modelled"), "{line}");
+    assert!(!line.contains("keeps only the top tiers"), "{line}");
+    // The pinned 3.29 bundle keeps the old line, unchanged.
+    let stranded = poe1::item::Item::from_spec(d, &spec).expect("an item");
+    let line = poe1::catalog::strands_line(d, &stranded).join("\n");
+    assert!(line.contains("keeps only the top tiers"), "{line}");
 }
