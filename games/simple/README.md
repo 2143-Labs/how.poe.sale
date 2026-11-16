@@ -83,7 +83,7 @@ is that the answers do not move:
 ```
 nix develop -c cargo run -q -p cli --release -- loop-report \
   --bundle data/simple.json --pattern totem-shield \
-  --item "Supreme Spiked Shield" --item-level 87 --influence shaper --depth 2
+  --base "Supreme Spiked Shield" --item-level 87 --influence shaper --depth 2
 ```
 
 prints the same first depth as the export does — 587 live classes, the goal at `1/108`
