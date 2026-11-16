@@ -97,3 +97,143 @@ word (`ItemOutputSet::exact()` already reports false and nothing checked it); an
 reaches the goal is left in the live distribution and recorded again as `Done` on the next step, so
 summing `Desired` across depths double counts. Both are being fixed by absorbing on reach and by
 refusing an inexact set.
+
+## What the per-currency model covers now
+
+Implemented as code, each agreeing with its op-declared twin item-for-item and chance-for-chance:
+transmutation, alteration, augmentation, regal, exalted, scouring, annulment, essence (parameterised
+by which essence), with fracture and the eight eldritch embers/ichors following.
+
+Still out of reach, and why — the four leaf shapes above, plus the multi-draw:
+
+- **chaos, and vaal's fourth quarter.** Both need `Op::Fill`, which the op path has never computed
+  (it returns a `Pending` leaf). A rare reroll is four to six draws from ~204 modifiers, so the
+  concrete outcome set is tens of millions of items. The per-currency model can *express* this
+  (`adds` composes draws), but only a lumped state can make it tractable — which is exactly what the
+  multi-step work is building.
+- **vaal's second and third quarters** need `Op::Sockets` (the "dewhiten" outcome), which is a
+  `Pending` leaf too, so a Vaal Orb cannot be exact today even though two of its four quarters are.
+- **mirror, unveil, destroy** are the leaf shapes: multi-item, choice, destroyed.
+- **Awakener's Orb** and every other two-input method: the machine's state is one item.
+
+Two facts the essence work settled, worth keeping:
+
+- The generated essence methods want a **normal or rare** item, not magic — the op path refuses a
+  magic one, so a currency must too. A currency may never be more permissive than its method.
+- `item_level_max` on an essence is **not** a refusal: claim `essence.ilvl` says an essence works on
+  an item of any level and the cap belongs to the fill that follows it. The op path accepts such
+  items, so refusing would have invented a rule.
+
+And two the currency layer itself settled:
+
+- `ItemOutputSet::new` now settles every result against the pre-step item (`apply::settle`), so the
+  display figures and `foreseen` cannot outlive the modification that invalidated them.
+- It refuses an empty set. Before, an empty pool produced `Outcomes { outcomes: [], total: 0 }` and
+  the machine's loop then dropped that item's mass silently. The Simplex amulet paste forced to
+  magic is the reproduction and is now a test.
+
+## Measured: shape legality was never the problem
+
+The earlier diagnosis predicted that the currency layer would produce items `Item::validate` rejects.
+It does not. An independent pass ran every single-input method over all 34 fixtures (66 555 result
+items), one step further from 2 246 depth-1 states (8 322 053 items), and every currency over every
+fixture plus 4 224 two-step checks: **zero** shape failures, no item ever over its rarity's affix
+limits. So result validation belongs in tests, and an invariant engine that folds `validate` into the
+op path would be churn for no hits.
+
+What the layer did get wrong is the *distribution*, and that is where the value went:
+
+- **A wrong normalisation across draws.** `adds` multiplied raw weights across successive draws
+  without dividing by each intermediate item's own total. It is exact only when every first draw
+  leaves the same second-draw total — on the shield the prefix-first and suffix-first errors cancel
+  to 2.7e-20, but a Viridian Jewel is 5.5 % out on some outcomes, and `exact()` still reported true.
+- **A dead end that should be carried forward.** A draw that cannot happen is a no-op in the op path
+  (a conditional branch keeps the item), but `adds` dropped the path, so an alteration on a magic
+  item with a fractured or lock-protected modifier produced 131 outcomes all at weight zero.
+- **Settling once per step instead of once per op.** `settle` now runs on each result, but an
+  alteration that rerolls the same unrolled modifier keeps `defences` where the op path clears it.
+
+The lesson is the one worth keeping: exactness that is only checked against items with no display
+state, on one base whose pools happen to be symmetric, is not exactness.
+
+## The price ceiling, and where the seam actually is
+
+A policy is `&Item -> Action`, so it cannot weigh cost — which is the real limit on applying this to
+other crafts, because the owner's decisions are cost-aware ("annul until it is worth exalting"). The
+pieces exist and are not connected:
+
+- **Cost is already data, as line items.** Every method in `rules/methods.json` carries
+  `cost: [{name, amount}]` — a currency display name or `beast:<name>`, with counts of the tradeable
+  item (Harvest lifeforce is in points, not items). `Method::validate` already requires each currency
+  name to resolve to exactly one bundle currency, so a cost is never a dangling reference.
+- **Every consumer displays cost and none does arithmetic with it.** `solve`, `invert`, `preimages`
+  and the browser all print it; `Assessment::rank` compares only the probability columns. The README
+  says so twice ("Costs are listed, not priced"), so this is a known gap rather than a bug.
+- **`crates/solver` is a complete priced-MDP kit with no client.** `Domain` already has
+  `cost` (line items) and `sell_value` — the "what is a three-good rare worth" hook — and
+  `GraphInput` takes `prices` in chaos per line-item key, plus `buy`, `sell` and `trade_penalty`.
+  `solve` gives a policy, `moments` gives expected chaos and expected spend per line item, and
+  `propose` ranks a predecessor's actions by `cost + Σ p·V`. An unpriced key is a hard error, by
+  design.
+
+So the missing piece is *not* a cost model, and not a solver: it is the adapter from the machine's
+lumped class graph to `solver::Domain`, plus a `prices.json` mapping each line-item key the craft
+touches to chaos. The lumped class graph is the right state space for it — 587 classes where the
+concrete distribution has 9 767 items — which is why the lumping work was worth doing before pricing
+rather than after.
+
+What a first honest report can say without that adapter: expected currency spent per stage
+transition at one step, and the share of mass that reaches each stage. What it must not claim: an
+optimal policy, or a total cost of the craft.
+
+## One divergence the harness found is a defect in the *op* path
+
+The widened comparison (5 736 cases across 18 items and 8 currencies, at one and two steps) came back
+5 632 pass / 104 fail. All 104 are the two currency-layer bugs above, with one exception, and that
+exception goes the other way:
+
+Transmuting a **Simplex Amulet** scoured to normal: the currency refuses ("the step produced no
+outcome") and the op path returns a magic item with **no modifiers at all**. The claim
+`empty.refused` settles it — "Using a currency on an item it has nothing to change is refused; the
+currency is not consumed" — so the code path is right and the op path is wrong. The mechanism is that
+`Op::AddRandom` does error on an empty pool, but a `Chance` branch catches the failure as a
+conditional no-op and keeps the item, so a transmutation whose only branch can add nothing still
+returns a rarity change.
+
+That is worth fixing in `apply.rs`, where it also affects the old `solve` and `sources` paths — but it
+is not a currency-layer change, it touches the 32 goldens, and it needs its own before/after. Recorded
+here rather than folded into the currency work.
+
+## The fill kernel: exact in principle, out of reach for a rare reroll
+
+A fill (chaos, veiled chaos, eldritch chaos, the Harvest add/remove reforges) draws several
+modifiers in a row without repeating a group. The annulment obstruction does **not** apply: a fill
+*adds*, and the exclusion test is membership in the class's group union, which is monotone. The
+outcome class is a pure function of (class, drawn modifier) — `count += 1`, the bucket count,
+`groups ∪ groups(m)`, `tags ∪ adds_tags(m)`, the metamod bits — so an exact class kernel exists.
+That is why adding is lumpable and removing is not.
+
+Two walls stop it rescuing the shield's chaos reroll:
+
+1. **The class graph is not small.** With 18 groups per side, the 4-to-6-draw reroll has of the order
+   of 10⁸ outcome classes — about 100× fewer than the 2.4 × 10¹⁰ concrete items, which is not enough
+   to make a depth cheap.
+2. **The exact rational cannot hold its denominator.** A class mass's denominator divides the product
+   of `k·T` over the draws, and folding a layer into per-stage masses takes the LCM across classes,
+   which overruns `u128` at three or four draws. `checked_add` returns `None`, and `MachineError::`
+   `Overflow` is then the correct answer rather than a rounded one.
+
+So the honest shape is the one the repository already has vocabulary for: implement the kernel
+(it is cheap and exact for jewels, magic items and single-side fills), gate it on a class budget
+*and* on `Fraction` overflow, and for the shield emit `PendingReason::TooLarge` **with the exact
+outcome count** — a knapsack count over families, not an enumeration.
+
+Three limits to record before anyone builds it:
+
+- **`Fill::include`** (the 17 Harvest reforges that guarantee a tag) tests a *mod-id* set. The class
+  keeps `adds_tags`, not the held modifiers' own `tags`, so it needs a `held_tags` fact — and that
+  fact is only exact when a fill does not also cap the level.
+- **`Weighting::MoreLikelySame` / `LessLikelySame`** boost a candidate by whether the item already
+  holds that modifier: that is modifier identity, and it is **permanently** un-lumpable.
+- **`SideReq::Dominant`** (eldritch chaos) reads the eldritch implicits' tiers, which the class does
+  not record yet.
