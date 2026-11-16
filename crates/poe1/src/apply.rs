@@ -368,7 +368,15 @@ pub fn pool_candidates(
     ignore_limits: bool,
     ignore_groups: bool,
 ) -> Vec<(u32, f64)> {
-    candidates(data, item, pool, side, ignore_limits, ignore_groups, false)
+    as_probabilities(candidates(
+        data,
+        item,
+        pool,
+        side,
+        ignore_limits,
+        ignore_groups,
+        false,
+    ))
 }
 
 /// The pool one random draw reaches: `pool_candidates` with the Memory Strands cut applied.
@@ -382,9 +390,33 @@ pub fn draw_candidates(
     ignore_limits: bool,
     ignore_groups: bool,
 ) -> Vec<(u32, f64)> {
+    as_probabilities(draw_weights(
+        data,
+        item,
+        pool,
+        side,
+        ignore_limits,
+        ignore_groups,
+    ))
+}
+
+/// The same pool as `draw_candidates`, as exact integer weights. Every chance the engine reports
+/// is a ratio of these integers, so a caller holding them can print exact percentages.
+pub fn draw_weights(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+) -> Vec<(u32, u128)> {
     candidates(data, item, pool, side, ignore_limits, ignore_groups, true)
 }
 
+/// The pooled candidates with their exact integer weights, before normalisation: `spawn ×
+/// generation percent`, both straight out of data. `candidates` divides by the total to give the
+/// probabilities the engine uses; a caller that must hold exact chances divides by the same total
+/// itself instead of accepting an `f64` rounding.
 fn candidates(
     data: &Data,
     item: &Item,
@@ -393,7 +425,7 @@ fn candidates(
     ignore_limits: bool,
     ignore_groups: bool,
     cut: bool,
-) -> Vec<(u32, f64)> {
+) -> Vec<(u32, u128)> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
     let groups = item.explicit_groups(data);
@@ -459,12 +491,29 @@ fn candidates(
             continue;
         }
         let w = match pool {
-            Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
-            _ => pool::weight(m, &tags),
+            Pool::Ducat { .. } => tag.map_or(0, |t| {
+                // Ducat pools weight by spawn alone; ×100 keeps one scale inside the pool.
+                u128::from(pool::weight_of_tag(m, t) as u32) * 100
+            }),
+            _ => pool::weight_exact(m, &tags),
         };
-        weighted.push((i, w));
+        if w > 0 {
+            weighted.push((i, w));
+        }
     }
-    pool::normalise(weighted)
+    weighted
+}
+
+/// Integer weights as probabilities: each weight over the total.
+fn as_probabilities(weighted: Vec<(u32, u128)>) -> Vec<(u32, f64)> {
+    let total: u128 = weighted.iter().map(|&(_, w)| w).sum();
+    if total == 0 {
+        return Vec::new();
+    }
+    weighted
+        .into_iter()
+        .map(|(m, w)| (m, w as f64 / total as f64))
+        .collect()
 }
 
 /// The candidates an `AddRandom` draws from, with their probabilities: the pool's mods, a side

@@ -21,6 +21,19 @@ pub fn generation(m: &ModData, tags: &[u16]) -> f64 {
         .map_or(1.0, |&(_, w)| f64::from(w) / 100.0)
 }
 
+/// Spawn weight × generation percent, as an exact integer: `weight` divides by 100, so that
+/// factor is common to every candidate and cancels in any ratio. A caller that must keep exact
+/// chances (the per-currency model) uses this instead of `weight`.
+pub fn weight_exact(m: &ModData, tags: &[u16]) -> u128 {
+    let spawn = u128::from(spawn(m, tags));
+    let generation = m
+        .generation
+        .iter()
+        .find(|(t, _)| tags.binary_search(t).is_ok())
+        .map_or(100, |&(_, w)| u128::from(w));
+    spawn * generation
+}
+
 /// Spawn weight × generation multiplier.
 pub fn weight(m: &ModData, tags: &[u16]) -> f64 {
     f64::from(spawn(m, tags)) * generation(m, tags)
