@@ -259,3 +259,37 @@ The review also found a grading error in the goal fixture itself: `totem-shield`
 were graded `neutral`, which `solve::grade_value` scores the same as `good`, so the score path could
 not tell a junk prefix from a good one while the step filter could. A goal written in one vocabulary
 and scored in another is the same class of mistake at the data layer.
+
+## The pricing adapter, specified
+
+The adapter from the lumped class graph to `solver::Domain` has been designed down to signatures. The
+one thing `crates/poe1` is missing is small and specific: `Class` derives only `Clone, Debug`, its
+`Key` is private, and its `witness()` is explicitly *not* identity (two equal classes keep whichever
+witness was inserted first), while `Domain::State` requires `Clone + Eq + Hash + Ord` and
+`Domain::key` needs a stable unique string. So `Class` needs `Hash` by key and a `Display` that writes
+the key — nothing else — before it can be a solver state.
+
+Everything else falls out of what exists:
+
+- **State.** A wrapper over `Class` plus one `Done` symbol, because the mass the lumped run absorbs at
+  `Stage::Desired` has no class, and `Domain::outcomes` must return a state for it.
+- **Actions.** The six registered currencies that are lumpable. Annulment is refused by
+  `step_action`; parameterised methods (essence, fossil) and unregistered ones (chaos, divine, bench,
+  beast) cannot be named at all, because the registry is private and `CurrencyId` is a bare string.
+- **Cost.** `apply::cost`'s output verbatim: a currency metadata id and a count of the tradeable
+  item. A missing price is already a hard `SolveError::MissingPrice`; an empty cost list is silent and
+  must be rejected at build time instead.
+- **Exactness.** Exact through `Fraction`, lost at one boundary: the `num/den` to `f64` conversion the
+  solver's DP needs. Keep the `Fraction`s beside the `f64`s so a reported number can be traced.
+- **Value.** The goal never needs a price (it is absorbing at zero); the finished item's price enters
+  as `buy["goal"]`. `sell_value` — what junk is worth — is an owner input.
+
+Owner decisions it cannot default: the base's buy price, `trade_penalty` (zero diverges), the seven
+currency prices, junk sell values, the finished item's price, and the goal predicate (`Desired` is one
+totem prefix, *not* a finished shield).
+
+One number must be measured before anything is claimed: the reachable class closure. `GraphInput` only
+expands pre-listed keys, `MAX_NODES` is 5 000, and the solver's dense linear solve is O(n³) per policy
+round across four or five rounds — so the practical budget is roughly 1 000–2 000 nodes, about one
+lumped depth's worth (587 classes at depth 1). The first thing any implementation should print is that
+count.
