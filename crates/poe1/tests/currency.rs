@@ -249,7 +249,7 @@ fn the_totem_shield_chances() {
     let filter = ItemSetFilter::new(desired, good, Accept::DesiredOrGoodBothSides);
 
     let share = |side: Side, tier: Tier| {
-        side_chance(data, &magic, side, |m, _| {
+        side_chance(data, &magic, &Pool::Natural, side, |m, _| {
             filter.tier_of_mod(data, m) == tier
         })
         .expect("a side with a pool")
@@ -300,7 +300,7 @@ fn the_goal_comes_from_the_pattern() {
     let mut magic = shield(data);
     magic.rarity = Rarity::Magic;
     let share = |side: Side, tier: Tier| {
-        side_chance(data, &magic, side, |m, _| {
+        side_chance(data, &magic, &Pool::Natural, side, |m, _| {
             filter.tier_of_mod(data, m) == tier
         })
         .expect("a side with a pool")

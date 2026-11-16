@@ -1,17 +1,9 @@
 //! Orb of Scouring: strips a magic or rare item back to normal (`currency/scouring`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter};
+use super::{Currency, ItemOutputSet, ItemSetFilter, REMOVAL_PROTECTION};
 use crate::apply::clear_changeable;
 use crate::data::{Data, Rarity};
 use crate::item::Item;
-use crate::method::{Policy, Protection};
-
-/// What `rules/methods.json` declares for `currency/scouring`: a lock is respected, and since 3.30
-/// no removal respects the Cannot Roll metamods (`remove.cannot-roll-scope`).
-pub const SCOURING_PROTECTION: Protection = Protection {
-    locks: Policy::Respect,
-    cannot_roll: Policy::Ignore,
-};
 
 /// The Orb of Scouring, one step. It is deterministic, so the set is a single item at the whole
 /// chance.
@@ -45,7 +37,7 @@ impl Currency for Scouring<'_> {
             return ItemOutputSet::refused("the item has no explicit modifiers to scour");
         }
         let mut scoured = item.clone();
-        if clear_changeable(data, SCOURING_PROTECTION, &mut scoured) == 0 {
+        if clear_changeable(data, REMOVAL_PROTECTION, &mut scoured) == 0 {
             return ItemOutputSet::refused("no modifier can be removed");
         }
         // A fractured modifier cannot be removed, so the rarity follows what survived: nothing at

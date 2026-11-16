@@ -5,8 +5,8 @@
 //! its side — and abstraction only ever widens: a specific modifier coerces to "desired prefix" and
 //! to "any prefix", never the other way round.
 
-use crate::data::{Data, Side};
-use crate::item::{Affix, Item};
+use crate::data::{Data, ModKind, Side};
+use crate::item::{is_metamod, Affix, Item};
 use crate::pattern::{Grade, Pattern};
 
 /// The three buckets a modifier falls into for a given goal.
@@ -79,23 +79,33 @@ impl AbstractMod {
     }
 }
 
-/// One modifier the goal names: a family at a tier or better, optionally with value floors.
+/// One modifier the goal names. A goal written in the pattern language names families mostly —
+/// "this modifier, or its tier or better" — but a class may also be written by category
+/// (`{"crafted": true}`), which names no id at all, so a selector says which of the two it is.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModSelector {
-    pub side: Side,
-    /// The modifier that names the family; usually its best tier.
-    pub m: u32,
-    /// Every modifier of the same family at this one's level or above.
-    pub or_better: bool,
-    /// Per-stat floors, in the modifier's stat order. A freshly drawn modifier is unrolled, so a
-    /// floor is treated as met there: the value is not chosen yet, only its family is.
-    pub min: Option<Vec<Option<i32>>>,
+pub enum ModSelector {
+    /// A family, named by one of its members.
+    Mod {
+        side: Side,
+        /// The modifier that names the family; usually its best tier.
+        m: u32,
+        /// Every modifier of the same family at this one's level or above.
+        or_better: bool,
+        /// Per-stat floors, in the modifier's stat order. A freshly drawn modifier is unrolled, so
+        /// a floor is treated as met there: the value is not chosen yet, only its family is.
+        min: Option<Vec<Option<i32>>>,
+    },
+    /// Every modifier of a kind on one side, carrying the sense the pattern's matcher has: `true`
+    /// takes a crafted modifier that is not a metamod — the same test the pattern applies, since a
+    /// metamod is a tool rather than a modifier a goal wants — and `false` takes anything that is
+    /// not crafted.
+    Crafted { side: Side, crafted: bool },
 }
 
 impl ModSelector {
     /// A single modifier, exactly as named.
     pub fn exact(side: Side, m: u32) -> ModSelector {
-        ModSelector {
+        ModSelector::Mod {
             side,
             m,
             or_better: false,
@@ -105,7 +115,7 @@ impl ModSelector {
 
     /// The family of `m` at its tier or better.
     pub fn or_better(side: Side, m: u32) -> ModSelector {
-        ModSelector {
+        ModSelector::Mod {
             side,
             m,
             or_better: true,
@@ -113,41 +123,71 @@ impl ModSelector {
         }
     }
 
+    /// Adds value floors. Only a family has values to floor; asking a category for floors is a
+    /// caller bug rather than a value nobody asked about.
     pub fn with_min(mut self, min: Vec<Option<i32>>) -> ModSelector {
-        self.min = Some(min);
+        match &mut self {
+            ModSelector::Mod { min: floors, .. } => *floors = Some(min),
+            ModSelector::Crafted { .. } => panic!("a category selector has no value floors"),
+        }
         self
     }
 
     pub fn matches(&self, data: &Data, affix: &Affix) -> bool {
         let md = data.mod_at(affix.roll.m);
-        if md.side != Some(self.side) {
-            return false;
-        }
-        if affix.roll.m != self.m {
-            if !self.or_better {
-                return false;
+        match self {
+            ModSelector::Crafted { side, crafted } => {
+                md.side == Some(*side) && crafted_kind(data, *crafted, affix.roll.m)
             }
-            let want = data.mod_at(self.m);
-            let same_family = md.mod_type == want.mod_type
-                && md.kind == want.kind
-                && md.influence == want.influence;
-            if !same_family || md.level < want.level {
-                return false;
+            ModSelector::Mod {
+                side,
+                m,
+                or_better,
+                min,
+            } => {
+                if md.side != Some(*side) {
+                    return false;
+                }
+                if affix.roll.m != *m {
+                    if !*or_better {
+                        return false;
+                    }
+                    let want = data.mod_at(*m);
+                    let same_family = md.mod_type == want.mod_type
+                        && md.kind == want.kind
+                        && md.influence == want.influence;
+                    if !same_family || md.level < want.level {
+                        return false;
+                    }
+                }
+                let Some(floors) = min else {
+                    return true;
+                };
+                let Some(values) = &affix.roll.values else {
+                    return true;
+                };
+                floors
+                    .iter()
+                    .enumerate()
+                    .all(|(i, floor)| match (floor, values.get(i)) {
+                        (Some(floor), Some(value)) => value >= floor,
+                        _ => true,
+                    })
             }
         }
-        let Some(floors) = &self.min else {
-            return true;
-        };
-        let Some(values) = &affix.roll.values else {
-            return true;
-        };
-        floors
-            .iter()
-            .enumerate()
-            .all(|(i, floor)| match (floor, values.get(i)) {
-                (Some(floor), Some(value)) => value >= floor,
-                _ => true,
-            })
+    }
+}
+
+/// Whether `m` is the kind a `{"crafted": bool}` class asks for — the pattern's own test
+/// (`pattern::crafted_match`). A metamod is crafted, and neither sense of the class counts it: a
+/// class that wants a crafted modifier wants a modifier, not a tool that sits in a slot and costs
+/// an Orb of Scouring to remove, and a class that wants anything else does not want it either.
+fn crafted_kind(data: &Data, want: bool, m: u32) -> bool {
+    let kind = data.mod_at(m).kind;
+    if want {
+        kind == ModKind::Crafted && !is_metamod(data, m)
+    } else {
+        kind != ModKind::Crafted
     }
 }
 
@@ -179,26 +219,36 @@ impl ItemSetFilter {
         }
     }
 
-    /// The same filter, taken from a pattern's classes: its `desired` classes become the desired
-    /// selectors and its `good` ones the good selectors, so a goal is written once, in the pattern
-    /// language the rest of the repository already speaks, and the step filter reads it.
+    /// The same filter, taken from a pattern's classes: its `Desired` classes become the desired
+    /// selectors, and its `Good`, `Middling` and `Neutral` ones the good selectors, so a goal is
+    /// written once, in the pattern language the rest of the repository already speaks, and the
+    /// step filter reads it. The buckets are `solve::grade_value`'s — best possible, good enough,
+    /// not good enough — so the filter and the score read a class the same way. A `Bad` class
+    /// needs no selector: its modifiers are `Tier::Any`, the fallback bucket.
     pub fn from_pattern(pattern: &Pattern, accept: Accept) -> ItemSetFilter {
         let mut desired = Vec::new();
         let mut good = Vec::new();
         for class in &pattern.classes {
-            let target = if matches!(class.grade, Grade::Desired) {
-                &mut desired
-            } else if matches!(class.grade, Grade::Good) {
-                &mut good
-            } else {
-                continue;
+            let target = match class.grade {
+                Grade::Desired => &mut desired,
+                Grade::Good | Grade::Middling | Grade::Neutral => &mut good,
+                Grade::Bad => continue,
             };
             for (m, or_better, min) in class.mods() {
-                target.push(ModSelector {
+                target.push(ModSelector::Mod {
                     side: class.side,
                     m,
                     or_better,
                     min,
+                });
+            }
+            // A class written by category names no ids, so `mods` cannot report it. `{"any": true}`
+            // still needs nothing here: a class that takes anything *is* the fallback bucket, and
+            // anything no selector claims already lands in `Tier::Any`.
+            for crafted in class.crafted_matchers() {
+                target.push(ModSelector::Crafted {
+                    side: class.side,
+                    crafted,
                 });
             }
         }

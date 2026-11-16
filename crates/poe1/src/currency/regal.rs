@@ -3,7 +3,7 @@
 use super::{Currency, ItemOutputSet, ItemSetFilter, adds, with_rarity};
 use crate::data::{Category, Data, Rarity};
 use crate::item::Item;
-use crate::method::SideReq;
+use crate::method::{Pool, SideReq};
 
 /// The Orb of Regal, one step.
 pub struct Regal<'d> {
@@ -46,7 +46,7 @@ impl Currency for Regal<'_> {
             return ItemOutputSet::refused("an Orb of Regal cannot be used on a flask or tincture");
         }
         let rare = with_rarity(item, Rarity::Rare);
-        let Some(weighted) = adds(data, &rare, 1, SideReq::Any) else {
+        let Some(weighted) = adds(data, &rare, &Pool::Natural, 1, SideReq::Any) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         let set = ItemOutputSet::new(data, weighted);

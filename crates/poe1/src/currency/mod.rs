@@ -33,7 +33,16 @@ use std::collections::BTreeMap;
 use crate::apply;
 use crate::data::{Data, ModData, Rarity, Side};
 use crate::item::{Affix, Item};
-use crate::method::{Pool, SideReq};
+use crate::method::{Policy, Pool, Protection, SideReq};
+
+/// What every removal method in `rules/methods.json` declares: a lock is respected, and since 3.30
+/// no removal respects the Cannot Roll metamods (`remove.cannot-roll-scope`). Scouring,
+/// alteration and annulment all clear or take modifiers, so they share this and the
+/// `apply::clear_changeable`/`apply::removable` predicates that read it.
+pub const REMOVAL_PROTECTION: Protection = Protection {
+    locks: Policy::Respect,
+    cannot_roll: Policy::Ignore,
+};
 
 /// A currency, in one struct and one file.
 pub trait Currency {
@@ -190,9 +199,17 @@ pub fn combine(data: &Data, branches: Vec<(u128, Vec<Weighted>)>) -> Option<Item
 
 /// The pools one random add reaches, one entry per side that can take a modifier, with the exact
 /// integer weights of the modifiers on it.
-fn side_pools(data: &Data, item: &Item, want: SideReq) -> Vec<(Side, Vec<(u32, u128)>)> {
+///
+/// `pool` is the pool the calling method declares — an influence slam draws its influence's pool,
+/// not the natural one — so the caller must pass it rather than relying on a default.
+fn side_pools(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    want: SideReq,
+) -> Vec<(Side, Vec<(u32, u128)>)> {
     let mut by_side: [Vec<(u32, u128)>; 2] = Default::default();
-    for (m, w) in apply::draw_weights(data, item, &Pool::Natural, want, false, false) {
+    for (m, w) in apply::draw_weights(data, item, pool, want, false, false) {
         if let Some(side) = data.mod_at(m).side {
             by_side[side.index()].push((m, w));
         }
@@ -203,8 +220,8 @@ fn side_pools(data: &Data, item: &Item, want: SideReq) -> Vec<(Side, Vec<(u32, u
 /// One random add, exactly: the side is drawn first, in equal shares among the sides that can take a
 /// modifier, and then the modifier on it by weight (claim `add.side-first`). Weights are scaled by
 /// the *other* sides' totals so every side shares one denominator, making the sum `k × Π totals`.
-pub fn one_add(data: &Data, item: &Item, want: SideReq) -> Vec<Weighted> {
-    let pools: Vec<(Side, Vec<(u32, u128)>)> = side_pools(data, item, want)
+pub fn one_add(data: &Data, item: &Item, pool: &Pool, want: SideReq) -> Vec<Weighted> {
+    let pools: Vec<(Side, Vec<(u32, u128)>)> = side_pools(data, item, pool, want)
         .into_iter()
         .filter(|(_, mods)| !mods.is_empty())
         .collect();
@@ -238,10 +255,11 @@ pub fn one_add(data: &Data, item: &Item, want: SideReq) -> Vec<Weighted> {
 pub fn side_chance(
     data: &Data,
     item: &Item,
+    pool: &Pool,
     side: Side,
     mut want: impl FnMut(u32, &ModData) -> bool,
 ) -> Option<Fraction> {
-    let pool = side_pools(data, item, SideReq::Any)
+    let pool = side_pools(data, item, pool, SideReq::Any)
         .into_iter()
         .find(|(s, _)| *s == side)?
         .1;
@@ -255,12 +273,18 @@ pub fn side_chance(
 }
 
 /// `n` random adds in a row, as one exact set; `None` if a weight would overflow.
-pub fn adds(data: &Data, item: &Item, n: usize, want: SideReq) -> Option<Vec<Weighted>> {
+pub fn adds(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    n: usize,
+    want: SideReq,
+) -> Option<Vec<Weighted>> {
     let mut acc = vec![(item.clone(), 1u128, None)];
     for _ in 0..n {
         let mut next = Vec::new();
         for (it, w, first) in acc {
-            for (result, w2, added) in one_add(data, &it, want) {
+            for (result, w2, added) in one_add(data, &it, pool, want) {
                 next.push((result, w.checked_mul(w2)?, first.or(added)));
             }
         }

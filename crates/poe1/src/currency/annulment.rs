@@ -1,8 +1,8 @@
 //! Orb of Annulment: removes one explicit modifier from a magic or rare item, in equal shares
 //! among the modifiers a removal may take (`currency/annulment`).
 
-use super::scouring::SCOURING_PROTECTION;
 use super::{Currency, ItemOutputSet, ItemSetFilter};
+use super::REMOVAL_PROTECTION;
 use crate::apply::removable;
 use crate::data::{Data, Rarity};
 use crate::item::Item;
@@ -41,7 +41,7 @@ impl Currency for Annulment<'_> {
         }
         // `currency/annulment` declares the same protection as a scouring — a lock is respected,
         // the Cannot Roll metamods are ignored — so this is the op path's own removable set.
-        let positions = removable(data, SCOURING_PROTECTION, item);
+        let positions = removable(data, REMOVAL_PROTECTION, item);
         if positions.is_empty() {
             return ItemOutputSet::refused("no modifier can be removed");
         }

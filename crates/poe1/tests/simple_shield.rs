@@ -67,7 +67,7 @@ fn the_totem_shield_chances() {
     magic.rarity = Rarity::Magic;
     let filter = ItemSetFilter::from_pattern(&pattern(data), Accept::DesiredOrGoodBothSides);
     let share = |side: Side, tier: Tier| {
-        side_chance(data, &magic, side, |m, _| {
+        side_chance(data, &magic, &Pool::Natural, side, |m, _| {
             filter.tier_of_mod(data, m) == tier
         })
         .expect("a side with a pool")

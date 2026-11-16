@@ -274,10 +274,20 @@ pub struct Pattern {
 impl Class {
     /// The modifiers this class names, with the `or_better` flag and value floors that came with
     /// them. Only a `Mod` matcher has an id: `Crafted` and `Any` are categories, not modifiers, so
-    /// they are not listed here.
+    /// they are not listed here (see [`Class::crafted_matchers`]).
     pub fn mods(&self) -> impl Iterator<Item = (u32, bool, Option<Vec<Option<i32>>>)> + '_ {
         self.matchers.iter().filter_map(|m| match m {
             Matcher::Mod { m, min, or_better } => Some((*m, *or_better, min.clone())),
+            _ => None,
+        })
+    }
+
+    /// The sense of each `{"crafted": bool}` matcher: `true` wants crafted modifiers that are not
+    /// metamods, `false` wants anything uncrafted. `{"any": true}` is absent on purpose — a class
+    /// that takes anything is the goal's own fallback bucket, not something a filter selects.
+    pub fn crafted_matchers(&self) -> impl Iterator<Item = bool> + '_ {
+        self.matchers.iter().filter_map(|m| match m {
+            Matcher::Crafted(crafted) => Some(*crafted),
             _ => None,
         })
     }

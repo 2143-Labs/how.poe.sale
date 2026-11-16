@@ -3,7 +3,7 @@
 use super::{Currency, ItemOutputSet, ItemSetFilter, adds, has_room};
 use crate::data::{Data, Rarity, Side};
 use crate::item::Item;
-use crate::method::SideReq;
+use crate::method::{Pool, SideReq};
 
 /// The Exalted Orb, one step.
 pub struct Exalted<'d> {
@@ -35,7 +35,7 @@ impl Currency for Exalted<'_> {
         if !Side::BOTH.into_iter().any(|s| has_room(data, item, s)) {
             return ItemOutputSet::refused("the item has no room for another modifier");
         }
-        let Some(weighted) = adds(data, item, 1, SideReq::Any) else {
+        let Some(weighted) = adds(data, item, &Pool::Natural, 1, SideReq::Any) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         let set = ItemOutputSet::new(data, weighted);

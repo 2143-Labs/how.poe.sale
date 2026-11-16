@@ -4,7 +4,7 @@
 use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine, with_rarity};
 use crate::data::{Data, Rarity};
 use crate::item::Item;
-use crate::method::SideReq;
+use crate::method::{Pool, SideReq};
 
 /// The Orb of Transmutation, one step.
 pub struct Transmutation<'d> {
@@ -35,8 +35,8 @@ impl Currency for Transmutation<'_> {
         }
         let magic = with_rarity(item, Rarity::Magic);
         let (Some(one), Some(two)) = (
-            adds(data, &magic, 1, SideReq::Any),
-            adds(data, &magic, 2, SideReq::Any),
+            adds(data, &magic, &Pool::Natural, 1, SideReq::Any),
+            adds(data, &magic, &Pool::Natural, 2, SideReq::Any),
         ) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
