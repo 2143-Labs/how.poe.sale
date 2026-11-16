@@ -4,9 +4,11 @@
 //! names come out of it exactly, one orb's step is exact, and nothing can roll past its side's room
 //! or repeat a modifier family.
 
-use simple::craft::{Coarse, LoopPolicy, Machine, Policy, Stage};
+use simple::craft::{
+    Action, Coarse, CurrencyId, LoopPolicy, Machine, MachineError, Policy, Stage, Step,
+};
 use simple::currency::{ItemOutputSet, registry};
-use simple::data::data;
+use simple::data::{Data, data};
 use simple::filter::{Accept, ItemSetFilter};
 use simple::fraction::Fraction;
 use simple::item::{Affix, Item, Rarity, Side};
@@ -470,5 +472,86 @@ fn a_collapsed_class_is_never_expanded() {
     assert!(
         collapsed > 0,
         "no class was collapsed, so the test proves nothing"
+    );
+}
+
+/// A policy that names one orb for every item, for the machine's guards.
+struct Always(CurrencyId);
+
+impl Policy for Always {
+    fn step(&self, _data: &Data, _filter: &ItemSetFilter, _item: &Item) -> Step {
+        Step {
+            action: Action::Apply(self.0),
+            reason: "a test asks for this orb",
+        }
+    }
+}
+
+/// The lumped machine's two refusals: it cannot follow an annulment, and it cannot run an orb this
+/// crate does not model.
+///
+/// The annulment is the one orb whose outcomes a class cannot name — taking a modifier off loses
+/// which group went, so one class has several successors with different pools. The loop never names
+/// it; a policy that does gets told why rather than a wrong answer.
+#[test]
+fn the_lumped_machine_refuses_what_it_cannot_follow() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+
+    let mut lumped = Coarse::new(data, &filter, &target);
+    assert_eq!(
+        lumped.step(&Always(CurrencyId::ANNULMENT)),
+        Err(MachineError::Refused("currency/annulment is not lumpable"))
+    );
+
+    let mut lumped = Coarse::new(data, &filter, &target);
+    assert_eq!(
+        lumped.step(&Always(CurrencyId("currency/chaos"))),
+        Err(MachineError::UnknownCurrency("currency/chaos"))
+    );
+}
+
+/// The same loop, with the collapse turned off: the step is the policy's, only the forgetting is not.
+struct NoCollapse<'a>(LoopPolicy<'a>);
+
+impl Policy for NoCollapse<'_> {
+    fn step(&self, data: &Data, filter: &ItemSetFilter, item: &Item) -> Step {
+        self.0.step(data, filter, item)
+    }
+}
+
+/// Collapsing finished classes changes how many states the machine holds and not what it says.
+///
+/// This is the check that the optimisation is exact: the same loop, with and without the forgetting,
+/// reports the same mass on every stage at every depth, and the forgetting holds fewer classes.
+#[test]
+fn forgetting_finished_classes_changes_no_number() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+    let policy = LoopPolicy::new(&target);
+    let mut collapsing = Coarse::new(data, &filter, &target);
+    let mut forgetting = Coarse::new(data, &filter, &target);
+
+    for depth in 1..=4 {
+        collapsing.step(&policy).unwrap();
+        forgetting
+            .step(&NoCollapse(LoopPolicy::new(&target)))
+            .unwrap();
+        let collapses = row(collapsing.history());
+        let forgets = row(forgetting.history());
+        for stage in Stage::ALL {
+            assert!(
+                (mass(&collapses, stage) - mass(&forgets, stage)).abs() < CLOSE,
+                "depth {depth}: the {stage:?} mass differs with the collapse on"
+            );
+        }
+    }
+    assert!(
+        collapsing.live().len() < forgetting.live().len(),
+        "the collapse should hold fewer classes: {} against {}",
+        collapsing.live().len(),
+        forgetting.live().len()
     );
 }

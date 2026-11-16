@@ -4,8 +4,8 @@
 //! exactly what each step produces — and it cannot go far, because a rare shield has three prefixes
 //! and three suffixes out of 204 modifiers. [`coarse::Coarse`] holds classes of items instead, so
 //! it can walk the loop for depth; it is exact for the same reason the concrete machine is, and the
-//! two agree step for step at the first. What it costs is state: the baseline craft's classes close
-//! at 952 518, which is the whole loop's exact state space.
+//! two agree step for step at the first. What it costs is state: the baseline craft fills about 953 000
+//! classes by the sixth step, and 198 656 once the policy's finished classes are collapsed.
 //!
 //! Both read the same [`Policy`], so a decision is written once and cannot drift between them.
 

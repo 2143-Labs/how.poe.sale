@@ -47,7 +47,7 @@ fn main() {
     println!();
 
     let target = Target::from_data(data);
-    let mut loop_ = Coarse::new(data, &filter, &target);
+    let mut machine = Coarse::new(data, &filter, &target);
     let policy = LoopPolicy::new(&target);
     print!("{:>5}", "depth");
     for stage in Stage::ALL {
@@ -55,22 +55,22 @@ fn main() {
     }
     println!(" {:>11}", "goal");
     for depth in 1..=depth {
-        loop_
+        machine
             .step(&policy)
             .expect("the loop's moves are modellable");
-        let row = loop_.history().last().expect("a step was taken");
+        let row = machine.history().last().expect("a step was taken");
         print!("{depth:>5}");
         for stage in Stage::ALL {
-            print!(" {:>11}", format!("{:.6}", mass(row, stage)));
+            print!(" {:>11}", format!("{:.6}", percent(row, stage)));
         }
-        println!(" {:>11}", format!("{:.6}", loop_.goal() * 100.0));
+        println!(" {:>11}", format!("{:.6}", machine.goal() * 100.0));
     }
     println!();
-    println!("goal {:.6}%", loop_.goal() * 100.0);
-    println!("unabsorbed {:.6}%", loop_.unabsorbed() * 100.0);
+    println!("goal {:.6}%", machine.goal() * 100.0);
+    println!("unabsorbed {:.6}%", machine.unabsorbed() * 100.0);
     println!(
         "target {:.6}% of the mass is the item the craft is for",
-        loop_.reached() * 100.0
+        machine.reached() * 100.0
     );
 }
 
@@ -97,7 +97,8 @@ fn pool_total(pool: &[(u16, u128)]) -> u128 {
     pool.iter().map(|&(_, weight)| weight).sum()
 }
 
-fn mass(row: &[(Stage, f64)], stage: Stage) -> f64 {
+/// One stage's share of the step, in percent.
+fn percent(row: &[(Stage, f64)], stage: Stage) -> f64 {
     row.iter()
         .find(|(label, _)| *label == stage)
         .map(|(_, mass)| *mass * 100.0)

@@ -12,6 +12,12 @@
 //! group went, so one class has several successor classes with different pools. [`Coarse::step`]
 //! refuses it by name rather than guessing. The loop never names it.
 //!
+//! The state is large — the baseline craft fills about 953 000 classes by the sixth step — but it
+//! closes:
+//! from the fifth step on, every class the loop reaches is already known, and a step costs a pass
+//! over the tables. Collapsing the classes the policy is finished with brings the same run to
+//! 198 656, and the numbers do not move, because a finished item is never drawn from again.
+//!
 //! Masses are `f64` for the same reason they are in [`super::machine`]: one step's shares are exact
 //! chances times the incoming mass, but summing them into a distribution needs a denominator that is
 //! the least common multiple of thousands of distinct pool totals. Every chance an orb states stays
@@ -27,7 +33,7 @@ use crate::filter::{ItemSetFilter, Tier};
 use crate::item::{Affix, Item, Rarity, Side};
 use crate::target::Target;
 
-use super::{Action, CurrencyId, LoopPolicy, MachineError, Policy, Stage};
+use super::{Action, CurrencyId, MachineError, Policy, Stage};
 
 /// What a draw and the goal can read about an item.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -225,6 +231,10 @@ pub struct Coarse<'a> {
     history: Vec<Vec<(Stage, f64)>>,
     /// Each class's next classes and their shares, computed once.
     ///
+    /// The machine is driven by one policy: the cache is keyed by the class and the orb, and the
+    /// collapse of finished classes is what that policy says. Driving one machine with two policies
+    /// would read the first policy's tables, which is why `step` is not meant for that.
+    ///
     /// What a class becomes under an orb cannot change between steps — the orb reads the rarity,
     /// the held groups and the base, all of which are the class — so the second depth onwards would
     /// otherwise recompute the same twelve thousand draws for every class.
@@ -255,7 +265,7 @@ impl<'a> Coarse<'a> {
     ///
     /// The policy is asked once per class, on the class's witness: every item in the class answers
     /// the same, because the loop's clauses read nothing but the rarity and the grade counts.
-    pub fn step(&mut self, policy: &LoopPolicy) -> Result<(), MachineError> {
+    pub fn step<P: Policy>(&mut self, policy: &P) -> Result<(), MachineError> {
         let current = std::mem::take(&mut self.live);
         let mut live: BTreeMap<Class, f64> = BTreeMap::new();
         let mut dropped: HashMap<Stage, f64> = HashMap::new();
@@ -313,11 +323,11 @@ impl<'a> Coarse<'a> {
     }
 
     /// One orb's effect on one item, as classes and shares.
-    fn transitions_of(
+    fn transitions_of<P: Policy>(
         &self,
         item: &Item,
         id: &'static str,
-        policy: &LoopPolicy,
+        policy: &P,
     ) -> Result<Vec<(Class, f64)>, MachineError> {
         let orb = registry(self.data, id).ok_or(MachineError::UnknownCurrency(id))?;
         match orb.apply(item, &None) {
