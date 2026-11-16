@@ -2,7 +2,7 @@
 //! distribution step.
 
 use poe1::apply::draw_weights;
-use poe1::craft::{LoopPolicy, Machine, Policy, Stage, StepKind};
+use poe1::craft::{LoopPolicy, Machine, Policy, Stage, Step, StepKind};
 use poe1::currency::{Accept, Fraction, ItemSetFilter, Tier};
 use poe1::data::{Data, Rarity, Side};
 use poe1::item::{Affix, Item, ItemSpec};
@@ -217,4 +217,88 @@ fn one_step_accounts_for_all_its_mass() {
     );
     let live = sum(machine.state().iter().map(|(_, p)| p));
     assert!(!live.is_zero(), "a normal item has somewhere to go");
+}
+
+/// A second policy over the same machine: reroll only, never augment and never regal. It exists to
+/// show the seam — the machine, the exact weights and the stage vocabulary are the same, and only
+/// the decision differs, so a policy is genuinely a decision function rather than part of the engine.
+struct RerollOnly<'a> {
+    filter: &'a ItemSetFilter,
+}
+
+impl Policy for RerollOnly<'_> {
+    fn step(&self, data: &Data, item: &Item) -> Step {
+        if self.filter.holds_desired(data, item) {
+            return Step {
+                currency: StepKind::Done,
+                reason: "the item holds a desired modifier",
+            };
+        }
+        match item.rarity {
+            Rarity::Normal => Step {
+                currency: StepKind::Transmutation,
+                reason: "a normal item: start it as magic",
+            },
+            Rarity::Magic => Step {
+                currency: StepKind::Alteration,
+                reason: "reroll, whatever the item holds",
+            },
+            _ => Step {
+                currency: StepKind::Reset,
+                reason: "a rare item without the goal: start again",
+            },
+        }
+    }
+}
+
+/// The two policies give the same machine two different answers, and both are exact: augmentation
+/// can never add the desired prefix (a prefix draw is not what it does), while a reroll gives it
+/// the usual 1/108.
+#[test]
+fn two_policies_give_the_same_machine_two_answers() {
+    let data = poe1::test_data();
+    let pattern = pattern(data);
+    let filter = filter(&pattern);
+    // A magic shield already holding a good prefix: the loop augments it, a reroll starts over.
+    let mut magic: ItemSpec = serde_json::from_str(
+        r#"{
+            "base": "Supreme Spiked Shield",
+            "itemLevel": 87,
+            "rarity": "magic",
+            "influences": ["shaper"],
+            "prefixes": [{"id": "IncreasedLife10"}]
+        }"#,
+    )
+    .expect("spec");
+    let item = Item::from_spec(data, &mut magic).expect("the item");
+
+    let mass = |chances: &[(Stage, Fraction)], stage: Stage| {
+        chances
+            .iter()
+            .filter(|(s, _)| *s == stage)
+            .map(|(_, p)| *p)
+            .fold(Fraction::ZERO, |a, b| a.checked_add(b).expect("exact"))
+    };
+
+    let mut loop_machine = Machine::new(data, filter.clone(), item.clone());
+    loop_machine
+        .step(&LoopPolicy::new(&filter))
+        .expect("the loop augments");
+    let augmented = loop_machine.chances();
+    assert_eq!(
+        mass(augmented, Stage::Desired),
+        Fraction::ZERO,
+        "a suffix draw cannot be the goal"
+    );
+
+    let mut reroll = Machine::new(data, filter.clone(), item.clone());
+    reroll
+        .step(&RerollOnly { filter: &filter })
+        .expect("a reroll");
+    let rerolled = reroll.chances();
+    assert_eq!(
+        mass(rerolled, Stage::Desired),
+        Fraction::new(1, 108).expect("1/108"),
+        "one alteration puts the goal in the distribution at 1/108"
+    );
 }
