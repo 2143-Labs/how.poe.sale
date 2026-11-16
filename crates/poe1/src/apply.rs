@@ -7,7 +7,10 @@
 //! rules not modelled yet stop at the item before their step. Whether an affix can change is
 //! decided in one place (`Guard`), from the method's `Protection`. An op with nothing to do
 //! outside a `Chance` branch refuses the method (owner, Q1); inside a branch it leaves that
-//! branch's item unchanged. `check` runs the same program as `apply`, so the two agree.
+//! branch's item unchanged. A step whose *whole outcome* is one item leaf no different from the
+//! input is refused too, with the reason the conditional op gave (claim `empty.refused`); the
+//! rule is about the outcome, so a branch that does nothing while another changes the item is a
+//! legitimate result. `check` runs the same program as `apply`, so the two agree.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -882,6 +885,8 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         params,
         size: 0,
         in_choice: 0,
+        changed: false,
+        idle: None,
     };
     let start = State {
         item: inputs[0].clone(),
@@ -893,7 +898,40 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         then: None,
     };
     match run.exec(vec![(1.0, start)], root) {
-        Ok(leaves) => Ok(Outcome::from_leaves(leaves)),
+        Ok(leaves) => {
+            let outcome = Outcome::from_leaves(leaves);
+            // Claim `empty.refused`: using a currency on an item it has nothing to change is
+            // refused, and the currency is not consumed. The rule is about the *outcome*, not a
+            // branch: a `Chance` branch that does nothing is a legitimate result when the other
+            // branches change the item (25 % of a Vaal Orb is deliberately "nothing happens"),
+            // so only a whole outcome that is one item leaf — and that item no different from
+            // the input — is refused. Two forms of it:
+            //
+            // - the same item, which is what an add with an empty pool leaves behind inside a
+            //   `Chance` branch (the transmutation on a base with no available modifier), and
+            // - the same item with only its rarity raised and no explicit modifier to show for
+            //   it: a Magic item with no modifier is not an item any currency can have made, so
+            //   the raise did not change the item either. That is the transmutation on a base
+            //   whose every affix limit is closed (the Simplex Amulet).
+            //
+            // `changed` keeps this exact: a reroll whose one valid outcome is the item it started
+            // from (an Alteration on an item that already holds the only modifier it can draw)
+            // did change the item on the way, and the per-currency model treats it as a use of
+            // the currency (`ItemOutputSet::new`), so it is not refused here.
+            //
+            // A `Pending` leaf is never refused by this rule, even when its item is the input:
+            // the leaf says the model stopped *before* the step that would change the item, which
+            // is not the same claim as "nothing can change it" — and `Pending { TooLarge }`
+            // reports the input by construction.
+            if !run.changed && outcome.item().is_some_and(|item| unchanged(&inputs[0], item)) {
+                let reason = run
+                    .idle
+                    .take()
+                    .unwrap_or_else(|| "the method leaves the item unchanged".into());
+                return Err(Unmet { reason });
+            }
+            Ok(outcome)
+        }
         Err(Stop::Unmet(reason)) => Err(Unmet { reason }),
         Err(Stop::TooLarge) => Ok(Outcome {
             leaves: vec![(
@@ -1134,6 +1172,15 @@ struct Run<'a> {
     size: usize,
     /// Set while the ops after a player's choice run; they are conditional too.
     in_choice: usize,
+    /// Whether any op did its work: produced an item that differs from the one it was given, or
+    /// rolled values or an enchant (which the model may not be able to show as a different item).
+    /// A rarity-only raise with no explicit modifier is no change (see [`unchanged`]). A step
+    /// that never did any work is refused when its whole outcome is the input (claim
+    /// `empty.refused`).
+    changed: bool,
+    /// The reason a conditional op last had nothing to do, kept for that refusal: it names the
+    /// pool or the modifier that could not change.
+    idle: Option<String>,
 }
 
 /// The display-only and one-shot fields after an op: the pasted defence figures go once
@@ -1159,6 +1206,22 @@ pub(crate) fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
             after.foreseen = false;
         }
     }
+}
+
+/// Whether a step left the item as it was: the same item, or the same item with only its rarity
+/// changed and no explicit modifier to show for it. A Magic item with no explicit modifier is not
+/// an item a currency can have made, so raising Normal to Magic without adding one changed
+/// nothing (claim `empty.refused`).
+fn unchanged(before: &Item, after: &Item) -> bool {
+    if before == after {
+        return true;
+    }
+    if after.explicits().next().is_some() {
+        return false;
+    }
+    let mut same = before.clone();
+    same.rarity = after.rarity;
+    same == *after
 }
 
 /// The next tier up a Dominance upgrade gives `m`, or `None` when `m` is elevated already.
@@ -1284,9 +1347,12 @@ impl Run<'_> {
     }
 
     /// An op with nothing to do: refuse the method, or inside a Chance branch (or after a
-    /// player's choice) leave the state as it is.
-    fn nothing(&self, conditional: bool, state: State, reason: String) -> Result<Step, Stop> {
+    /// player's choice) leave the state as it is. The conditional reason is kept on the run: if
+    /// the whole method turns out to change nothing, it is the refusal's reason (claim
+    /// `empty.refused`).
+    fn nothing(&mut self, conditional: bool, state: State, reason: String) -> Result<Step, Stop> {
         if conditional {
+            self.idle = Some(reason);
             Ok(Step::Go(vec![(1.0, state)]))
         } else {
             Err(Stop::Unmet(reason))
@@ -1449,17 +1515,29 @@ impl Run<'_> {
             Ok(b) => b,
             Err(reason) => return self.nothing(conditional, state, reason),
         };
-        Ok(Step::Go(
-            branches
-                .into_iter()
-                .map(|(p, mut item, added)| {
-                    item.canonical(data);
-                    settle(&before, &mut item, matches!(op, Op::Imprint));
-                    let last_added = added.or(state.last_added);
-                    (p, State { item, last_added })
-                })
-                .collect(),
-        ))
+        // Whether the op did any work. A rarity raise that no explicit modifier backs is no
+        // change (see `unchanged`), and a clear that removed nothing is none either; but an op
+        // that rolls — values, an enchant — has done its work even when the item it produces
+        // compares equal to the one it was given, because the model does not carry the rolled
+        // figure (a Sacred Orb on an armour whose defence values are not stated rolls the base's
+        // range and comes back the same item). Refusing that would say the orb cannot be used.
+        let rolled = matches!(
+            op,
+            Op::RerollValues { .. } | Op::SetEnchant { .. } | Op::SetEnchantMod { .. }
+        );
+        let states: Vec<(f64, State)> = branches
+            .into_iter()
+            .map(|(p, mut item, added)| {
+                item.canonical(data);
+                settle(&before, &mut item, matches!(op, Op::Imprint));
+                if rolled || !unchanged(&before, &item) {
+                    self.changed = true;
+                }
+                let last_added = added.or(state.last_added);
+                (p, State { item, last_added })
+            })
+            .collect();
+        Ok(Step::Go(states))
     }
 
     /// The ops that change the item: (chance, item, the mod it added) per branch, or why the op

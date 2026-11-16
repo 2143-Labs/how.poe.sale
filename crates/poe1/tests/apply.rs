@@ -1496,6 +1496,51 @@ fn simplex_locks() {
     assert!(close(unchanged, 2.0 / 3.0, 1e-12));
 }
 
+/// Claim `empty.refused`: a step that changes nothing is refused, not reported as a change. A
+/// Simplex Amulet's base leaves a Magic item no affix slot, so the Transmutation's rarity rise has
+/// no modifier to go with it — the item comes back as it went in.
+#[test]
+fn a_step_that_changes_nothing_is_refused() {
+    assert_eq!(
+        reason("currency/transmutation", &item("simplex-normal")),
+        "no modifier can roll on this item"
+    );
+    // The same rule at its plainest: the rarity rise on its own is not a change.
+    let improve = custom(serde_json::json!({"ops": [{"op": "setRarity", "rarity": "magic"}]}));
+    assert_eq!(
+        reason_of(&improve, &[item("slink-boots-normal")], &Params::default()),
+        "the method leaves the item unchanged"
+    );
+    // A clear with nothing to clear is no change either.
+    let clear = custom(serde_json::json!({
+        "protect": {"locks": "ignore", "cannotRoll": "ignore"},
+        "ops": [{"op": "clear"}]
+    }));
+    assert_eq!(
+        reason_of(&clear, &[item("slink-boots-normal")], &Params::default()),
+        "the method leaves the item unchanged"
+    );
+}
+
+/// A roll that comes back with the item it started from is a use of the currency, not a refusal:
+/// the Sacred Orb rolls the Archdemon Crown's base defences and this item states none, so the
+/// model cannot show a different item — but it did roll, and the method applies.
+#[test]
+fn a_roll_that_lands_on_the_same_item_still_applies() {
+    let d = test_data();
+    let crown = item("crown-a");
+    assert!(
+        check(
+            d,
+            method("currency/sacred"),
+            std::slice::from_ref(&crown),
+            &Params::default()
+        )
+        .is_ok()
+    );
+    assert_eq!(run("currency/sacred", &crown).item(), Some(&crown));
+}
+
 #[test]
 fn dominance_elevates_top_tier() {
     let d = test_data();
