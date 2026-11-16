@@ -8,7 +8,10 @@
 //! copy on `main` only carries the toy bases, so the generator was run against the copy that has the
 //! shield. The generated file is compiled in, so nothing here reads the export.
 
+pub mod currency;
 pub mod data;
+pub mod filter;
 pub mod fraction;
 pub mod item;
 pub mod pool;
+pub mod target;

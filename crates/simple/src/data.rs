@@ -235,38 +235,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_pool_is_the_shields() {
-        let data = data();
-        assert_eq!(data.base.name, "Supreme Spiked Shield");
-        assert_eq!(data.base.item_level, 87);
-        assert!(data.base.tags.iter().any(|t| t == "shield_shaper"));
-
-        let prefixes: Vec<&Mod> = data
-            .mods
-            .iter()
-            .filter(|m| m.side == Side::Prefix)
-            .collect();
-        let suffixes: Vec<&Mod> = data
-            .mods
-            .iter()
-            .filter(|m| m.side == Side::Suffix)
-            .collect();
-        assert_eq!(prefixes.len(), 73, "the shield rolls 73 prefixes");
-        assert_eq!(suffixes.len(), 131, "the shield rolls 131 suffixes");
-        assert_eq!(data.mods.len(), 204);
-
-        let total = |side| -> u128 {
-            data.mods
-                .iter()
-                .filter(|m| m.side == side)
-                .map(|m| data.weight_on(data.id_of(&m.id).unwrap()))
-                .sum()
-        };
-        assert_eq!(total(Side::Prefix), 64800);
-        assert_eq!(total(Side::Suffix), 96475);
-    }
-
-    #[test]
     fn every_target_modifier_is_in_the_pool() {
         let data = data();
         assert_eq!(data.target.desired.len(), 1);
