@@ -81,8 +81,9 @@ pub fn render(data: &Data, item: &Item) -> String {
         "Every number below comes from the pinned RePoE export (patch {}, commit `{}`). \
          A weight is the export's spawn weight times its generation percentage, kept as an exact \
          integer{}; a share is a ratio of those integers, printed to three decimals for reading \
-         only. A modifier's chance is its weight over its side's total — the division the \
-         currency code makes.\n",
+         only. A modifier's share within its side is its weight over that side's total; with both \
+         sides open the side is chosen first (claim `add.side-first`), so the chance a particular \
+         modifier is the next add is half its share.\n",
         data.patch,
         data.repoe_commit,
         if scale == 100 {

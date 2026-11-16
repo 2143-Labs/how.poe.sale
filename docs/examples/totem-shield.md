@@ -2,7 +2,7 @@
 
 `Metadata/Items/Armours/Shields/ShieldDexInt13`, Shields.
 
-Every number below comes from the pinned RePoE export (patch 3.29.3.3, commit `d8635430f4005faccfed69c7957ef2fb9f8fb1fb`). A weight is the export's spawn weight times its generation percentage, kept as an exact integer, with the common factor of 100 removed so the numbers match the published tables; a share is a ratio of those integers, printed to three decimals for reading only. A modifier's chance is its weight over its side's total — the division the currency code makes.
+Every number below comes from the pinned RePoE export (patch 3.29.3.3, commit `d8635430f4005faccfed69c7957ef2fb9f8fb1fb`). A weight is the export's spawn weight times its generation percentage, kept as an exact integer, with the common factor of 100 removed so the numbers match the published tables; a share is a ratio of those integers, printed to three decimals for reading only. A modifier's share within its side is its weight over that side's total; with both sides open the side is chosen first (claim `add.side-first`), so the chance a particular modifier is the next add is half its share.
 
 
 ## Prefixes — total weight 64,800
