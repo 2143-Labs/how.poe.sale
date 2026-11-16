@@ -69,6 +69,9 @@ pub struct Data {
     pub target: TargetSpec,
     ids: HashMap<String, u16>,
     groups: Vec<String>,
+    /// Each modifier's weight on this base, computed once: a draw asks for it for every modifier
+    /// of every pool.
+    weights: Vec<u128>,
 }
 
 impl Data {
@@ -164,12 +167,18 @@ impl Data {
                 .collect::<Result<_, _>>()?,
         };
 
+        let weights = mods
+            .iter()
+            .map(|entry| entry.weights.iter().map(|&(_, weight)| weight).sum())
+            .collect();
+
         Ok(Data {
             base,
             mods,
             target,
             ids,
             groups,
+            weights,
         })
     }
 
@@ -188,11 +197,7 @@ impl Data {
 
     /// The modifier's weight on this base: what it contributes to its side's pool.
     pub fn weight_on(&self, m: u16) -> u128 {
-        self.mod_at(m)
-            .weights
-            .iter()
-            .map(|&(_, weight)| weight)
-            .sum()
+        self.weights[m as usize]
     }
 }
 

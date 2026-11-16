@@ -10,8 +10,6 @@
 //! *other* sides' totals: it puts every outcome of one add over one denominator
 //! (`k × Π totals` for `k` sides with room), so the shares stay integers and the total stays exact.
 
-use std::collections::HashSet;
-
 use crate::data::Data;
 use crate::fraction::Fraction;
 use crate::item::{Affix, Item, Rarity, Side};
@@ -38,14 +36,20 @@ pub fn room(item: &Item, side: Side) -> usize {
     rarity_cap(item.rarity).saturating_sub(item.affixes(side).len())
 }
 
-/// Every group held on the item, both sides together. A modifier whose groups touch this set is
-/// out of both pools.
-pub fn held_groups(data: &Data, item: &Item) -> HashSet<u16> {
-    Side::BOTH
+/// Every group held on the item, both sides together, sorted. A modifier whose groups touch this
+/// list is out of both pools.
+///
+/// A list rather than a set: an item holds at most six modifiers, so its groups number a handful and
+/// a scan of a few `u16`s beats hashing — and a draw makes this call once per state it draws from.
+pub fn held_groups(data: &Data, item: &Item) -> Vec<u16> {
+    let mut held: Vec<u16> = Side::BOTH
         .into_iter()
         .flat_map(|side| item.affixes(side).iter())
         .flat_map(|affix| data.mod_at(affix.m).groups.iter().copied())
-        .collect()
+        .collect();
+    held.sort_unstable();
+    held.dedup();
+    held
 }
 
 /// The pool of one side: `(modifier, weight)` for every modifier that side could roll on this item,
@@ -63,10 +67,8 @@ pub fn draw_weights(data: &Data, item: &Item, side: Side) -> Vec<(u16, u128)> {
         .enumerate()
         .filter(|(_, m)| m.side == side && m.level <= data.base.item_level)
         .filter(|(_, m)| !m.groups.iter().any(|group| held.contains(group)))
-        .filter_map(|(m, entry)| {
-            let weight = entry.weights.iter().map(|&(_, w)| w).sum::<u128>();
-            (weight > 0).then_some((m as u16, weight))
-        })
+        .map(|(m, _)| (m as u16, data.weight_on(m as u16)))
+        .filter(|&(_, weight)| weight > 0)
         .collect()
 }
 

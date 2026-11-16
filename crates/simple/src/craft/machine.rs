@@ -7,15 +7,21 @@
 //! The state is a distribution over items, never a stage: a stage is a label a report reads, and an
 //! item that rolls well is a different item, not the same item at a later stage. That is why the
 //! machine can say exactly what one step produces — and why it cannot take many: a rare shield has
-//! three prefixes and three suffixes out of 204 modifiers, so the second step is millions of items
+//! three prefixes and three suffixes out of 204 modifiers, so the second step is thousands of items
 //! and the third is out of reach. [`super::coarse::Coarse`] is the machine for depth.
+//!
+//! **What is exact.** Every chance an orb states is an exact [`Fraction`] of the set's weights, and
+//! one step's distribution is those chances times the incoming mass. The *masses* are `f64`: a mass is
+//! a share of the distribution, and summing them exactly would need a denominator that is the least
+//! common multiple of thousands of distinct pool totals, which does not fit in 128 bits. So a row is
+//! one within about `1e-15`, not exactly one, and the tests say so. Nothing here feeds back into a
+//! chance.
 
 use std::collections::HashMap;
 
 use crate::currency::{ItemOutputSet, registry};
 use crate::data::Data;
 use crate::filter::ItemSetFilter;
-use crate::fraction::Fraction;
 use crate::item::{Item, Rarity};
 use crate::target::Target;
 
@@ -26,21 +32,18 @@ use super::{Action, Policy, Stage};
 pub enum MachineError {
     /// The policy named an orb this crate does not model.
     UnknownCurrency(&'static str),
-    /// A chance, a weight or a sum did not fit in 128 bits.
-    Overflow,
-    /// The orb refused the item, for the reason given.
-    Refused(&'static str),
     /// The orb produced no outcome at all.
     Empty(&'static str),
+    /// The orb refused the item, for the reason given.
+    Refused(&'static str),
 }
 
 impl std::fmt::Display for MachineError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MachineError::UnknownCurrency(id) => write!(f, "{id} is not modelled"),
-            MachineError::Overflow => write!(f, "a chance does not fit in 128 bits"),
-            MachineError::Refused(why) => f.write_str(why),
             MachineError::Empty(id) => write!(f, "{id} produced no outcome"),
+            MachineError::Refused(why) => f.write_str(why),
         }
     }
 }
@@ -52,10 +55,10 @@ pub struct Machine<'a> {
     data: &'a Data,
     filter: &'a ItemSetFilter,
     target: &'a Target,
-    live: Vec<(Item, Fraction)>,
-    goal: Fraction,
-    reached: Fraction,
-    history: Vec<Vec<(Stage, Fraction)>>,
+    live: Vec<(Item, f64)>,
+    goal: f64,
+    reached: f64,
+    history: Vec<Vec<(Stage, f64)>>,
 }
 
 impl<'a> Machine<'a> {
@@ -65,9 +68,9 @@ impl<'a> Machine<'a> {
             data,
             filter,
             target,
-            live: vec![(Item::new(Rarity::Normal), Fraction::ONE)],
-            goal: Fraction::ZERO,
-            reached: Fraction::ZERO,
+            live: vec![(Item::new(Rarity::Normal), 1.0)],
+            goal: 0.0,
+            reached: 0.0,
             history: Vec::new(),
         }
     }
@@ -75,10 +78,9 @@ impl<'a> Machine<'a> {
     /// Takes one step for every live item.
     pub fn step<P: Policy>(&mut self, policy: &P) -> Result<(), MachineError> {
         let current = std::mem::take(&mut self.live);
-        let mut live: Vec<(Item, Fraction)> = Vec::new();
+        let mut live: Vec<(Item, f64)> = Vec::new();
         let mut index: HashMap<Item, usize> = HashMap::new();
-        let mut absorbed = Fraction::ZERO;
-        let mut dropped: HashMap<Stage, Fraction> = HashMap::new();
+        let mut dropped: HashMap<Stage, f64> = HashMap::new();
 
         for (item, mass) in current {
             let decision = policy.step(self.data, self.filter, &item);
@@ -87,76 +89,65 @@ impl<'a> Machine<'a> {
                     let orb =
                         registry(self.data, id.0).ok_or(MachineError::UnknownCurrency(id.0))?;
                     match orb.apply(&item, &None) {
-                        ItemOutputSet::Refused(why) => {
-                            return Err(MachineError::Refused(why));
-                        }
+                        ItemOutputSet::Refused(why) => return Err(MachineError::Refused(why)),
                         ItemOutputSet::Outcomes { outcomes, total } => {
                             if outcomes.is_empty() || total == 0 {
                                 return Err(MachineError::Empty(id.0));
                             }
+                            let total = total as f64;
                             for outcome in outcomes {
-                                let chance = Fraction::new(outcome.weight, total)
-                                    .ok_or(MachineError::Overflow)?;
-                                let share =
-                                    mass.checked_mul(chance).ok_or(MachineError::Overflow)?;
-                                fold(&mut live, &mut index, outcome.item, share)?;
+                                let share = mass * (outcome.weight as f64 / total);
+                                fold(&mut live, &mut index, outcome.item, share);
                             }
                         }
                     }
                 }
                 Action::Done => {
-                    self.goal = self.goal.checked_add(mass).ok_or(MachineError::Overflow)?;
+                    self.goal += mass;
                     if self.target.reached(self.filter, &item) {
-                        self.reached = self
-                            .reached
-                            .checked_add(mass)
-                            .ok_or(MachineError::Overflow)?;
+                        self.reached += mass;
                     }
-                    absorbed = absorbed.checked_add(mass).ok_or(MachineError::Overflow)?;
                 }
-                Action::Reset => add_mass(&mut dropped, Stage::Reset, mass)?,
-                Action::Stop => add_mass(&mut dropped, Stage::Stop, mass)?,
+                Action::Reset => *dropped.entry(Stage::Reset).or_insert(0.0) += mass,
+                Action::Stop => *dropped.entry(Stage::Stop).or_insert(0.0) += mass,
             }
         }
 
         live.sort_by(|a, b| a.0.cmp(&b.0));
         self.live = live;
-        self.history.push(self.row(&dropped, absorbed)?);
+        self.history.push(self.row(&dropped));
         Ok(())
     }
 
-    /// The labels a report prints for the step just taken: the new live distribution, the mass a
-    /// `Done` decision absorbed (under [`Stage::Desired`]), and the mass the terminals dropped.
+    /// The labels a report prints for the step just taken: the new live distribution, the mass the
+    /// `Done` decisions absorbed (under [`Stage::Desired`]), and the mass the terminals dropped.
     ///
-    /// The row is a whole chance every step, which is what makes conservation checkable: no mass is
-    /// lost between one row and the next.
-    fn row(
-        &self,
-        dropped: &HashMap<Stage, Fraction>,
-        absorbed: Fraction,
-    ) -> Result<Vec<(Stage, Fraction)>, MachineError> {
-        let mut counts: HashMap<Stage, Fraction> = HashMap::new();
-        for (item, mass) in &self.live {
-            let stage = Stage::classify(self.filter, item);
-            add_mass(&mut counts, stage, *mass)?;
+    /// A row is the mass that entered the step — the live distribution, plus this step's `Done`
+    /// mass, plus this step's dropped mass — so a row is the whole chance minus everything earlier
+    /// steps took, and no mass is lost between one row and the next.
+    fn row(&self, dropped: &HashMap<Stage, f64>) -> Vec<(Stage, f64)> {
+        let mut mass: HashMap<Stage, f64> = HashMap::new();
+        for (item, share) in &self.live {
+            *mass
+                .entry(Stage::classify(self.filter, item))
+                .or_insert(0.0) += share;
         }
-        add_mass(&mut counts, Stage::Desired, absorbed)?;
-        for (stage, mass) in dropped {
-            add_mass(&mut counts, *stage, *mass)?;
+        for (stage, share) in dropped {
+            *mass.entry(*stage).or_insert(0.0) += share;
         }
-        Ok(Stage::ALL
+        Stage::ALL
             .into_iter()
-            .map(|stage| (stage, counts.get(&stage).copied().unwrap_or(Fraction::ZERO)))
-            .collect())
+            .map(|stage| (stage, mass.get(&stage).copied().unwrap_or(0.0)))
+            .collect()
     }
 
     /// The live distribution, by item, in a stable order.
-    pub fn live(&self) -> &[(Item, Fraction)] {
+    pub fn live(&self) -> &[(Item, f64)] {
         &self.live
     }
 
     /// The mass the loop has finished with: the items holding a desired modifier.
-    pub fn goal(&self) -> Fraction {
+    pub fn goal(&self) -> f64 {
         self.goal
     }
 
@@ -165,41 +156,27 @@ impl<'a> Machine<'a> {
     /// The loop stops at a desired modifier, which a magic item can hold; the target is a rare item
     /// with three modifiers a side. This is the narrower number, and it is why the two are reported
     /// apart.
-    pub fn reached(&self) -> Fraction {
+    pub fn reached(&self) -> f64 {
         self.reached
     }
 
+    /// The live mass, both sides together: what no decision has taken yet.
+    pub fn unabsorbed(&self) -> f64 {
+        self.live.iter().map(|&(_, share)| share).sum()
+    }
+
     /// One row per step taken, as [`Self::row`] builds them.
-    pub fn history(&self) -> &[Vec<(Stage, Fraction)>] {
+    pub fn history(&self) -> &[Vec<(Stage, f64)>] {
         &self.history
     }
 }
 
-fn fold(
-    live: &mut Vec<(Item, Fraction)>,
-    index: &mut HashMap<Item, usize>,
-    item: Item,
-    mass: Fraction,
-) -> Result<(), MachineError> {
+fn fold(live: &mut Vec<(Item, f64)>, index: &mut HashMap<Item, usize>, item: Item, share: f64) {
     match index.get(&item) {
-        Some(&at) => {
-            live[at].1 = live[at].1.checked_add(mass).ok_or(MachineError::Overflow)?;
-        }
+        Some(&at) => live[at].1 += share,
         None => {
             index.insert(item.clone(), live.len());
-            live.push((item, mass));
+            live.push((item, share));
         }
     }
-    Ok(())
-}
-
-fn add_mass(
-    counts: &mut HashMap<Stage, Fraction>,
-    stage: Stage,
-    mass: Fraction,
-) -> Result<(), MachineError> {
-    let held = counts.get(&stage).copied().unwrap_or(Fraction::ZERO);
-    let sum = held.checked_add(mass).ok_or(MachineError::Overflow)?;
-    counts.insert(stage, sum);
-    Ok(())
 }

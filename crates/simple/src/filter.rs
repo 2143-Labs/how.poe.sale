@@ -104,22 +104,43 @@ pub enum Accept {
 }
 
 /// The goal's modifier lists and acceptance rule.
+///
+/// The filter is built from one pool ([`ItemSetFilter::from_data`]) and grades that pool's
+/// modifiers, so [`ItemSetFilter::tier_of`] is one lookup rather than a scan: a single draw grades
+/// two hundred modifiers and a step grades millions of draws.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ItemSetFilter {
-    pub desired: Vec<ModSelector>,
-    pub good: Vec<ModSelector>,
+    desired: Vec<ModSelector>,
+    good: Vec<ModSelector>,
     pub accept: Accept,
+    /// Every modifier's grade, indexed by modifier id.
+    tiers: Vec<Tier>,
 }
 
 impl ItemSetFilter {
     /// The shield's goal: the data file's desired and good ids, under the given acceptance rule.
     pub fn from_data(data: &Data, accept: Accept) -> ItemSetFilter {
         let selector = |m: u16| ModSelector::Mod(m);
-        ItemSetFilter {
+        let mut filter = ItemSetFilter {
             desired: data.target.desired.iter().copied().map(selector).collect(),
             good: data.target.good.iter().copied().map(selector).collect(),
             accept,
-        }
+            tiers: Vec::new(),
+        };
+        filter.tiers = (0..data.mods.len() as u16)
+            .map(|m| filter.grade(m))
+            .collect();
+        filter
+    }
+
+    /// The modifier ids the goal calls desired.
+    pub fn desired(&self) -> &[ModSelector] {
+        &self.desired
+    }
+
+    /// The modifier ids the goal calls good.
+    pub fn good(&self) -> &[ModSelector] {
+        &self.good
     }
 
     fn lists(&self, selectors: &[ModSelector], m: u16) -> bool {
@@ -131,6 +152,14 @@ impl ItemSetFilter {
 
     /// The grade of one modifier. Anything the filter does not name is [`Tier::Any`].
     pub fn tier_of(&self, m: u16) -> Tier {
+        match self.tiers.get(m as usize) {
+            Some(tier) => *tier,
+            None => self.grade(m),
+        }
+    }
+
+    /// The grade as the lists state it, without the cache.
+    fn grade(&self, m: u16) -> Tier {
         if self.lists(&self.desired, m) {
             Tier::Desired
         } else if self.lists(&self.good, m) {

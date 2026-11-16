@@ -4,7 +4,7 @@
 //! names come out of it exactly, one orb's step is exact, and nothing can roll past its side's room
 //! or repeat a modifier family.
 
-use simple::craft::{LoopPolicy, Machine, Stage};
+use simple::craft::{Coarse, LoopPolicy, Machine, Policy, Stage};
 use simple::currency::{ItemOutputSet, registry};
 use simple::data::data;
 use simple::filter::{Accept, ItemSetFilter};
@@ -296,42 +296,50 @@ fn the_target_needs_the_totem_prefix_and_two_good_suffixes() {
     assert!(!target.reached(&filter, &magic));
 }
 
-/// The machine's row for one step, by stage.
-fn row(machine: &simple::craft::Machine<'_>) -> Vec<(simple::craft::Stage, Fraction)> {
-    machine.history().last().expect("a step was taken").clone()
+/// The last step's row, by stage.
+fn row(history: &[Vec<(Stage, f64)>]) -> Vec<(Stage, f64)> {
+    history.last().expect("a step was taken").clone()
 }
 
-fn mass(row: &[(simple::craft::Stage, Fraction)], stage: simple::craft::Stage) -> Fraction {
+/// The row's mass, which is a whole chance for every step either machine takes.
+fn whole(row: &[(Stage, f64)]) -> f64 {
+    row.iter().map(|&(_, mass)| mass).sum()
+}
+
+fn mass(row: &[(Stage, f64)], stage: Stage) -> f64 {
     row.iter()
         .find(|(label, _)| *label == stage)
         .map(|(_, mass)| *mass)
-        .unwrap_or(Fraction::ZERO)
+        .unwrap_or(0.0)
 }
 
+/// The tolerance a machine's mass is checked to.
+///
+/// A row is a sum of shares over thousands of distinct pool totals, so it is a whole chance to
+/// about this much and no closer. Every chance an orb states is exact separately:
+/// [`one_transmute_is_one_in_one_hundred_and_eight`] checks 1/108 as a `Fraction`.
+const CLOSE: f64 = 1e-12;
+
 /// 3, again, through the machine: the first step from a normal shield is one transmutation, and it
-/// puts exactly 1/108 of the mass in the desired stage.
+/// puts 1/108 of the mass in the desired stage — the exact chance the orb states, carried as a mass.
 #[test]
 fn the_first_machine_step_is_one_transmutation() {
     let data = data();
     let filter = shield_goal();
     let target = Target::from_data(data);
     let mut machine = Machine::new(data, &filter, &target);
-    machine.step(&LoopPolicy::new()).unwrap();
+    machine.step(&LoopPolicy::new(&target)).unwrap();
 
     assert_eq!(machine.history().len(), 1);
-    let first = row(&machine);
-    assert_eq!(
-        mass(&first, Stage::Desired),
-        Fraction::new(1, 108).unwrap(),
-        "the totem prefix, one step in"
+    let first = row(machine.history());
+    assert!(
+        (mass(&first, Stage::Desired) - 1.0 / 108.0).abs() < CLOSE,
+        "the totem prefix, one step in: {}",
+        mass(&first, Stage::Desired)
     );
     // One step is a whole chance: nothing is absorbed and nothing is dropped yet.
-    let whole = first
-        .iter()
-        .try_fold(Fraction::ZERO, |sum, &(_, mass)| sum.checked_add(mass))
-        .unwrap();
-    assert_eq!(whole, Fraction::ONE);
-    assert_eq!(machine.goal(), Fraction::ZERO);
+    assert!((whole(&first) - 1.0).abs() < CLOSE);
+    assert_eq!(machine.goal(), 0.0);
 
     // A normal item has two modifiers at most, so every outcome is magic with one or two.
     assert!(
@@ -345,4 +353,122 @@ fn the_first_machine_step_is_one_transmutation() {
         (Stage::classify(&filter, item) == Stage::Desired)
             == item.affixes(Side::Prefix).iter().any(|a| a.m == totem())
     }));
+}
+
+/// 9. The two machines agree at depth one.
+///
+/// After one transmutation step every stage's mass is identical — as fractions, not percentages.
+/// This is the check that the lumping is exact: a class that forgot a group would give its items a
+/// different pool, and the lumped machine would drift away from the concrete one here.
+#[test]
+fn the_two_machines_agree_at_depth_one() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+    let policy = LoopPolicy::new(&target);
+    let mut concrete = Machine::new(data, &filter, &target);
+    let mut lumped = Coarse::new(data, &filter, &target);
+    concrete.step(&policy).unwrap();
+    lumped.step(&policy).unwrap();
+
+    let concrete_row = row(concrete.history());
+    let lumped_row = lumped.history()[0].clone();
+    // The lumped machine remembers its classes' transitions, which never change; the concrete one
+    // holds the items themselves.
+    // The lumping is doing work: fewer classes than items, and every item of a class lands in it.
+    assert!(
+        lumped.live().len() < concrete.live().len(),
+        "depth one held {} items in {} classes",
+        concrete.live().len(),
+        lumped.live().len()
+    );
+    assert!((lumped.unabsorbed() - concrete.unabsorbed()).abs() < CLOSE);
+    for stage in Stage::ALL {
+        assert!(
+            (mass(&concrete_row, stage) - mass(&lumped_row, stage)).abs() < CLOSE,
+            "the {stage:?} mass differs between the machines: {} against {}",
+            mass(&concrete_row, stage),
+            mass(&lumped_row, stage)
+        );
+    }
+}
+
+/// 10. Conservation across depths.
+///
+/// A row is one step's distribution: the live mass by stage, the mass this step's `Done` decisions
+/// absorbed under [`Stage::Desired`], and the mass this step's terminals dropped under their own
+/// labels. So a row is the mass that *entered* the step, and what entered is the whole chance minus
+/// everything earlier steps took. The goal only grows, and unabsorbed mass, goal and dropped mass
+/// are between them the whole chance at every depth.
+#[test]
+fn mass_is_conserved_across_depths() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+    let policy = LoopPolicy::new(&target);
+    let mut lumped = Coarse::new(data, &filter, &target);
+
+    let mut goal = 0.0f64;
+    let mut dropped = 0.0f64;
+    // Four depths, not six: the loop's whole state space takes about a minute in an unoptimized
+    // build, and the interesting part — the first resets — is already here at the fourth.
+    for depth in 1..=4 {
+        let entered = 1.0 - goal - dropped;
+        lumped.step(&policy).unwrap();
+        let taken = row(lumped.history());
+        assert!(
+            (whole(&taken) - entered).abs() < CLOSE,
+            "depth {depth}: the row should be the mass that entered the step, {entered}, not {}",
+            whole(&taken)
+        );
+
+        let now = lumped.goal();
+        assert!(now >= goal, "depth {depth}: the goal went down");
+        goal = now;
+        dropped += mass(&taken, Stage::Reset) + mass(&taken, Stage::Stop);
+
+        let left = goal + dropped + lumped.unabsorbed();
+        assert!(
+            (left - 1.0).abs() < CLOSE,
+            "depth {depth}: unabsorbed, goal and dropped should be the whole chance: {left}"
+        );
+    }
+    assert!(dropped > 0.0, "the loop should have given up on some items");
+}
+
+/// The lumped machine forgets which modifiers a class holds when the policy is finished with it, so
+/// that thousands of dead ends collapse into one state. The forgetting is sound only because the
+/// policy's answer for such a class is a terminal read off the rarity, the counts and the grades —
+/// and a collapsed class keeps all three.
+///
+/// Every modifier in this pool belongs to a group, so a class holding a modifier always holds a
+/// group: a class with modifiers and no groups is a collapsed one, and this test says the policy
+/// would discard it again.
+#[test]
+fn a_collapsed_class_is_never_expanded() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+    let policy = LoopPolicy::new(&target);
+    let mut lumped = Coarse::new(data, &filter, &target);
+    for _ in 0..4 {
+        lumped.step(&policy).unwrap();
+    }
+
+    let mut collapsed = 0usize;
+    for class in lumped.live().keys() {
+        if class.explicits() > 0 && class.groups.is_empty() {
+            collapsed += 1;
+            assert!(
+                policy.finished(&filter, class).is_some(),
+                "a collapsed class the policy would expand: {class:?}"
+            );
+            // The facts the policy reads are the ones the collapse kept.
+            assert!(class.counts.iter().sum::<u8>() > 0);
+        }
+    }
+    assert!(
+        collapsed > 0,
+        "no class was collapsed, so the test proves nothing"
+    );
 }
