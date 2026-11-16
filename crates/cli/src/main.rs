@@ -2,6 +2,7 @@
 //! `rules/`.
 
 mod bundle;
+mod loop_report;
 mod methods;
 mod pool_report;
 mod raw;
@@ -11,7 +12,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli pool-report --bundle <file> --base <name> --item-level <n> [--influence <name>] --out <file>";
+const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli pool-report --bundle <file> --base <name> --item-level <n> [--influence <name>] --out <file>\n       cli loop-report --bundle <file> --pattern <name> --item <base> --item-level <n> [--influence <name>] --depth <n>";
 
 /// Parses `--flag value` pairs; any flag not in `names` is an error.
 fn flag_map(
@@ -265,6 +266,69 @@ fn main() -> anyhow::Result<()> {
                 .with_context(|| format!("loading {}", bundle.display()))?;
             let item = pool_report::item(&data, base, level, influence)?;
             write(&out, pool_report::render(&data, &item).as_bytes())
+        }
+        "loop-report" => {
+            let mut given = flag_map(
+                args,
+                &[
+                    "--bundle",
+                    "--pattern",
+                    "--item",
+                    "--item-level",
+                    "--influence",
+                    "--depth",
+                ],
+            )?;
+            let mut required = |name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let bundle = required("--bundle")?;
+            let pattern = required("--pattern")?;
+            let base = required("--item")?;
+            let level = required("--item-level")?;
+            let depth = required("--depth")?;
+            let influence = given.remove("--influence");
+            let pattern = pattern
+                .to_str()
+                .with_context(|| format!("{} is not a pattern name", pattern.display()))?;
+            let base = base
+                .to_str()
+                .with_context(|| format!("{} is not a base name", base.display()))?;
+            let level: u8 = level
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--item-level {} is not a number", level.display()))?;
+            let depth: usize = depth
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--depth {} is not a number", depth.display()))?;
+            if depth == 0 {
+                bail!("--depth must be at least 1; {USAGE}");
+            }
+            let influence = influence
+                .map(|name| {
+                    let text = name
+                        .to_str()
+                        .with_context(|| format!("{} is not an influence name", name.display()))?;
+                    pool_report::influence(text).with_context(|| format!("no influence {text:?}"))
+                })
+                .transpose()?;
+            let text = std::fs::read_to_string(&bundle).with_context(|| {
+                format!(
+                    "reading {} (build it with `cargo run -p cli --release -- bundle --raw \
+                     data/raw --rules rules --out {}`)",
+                    bundle.display(),
+                    bundle.display(),
+                )
+            })?;
+            let data = poe1::data::Data::from_json(&text)
+                .with_context(|| format!("loading {}", bundle.display()))?;
+            let item = pool_report::item(&data, base, level, influence)?;
+            let pattern = loop_report::pattern(&data, pattern)?;
+            print!("{}", loop_report::report(&data, &pattern, &item, depth)?);
+            Ok(())
         }
         other => bail!("unknown command {other}; {USAGE}"),
     }

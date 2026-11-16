@@ -55,7 +55,7 @@ impl Fraction {
     /// told so rather than handed a rounded one.
     pub fn checked_add(self, other: Fraction) -> Option<Fraction> {
         let g = gcd(self.den, other.den);
-        let den = self.den / g * other.den;
+        let den = (self.den / g).checked_mul(other.den)?;
         let a = self.num.checked_mul(den / self.den)?;
         let b = other.num.checked_mul(den / other.den)?;
         Fraction::new(a.checked_add(b)?, den)
@@ -119,5 +119,10 @@ mod tests {
     fn overflow_is_reported_not_rounded() {
         let big = Fraction::new(u128::MAX, 2).unwrap();
         assert!(big.checked_add(big).is_none());
+        // The common denominator is the product here, and it is wider than `u128` even though
+        // both fractions and their sum fit: the sum must be refused, not wrapped.
+        let wide = Fraction::new(1, u128::MAX / 2).unwrap();
+        let three = Fraction::new(1, 3).unwrap();
+        assert!(wide.checked_add(three).is_none());
     }
 }
