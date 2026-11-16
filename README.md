@@ -63,7 +63,11 @@ The data is pinned to the repoe-fork export of 3.29.3.3 (commit `d8635430f4005fa
 
 - One step of lookahead only: the solver ranks the next craft, not a whole route.
 - Reforges (Chaos Orb, essences, fossils and the like) are ranked from their certain part until the reforge fill lands.
-- Costs are listed, not priced.
+- Costs are listed in the reports. A craft's loop can now be priced, but only over the currencies
+  the craft engine implements and only on a *bounded* class graph: the reachable closure of a real
+  craft is over 500 000 classes, so the priced graph cuts at 1 000 and reports that it truncated. A
+  priced report is therefore an upper bound on the truncated graph's optimum, not a market answer;
+  it still needs prices and a junk sell value from the owner.
 
 ## License
 

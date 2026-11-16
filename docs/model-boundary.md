@@ -293,3 +293,26 @@ expands pre-listed keys, `MAX_NODES` is 5 000, and the solver's dense linear sol
 round across four or five rounds — so the practical budget is roughly 1 000–2 000 nodes, about one
 lumped depth's worth (587 classes at depth 1). The first thing any implementation should print is that
 count.
+
+## What the priced graph actually measured
+
+The adapter exists (`crates/poe1/src/craft/priced.rs`) and the first number it produced changes the
+plan: the reachable class closure of the ilvl-86 Shaper Archdemon Crown is **over 500 000 classes**,
+not the ~600 one depth suggests — depth 1 is 314, depth 2 is 685, and a 500 000-node probe was still
+growing when stopped. That is inherent to the class, which records per-side *unions* of groups and
+tags, so three modifiers on a side multiply out.
+
+So a priced graph is **cut**, not solved: the budget is 1 000 nodes and every unexpanded outcome class
+folds into one `Frontier` dead end, because a transition must land somewhere and its chance must stay
+on the row. The adapter reports `truncated`, and a report over a cut graph is an upper bound on the
+closure's optimum — never a claim about the whole space.
+
+What can be claimed is checkable: 2 347 (class, action) rows and 104 609 transitions whose exact
+`Fraction` weights sum to 1 and whose `f64`s agree within 1e-9; a 1 000-node solve in 0.68 s; and an
+expected cost that stops moving at three decimals from 400 nodes up. On the crown that is 10.0167
+chaos for "transmute once, then alter until the desired suffix" — 140.7 alterations — which is *not*
+the owner's real craft, because veil, bench, essence and beast are outside the graph and the goal
+predicate fires on any desired class.
+
+The owner inputs remain: currency prices keyed by metadata id, the base's buy price, junk sell values,
+the finished item's price under `"goal"`, a positive trade penalty, and the goal predicate.
