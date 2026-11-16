@@ -140,10 +140,8 @@ fn a_value_floor_is_read_in_the_units_the_game_shows() {
         102,
         "the value the game shows, which the floor is read in"
     );
-    assert!(
-        85 < 100 && 102 >= 100,
-        "the raw comparison and the shown one must disagree at this floor"
-    );
+    // 85 is under the floor and 102 is over it, so a raw comparison and a shown one must disagree
+    // at this floor — which is what the two runs below check.
 
     // The pattern, built here so the floor is the only thing that moves between the two runs.
     let probe = |floor: i32| -> Pattern {

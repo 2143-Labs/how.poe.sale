@@ -219,9 +219,7 @@ impl ItemOutputSet {
                     .iter()
                     .try_fold(0u128, |sum, o| sum.checked_add(o.weight))
                 else {
-                    return ItemOutputSet::refused(
-                        "the filtered weights do not fit in 128 bits",
-                    );
+                    return ItemOutputSet::refused("the filtered weights do not fit in 128 bits");
                 };
                 ItemOutputSet::Outcomes {
                     outcomes: kept,
@@ -406,9 +404,7 @@ pub fn adds(data: &Data, item: &Item, pool: &Pool, n: usize, want: SideReq) -> O
     for draw in 0..n {
         let mut next: Vec<Mass> = Vec::new();
         for (state, chance, first) in acc {
-            let Some(branches) = one_add(data, &state, pool, want) else {
-                return None;
-            };
+            let branches = one_add(data, &state, pool, want)?;
             if branches.is_empty() {
                 if draw == 0 {
                     // Nothing at all can be drawn, so the currency has produced no modifier.

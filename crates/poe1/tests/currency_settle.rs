@@ -23,10 +23,10 @@ fn items_with_defences(data: &Data) -> Vec<Item> {
         let Ok(parsed) = poe1::text::parse(data, &text) else {
             continue;
         };
-        if let Ok(item) = Item::from_spec(data, &parsed.spec) {
-            if item.defences.is_some() {
-                out.push(item);
-            }
+        if let Ok(item) = Item::from_spec(data, &parsed.spec)
+            && item.defences.is_some()
+        {
+            out.push(item);
         }
     }
     out

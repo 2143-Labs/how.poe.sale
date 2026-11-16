@@ -73,12 +73,7 @@ pub struct Stop {
 /// A depth too deep for the exact state does not throw the earlier depths away: they are rendered,
 /// the document says which depth stopped it and why, and [`Report::stopped`] carries the failure so
 /// the command can still exit non-zero.
-pub fn report(
-    data: &Data,
-    pattern: &Pattern,
-    item: &Item,
-    depth: usize,
-) -> anyhow::Result<Report> {
+pub fn report(data: &Data, pattern: &Pattern, item: &Item, depth: usize) -> anyhow::Result<Report> {
     let filter = ItemSetFilter::from_pattern(pattern, Accept::DesiredOrGoodBothSides);
     let policy = LoopPolicy::new(&filter);
     let mut lumped = Lumped::new(data, filter.clone(), item.clone());
@@ -95,7 +90,14 @@ pub fn report(
             break;
         }
     }
-    let text = render(data, pattern, item, lumped.history(), depth, stopped.as_ref())?;
+    let text = render(
+        data,
+        pattern,
+        item,
+        lumped.history(),
+        depth,
+        stopped.as_ref(),
+    )?;
     Ok(Report { text, stopped })
 }
 
@@ -315,8 +317,11 @@ mod tests {
     #[test]
     fn a_broken_account_is_an_error() {
         assert!(ensure_account(Fraction::new(1, 2).expect("1/2"), Fraction::ONE).is_ok());
-        let err = ensure_account(Fraction::new(1, 2).expect("1/2"), Fraction::new(5, 6).expect("5/6"))
-            .expect_err("5/6 of the mass is not a whole one");
+        let err = ensure_account(
+            Fraction::new(1, 2).expect("1/2"),
+            Fraction::new(5, 6).expect("5/6"),
+        )
+        .expect_err("5/6 of the mass is not a whole one");
         assert!(err.to_string().contains("does not hold"), "{err}");
     }
 }

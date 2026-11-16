@@ -397,6 +397,9 @@ fn compare(data: &Data, currency: &str, item: &Item, set: &ItemOutputSet) -> Res
 }
 
 /// Feeds up to 25 of `set`'s outcomes through every currency, under the same five assertions.
+// One call site and one test: the parameters are the case's identity, and a struct around them would
+// only move the same list somewhere else.
+#[allow(clippy::too_many_arguments)]
 fn second_step(
     data: &Data,
     label: &str,

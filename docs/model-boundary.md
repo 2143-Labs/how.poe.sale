@@ -76,8 +76,11 @@ pool tests. The conclusion still holds — `Stage` is not a Markov state — but
    depends on the item's held groups (an augmentation's does not).
 2. **Rarity and room**: a magic `GoodPair` and a rare `GoodPair` have different affix limits, so the
    same stage means different pools.
-3. **Metamod bits**: the `Level28` metamod alone cuts the pool from 204 modifiers to 58, and the locks
-   decide what a clear can remove.
+3. **Metamod bits**: on this shield the `Level28` metamod alone cuts its own pool from 204 modifiers
+   (73 prefixes, 131 suffixes at item level 87) to 58 (23 and 35 at level 28 or below), and the locks
+   decide what a clear can remove. The all-bases natural pool is 3 765 at item level 87 and 633 at
+   level ≤ 28 — a different set, and the source of a disagreement worth recording so nobody re-derives
+   it: both numbers are right, about different things.
 4. **Fractured and locked affixes** survive a clear, so they persist into the next state.
 
 The audit established that the next pool depends on the item only through: rarity, per-side count,
@@ -237,3 +240,22 @@ Three limits to record before anyone builds it:
   holds that modifier: that is modifier identity, and it is **permanently** un-lumpable.
 - **`SideReq::Dominant`** (eldritch chaos) reads the eldritch implicits' tiers, which the class does
   not record yet.
+
+## A lesson from the lumped cache: never restate the engine's predicate
+
+The first version of `Class::cleared` decided a side was locked by testing that *side's* metamod bit.
+But a lock sits on the opposite side — `StrMasterItemGenerationCannotChangePrefixes` is a suffix that
+locks prefixes — so `cleared()` never saw a lock, and two classes that clear differently shared one
+alteration cache entry. Nothing was lost from a total; the mass landed on the wrong items, which is
+precisely what a coarse state's exactness argument forbids.
+
+The engine's own answer was already there: `Item::locked` searches every explicit. A coarse state is a
+second implementation of the same facts, so every predicate it needs must be *called* from the engine,
+not restated beside it. That is the same rule the currency layer learned when `settle`,
+`clear_changeable`, `removable` and `cannot_place` were shared rather than copied — and it is worth
+stating here because the lumped state is the third place the temptation appears.
+
+The review also found a grading error in the goal fixture itself: `totem-shield`'s catch-all classes
+were graded `neutral`, which `solve::grade_value` scores the same as `good`, so the score path could
+not tell a junk prefix from a good one while the step filter could. A goal written in one vocabulary
+and scored in another is the same class of mistake at the data layer.
