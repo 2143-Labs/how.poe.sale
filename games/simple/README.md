@@ -73,3 +73,24 @@ same as before.
   the currency methods the toy rules list are the eleven that need no bench.
 - **Every other modifier kind and every other base.** Crafted and veiled modifiers exist only as
   the toy placeholders the bench and the Veiled Chaos Orb need.
+
+## The same code, the same numbers
+
+Simple is not a parallel implementation: the currency structs, the craft machine and the lumped
+state in `crates/poe1` run on `data/simple.json` exactly as they run on the pinned export. The check
+is that the answers do not move:
+
+```
+nix develop -c cargo run -q -p cli --release -- loop-report \
+  --bundle data/simple.json --pattern totem-shield \
+  --item "Supreme Spiked Shield" --item-level 87 --influence shaper --depth 2
+```
+
+prints the same first depth as the export does — 587 live classes, the goal at `1/108`
+(0.925926 %), a good prefix at `5/324`, a good suffix at `146/3859`, everything else at
+`291575/312579`. `crates/poe1/tests/simple_shield.rs` pins the same three chances and the two pool
+totals from simple's data, and compiles `fixtures/patterns/totem-shield.json` against it unchanged,
+because the modifier ids are the export's own.
+
+That is the property worth keeping: a dataset can be small and hand-reviewable without becoming a
+second model. If a figure ever differs between the two bundles, the dataset is what is wrong.
