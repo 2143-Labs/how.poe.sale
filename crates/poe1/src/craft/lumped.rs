@@ -225,6 +225,22 @@ impl PartialEq for Class {
 
 impl Eq for Class {}
 
+impl std::hash::Hash for Class {
+    /// By key, never by witness: the witness is not part of a class's identity — two equal classes
+    /// keep whichever witness was inserted first, so hashing it would break the `Hash`/`Eq` contract.
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state);
+    }
+}
+
+impl fmt::Display for Class {
+    /// The identity as a stable string, with no witness in it. A graph node needs exactly this: two
+    /// equal classes print the same thing and unequal ones do not.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.key)
+    }
+}
+
 impl PartialOrd for Class {
     fn partial_cmp(&self, other: &Class) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))

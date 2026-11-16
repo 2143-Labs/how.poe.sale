@@ -250,3 +250,32 @@ fn three_lumped_steps_account_for_their_mass() {
         "absorbed mass is part of the same one, never more"
     );
 }
+
+/// The class is a graph node now, so its identity has to behave: two items in one class must hash and
+/// print alike even though their witnesses differ, and neither the hash nor the string may carry the
+/// witness — `Class`'s own `Eq` says the witness is not identity.
+#[test]
+fn equal_classes_hash_and_print_alike_whatever_their_witness() {
+    let data = poe1::test_data();
+    let pattern = pattern(data);
+    let filter = filter(&pattern);
+    let with = |id: &str| {
+        let spec: ItemSpec = serde_json::from_str(&format!(
+            r#"{{"base":"Supreme Spiked Shield","itemLevel":87,"rarity":"magic",
+                 "influences":["shaper"],"prefixes":[{{"id":"{id}"}}]}}"#
+        ))
+        .expect("spec");
+        poe1::item::Item::from_spec(data, &spec).expect("item")
+    };
+    // Two tiers of one family: the same bucket and the same group, so the same class, but a
+    // different modifier and therefore a different witness.
+    let best = Class::of(data, &filter, &with("IncreasedLife10"));
+    let next = Class::of(data, &filter, &with("IncreasedLife9"));
+    assert_ne!(best.witness(), next.witness(), "the witnesses differ");
+    assert_eq!(best, next, "the classes do not");
+    assert_eq!(format!("{best}"), format!("{next}"), "identity prints alike");
+    let mut set = std::collections::HashSet::new();
+    set.insert(best);
+    set.insert(next);
+    assert_eq!(set.len(), 1, "a HashSet must see one class, not two");
+}
