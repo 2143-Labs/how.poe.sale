@@ -26,7 +26,11 @@ fn op_certain(data: &Data, id: &str, item: &Item) -> Item {
     let method = data.method(id).unwrap_or_else(|| panic!("{id} missing"));
     let outcome = apply(data, method, std::slice::from_ref(item), &Params::default())
         .unwrap_or_else(|e| panic!("{id}: {e}"));
-    assert_eq!(outcome.leaves.len(), 1, "{id}: the certain part is one result");
+    assert_eq!(
+        outcome.leaves.len(),
+        1,
+        "{id}: the certain part is one result"
+    );
     match &outcome.leaves[0] {
         (p, Leaf::Pending(pending)) => {
             assert_eq!(*p, 1.0, "{id}: the certain part is the whole mass");
@@ -108,7 +112,10 @@ fn the_essence_places_exactly_its_own_modifier() {
     let m = declared_mod(data, name, &shield);
     let set = essence.apply(&shield, &None);
     let out = one(&set);
-    let side = data.mod_at(m).side.expect("an explicit modifier has a side");
+    let side = data
+        .mod_at(m)
+        .side
+        .expect("an explicit modifier has a side");
     assert_eq!(out.added, Some((side, m)), "the step reports what it added");
     assert_eq!(
         out.item.explicits().count(),
@@ -129,7 +136,9 @@ fn an_item_level_cap_does_not_refuse_a_higher_item() {
     let name = "Wailing Essence of Anger";
     let essence = Essence::named(data, name).expect("the essence");
     let index = data.essence_by_name(name).expect("the essence") as usize;
-    let cap = data.essences[index].item_level_max.expect("a capped essence");
+    let cap = data.essences[index]
+        .item_level_max
+        .expect("a capped essence");
     assert!(cap < 87, "the cap {cap} is below the shield's item level");
     let shield = item(data, NORMAL);
     let m = declared_mod(data, name, &shield);

@@ -5,12 +5,17 @@
 //! its side — and abstraction only ever widens: a specific modifier coerces to "desired prefix" and
 //! to "any prefix", never the other way round.
 
-use crate::data::{Data, ModKind, Side};
-use crate::item::{is_metamod, Affix, Item};
-use crate::pattern::{Grade, Pattern};
+use crate::data::{Data, Side};
+use crate::item::{Affix, Item};
+use crate::pattern::{self, Pattern};
 
 /// The three buckets a modifier falls into for a given goal.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+///
+/// Deliberately unordered: the variants are declared `Desired, Good, Any`, so a derived `Ord`
+/// would rank `Desired` *lowest* while [`Tier::rank`] ranks it highest. Nothing orders buckets —
+/// callers that need the best one use `max_by_key(Tier::rank)` — so no `Ord` is offered rather
+/// than one that disagrees with the only notion of order the module has.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Tier {
     Desired,
     Good,
@@ -133,11 +138,20 @@ impl ModSelector {
         self
     }
 
-    pub fn matches(&self, data: &Data, affix: &Affix) -> bool {
+    /// Whether this selector takes `affix` on `item`: the same test the pattern makes, family and
+    /// value floors read through `pattern::mod_matches` and `pattern::floors_met`, so a goal
+    /// cannot bucket a modifier one way here and another in `pattern::evaluate`. The floors are in
+    /// the units the game shows, which is why the item is needed: its effect magnitudes scale a
+    /// stored roll into the number on the item's tooltip.
+    pub fn matches(&self, data: &Data, item: &Item, affix: &Affix) -> bool {
+        self.matches_with(data, item.effect(data, &affix.roll, false), affix)
+    }
+
+    fn matches_with(&self, data: &Data, effect: i16, affix: &Affix) -> bool {
         let md = data.mod_at(affix.roll.m);
         match self {
             ModSelector::Crafted { side, crafted } => {
-                md.side == Some(*side) && crafted_kind(data, *crafted, affix.roll.m)
+                md.side == Some(*side) && pattern::crafted_match(data, *crafted, affix.roll.m)
             }
             ModSelector::Mod {
                 side,
@@ -148,46 +162,15 @@ impl ModSelector {
                 if md.side != Some(*side) {
                     return false;
                 }
-                if affix.roll.m != *m {
-                    if !*or_better {
-                        return false;
-                    }
-                    let want = data.mod_at(*m);
-                    let same_family = md.mod_type == want.mod_type
-                        && md.kind == want.kind
-                        && md.influence == want.influence;
-                    if !same_family || md.level < want.level {
-                        return false;
-                    }
+                if !pattern::mod_matches(data, *m, *or_better, affix.roll.m) {
+                    return false;
                 }
-                let Some(floors) = min else {
-                    return true;
-                };
-                let Some(values) = &affix.roll.values else {
-                    return true;
-                };
-                floors
-                    .iter()
-                    .enumerate()
-                    .all(|(i, floor)| match (floor, values.get(i)) {
-                        (Some(floor), Some(value)) => value >= floor,
-                        _ => true,
-                    })
+                match min {
+                    None => true,
+                    Some(floors) => pattern::floors_met(data, affix, effect, floors),
+                }
             }
         }
-    }
-}
-
-/// Whether `m` is the kind a `{"crafted": bool}` class asks for — the pattern's own test
-/// (`pattern::crafted_match`). A metamod is crafted, and neither sense of the class counts it: a
-/// class that wants a crafted modifier wants a modifier, not a tool that sits in a slot and costs
-/// an Orb of Scouring to remove, and a class that wants anything else does not want it either.
-fn crafted_kind(data: &Data, want: bool, m: u32) -> bool {
-    let kind = data.mod_at(m).kind;
-    if want {
-        kind == ModKind::Crafted && !is_metamod(data, m)
-    } else {
-        kind != ModKind::Crafted
     }
 }
 
@@ -222,17 +205,19 @@ impl ItemSetFilter {
     /// The same filter, taken from a pattern's classes: its `Desired` classes become the desired
     /// selectors, and its `Good`, `Middling` and `Neutral` ones the good selectors, so a goal is
     /// written once, in the pattern language the rest of the repository already speaks, and the
-    /// step filter reads it. The buckets are `solve::grade_value`'s — best possible, good enough,
-    /// not good enough — so the filter and the score read a class the same way. A `Bad` class
-    /// needs no selector: its modifiers are `Tier::Any`, the fallback bucket.
+    /// step filter reads it. The buckets come from `solve::grade_value` — the score's own
+    /// collapse of the five authoring grades onto best (2), good enough (1) and not good enough
+    /// (0) — rather than restating which grades pair up, so the filter and the score cannot
+    /// disagree about whether a class is good enough. A `Bad` class needs no selector: its
+    /// modifiers are `Tier::Any`, the fallback bucket.
     pub fn from_pattern(pattern: &Pattern, accept: Accept) -> ItemSetFilter {
         let mut desired = Vec::new();
         let mut good = Vec::new();
         for class in &pattern.classes {
-            let target = match class.grade {
-                Grade::Desired => &mut desired,
-                Grade::Good | Grade::Middling | Grade::Neutral => &mut good,
-                Grade::Bad => continue,
+            let target = match crate::solve::grade_value(class.grade) {
+                2 => &mut desired,
+                1 => &mut good,
+                _ => continue,
             };
             for (m, or_better, min) in class.mods() {
                 target.push(ModSelector::Mod {
@@ -259,12 +244,29 @@ impl ItemSetFilter {
         }
     }
 
-    /// Which bucket one modifier falls into.
+    /// Which bucket one modifier falls into, for a caller that has only the affix: a freshly
+    /// drawn modifier, or a class fact that is not about one item's magnitudes. A value floor is
+    /// read with effect zero, which is what every base in the bundle carries; use [`Self::tier_of_item`]
+    /// when the item is at hand.
     pub fn tier_of(&self, data: &Data, affix: &Affix) -> Tier {
-        if self.desired.iter().any(|s| s.matches(data, affix)) {
+        self.tier_of_with(data, 0, affix)
+    }
+
+    /// Which bucket one modifier on `item` falls into: the same reading `pattern::evaluate` makes,
+    /// with the item's effect magnitudes applied to any value floor.
+    pub fn tier_of_item(&self, data: &Data, item: &Item, affix: &Affix) -> Tier {
+        self.tier_of_with(data, item.effect(data, &affix.roll, false), affix)
+    }
+
+    fn tier_of_with(&self, data: &Data, effect: i16, affix: &Affix) -> Tier {
+        if self
+            .desired
+            .iter()
+            .any(|s| s.matches_with(data, effect, affix))
+        {
             return Tier::Desired;
         }
-        if self.good.iter().any(|s| s.matches(data, affix)) {
+        if self.good.iter().any(|s| s.matches_with(data, effect, affix)) {
             return Tier::Good;
         }
         Tier::Any
@@ -274,7 +276,7 @@ impl ItemSetFilter {
     pub fn best(&self, data: &Data, item: &Item, side: Side) -> Option<Tier> {
         item.affixes(side)
             .iter()
-            .map(|a| self.tier_of(data, a))
+            .map(|a| self.tier_of_item(data, item, a))
             .max_by_key(|t| t.rank())
     }
 
@@ -318,7 +320,7 @@ impl ItemSetFilter {
         for side in Side::BOTH {
             for affix in item.affixes(side) {
                 let specific = AbstractMod::Specific(side, affix.roll.m);
-                let tier = self.tier_of(data, affix);
+                let tier = self.tier_of_item(data, item, affix);
                 out.push(specific);
                 if let Some(wider) = specific.coerce(AbstractMod::Tier(side, tier)) {
                     out.push(wider);

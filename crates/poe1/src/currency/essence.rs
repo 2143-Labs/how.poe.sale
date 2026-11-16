@@ -17,8 +17,13 @@ pub struct Essence<'d> {
     /// Position in `Bundle::essences`.
     index: u16,
     /// The method the generator declares for this essence, e.g.
-    /// `essence/deafening-essence-of-hatred`. Its id is this currency's id, and its `requires`
-    /// are the refusals below, so the two implementations cannot drift.
+    /// `essence/deafening-essence-of-hatred`; its id is this currency's id.
+    ///
+    /// The method's `requires` are the same rules `apply` refuses on below, but as two
+    /// implementations of one rule: the ops path reads the declared `requires`, and this file
+    /// restates them by hand. They agree today and the essence tests check the behaviour, but
+    /// nothing makes them share code, so a rule that changes in `rules/methods.json` has to be
+    /// reflected here too.
     method: &'d str,
 }
 

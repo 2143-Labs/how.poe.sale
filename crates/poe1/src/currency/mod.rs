@@ -105,6 +105,13 @@ impl ItemOutputSet {
     /// that is a use of the currency. The two cases `empty.refused` cares about are decided where
     /// the step can see them: a currency whose first draw has nothing to take comes back from
     /// [`adds`] empty, and an unconditional add with an empty pool is refused by its own currency.
+    ///
+    /// The fold is checked rather than wrapped. In practice it cannot overflow: the weights arrive
+    /// from [`weigh`] (which checks every weight and their total) or from [`one_add`], whose
+    /// per-side products are pool weights summed over a handful of modifiers and sit far below
+    /// `u128::MAX`. This function is still the module's one gate on "can the answer be held
+    /// exactly", so a caller that one day hands it an overflowing vector is refused here instead
+    /// of silently saturating.
     pub fn new(data: &Data, before: &Item, weighted: Vec<Weighted>) -> ItemOutputSet {
         if weighted.is_empty() {
             return ItemOutputSet::refused("the step produced no outcome");
@@ -118,9 +125,18 @@ impl ItemOutputSet {
             // modification: both are settled here, once, for every currency.
             crate::apply::settle(before, &mut item, false);
             let slot = folded.entry(item).or_insert((0, added));
-            slot.0 = slot.0.saturating_add(weight);
+            let Some(weight) = slot.0.checked_add(weight) else {
+                return ItemOutputSet::refused("the step's weights do not fit in 128 bits");
+            };
+            slot.0 = weight;
         }
-        let total = folded.values().map(|&(w, _)| w).sum();
+        let mut total = 0u128;
+        for &(weight, _) in folded.values() {
+            let Some(sum) = total.checked_add(weight) else {
+                return ItemOutputSet::refused("the step's weights do not fit in 128 bits");
+            };
+            total = sum;
+        }
         let outcomes = folded
             .into_iter()
             .map(|(item, (weight, added))| Outcome {
@@ -148,32 +164,45 @@ impl ItemOutputSet {
     }
 
     /// Whether the weights really do sum to the total — the invariant every report relies on.
+    /// The sum is checked: a set whose weights overflow `u128` is not exact, and must not be
+    /// mistaken for one whose sum merely wrapped onto the total.
     pub fn exact(&self) -> bool {
         match self {
             ItemOutputSet::Refused(_) => true,
             ItemOutputSet::Outcomes { outcomes, total } => {
-                *total > 0 && outcomes.iter().map(|o| o.weight).sum::<u128>() == *total
+                *total > 0
+                    && outcomes
+                        .iter()
+                        .try_fold(0u128, |sum, o| sum.checked_add(o.weight))
+                        == Some(*total)
             }
         }
     }
 
-    /// The exact share of the step whose result satisfies `want`; `None` when refused.
+    /// The exact share of the step whose result satisfies `want`; `None` when refused or when the
+    /// kept weights do not fit in `u128` (a chance that cannot be held exactly is not reported).
     pub fn chance(&self, mut want: impl FnMut(&Item) -> bool) -> Option<Fraction> {
         let total = self.total();
         if total == 0 {
             return None;
         }
-        let kept: u128 = self
+        let kept = self
             .outcomes()
             .iter()
             .filter(|o| want(&o.item))
-            .map(|o| o.weight)
-            .sum();
+            .try_fold(0u128, |sum, o| sum.checked_add(o.weight))?;
         Fraction::new(kept, total)
     }
 
     /// "Mod filtering a crafting step": keeps the outcomes the filter accepts, with the chances
     /// renormalised exactly over what is left.
+    ///
+    /// The rejected outcomes' mass is **dropped, not reported**: the kept outcomes keep their
+    /// original weights and the set's total becomes their sum, so a chance read off the filtered
+    /// set is conditional on the filter — it says "given the filter accepted this step, this
+    /// outcome's share", not "this outcome's share of the whole step". Call
+    /// [`Self::chance`] on the *unfiltered* set to learn how much the filter threw away. A
+    /// filter that accepts nothing yields a refusal rather than an empty distribution.
     pub fn filtered(&self, data: &Data, filter: &ItemSetFilter) -> ItemOutputSet {
         match self {
             ItemOutputSet::Refused(why) => ItemOutputSet::refused(why),
@@ -186,7 +215,14 @@ impl ItemOutputSet {
                 if kept.is_empty() {
                     return ItemOutputSet::refused("no outcome meets the filter");
                 }
-                let total = kept.iter().map(|o| o.weight).sum();
+                let Some(total) = kept
+                    .iter()
+                    .try_fold(0u128, |sum, o| sum.checked_add(o.weight))
+                else {
+                    return ItemOutputSet::refused(
+                        "the filtered weights do not fit in 128 bits",
+                    );
+                };
                 ItemOutputSet::Outcomes {
                     outcomes: kept,
                     total,
@@ -287,35 +323,43 @@ fn side_pools(
 /// One random add, exactly: the side is drawn first, in equal shares among the sides that can take a
 /// modifier, and then the modifier on it by weight (claim `add.side-first`). Weights are scaled by
 /// the *other* sides' totals so every side shares one denominator, making the sum `k × Π totals`.
-pub fn one_add(data: &Data, item: &Item, pool: &Pool, want: SideReq) -> Vec<Weighted> {
+///
+/// `None` when a side's total or a scaled weight would overflow `u128`: a distribution that
+/// cannot be held exactly is refused rather than wrapped. In practice the totals are pool weights
+/// summed over a handful of modifiers (real weights are ~1e5–1e8), so this is a guard, not a
+/// limit the data reaches.
+pub fn one_add(data: &Data, item: &Item, pool: &Pool, want: SideReq) -> Option<Vec<Weighted>> {
     let pools: Vec<(Side, Vec<(u32, u128)>)> = side_pools(data, item, pool, want)
         .into_iter()
         .filter(|(_, mods)| !mods.is_empty())
         .collect();
     let totals: Vec<u128> = pools
         .iter()
-        .map(|(_, mods)| mods.iter().map(|&(_, w)| w).sum())
-        .collect();
+        .map(|(_, mods)| {
+            mods.iter()
+                .try_fold(0u128, |sum, &(_, w)| sum.checked_add(w))
+        })
+        .collect::<Option<_>>()?;
     let mut out = Vec::new();
     for (i, (side, mods)) in pools.iter().enumerate() {
         let scale = totals
             .iter()
             .enumerate()
             .filter(|&(j, _)| j != i)
-            .map(|(_, t)| *t)
-            .product::<u128>()
+            .try_fold(1u128, |acc, (_, t)| acc.checked_mul(*t))?
             .max(1);
         for &(m, w) in mods {
             let mut it = item.clone();
             it.affixes_mut(*side).push(Affix::new(m));
-            out.push((it, w * scale, Some((*side, m))));
+            out.push((it, w.checked_mul(scale)?, Some((*side, m))));
         }
     }
-    out
+    Some(out)
 }
 
 /// The exact share of one side's next draw that `want` would take: the weights of the modifiers it
-/// accepts over the side's whole pool. `None` when that side has nothing to draw.
+/// accepts over the side's whole pool. `None` when that side has nothing to draw, or when a total
+/// would overflow `u128` (the share cannot then be held exactly).
 ///
 /// This is the number a report wants ("a 0.63 % chance the added prefix is the totem modifier"),
 /// and it is exact: the pool's weights are integers and the share is their ratio.
@@ -330,12 +374,13 @@ pub fn side_chance(
         .into_iter()
         .find(|(s, _)| *s == side)?
         .1;
-    let total: u128 = pool.iter().map(|&(_, w)| w).sum();
-    let kept: u128 = pool
+    let total = pool
+        .iter()
+        .try_fold(0u128, |sum, &(_, w)| sum.checked_add(w))?;
+    let kept = pool
         .iter()
         .filter(|&&(m, _)| want(m, data.mod_at(m)))
-        .map(|&(_, w)| w)
-        .sum();
+        .try_fold(0u128, |sum, &(_, w)| sum.checked_add(w))?;
     Fraction::new(kept, total)
 }
 
@@ -361,7 +406,9 @@ pub fn adds(data: &Data, item: &Item, pool: &Pool, n: usize, want: SideReq) -> O
     for draw in 0..n {
         let mut next: Vec<Mass> = Vec::new();
         for (state, chance, first) in acc {
-            let branches = one_add(data, &state, pool, want);
+            let Some(branches) = one_add(data, &state, pool, want) else {
+                return None;
+            };
             if branches.is_empty() {
                 if draw == 0 {
                     // Nothing at all can be drawn, so the currency has produced no modifier.
@@ -370,7 +417,9 @@ pub fn adds(data: &Data, item: &Item, pool: &Pool, n: usize, want: SideReq) -> O
                 next.push((state, chance, first));
                 continue;
             }
-            let total: u128 = branches.iter().map(|&(_, weight, _)| weight).sum();
+            let total = branches
+                .iter()
+                .try_fold(0u128, |sum, &(_, weight, _)| sum.checked_add(weight))?;
             for (result, weight, added) in branches {
                 let share = Fraction::new(weight, total)?;
                 next.push((result, chance.checked_mul(share)?, first.or(added)));
@@ -386,7 +435,7 @@ pub fn adds(data: &Data, item: &Item, pool: &Pool, n: usize, want: SideReq) -> O
 /// rather than adding nothing, so an item with room but nothing to draw yields `None` and the
 /// caller refuses with the reason.
 fn add_required(data: &Data, item: &Item, pool: &Pool) -> Option<Vec<Weighted>> {
-    let drawn = one_add(data, item, pool, SideReq::Any);
+    let drawn = one_add(data, item, pool, SideReq::Any)?;
     (!drawn.is_empty()).then_some(drawn)
 }
 

@@ -47,9 +47,10 @@ fn sum<'a>(chances: impl IntoIterator<Item = &'a Fraction>) -> Fraction {
         .fold(Fraction::ZERO, |acc, &p| acc.checked_add(p).expect("exact"))
 }
 
-/// `a >= b`, exactly. `Fraction`'s derived `Ord` orders the numerator and denominator fields, not
-/// the values (1/3 sorts after 1/2), so a curve has to cross-multiply to be read at all. The
-/// products reach about 1.6 × 10³⁸ here, so they are checked rather than left to wrap.
+/// `a >= b`, exactly. `Fraction` has no ordering — a derived `Ord` would compare the numerator
+/// and then the denominator, not the values (1/3 would sort after 1/2) — so a curve has to
+/// cross-multiply to be read at all. The products reach about 1.6 × 10³⁸ here, so they are checked
+/// rather than left to wrap.
 fn at_least(a: Fraction, b: Fraction) -> bool {
     let left = a
         .num()

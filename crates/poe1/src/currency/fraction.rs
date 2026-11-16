@@ -4,7 +4,12 @@
 use std::fmt;
 
 /// A reduced fraction; the denominator is never zero.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+///
+/// Deliberately unordered: a derived `Ord` would compare the numerator and then the denominator —
+/// 1/3 would sort after 1/2 — which is a trap for any caller that wants to compare the values. A
+/// caller that needs "which chance is larger" must compare cross-multiplied (as the tests do) or
+/// read [`Fraction::percent`]; neither is silent about what it is doing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Fraction {
     num: u128,
     den: u128,

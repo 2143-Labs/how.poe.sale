@@ -17,7 +17,8 @@ use std::collections::BTreeMap;
 
 use poe1::apply::{Leaf, Params, apply};
 use poe1::currency::{
-    Alteration, Augmentation, Currency, Fraction, ItemOutputSet, Mass, Transmutation, weigh,
+    Accept, Alteration, Augmentation, Currency, Fraction, ItemOutputSet, ItemSetFilter, Mass,
+    Outcome, Transmutation, weigh,
 };
 use poe1::data::Data;
 use poe1::item::{Item, ItemSpec};
@@ -269,6 +270,92 @@ fn an_overflowing_common_denominator_is_refused() {
         weigh(mass),
         None,
         "an unrepresentable common denominator must not be rounded"
+    );
+}
+
+/// The fold that builds a set is checked, not saturated: two weights that overflow `u128` are
+/// refused, in both places the fold adds — the per-item sum and the set's total. Saturating would
+/// have produced a plausible-looking total that silently lost the difference.
+#[test]
+fn an_overflowing_fold_is_refused() {
+    let data = test_data();
+    let first = item(
+        data,
+        r#"{"base":"Viridian Jewel","itemLevel":83,"rarity":"magic"}"#,
+    );
+    // The same item twice folds into one entry, which is the per-item sum.
+    let folded = ItemOutputSet::new(
+        data,
+        &first,
+        vec![(first.clone(), u128::MAX, None), (first.clone(), 1, None)],
+    );
+    assert!(
+        matches!(folded, ItemOutputSet::Refused(_)),
+        "a saturated weight would hide the overflow: {folded:?}"
+    );
+    // Two distinct results leave two entries, so the set's total is where the overflow lands.
+    let other = item(
+        data,
+        r#"{"base":"Cobalt Jewel","itemLevel":83,"rarity":"magic"}"#,
+    );
+    let total = ItemOutputSet::new(
+        data,
+        &first,
+        vec![(first.clone(), u128::MAX, None), (other, u128::MAX, None)],
+    );
+    assert!(
+        matches!(total, ItemOutputSet::Refused(_)),
+        "a saturated total would hide the overflow: {total:?}"
+    );
+}
+
+/// Reading a set is checked as well: the three readers that add weights — `exact`, `chance` and
+/// `filtered` — say so on a sum that overflows instead of wrapping onto a plausible total. The set
+/// is built by hand because no real step reaches this; the point is that if one ever does, the
+/// readers cannot be fooled by the wrap.
+#[test]
+fn an_overflowing_read_is_refused() {
+    let data = test_data();
+    let viridian = item(
+        data,
+        r#"{"base":"Viridian Jewel","itemLevel":83,"rarity":"magic"}"#,
+    );
+    let cobalt = item(
+        data,
+        r#"{"base":"Cobalt Jewel","itemLevel":83,"rarity":"magic"}"#,
+    );
+    // The weights are chosen so a wrapping sum lands exactly on the total (`MAX + 1 + 2` wraps to
+    // 2 in release), which is the false positive the checked readers exist to prevent.
+    let set = ItemOutputSet::Outcomes {
+        outcomes: vec![
+            Outcome {
+                item: viridian.clone(),
+                weight: u128::MAX,
+                added: None,
+            },
+            Outcome {
+                item: cobalt,
+                weight: 1,
+                added: None,
+            },
+            Outcome {
+                item: viridian,
+                weight: 2,
+                added: None,
+            },
+        ],
+        total: 2,
+    };
+    assert!(!set.exact(), "a wrapped sum is not the set's total");
+    assert_eq!(
+        set.chance(|_| true),
+        None,
+        "a chance whose sum overflows must be refused, not wrapped"
+    );
+    let keep_all = ItemSetFilter::new(Vec::new(), Vec::new(), Accept::Any);
+    assert!(
+        matches!(set.filtered(data, &keep_all), ItemOutputSet::Refused(_)),
+        "a filtered total that overflows must be refused"
     );
 }
 

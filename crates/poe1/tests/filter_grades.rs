@@ -97,3 +97,115 @@ fn a_good_class_is_good() {
         Tier::Good
     );
 }
+
+/// A value floor is read in the units the game shows, exactly as the pattern reads it — the one
+/// comparison both sides now call (`pattern::floors_met`).
+///
+/// The item is a magic Blue Pearl Amulet carrying `IncreasedLife6` (stored 85..99) with a Fertile
+/// Catalyst at 20% quality, so the stored 85 is shown as 102 (`Item::display` at effect 20). A
+/// floor of 100 is met by the shown value but not by the stored roll: the pattern puts the affix in
+/// the floored class, and the filter must put it in `Good`. A floor of 103 fails both. Before the
+/// delegation the filter compared the raw roll, so it rejected at 100 and the two disagreed.
+#[test]
+fn a_value_floor_is_read_in_the_units_the_game_shows() {
+    use poe1::item::ItemSpec;
+    use poe1::pattern::{Pattern, PatternSpec, evaluate};
+
+    let data = test_data();
+    let item_spec: ItemSpec = serde_json::from_str(
+        r#"{
+            "base": "Blue Pearl Amulet",
+            "itemLevel": 84,
+            "rarity": "magic",
+            "quality": 20,
+            "catalyst": "Fertile Catalyst",
+            "prefixes": [{ "id": "IncreasedLife6", "values": [85] }]
+        }"#,
+    )
+    .expect("the jewel's spec");
+    let item = poe1::item::Item::from_spec(data, &item_spec).expect("the jewel");
+    let affix = &item.prefixes[0];
+    assert_eq!(
+        item.effect(data, &affix.roll, false),
+        20,
+        "the catalyst's quality is the effect the floor must be read with"
+    );
+    assert_eq!(
+        item.prefixes[0].roll.values.as_deref(),
+        Some([85].as_slice()),
+        "the stored roll is what the old comparison used"
+    );
+    assert_eq!(
+        poe1::item::Item::display(85, 20),
+        102,
+        "the value the game shows, which the floor is read in"
+    );
+    assert!(
+        85 < 100 && 102 >= 100,
+        "the raw comparison and the shown one must disagree at this floor"
+    );
+
+    // The pattern, built here so the floor is the only thing that moves between the two runs.
+    let probe = |floor: i32| -> Pattern {
+        let spec: PatternSpec = serde_json::from_value(serde_json::json!({
+            "name": "floor-probe",
+            "item": {
+                "bases": ["Blue Pearl Amulet"],
+                "itemLevelMin": 84,
+                "rarity": "magic",
+                "influences": []
+            },
+            "classes": [
+                {
+                    "id": "life-at-floor",
+                    "label": "Jewel life at the floor",
+                    "side": "prefix",
+                    "grade": "good",
+                    "matchers": [{ "mod": "IncreasedLife6", "min": [floor] }]
+                },
+                {
+                    "id": "any-other-prefix",
+                    "label": "Any other prefix",
+                    "side": "prefix",
+                    "grade": "bad",
+                    "matchers": [{ "any": true }]
+                },
+                {
+                    "id": "any-other-suffix",
+                    "label": "Any other suffix",
+                    "side": "suffix",
+                    "grade": "bad",
+                    "matchers": [{ "any": true }]
+                }
+            ],
+            "prefixes": [["life-at-floor", "any-other-prefix"]],
+            "suffixes": [["any-other-suffix"]]
+        }))
+        .expect("the probe's spec");
+        Pattern::compile(data, &spec).expect("the probe compiles")
+    };
+    // The class the pattern's own reading puts the affix in.
+    let pattern_class = |pattern: &Pattern| -> String {
+        let states = evaluate(data, pattern, &item);
+        assert_eq!(states.len(), 1, "the item's values are concrete");
+        let state = &states[0].1;
+        assert!(state.item_ok, "the jewel fits the probe's item filter");
+        pattern.classes[state.prefixes[0].class as usize].id.clone()
+    };
+
+    // 85 stored, 102 shown: a floor of 100 is met only by the shown value.
+    let accepted = probe(100);
+    let filter = ItemSetFilter::from_pattern(&accepted, Accept::DesiredOrGoodBothSides);
+    assert_eq!(pattern_class(&accepted), "life-at-floor");
+    assert_eq!(
+        filter.tier_of_item(data, &item, affix),
+        Tier::Good,
+        "the filter reads the shown value, like the pattern"
+    );
+
+    // A floor above the shown value fails both readings.
+    let rejected = probe(103);
+    let filter = ItemSetFilter::from_pattern(&rejected, Accept::DesiredOrGoodBothSides);
+    assert_eq!(pattern_class(&rejected), "any-other-prefix");
+    assert_eq!(filter.tier_of_item(data, &item, affix), Tier::Any);
+}

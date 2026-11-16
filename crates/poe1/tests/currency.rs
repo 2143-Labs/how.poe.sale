@@ -2,12 +2,12 @@
 
 use poe1::apply::draw_weights;
 use poe1::currency::{
-    Accept, Currency, Fraction, ItemOutputSet, ItemSetFilter, ModSelector, Tier, Transmutation,
-    side_chance,
+    Accept, Currency, Fraction, ItemOutputSet, ItemSetFilter, Tier, Transmutation,
+    REMOVAL_PROTECTION, side_chance,
 };
 use poe1::data::{Data, Rarity, Side};
 use poe1::item::{Item, ItemSpec};
-use poe1::method::{Pool, SideReq};
+use poe1::method::{Pool, Protection, SideReq};
 
 /// The owner's shield: a Shaper Supreme Spiked Shield, item level 87, normal to begin with.
 fn shield(data: &Data) -> Item {
@@ -22,6 +22,18 @@ fn shield(data: &Data) -> Item {
     )
     .expect("spec");
     Item::from_spec(data, &spec).expect("the shield")
+}
+
+/// The owner's totem goal, compiled from its fixture: the one pattern the filter tests read.
+fn totem_pattern(data: &Data) -> poe1::pattern::Pattern {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/patterns/totem-shield.json"
+    );
+    let spec: poe1::pattern::PatternSpec =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("the pattern fixture"))
+            .expect("pattern spec");
+    poe1::pattern::Pattern::compile(data, &spec).expect("compiles")
 }
 
 /// A modifier's printed text with every number blanked, so a family can be named by what it says
@@ -49,26 +61,6 @@ fn pool(data: &Data, item: &Item, side: Side) -> Vec<(u32, u128)> {
     draw_weights(data, item, &Pool::Natural, SideReq::Any, false, false)
         .into_iter()
         .filter(|&(m, w)| data.mod_at(m).side == Some(side) && w > 0)
-        .collect()
-}
-
-/// The best `n` tiers of the family whose printed text is `text`, as exact selectors.
-fn tiers(data: &Data, pool: &[(u32, u128)], side: Side, text: &str, n: usize) -> Vec<ModSelector> {
-    let mut members: Vec<u32> = pool
-        .iter()
-        .map(|&(m, _)| m)
-        .filter(|&m| key(&data.mod_at(m).text) == key(text))
-        .collect();
-    members.sort_by_key(|&m| std::cmp::Reverse(data.mod_at(m).level));
-    assert!(
-        members.len() >= n,
-        "{text:?} has {} tiers, wanted {n}",
-        members.len()
-    );
-    members
-        .into_iter()
-        .take(n)
-        .map(|m| ModSelector::exact(side, m))
         .collect()
 }
 
@@ -152,149 +144,12 @@ fn the_pool_is_the_published_pool() {
     assert_eq!(suffix_total / 100, 96_475);
 }
 
-#[test]
-fn the_totem_shield_chances() {
-    let data = poe1::test_data();
-    let item = shield(data);
-    let magic = {
-        let mut it = item.clone();
-        it.rarity = Rarity::Magic;
-        it
-    };
-    let prefix = pool(data, &magic, Side::Prefix);
-    let suffix = pool(data, &magic, Side::Suffix);
-
-    // The filter, as the owner wrote it: one desired prefix, then the good ones by tier.
-    let desired = tiers(
-        data,
-        &prefix,
-        Side::Prefix,
-        "+1 to maximum number of Summoned Totems",
-        1,
-    );
-    let mut good = Vec::new();
-    good.extend(tiers(
-        data,
-        &prefix,
-        Side::Prefix,
-        "+(145-159) to maximum Life",
-        2,
-    )); // t1/t2 life
-    good.extend(tiers(
-        data,
-        &prefix,
-        Side::Prefix,
-        "+(69-73) to maximum Mana",
-        1,
-    )); // t1 mana
-    good.extend(tiers(
-        data,
-        &prefix,
-        Side::Prefix,
-        "(76-81)% increased Chance to Block",
-        2,
-    )); // t1/t2 block
-    good.extend(tiers(
-        data,
-        &suffix,
-        Side::Suffix,
-        "+(17-18)% to all Elemental Resistances",
-        2,
-    ));
-    for resist in [
-        "+(46-48)% to Fire Resistance",
-        "+(46-48)% to Cold Resistance",
-        "+(46-48)% to Lightning Resistance",
-        "(90-109)% increased Spell Critical Strike Chance",
-    ] {
-        good.extend(tiers(data, &suffix, Side::Suffix, resist, 2));
-    }
-    good.extend(tiers(
-        data,
-        &suffix,
-        Side::Suffix,
-        "Recover (3-5)% of Energy Shield when you Block",
-        1,
-    ));
-    good.extend(tiers(
-        data,
-        &suffix,
-        Side::Suffix,
-        "Recover (3-5)% of Life when you Block",
-        1,
-    ));
-    for max in [
-        "+3% to maximum Fire Resistance",
-        "+3% to maximum Cold Resistance",
-        "+3% to maximum Lightning Resistance",
-        "+3% to maximum Chaos Resistance",
-        "+2% to all maximum Resistances",
-    ] {
-        good.extend(tiers(data, &suffix, Side::Suffix, max, 1));
-    }
-    good.extend(tiers(
-        data,
-        &suffix,
-        Side::Suffix,
-        "(31-35)% chance to Avoid Elemental Ailments",
-        1,
-    ));
-    good.extend(tiers(
-        data,
-        &suffix,
-        Side::Suffix,
-        "+(20-22)% chance to Suppress Spell Damage",
-        2,
-    ));
-    let filter = ItemSetFilter::new(desired, good, Accept::DesiredOrGoodBothSides);
-
-    let share = |side: Side, tier: Tier| {
-        side_chance(data, &magic, &Pool::Natural, side, |m, _| {
-            filter.tier_of_mod(data, m) == tier
-        })
-        .expect("a side with a pool")
-    };
-    for side in Side::BOTH {
-        let desired = share(side, Tier::Desired);
-        let good = share(side, Tier::Good);
-        println!(
-            "{:6} draw: desired {:>9} ({:>7.4} %)   good {:>9} ({:>7.3} %)",
-            side.name(),
-            desired,
-            desired.percent(),
-            good,
-            good.percent()
-        );
-    }
-    // The numbers the model must reproduce, exactly.
-    assert_eq!(
-        share(Side::Prefix, Tier::Desired),
-        Fraction::new(800, 64_800).unwrap()
-    );
-    assert_eq!(
-        share(Side::Prefix, Tier::Good),
-        Fraction::new(4_000, 64_800).unwrap()
-    );
-    assert_eq!(share(Side::Suffix, Tier::Desired), Fraction::ZERO);
-    assert_eq!(
-        share(Side::Suffix, Tier::Good),
-        Fraction::new(14_600, 96_475).unwrap()
-    );
-}
-
 /// The goal is written once, in the pattern language, and the step filter reads it from there —
 /// no second vocabulary for "desired / good / any".
 #[test]
 fn the_goal_comes_from_the_pattern() {
     let data = poe1::test_data();
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../fixtures/patterns/totem-shield.json"
-    );
-    let spec: poe1::pattern::PatternSpec =
-        serde_json::from_str(&std::fs::read_to_string(path).expect("the pattern fixture"))
-            .expect("pattern spec");
-    let pattern = poe1::pattern::Pattern::compile(data, &spec).expect("compiles");
+    let pattern = totem_pattern(data);
     let filter = ItemSetFilter::from_pattern(&pattern, Accept::DesiredOrGoodBothSides);
 
     let mut magic = shield(data);
@@ -317,6 +172,98 @@ fn the_goal_comes_from_the_pattern() {
     assert_eq!(
         share(Side::Suffix, Tier::Good),
         Fraction::new(14_600, 96_475).unwrap()
+    );
+}
+
+/// The filter parameter of a currency step is a real path, not a decoration: the outcomes the
+/// filter accepts keep their weights untouched, the rejected ones are dropped, and the chances are
+/// renormalised over exactly the kept mass. The dropped mass is reported only by the *unfiltered*
+/// set — see [`ItemOutputSet::filtered`]'s doc.
+#[test]
+fn a_filtered_step_renormalises_exactly() {
+    let data = poe1::test_data();
+    let item = shield(data);
+    let currency = Transmutation::new(data);
+    let unfiltered = currency.apply(&item, &None);
+    assert!(unfiltered.exact(), "the step's own weights are a distribution");
+
+    // The totem pattern's desired bucket, keeping only outcomes that hold the wanted prefix.
+    let pattern = totem_pattern(data);
+    let filter = ItemSetFilter::from_pattern(&pattern, Accept::HasDesired);
+
+    let filtered = currency.apply(&item, &Some(filter.clone()));
+    assert_eq!(
+        filtered,
+        unfiltered.filtered(data, &filter),
+        "every currency's filter arm is the set's filtered"
+    );
+    assert!(filtered.exact(), "the renormalised weights still sum to the total");
+
+    let kept: Vec<&poe1::currency::Outcome> = unfiltered
+        .outcomes()
+        .iter()
+        .filter(|o| filter.accepts(data, &o.item))
+        .collect();
+    assert!(
+        !kept.is_empty(),
+        "some transmutation outcome holds the totem prefix"
+    );
+    let kept_mass = kept
+        .iter()
+        .try_fold(0u128, |sum, o| sum.checked_add(o.weight))
+        .expect("the kept weights fit");
+    assert_eq!(
+        filtered.total(),
+        kept_mass,
+        "the set's total is exactly the kept mass"
+    );
+    assert_eq!(
+        filtered.outcomes().len(),
+        kept.len(),
+        "only the rejected outcomes go"
+    );
+    let mut whole = Fraction::ZERO;
+    for (survivor, original) in filtered.outcomes().iter().zip(&kept) {
+        assert_eq!(
+            survivor, *original,
+            "an accepted outcome keeps its weight and its modifier"
+        );
+        assert!(
+            filter.holds_desired(data, &survivor.item),
+            "a survivor is what the filter accepted"
+        );
+        let chance = Fraction::new(survivor.weight, kept_mass).expect("a chance");
+        whole = whole.checked_add(chance).expect("exact");
+    }
+    assert!(whole.is_one(), "the filtered chances are whole: {whole}");
+
+    // Filtering never rescales, so the kept share of the *step* is the filtered total over the
+    // unfiltered one — and it complements the dropped mass exactly.
+    let accepts = |i: &Item| filter.accepts(data, i);
+    let kept_share = unfiltered.chance(|i| accepts(i)).expect("mass");
+    let dropped = unfiltered.chance(|i| !accepts(i)).expect("mass");
+    assert!(
+        kept_share.checked_add(dropped).expect("exact").is_one(),
+        "the two shares are the whole step"
+    );
+    assert_eq!(
+        Fraction::new(kept_mass, unfiltered.total()).expect("a chance"),
+        kept_share,
+        "the filtered total over the step's total is the accepted share"
+    );
+}
+
+/// A filter that accepts nothing refuses the step rather than returning an empty distribution,
+/// which would read as "0 %" instead of "this step cannot reach the goal".
+#[test]
+fn a_filter_that_accepts_nothing_refuses_the_step() {
+    let data = poe1::test_data();
+    let item = shield(data);
+    let empty = ItemSetFilter::new(Vec::new(), Vec::new(), Accept::DesiredOrGoodBothSides);
+    let set = Transmutation::new(data).apply(&item, &Some(empty));
+    assert!(
+        matches!(set, ItemOutputSet::Refused(why) if why.contains("filter")),
+        "{set:?}"
     );
 }
 
@@ -354,22 +301,33 @@ fn scouring_keeps_a_fractured_modifier() {
 
 /// The code's removal policy must be the one the rules declare, or a currency written as code and
 /// the same currency written as ops would drift apart.
+///
+/// The rule's `protect` object is read through the same [`Protection`] deserialiser the ops path
+/// uses and compared with [`REMOVAL_PROTECTION`] itself, so a change to either side fails here.
+/// Comparing the JSON against string literals, as an earlier version did, would notice a rule
+/// edit but never a change to the constant the code actually applies — and it forgot annulment,
+/// the third method that shares it.
 #[test]
 fn the_code_removal_policy_matches_the_rules() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../rules/methods.json");
     let rules: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(path).expect("the rules")).expect("json");
-    for id in ["currency/scouring", "currency/alteration"] {
+    for id in [
+        "currency/scouring",
+        "currency/alteration",
+        "currency/annulment",
+    ] {
         let method = rules["methods"]
             .as_array()
             .expect("methods")
             .iter()
             .find(|m| m["id"] == id)
             .unwrap_or_else(|| panic!("{id} is in the rules"));
-        assert_eq!(method["protect"]["locks"], "respect", "{id} respects locks");
+        let declared: Protection = serde_json::from_value(method["protect"].clone())
+            .unwrap_or_else(|e| panic!("{id}: the rule's protect does not parse: {e}"));
         assert_eq!(
-            method["protect"]["cannotRoll"], "ignore",
-            "{id} ignores the Cannot Roll metamods"
+            declared, REMOVAL_PROTECTION,
+            "{id} must declare exactly the code's removal policy"
         );
     }
 }

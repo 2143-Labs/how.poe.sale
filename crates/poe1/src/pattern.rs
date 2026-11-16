@@ -564,7 +564,10 @@ fn grid_share(data: &Data, stat: u16, lo: i32, hi: i32, threshold: i32, effect: 
 /// family at the same tier or higher. A family is one mod type, kind and influence: an essence
 /// tier shares a type with the natural tiers and sits at a high level while rolling lower, and a
 /// Shaper tier must not stand for a Crusader one.
-fn mod_matches(data: &Data, want: u32, or_better: bool, m: u32) -> bool {
+///
+/// The currency filter's selectors call this rather than restating the family test, so a goal
+/// cannot bucket a modifier one way in the score and another in the step filter.
+pub(crate) fn mod_matches(data: &Data, want: u32, or_better: bool, m: u32) -> bool {
     if m == want {
         return true;
     }
@@ -582,13 +585,34 @@ fn mod_matches(data: &Data, want: u32, or_better: bool, m: u32) -> bool {
 /// Whether a `{"crafted": true|false}` matcher accepts `m`. A metamod is crafted, but it is a
 /// tool rather than a modifier a pattern wants: it sits in a slot, costs one Orb of Scouring to
 /// remove and one bench craft to put back, so a crafted class must not count it as what it wants.
-fn crafted_match(data: &Data, want: bool, m: u32) -> bool {
+/// Shared with the currency filter for the same reason as [`mod_matches`].
+pub(crate) fn crafted_match(data: &Data, want: bool, m: u32) -> bool {
     let kind = data.mod_at(m).kind;
     if want {
         kind == ModKind::Crafted && !crate::item::is_metamod(data, m)
     } else {
         kind != ModKind::Crafted
     }
+}
+
+/// Whether a concrete affix meets every threshold of a `min` list, in the units the game shows
+/// (`shown`: the item's effect magnitudes and the stat's translation factor).
+///
+/// This is the one floor comparison: [`matcher_chance`] uses it for a rolled affix, and the
+/// currency filter's selectors call it too, so a floor cannot accept a modifier in the score and
+/// reject it in the step filter. An affix with no values yet has not chosen a value — only its
+/// family — so a floor is met there.
+pub(crate) fn floors_met(data: &Data, affix: &Affix, effect: i16, floors: &[Option<i32>]) -> bool {
+    let Some(values) = &affix.roll.values else {
+        return true;
+    };
+    let md = data.mod_at(affix.roll.m);
+    floors.iter().enumerate().all(|(k, floor)| {
+        let (Some(floor), Some(stat), Some(value)) = (floor, md.stats.get(k), values.get(k)) else {
+            return true;
+        };
+        shown(data, stat.stat, *value, effect) >= f64::from(*floor)
+    })
 }
 
 /// The chance a single matcher accepts an affix: `None` when it does not apply at all. A value
@@ -618,22 +642,20 @@ fn matcher_chance(
             }
             let Some(min) = min else { return Some(1.0) };
             let effect = item.effect(data, &affix.roll, implicit);
+            if affix.roll.values.is_some() {
+                return Some(if floors_met(data, affix, effect, min) {
+                    1.0
+                } else {
+                    0.0
+                });
+            }
+            // Unrolled: the chance is the share of the roll grid the floors admit.
             let mut p = 1.0;
             for (k, threshold) in min.iter().enumerate() {
                 let (Some(t), Some(stat)) = (threshold, m.stats.get(k)) else {
                     continue;
                 };
-                match &affix.roll.values {
-                    Some(values) => {
-                        let Some(v) = values.get(k) else { continue };
-                        if shown(data, stat.stat, *v, effect) < f64::from(*t) {
-                            return Some(0.0);
-                        }
-                    }
-                    None => {
-                        p *= grid_share(data, stat.stat, stat.min, stat.max, *t, effect);
-                    }
-                }
+                p *= grid_share(data, stat.stat, stat.min, stat.max, *t, effect);
             }
             Some(p)
         }

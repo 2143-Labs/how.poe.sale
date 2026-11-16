@@ -1,8 +1,8 @@
 //! Orb of Annulment: removes one explicit modifier from a magic or rare item, in equal shares
 //! among the modifiers a removal may take (`currency/annulment`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter};
 use super::REMOVAL_PROTECTION;
+use super::{Currency, ItemOutputSet, ItemSetFilter};
 use crate::apply::removable;
 use crate::data::{Data, Rarity};
 use crate::item::Item;
