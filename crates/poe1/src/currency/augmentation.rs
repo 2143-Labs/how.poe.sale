@@ -39,7 +39,7 @@ impl Currency for Augmentation<'_> {
         let Some(weighted) = adds(data, item, 1, SideReq::Any) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let set = ItemOutputSet::new(weighted);
+        let set = ItemOutputSet::new(data, weighted);
         match filter {
             Some(f) => set.filtered(data, f),
             None => set,

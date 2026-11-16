@@ -1029,7 +1029,24 @@ impl Guard {
 /// The protection `method` gives an `item`'s affixes. A method with no stated protection keeps
 /// nothing (`Policy::Ignore`), which is what a method that changes no explicits needs.
 pub(crate) fn guard_for(data: &Data, method: &Method, item: &Item) -> Guard {
-    let p = method.protect.unwrap_or(Protection::IGNORE_ALL);
+    guard_for_protection(data, method.protect.unwrap_or(Protection::IGNORE_ALL), item)
+}
+
+/// Removes every modifier `protection` lets a removal take, returning how many went: the predicate
+/// is `Guard::can_change`, the same one `Op::Scour` and `Op::Clear` use, so a currency written as
+/// code (`currency/scouring`, `currency/alteration`) cannot disagree with its op-declared twin
+/// about fractures or about a lock the method respects.
+pub(crate) fn clear_changeable(data: &Data, protection: Protection, item: &mut Item) -> usize {
+    let guard = guard_for_protection(data, protection, item);
+    let before = item.prefixes.len() + item.suffixes.len();
+    for side in Side::BOTH {
+        item.affixes_mut(side)
+            .retain(|a| !guard.can_change(data, side, a));
+    }
+    before - (item.prefixes.len() + item.suffixes.len())
+}
+
+fn guard_for_protection(data: &Data, p: Protection, item: &Item) -> Guard {
     let locks = p.locks == Policy::Respect;
     let tags = p.cannot_roll == Policy::Respect;
     let tag_of = |meta: MetaMod, name: &str| {

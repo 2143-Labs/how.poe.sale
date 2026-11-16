@@ -106,6 +106,22 @@ fn a_currency_refuses_what_it_cannot_do() {
     );
 }
 
+/// The six currencies must mirror `rules/methods.json`, because the loop is a policy over these
+/// exact steps: `currency/regal` names the categories it works on, and a flask is not one.
+#[test]
+fn regal_refuses_a_flask() {
+    let data = poe1::test_data();
+    let spec: ItemSpec =
+        serde_json::from_str(r#"{"base": "Jade Flask", "itemLevel": 80, "rarity": "magic"}"#)
+            .expect("spec");
+    let flask = Item::from_spec(data, &spec).expect("the flask");
+    let set = poe1::currency::Regal::new(data).apply(&flask, &None);
+    assert!(
+        matches!(set, ItemOutputSet::Refused(why) if why.contains("flask")),
+        "a flask cannot be regaled"
+    );
+}
+
 #[test]
 fn the_pool_is_the_published_pool() {
     let data = poe1::test_data();
@@ -302,4 +318,58 @@ fn the_goal_comes_from_the_pattern() {
         share(Side::Suffix, Tier::Good),
         Fraction::new(14_600, 96_475).unwrap()
     );
+}
+
+/// A fractured modifier cannot be removed, so a scour leaves it and the rarity follows what is
+/// left — the same rule `Op::Scour` applies, because both go through `can_change`.
+#[test]
+fn scouring_keeps_a_fractured_modifier() {
+    let data = poe1::test_data();
+    let spec: ItemSpec = serde_json::from_str(
+        r#"{
+            "base": "Supreme Spiked Shield",
+            "itemLevel": 87,
+            "rarity": "rare",
+            "influences": ["shaper"],
+            "prefixes": [
+                {"id": "IncreasedLife10", "fractured": true},
+                {"id": "IncreasedMana12"}
+            ]
+        }"#,
+    )
+    .expect("spec");
+    let item = Item::from_spec(data, &spec).expect("the item");
+    let set = poe1::currency::Scouring::new(data).apply(&item, &None);
+    let outcomes = set.outcomes();
+    assert_eq!(outcomes.len(), 1, "a scour is deterministic");
+    let left = &outcomes[0].item;
+    assert_eq!(left.prefixes.len(), 1, "only the plain prefix goes");
+    assert!(left.prefixes[0].fractured, "the fractured one stays");
+    assert_eq!(
+        left.rarity,
+        Rarity::Magic,
+        "one fractured modifier is magic"
+    );
+}
+
+/// The code's removal policy must be the one the rules declare, or a currency written as code and
+/// the same currency written as ops would drift apart.
+#[test]
+fn the_code_removal_policy_matches_the_rules() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../rules/methods.json");
+    let rules: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("the rules")).expect("json");
+    for id in ["currency/scouring", "currency/alteration"] {
+        let method = rules["methods"]
+            .as_array()
+            .expect("methods")
+            .iter()
+            .find(|m| m["id"] == id)
+            .unwrap_or_else(|| panic!("{id} is in the rules"));
+        assert_eq!(method["protect"]["locks"], "respect", "{id} respects locks");
+        assert_eq!(
+            method["protect"]["cannotRoll"], "ignore",
+            "{id} ignores the Cannot Roll metamods"
+        );
+    }
 }

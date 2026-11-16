@@ -76,9 +76,12 @@ impl ItemOutputSet {
 
     /// Builds a set from weighted results, folding items that came out the same so the set is
     /// canonical and their weights add up.
-    pub fn new(weighted: Vec<Weighted>) -> ItemOutputSet {
+    pub fn new(data: &Data, weighted: Vec<Weighted>) -> ItemOutputSet {
         let mut folded: BTreeMap<Item, (u128, Option<(Side, u32)>)> = BTreeMap::new();
-        for (item, weight, added) in weighted {
+        for (mut item, weight, added) in weighted {
+            // The engine's one form: a fixed roll is filled in, so two results that are the same
+            // item fold together and compare equal to what the op-declared path produces.
+            item.canonical(data);
             let slot = folded.entry(item).or_insert((0, added));
             slot.0 = slot.0.saturating_add(weight);
         }
@@ -163,7 +166,7 @@ impl ItemOutputSet {
 ///
 /// Branch `i`'s results are multiplied by `branch_i × Π_{j≠i} total_j`, so every branch shares one
 /// denominator and the total is `Π_j total_j × Σ branch_j`. `None` if that would overflow.
-pub fn combine(branches: Vec<(u128, Vec<Weighted>)>) -> Option<ItemOutputSet> {
+pub fn combine(data: &Data, branches: Vec<(u128, Vec<Weighted>)>) -> Option<ItemOutputSet> {
     let totals: Vec<u128> = branches
         .iter()
         .map(|(_, results)| results.iter().map(|&(_, w, _)| w).sum())
@@ -180,7 +183,7 @@ pub fn combine(branches: Vec<(u128, Vec<Weighted>)>) -> Option<ItemOutputSet> {
             weighted.push((item, weight.checked_mul(scale)?, added));
         }
     }
-    Some(ItemOutputSet::new(weighted))
+    Some(ItemOutputSet::new(data, weighted))
 }
 
 /// The pools one random add reaches, one entry per side that can take a modifier, with the exact

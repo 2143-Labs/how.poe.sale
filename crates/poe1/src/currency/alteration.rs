@@ -1,7 +1,9 @@
 //! Orb of Alteration: rerolls a magic item into one or two fresh modifiers, half the time each way
 //! (`currency/alteration` in `rules/methods.json`).
 
+use super::scouring::SCOURING_PROTECTION;
 use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine};
+use crate::apply::clear_changeable;
 use crate::data::{Data, Rarity};
 use crate::item::Item;
 use crate::method::SideReq;
@@ -33,16 +35,17 @@ impl Currency for Alteration<'_> {
         if item.rarity != Rarity::Magic {
             return ItemOutputSet::refused("an Orb of Alteration needs a magic item");
         }
+        // `currency/alteration` declares the same protection as a scouring, so it clears through
+        // the same predicate: a fractured modifier stays.
         let mut fresh = item.clone();
-        fresh.prefixes.clear();
-        fresh.suffixes.clear();
+        clear_changeable(data, SCOURING_PROTECTION, &mut fresh);
         let (Some(one), Some(two)) = (
             adds(data, &fresh, 1, SideReq::Any),
             adds(data, &fresh, 2, SideReq::Any),
         ) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let Some(set) = combine(vec![(1, one), (1, two)]) else {
+        let Some(set) = combine(data, vec![(1, one), (1, two)]) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         match filter {
