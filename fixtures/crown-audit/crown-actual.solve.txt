@@ -9,7 +9,7 @@
 - prefixes [desired-veiled, ok-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 2 slots it wants still missing — `currency/shapers-exalted` at 0.0635, `beast/influence-slam-shaper` at 0.0635, `currency/exalted` at 0.0050
 - prefixes [desired-veiled, ok-prefix], suffixes [hypothermia, essence-elemental, spell-crit], 1 open prefix / none open, 1 slot it wants still missing — `currency/exalted` at 0.0189
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).
+297 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+294 more).
 
 **Exact steps:** every outcome is computed.
 
@@ -45,7 +45,7 @@ What those steps do:
 
 **Not computed:** `beast/create-talisman`, `bench/colours/NN`, `bench/colours/NNN`, `bench/colours/NNNN`, `bench/links/2`, `bench/links/3`, `bench/links/4`, `bench/reroll-rare-mods/1` (+17 more) — 12 × socket outcome table; 10 × needs data; 1 × multi-draw reforge; 2 more reasons (the model stops before their result).
 
-**Does not apply:** 962 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +87 more reasons)
+**Does not apply:** 961 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `needs an open suffix` ×82, `needs an open prefix` ×73, +87 more reasons)
 
 **Best exact step:** Orb of Dominance — `currency/orb-of-dominance`
 

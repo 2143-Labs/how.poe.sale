@@ -1031,11 +1031,11 @@
     },
     {
       "id": "vaal.one-implicit",
-      "statement": "Corrupting an item with several implicits replaces one random implicit and leaves the others untouched.",
-      "sourceKind": "guide",
-      "url": "https://maxroll.gg/poe/resources/corruption",
-      "quote": "The trick here is that corrupting an item with several implicits only replaces one random implicit and leave the others untouched, allowing you to potentially keep the base implicit of the item.",
-      "patch": "3.29",
+      "statement": "Corrupting an item adds a corrupted implicit; once it already holds two Vaal implicits the outcome replaces one of those two, never a base implicit.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/4013680",
+      "quote": "The Corruption outcome to add a Corrupted Implicit Modifier will replace an existing Corrupted Implicit Modifier if the item already has 2 Vaal Implicit Modifiers.",
+      "patch": "3.30",
       "checked": true
     },
     {
@@ -1144,6 +1144,24 @@
       "url": "https://www.reddit.com/r/pathofexile/comments/1wr9445/329_everything_you_need_to_know_about_memory/",
       "quote": "at 82 strands, a modifier with 8 tiers (like elemental resistances on most bases), rollable_tiers = floor((100/(2.5 * 82 + 147.5)) * (8 - 1)) + 1 = 2",
       "patch": "3.29",
+      "checked": true
+    },
+    {
+      "id": "metamod.partial-locks",
+      "statement": "3.30 adds four bench meta-crafts that protect one randomly chosen prefix or suffix, for 1 or 2 Divine Orbs; GGG's FAQ for the patch says the protected modifier is randomly selected and that no indicator shows which one. The model's protection is a deterministic whole-side decision, so a randomly chosen protected modifier cannot be expressed and these crafts are not modelled.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/4013680",
+      "quote": "Added four new Meta-Crafting Bench options: 1 Prefix Modifier cannot be changed, for a cost of 1 Divine Orb. 1 Suffix Modifier cannot be changed, for a cost of 1 Divine Orb. 2 Prefix Modifiers cannot be changed, for a cost of 2 Divine Orbs. 2 Suffix Modifiers cannot be changed, for a cost of 2 Divine Orbs.",
+      "patch": "3.30",
+      "checked": true
+    },
+    {
+      "id": "beast.flask-mods",
+      "statement": "Bestiary's flask-modifier crafts are not modelled: the family was never in the rules, and 3.30 changed its requirement to any Red Beast. This is a gap that predates the patch, recorded so the next audit does not read its absence as a 3.30 regression.",
+      "sourceKind": "patch-notes",
+      "url": "https://www.pathofexile.com/forum/view-thread/4013680",
+      "quote": "Beastcrafting options to add Modifiers to Flasks now require any Red Beast to use.",
+      "patch": "3.30",
       "checked": true
     }
   ]

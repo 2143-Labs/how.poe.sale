@@ -695,3 +695,16 @@ Item Level: 84\n\
     );
     Item::from_spec(data, &parsed.spec).expect("the placeholder paste builds");
 }
+
+/// A 3.30 item corrupted twice says "Twice Corrupted" on a line of its own. Before that line was
+/// known it fell through to the modifier path, so the item read as **uncorrupted** and the model
+/// would offer crafts on an item the game forbids modifying.
+#[test]
+fn twice_corrupted_reads_as_corrupted() {
+    let (item, warnings) = parsed("twice-corrupted-maul");
+    assert!(item.corrupted, "a twice-corrupted item is corrupted");
+    assert!(
+        !warnings.iter().any(|w| w.contains("Twice Corrupted")),
+        "the flag line must not be read as a modifier: {warnings:?}"
+    );
+}

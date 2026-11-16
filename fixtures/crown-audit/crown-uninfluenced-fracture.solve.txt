@@ -10,7 +10,7 @@
 - prefixes [good-prefix, any-crafted-prefix, any-other-prefix], suffixes [any-other-suffix], none open / 2 open suffixes, 4 slots it wants still missing — `currency/veiled-exalted` at 0.1667, `currency/veiled-exalted` at 0.1250
 - … 5 more inputs
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).
+297 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+294 more).
 
 **Exact steps:** every outcome is computed.
 
@@ -36,7 +36,7 @@ What those steps do:
 
 **Not computed:** `beast/create-talisman`, `bench/reroll-rare-mods/1`, `bench/reroll-rare-mods/3`, `bench/reroll-rarity`, `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/brinehooks-ducat` (+8 more) — 9 × needs data; 4 × socket outcome table; 2 × unconfirmed rule; 1 more reasons (the model stops before their result).
 
-**Does not apply:** 947 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `the item already has as many crafted modifiers as it can hold` ×76, `needs an open prefix` ×72, +92 more reasons)
+**Does not apply:** 946 methods (`only works on: Daggers, Rune Daggers, One Hand Axes, One Hand Maces, One Hand Swords, Claws, Sceptres, Thrusting One Hand Swords, Wands` ×91, `the item already has as many crafted modifiers as it can hold` ×76, `needs an open prefix` ×72, +92 more reasons)
 
 **Best exact step:** Shaper's Exalted Orb — `currency/shapers-exalted`
 

@@ -1208,8 +1208,10 @@ fn classify(line: &str) -> Line {
     {
         return Line::Ignored;
     }
+    // A 3.30 item corrupted twice says "Twice Corrupted"; it is corrupted for everything this
+    // model asks about, and the count itself is not carried (claim `vaal.one-implicit`).
     match line {
-        "Corrupted" => return Line::Corrupted,
+        "Corrupted" | "Twice Corrupted" => return Line::Corrupted,
         "Mirrored" => return Line::Mirrored,
         "Split" => return Line::Split,
         "Synthesised Item" => return Line::Synthesised,

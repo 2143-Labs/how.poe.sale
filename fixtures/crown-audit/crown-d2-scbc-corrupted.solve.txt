@@ -9,7 +9,7 @@
 - prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [essence-elemental, spell-crit], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0048
 - prefixes [good-prefix, any-other-prefix, any-other-prefix], suffixes [hypothermia, essence-elemental], none open / 1 open suffix, 3 slots it wants still missing — `currency/tainted-exalted-orb` at 0.0025
 
-298 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+295 more).
+297 methods cannot be walked backwards in this pass, e.g. `beast/create-talisman` (cannot undo `unmodelled`), `beast/hinekoras-lock` (cannot undo `unmodelled`), `beast/imprint` (cannot undo `imprint`) (+294 more).
 
 **Exact steps:** every outcome is computed.
 
@@ -33,7 +33,7 @@ What those steps do:
 
 **Not computed:** `bench/sockets/2`, `bench/sockets/3`, `bench/sockets/4`, `currency/kisharas-ducat`, `currency/magmatic-ore`, `currency/tainted-armourers-scrap`, `currency/tainted-divine-teardrop`, `currency/tainted-mythic-orb` — 4 × needs data; 3 × socket outcome table; 1 × unconfirmed rule (the model stops before their result).
 
-**Does not apply:** 1070 methods (`the item is corrupted` ×1025, `only works on: weapons` ×12, `the item has no sockets` ×9, +14 more reasons)
+**Does not apply:** 1069 methods (`the item is corrupted` ×1024, `only works on: weapons` ×12, `the item has no sockets` ×9, +14 more reasons)
 
 **Best exact step:** Tainted Exalted Orb — `currency/tainted-exalted-orb`
 

@@ -11,7 +11,7 @@ use poe1::data::{Data, Scope};
 use poe1::method::{CostSpec, Family, Method, Op, Policy, Protection, Require};
 use poe1::test_data;
 
-const REASONS: [&str; 7] = [
+const REASONS: [&str; 8] = [
     "placeholder",
     "shard",
     "maps-atlas",
@@ -19,6 +19,10 @@ const REASONS: [&str; 7] = [
     "other-item-class",
     "cost-only",
     "not-used-on-items",
+    // A currency the game no longer hands out, whose existing orbs still work (3.30: the Orb of
+    // Binding). Nothing in the model can say "unobtainable", so the method is gone and the
+    // currency is scoped out instead.
+    "unobtainable",
 ];
 
 #[test]

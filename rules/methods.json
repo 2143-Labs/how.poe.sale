@@ -867,28 +867,7 @@
       ],
       "claims": ["game-text"]
     },
-    {
-      "id": "currency/binding",
-      "name": "Orb of Binding",
-      "family": "currency",
-      "cost": [
-        {"name": "Orb of Binding", "amount": 1}
-      ],
-      "requires": [
-        {"kind": "notCorrupted"},
-        {"kind": "notMirrored"},
-        {"kind": "rarity", "anyOf": ["normal"]},
-        {"kind": "category", "anyOf": ["weapon", "armour", "jewellery", "quiver", "jewel", "abyss-jewel"]}
-      ],
-      "ops": [
-        {"op": "setRarity", "rarity": "rare"},
-        {"op": "fill", "fill": {"counts": [[4, 8], [5, 3], [6, 1]]}},
-        {"op": "sockets", "change": {"kind": "link-up-to-four"}}
-      ],
-      "claims": ["game-text", "chaos.count", "reforge.counts"],
-      "example": "slink-boots-normal"
-    },
-    {
+        {
       "id": "currency/blacksmiths-whetstone",
       "name": "Blacksmith's Whetstone",
       "family": "currency",
