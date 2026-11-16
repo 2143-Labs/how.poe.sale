@@ -16,7 +16,9 @@ use crate::item::Item;
 pub enum Stage {
     /// A desired modifier is held: the loop is done with this item.
     Desired,
-    /// Good on both sides, no desired modifier: the loop keeps it as it is.
+    /// Good on both sides, no desired modifier: a magic item is regalled for a third draw, and a
+    /// rare one falls to the policy's rare-item answer — stop once three of its modifiers are good,
+    /// otherwise reset.
     GoodPair,
     /// A good prefix with the suffix side empty: one more draw is worth taking.
     GoodPrefix,
@@ -26,7 +28,8 @@ pub enum Stage {
     Other,
     /// No explicit affixes: normal, or an item that was never rolled.
     Spare,
-    /// A rare item without the desired modifier: its affixes are finished, so only a reset is left.
+    /// A rare item without the desired modifier that no other label claims: its affixes are
+    /// finished, so the loop either hands it to its owner once three of them are good or resets it.
     ///
     /// Split out of [`Stage::Other`] because the summary must show how much mass is about to be
     /// scoured, and because the owner's loop has a different answer for it ("stop" once three of its
@@ -62,8 +65,10 @@ impl Stage {
     ///
     /// An empty side and a good side are facts worth printing, so a rare item can classify as
     /// [`Stage::GoodPrefix`] — the policy is what knows a rare item cannot be augmented, and it
-    /// reads the rarity for that. [`Stage::SpentRare`] is therefore "a rare item with affixes on
-    /// both sides and no desired modifier", the stage that has nothing left but a reset.
+    /// reads the rarity for that. [`Stage::SpentRare`] is therefore every rare item no earlier test
+    /// claimed: both sides filled with nothing good, a good side beside a filled non-good one, or
+    /// one side filled and the other empty when the filled side is not good. What makes it spent is
+    /// not that both sides carry affixes but that the loop has nothing left for it but a reset.
     pub fn classify(data: &Data, filter: &ItemSetFilter, item: &Item) -> Stage {
         let prefix = filter.best(data, item, Side::Prefix);
         let suffix = filter.best(data, item, Side::Suffix);

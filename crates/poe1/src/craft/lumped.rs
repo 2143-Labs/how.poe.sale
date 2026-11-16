@@ -25,7 +25,10 @@
 //!   count. Rarity and per-side counts are fields of the class.
 //! - `item.has_meta(..)` for the Cannot Roll and lock bits, which bar tags from a draw. The class
 //!   keeps the metamod bits per side; per side is one step finer than the audit's "metamod bits",
-//!   and it is needed because a lock keeps the whole side it sits on, other metamods included.
+//!   and it is needed because a lock keeps the whole side it names, other metamods included. The
+//!   side it names is the *opposite* one: `StrMasterItemGenerationCannotChangePrefixes` is a suffix
+//!   modifier, so a side is locked when the bit appears on either side. `Item::locked` searches
+//!   every explicit for the lock's group, and the class's clear test has to make the same test.
 //! - `item.memory_strands` and `data.cuts_memory_strands()`, which raise the level floor of the
 //!   tiers a draw can reach. Both are fields of the class (the patch is the data's).
 //!
@@ -64,7 +67,7 @@
 //! The class records the per-side *union* of groups and the per-side bucket counts, not which
 //! modifier carries which group, so two members of one class can lose different groups to the same
 //! annulment and land in different classes. Enumerating every item a class abstracts is not
-//! tractable (the classes exist precisely to avoid that enumeration), so [`lump_step`] refuses
+//! tractable (the classes exist precisely to avoid that enumeration), so a lumped step refuses
 //! annulment rather than approximating it.
 //!
 //! One more `candidates` input is not recorded because no registered currency asks for it:
@@ -75,7 +78,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use super::machine::{apply_checked, MachineError};
+use super::machine::{MachineError, apply_checked};
 use super::{Action, CurrencyId, Policy, Stage};
 use crate::currency::{Fraction, ItemSetFilter, Tier};
 use crate::data::{Data, Influence, Rarity, Side};
@@ -113,31 +116,43 @@ struct Key {
 }
 
 impl Key {
-    /// The class a `clear_changeable` step leaves: a locked side keeps every affix, an unlocked side
-    /// keeps only the fractured ones.
+    /// The class a `clear_changeable` step leaves: a locked side keeps every affix, an unlocked
+    /// side keeps only the fractured ones.
     ///
     /// This is the same selection `apply::clear_changeable` makes through `Guard::can_change`
     /// (fractured, or a respected lock), expressed on the class instead of on an item. It exists so
     /// that two classes whose clears agree can share one reroll: an alteration clears first, so its
     /// outcome distribution depends on the cleared class, not on the class it started from.
+    ///
+    /// The lock test is the one `Item::locked` makes: it searches every explicit for the lock's
+    /// group, so the bit can sit on either side. `StrMasterItemGenerationCannotChangePrefixes` is a
+    /// suffix modifier that locks the prefix side, so reading only the side's own bits would never
+    /// see it.
+    ///
+    /// The other metamods — the Cannot Roll pair and the level cap — lock no side, and they change
+    /// the pool only while the affix carrying them is on the item. They are kept here on a side
+    /// whose affixes survive the clear (a locked side) and dropped with the affixes of an unlocked
+    /// one, so the cleared key records exactly the bits `candidates` would read from the cleared
+    /// item.
     fn cleared(&self) -> Key {
         let mut out = self.clone();
+        // A lock on either side names the side it locks; a lock anywhere is enough.
+        let metas = self.sides[0].metas | self.sides[1].metas;
         for side in Side::BOTH {
             let i = side.index();
             let lock = match side {
                 Side::Prefix => MetaMod::LockPrefixes,
                 Side::Suffix => MetaMod::LockSuffixes,
             };
-            let kept = if out.sides[i].metas & meta_bit(lock) != 0 {
-                out.sides[i].clone()
-            } else {
-                out.fractured[i].clone()
-            };
-            out.sides[i] = kept.clone();
-            // Everything left is fractured (a locked side's non-fractured affixes are locked, not
-            // fractured, but a later clear keeps the side again, so the distinction never matters).
-            out.fractured[i] = kept;
+            if metas & meta_bit(lock) == 0 {
+                out.sides[i] = out.fractured[i].clone();
+            }
         }
+        // The fractured facts do not change: a clear keeps every fractured affix and fractures
+        // nothing, and a lock keeps its side without fracturing it. So a locked side's kept
+        // affixes stay non-fractured here — marking them fractured would make a locked class's
+        // clear equal to a class that really holds those affixes fractured, and their alterations
+        // do differ (the outcome items differ in which affixes are fractured).
         out
     }
 }
@@ -174,10 +189,6 @@ impl Class {
         &self.witness
     }
 
-    pub fn rarity(&self) -> Rarity {
-        self.key.rarity
-    }
-
     /// The stage the class classifies into. It is a class fact (per-side bucket maxima, counts and
     /// rarity), so every member of the class has this stage.
     pub fn stage(&self, data: &Data, filter: &ItemSetFilter) -> Stage {
@@ -185,8 +196,24 @@ impl Class {
     }
 
     /// The key a clear of this class leaves.
-    fn cleared(&self) -> Key {
-        self.key.cleared()
+    pub fn cleared(&self) -> Cleared {
+        Cleared(self.key.cleared())
+    }
+}
+
+/// The facts a clear of a class leaves, without the witness item that produced them.
+///
+/// Equality is exactly the condition under which two classes reroll an alteration the same way —
+/// the invariant [`Lumped`]'s alteration cache is built on — so this is the observable a test can
+/// assert on: two classes whose clears are equal must alter identically.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Cleared(Key);
+
+impl Cleared {
+    /// The affixes a clear keeps on `side`: how many, and how many of those are fractured.
+    pub fn affixes(&self, side: Side) -> (u8, u8) {
+        let i = side.index();
+        (self.0.sides[i].count, self.0.fractured[i].count)
     }
 }
 
@@ -253,32 +280,31 @@ pub struct Depth {
     pub index: usize,
     /// The live classes and their shares of one.
     pub classes: Vec<(Class, Fraction)>,
-    /// Every stage's mass for this step, live and absorbed alike; it sums to one.
+    /// Every stage's mass for this step, live and absorbed alike; it sums to the mass that entered
+    /// the step — one at depth 1, and afterwards whatever the loop left live.
     pub chances: Vec<(Stage, Fraction)>,
     /// The mass that reached the goal this step and left the live state.
     pub absorbed: Fraction,
+    /// The live mass, added with checked arithmetic when the depth was built.
+    live: Fraction,
+    /// The same numbers `chances` holds, keyed for lookup: a stage appears there once, so a stage's
+    /// mass is a lookup rather than a filter-and-sum a caller could overflow.
+    totals: BTreeMap<Stage, Fraction>,
 }
 
 impl Depth {
     /// The mass still in the loop after this step.
+    ///
+    /// The sum is taken once, when the step runs, where an overflow is the step's error rather than
+    /// a panic in a report: a query cannot fail, so it cannot panic either.
     pub fn live(&self) -> Fraction {
-        sum(self.classes.iter().map(|(_, p)| p))
+        self.live
     }
 
     /// The mass this step recorded at `stage`.
     pub fn mass(&self, stage: Stage) -> Fraction {
-        sum(self
-            .chances
-            .iter()
-            .filter(|(s, _)| *s == stage)
-            .map(|(_, p)| p))
+        self.totals.get(&stage).copied().unwrap_or(Fraction::ZERO)
     }
-}
-
-fn sum<'a>(chances: impl IntoIterator<Item = &'a Fraction>) -> Fraction {
-    chances
-        .into_iter()
-        .fold(Fraction::ZERO, |acc, &p| acc.checked_add(p).expect("exact"))
 }
 
 /// The facts of one item, as a key. Order-independent: every set is sorted and deduped here, so two
@@ -305,7 +331,10 @@ fn key_of(data: &Data, filter: &ItemSetFilter, item: &Item) -> Key {
 
     let metas: BTreeMap<u16, u8> = MetaMod::ALL
         .iter()
-        .filter_map(|meta| data.group_by_name(meta.group()).map(|g| (g, meta_bit(*meta))))
+        .filter_map(|meta| {
+            data.group_by_name(meta.group())
+                .map(|g| (g, meta_bit(*meta)))
+        })
         .collect();
     let mut sides = [SideFacts::default(), SideFacts::default()];
     let mut fractured = [SideFacts::default(), SideFacts::default()];
@@ -313,13 +342,7 @@ fn key_of(data: &Data, filter: &ItemSetFilter, item: &Item) -> Key {
         for affix in item.affixes(side) {
             hold(data, filter, &metas, &mut sides[side.index()], affix);
             if affix.fractured {
-                hold(
-                    data,
-                    filter,
-                    &metas,
-                    &mut fractured[side.index()],
-                    affix,
-                );
+                hold(data, filter, &metas, &mut fractured[side.index()], affix);
             }
         }
     }
@@ -368,32 +391,6 @@ fn hold(
     }
 }
 
-/// One policy move over one class, exactly: the live outcome classes and the per-stage masses.
-///
-/// The move is the policy's, read from the class's witness; a policy that is a function of the class
-/// (the contract in the module docs) makes this the class's move rather than the witness's.
-pub fn lump_step<P: Policy + ?Sized>(
-    data: &Data,
-    filter: &ItemSetFilter,
-    class: &Class,
-    policy: &P,
-) -> Result<ClassStep, LumpError> {
-    let action = policy.step(data, class.witness()).action;
-    step_action(data, filter, class, action)
-}
-
-/// One currency applied to one class: the class-level distribution `lump_step` would give a policy
-/// that chose `currency`, without a policy value. This is the "class and currency in, classes and
-/// Fractions out" step; `lump_step` is the same thing driven by a decision.
-pub fn lump_apply(
-    data: &Data,
-    filter: &ItemSetFilter,
-    class: &Class,
-    currency: CurrencyId,
-) -> Result<ClassStep, LumpError> {
-    step_action(data, filter, class, Action::Apply(currency))
-}
-
 /// One move, already decided: the currency's exact distribution folded by class, or the terminal's
 /// single stage.
 fn step_action(
@@ -406,6 +403,19 @@ fn step_action(
         let stage = match action {
             Action::Reset => Stage::Reset,
             Action::Stop => Stage::Stop,
+            Action::Done => {
+                let stage = class.stage(data, filter);
+                // The same contract `Machine` asserts: `Done` means the item holds the goal, so a
+                // custom policy that says `Done` for anything else would have its mass recorded
+                // under a live stage with no class left to carry it. Tests catch that; a release
+                // build keeps the old reading.
+                debug_assert_eq!(
+                    stage,
+                    Stage::Desired,
+                    "a policy's `Done` must name an item that holds the goal"
+                );
+                stage
+            }
             _ => class.stage(data, filter),
         };
         return Ok(ClassStep {
@@ -434,9 +444,7 @@ fn step_action(
         let stage = Stage::classify(data, filter, &outcome.item);
         add(&mut stages, stage, p)?;
         if stage == Stage::Desired {
-            absorbed = absorbed
-                .checked_add(p)
-                .ok_or(MachineError::Overflow)?;
+            absorbed = absorbed.checked_add(p).ok_or(MachineError::Overflow)?;
         } else {
             // Build the key first and the class (with its witness item) only for a key that is new:
             // the same outcome class shows up many times in one set, and cloning the item each time
@@ -483,7 +491,7 @@ pub struct Lumped<'d> {
     /// An alteration's outcome distribution, keyed by the class its clear leaves. Every class with
     /// the same cleared class rerolls the same way, so one computation stands for all of them — the
     /// difference is exactly what makes the concrete machine explode.
-    alterations: BTreeMap<Key, ClassStep>,
+    alterations: BTreeMap<Cleared, ClassStep>,
 }
 
 impl<'d> Lumped<'d> {
@@ -504,6 +512,13 @@ impl<'d> Lumped<'d> {
     /// The live classes and their shares after the last step.
     pub fn state(&self) -> &BTreeMap<Class, Fraction> {
         &self.state
+    }
+
+    /// Add `mass` on `item`'s class to the live state. [`Lumped::new`] is the one-item case; a run
+    /// that starts from a distribution builds it with one call per item.
+    pub fn insert(&mut self, item: Item, mass: Fraction) -> Result<(), MachineError> {
+        let class = Class::of(self.data, &self.filter, &item);
+        add(&mut self.state, class, mass)
     }
 
     /// Every depth taken so far.
@@ -541,20 +556,31 @@ impl<'d> Lumped<'d> {
                 add(&mut stages, *stage, scaled)?;
             }
             absorbed = absorbed
-                .checked_add(mass.checked_mul(one.absorbed).ok_or(MachineError::Overflow)?)
+                .checked_add(
+                    mass.checked_mul(one.absorbed)
+                        .ok_or(MachineError::Overflow)?,
+                )
                 .ok_or(MachineError::Overflow)?;
         }
+        let classes: Vec<(Class, Fraction)> = next
+            .iter()
+            .map(|(class, p)| (class.clone(), *p))
+            .collect();
+        // The sums a report reads are taken here, once, where an overflow can still be refused as
+        // the step's error instead of panicking in `Depth::live` or `Depth::mass`.
+        let live = classes
+            .iter()
+            .try_fold(Fraction::ZERO, |acc, (_, p)| acc.checked_add(*p))
+            .ok_or(MachineError::Overflow)?;
         self.state = next;
         let index = self.history.len() + 1;
         self.history.push(Depth {
             index,
-            classes: self
-                .state
-                .iter()
-                .map(|(class, p)| (class.clone(), *p))
-                .collect(),
-            chances: stages.into_iter().collect(),
+            classes,
+            chances: stages.iter().map(|(stage, p)| (*stage, *p)).collect(),
             absorbed,
+            live,
+            totals: stages,
         });
         Ok(self.history.last().expect("just pushed"))
     }

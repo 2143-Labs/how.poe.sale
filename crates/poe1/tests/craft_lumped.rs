@@ -48,9 +48,18 @@ fn sum<'a>(chances: impl IntoIterator<Item = &'a Fraction>) -> Fraction {
 }
 
 /// `a >= b`, exactly. `Fraction`'s derived `Ord` orders the numerator and denominator fields, not
-/// the values (1/3 sorts after 1/2), so a curve has to cross-multiply to be read at all.
+/// the values (1/3 sorts after 1/2), so a curve has to cross-multiply to be read at all. The
+/// products reach about 1.6 × 10³⁸ here, so they are checked rather than left to wrap.
 fn at_least(a: Fraction, b: Fraction) -> bool {
-    a.num() * b.den() >= b.num() * a.den()
+    let left = a
+        .num()
+        .checked_mul(b.den())
+        .expect("the cross-product of two loop masses fits in u128");
+    let right = b
+        .num()
+        .checked_mul(a.den())
+        .expect("the cross-product of two loop masses fits in u128");
+    left >= right
 }
 
 /// One lumped step from the normal shield is the concrete step folded by class, exactly.
@@ -152,9 +161,9 @@ fn the_coarse_state_is_far_smaller_than_the_concrete_one() {
 }
 
 /// Three lumped depths, bounded in time, with every step's mass accounted for: the per-stage masses
-/// sum to one, the live classes plus the absorbed mass plus the two policy terminals are the same
-/// one, and the absorbed mass accumulated over depths never decreases — the double-counting fix,
-/// since absorbed mass leaves the live state and cannot be recorded twice.
+/// cover exactly what the step accounted for, and that mass plus everything already gone is one, so
+/// no mass is counted twice — the double-counting fix, since absorbed mass leaves the live state
+/// and cannot appear in a later depth.
 #[test]
 fn three_lumped_steps_account_for_their_mass() {
     let data = poe1::test_data();
@@ -207,7 +216,11 @@ fn three_lumped_steps_account_for_their_mass() {
             "depth {}: `absorbed` is the Desired mass",
             depth.index
         );
-        assert!(!depth.classes.is_empty(), "depth {} leaves work", depth.index);
+        assert!(
+            !depth.classes.is_empty(),
+            "depth {} leaves work",
+            depth.index
+        );
 
         println!(
             "depth {}: {} live classes, live {}, absorbed {}, terminal {}",
@@ -217,15 +230,10 @@ fn three_lumped_steps_account_for_their_mass() {
             depth.absorbed,
             terminals
         );
-        let next = accumulated
-            .checked_add(depth.absorbed)
-            .expect("exact");
-        assert!(
-            at_least(next, accumulated),
-            "depth {}: absorbed mass never decreases, it left the live state for good",
-            depth.index
-        );
-        accumulated = next;
+        // The goal's mass only ever accumulates: `absorbed` left the live state, so adding it to a
+        // running total cannot decrease that total. There is nothing to assert there; the
+        // conservation checks above are what catch a double count.
+        accumulated = accumulated.checked_add(depth.absorbed).expect("exact");
         gone = gone
             .checked_add(depth.absorbed)
             .expect("exact")

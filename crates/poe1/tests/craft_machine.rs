@@ -57,10 +57,7 @@ fn mod_of(data: &Data, item: &Item, filter: &ItemSetFilter, side: Side, tier: Ti
 
 /// The mass one stage holds in a summary.
 fn summary_of(chances: &[(Stage, Fraction)], stage: Stage) -> Fraction {
-    sum(chances
-        .iter()
-        .filter(|(s, _)| *s == stage)
-        .map(|(_, p)| p))
+    sum(chances.iter().filter(|(s, _)| *s == stage).map(|(_, p)| p))
 }
 
 /// The exact sum of a list of chances.
@@ -81,10 +78,7 @@ fn a_normal_shield_is_spare_and_is_transmuted() {
         "a normal shield has no explicit modifiers"
     );
     let step = LoopPolicy::new(&filter).step(data, &item);
-    assert_eq!(
-        step.action,
-        Action::Apply(CurrencyId::TRANSMUTATION)
-    );
+    assert_eq!(step.action, Action::Apply(CurrencyId::TRANSMUTATION));
     assert!(!step.reason.is_empty());
 }
 
@@ -98,10 +92,7 @@ fn a_magic_item_with_a_good_prefix_is_augmented() {
     magic.prefixes.push(Affix::new(good));
     assert_eq!(Stage::classify(data, &filter, &magic), Stage::GoodPrefix);
     let step = LoopPolicy::new(&filter).step(data, &magic);
-    assert_eq!(
-        step.action,
-        Action::Apply(CurrencyId::AUGMENTATION)
-    );
+    assert_eq!(step.action, Action::Apply(CurrencyId::AUGMENTATION));
 }
 
 #[test]
@@ -139,8 +130,10 @@ fn one_transmutation_step_puts_the_goal_in_the_distribution() {
         "one branch draws a prefix half the time, the other always"
     );
     assert!(
-        snapshot.state.iter().all(|(item, _)| Stage::classify(data, &filter, item)
-            != Stage::Desired),
+        snapshot
+            .state
+            .iter()
+            .all(|(item, _)| Stage::classify(data, &filter, item) != Stage::Desired),
         "a desired outcome is absorbed into the summary, not left live"
     );
 
@@ -339,6 +332,31 @@ fn two_policies_give_the_same_machine_two_answers() {
     );
 }
 
+/// A policy that says `Done` for an item without the goal is a defect, not a terminal: `Done` is
+/// read from the item, so the mass would be recorded under a live stage and then dropped from the
+/// state. The step asserts the two agree; a release build keeps the old reading, so this is a
+/// debug-only guard, checked in the default (debug) test run.
+#[cfg(debug_assertions)]
+#[test]
+#[should_panic(expected = "a policy's `Done` must name an item that holds the goal")]
+fn a_done_that_is_not_the_goal_is_caught() {
+    struct Premature;
+
+    impl Policy for Premature {
+        fn step(&self, _data: &Data, _item: &Item) -> Step {
+            Step {
+                action: Action::Done,
+                reason: "the policy gives up without the goal",
+            }
+        }
+    }
+
+    let data = poe1::test_data();
+    let filter = filter(&pattern(data));
+    let mut machine = Machine::new(data, filter, shield(data));
+    let _ = machine.step(&Premature);
+}
+
 /// An id the registry does not hold is an error, not a refusal. When the vocabulary was a closed
 /// enum a policy could not even name a missing currency; with ids, a misspelt or unmodelled one is
 /// reported as such instead of silently doing nothing.
@@ -393,7 +411,9 @@ fn a_registered_currency_the_loop_never_uses_is_reachable() {
     let before = rare.affixes(Side::Prefix).len() + rare.affixes(Side::Suffix).len();
     assert_eq!(before, 1, "the item starts with one modifier");
     let mut machine = Machine::new(data, filter.clone(), rare);
-    let snapshot = machine.step(&ExaltOnly).expect("a rare item with room exalts");
+    let snapshot = machine
+        .step(&ExaltOnly)
+        .expect("a rare item with room exalts");
 
     assert!(!snapshot.state.is_empty(), "the exalt distribution is live");
     for (item, _) in snapshot.state {
@@ -462,11 +482,11 @@ fn a_desired_item_is_recorded_once_not_every_step() {
     assert_eq!(machine.history().len(), 1, "only one step did anything");
 }
 
-/// A currency can produce a set with no mass at all. The old `step` looped over an empty outcome
-/// list, so the loop body never ran and the item's mass was recorded nowhere: the step "succeeded"
-/// while silently shrinking the distribution. This is the real item that reproduced it — an
-/// alteration clears the paste's modifiers, and the natural pool it then draws from is empty, so
-/// the set has `total == 0` and no outcomes. The error must name the failure instead.
+/// A currency can produce nothing at all. The old `step` looped over an empty outcome list, so the
+/// loop body never ran and the item's mass was recorded nowhere: the step "succeeded" while
+/// silently shrinking the distribution. This is the real item that reproduced it — an alteration
+/// clears the paste's modifiers, and the natural pool it then draws from is empty, so the step's
+/// set has no outcome and its total is zero. The error must name the failure instead.
 #[test]
 fn an_empty_pool_is_an_error_not_a_vanished_item() {
     let data = poe1::test_data();
@@ -497,12 +517,13 @@ fn an_empty_pool_is_an_error_not_a_vanished_item() {
     let err = machine
         .step(&AlterOnly)
         .expect_err("an empty pool is an error, not a vanished item");
-    // The exchange rate is the currency's own: a zero-total set is `Empty`, and if the currency
-    // layer refuses the empty list first this reads as `Refused`. Either way the mass is reported,
-    // not lost.
-    assert!(
-        matches!(err, MachineError::Empty("currency/alteration") | MachineError::Refused(_)),
-        "the step must name the failure: {err}"
+    // The currency layer refuses the empty list itself: `ItemOutputSet::new` gives a step that
+    // produced nothing the reason "the step produced no outcome", so the machine reports the
+    // currency's own refusal rather than its hand-built-set guard (`MachineError::Empty`).
+    assert_eq!(
+        err,
+        MachineError::Refused("the step produced no outcome"),
+        "the empty draw is refused with the currency layer's own reason"
     );
     assert_eq!(
         machine.state(),

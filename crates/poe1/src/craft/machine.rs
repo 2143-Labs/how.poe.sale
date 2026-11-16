@@ -38,8 +38,8 @@ use std::fmt;
 
 use super::{Action, CurrencyId, Policy, Stage};
 use crate::currency::{
-    Alteration, Annulment, Augmentation, Currency, Exalted, Fraction, ItemOutputSet,
-    ItemSetFilter, Regal, Scouring, Transmutation,
+    Alteration, Annulment, Augmentation, Currency, Exalted, Fraction, ItemOutputSet, ItemSetFilter,
+    Regal, Scouring, Transmutation,
 };
 use crate::data::Data;
 use crate::item::Item;
@@ -68,6 +68,12 @@ pub enum MachineError {
     UnknownCurrency(&'static str),
     /// The currency produced a set with no mass at all. Folding it would drop the item's mass
     /// without recording it anywhere, so the step reports the currency that did it instead.
+    ///
+    /// No currency in this crate can reach this: one that has nothing to draw refuses the step
+    /// itself, and `ItemOutputSet::new` and `ItemOutputSet::filtered` both refuse an empty outcome
+    /// list rather than return a zero-total set. It stays as the machine's guard against a set that
+    /// was built by hand (the unit test below does exactly that), because a set is a distribution
+    /// and an empty one silently loses the item's mass.
     Empty(&'static str),
     /// The currency's set does not sum to its declared total. Folding it would report shares that
     /// do not add up, so the set is rejected rather than normalised silently.
@@ -205,13 +211,29 @@ impl<'d> Machine<'d> {
     }
 }
 
-/// The stage a terminal move carries: the loop's own two terminals name themselves, and anything
-/// else is classified from the item (which is how `Action::Done` reads as `Desired`).
+/// The stage a terminal move carries: the loop's own two terminals name themselves, and `Done` is
+/// read from the item (which is how it reads as `Desired`).
 fn terminal_stage(data: &Data, filter: &ItemSetFilter, item: &Item, action: Action) -> Stage {
     match action {
         Action::Reset => Stage::Reset,
         Action::Stop => Stage::Stop,
-        _ => Stage::classify(data, filter, item),
+        Action::Done => {
+            let stage = Stage::classify(data, filter, item);
+            // `Done` says the item holds the goal, and the stage has to agree: an item classified
+            // into a live stage would have its mass recorded under that stage and then dropped from
+            // the state, so the step's summary would not add up. `LoopPolicy` cannot do this (it
+            // tests `holds_desired` first, like `Stage::Desired`); a custom policy can, and this is
+            // the assertion that catches it in tests while a release build keeps the behaviour.
+            debug_assert_eq!(
+                stage,
+                Stage::Desired,
+                "a policy's `Done` must name an item that holds the goal"
+            );
+            stage
+        }
+        // The step handles an applied currency before asking for a terminal's stage; classifying
+        // here is the harmless reading for a caller that asks anyway.
+        Action::Apply(_) => Stage::classify(data, filter, item),
     }
 }
 
@@ -284,7 +306,7 @@ fn add<K: Ord>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::currency::{Outcome, ItemOutputSet};
+    use crate::currency::{ItemOutputSet, Outcome};
     use crate::item::ItemSpec;
 
     fn normal_shield(data: &Data) -> Item {

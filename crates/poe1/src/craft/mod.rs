@@ -25,8 +25,8 @@
 //! # Why `Stage` is not the Markov state
 //!
 //! The live distribution is the set of items the loop can be holding, and the next draw's pool
-//! depends on which modifiers an item already holds. Four facts of the engine make two items in the
-//! same stage draw differently, so a per-stage geometric series would be wrong:
+//! depends on which modifiers an item already holds. Facts of the engine beyond the stage make two
+//! items in the same stage draw differently, so a per-stage geometric series would be wrong:
 //!
 //! - Regal's group exclusion: a draw may not repeat a modifier group the item already holds
 //!   (`apply::candidates` filters those out), so a magic and a rare `GoodPair` can reach different
@@ -34,9 +34,9 @@
 //! - Rarity and room: a magic and a rare `GoodPair` have different limits for their rarity (one
 //!   prefix and one suffix against three of each), so the same stage has a different number of open
 //!   slots and therefore a different next draw.
-//! - The metamod bits: `MaxModRequiredLevelOverride` alone cuts the pool from 204 modifiers to 58
-//!   by capping the level a draw may use, and the lock and Cannot Roll bits change what may be
-//!   drawn or removed.
+//! - The metamod bits: `MaxModRequiredLevelOverride` caps the level a draw may use at 28
+//!   (`apply::candidates`), which narrows the pool to the modifiers such an item can roll, while
+//!   the lock and Cannot Roll bits change what may be drawn or removed.
 //! - Fractured or locked affixes survive a clear, so two items in the same stage can differ in what
 //!   a scour or an alteration leaves behind.
 //!
@@ -93,13 +93,6 @@ pub enum Action {
     Reset,
     /// The loop must not continue; hand the item to its owner.
     Stop,
-}
-
-impl Action {
-    /// Whether this action applies a currency, i.e. whether it changes the item.
-    pub fn applies(self) -> bool {
-        matches!(self, Action::Apply(_))
-    }
 }
 
 /// One move and the reason for it.
