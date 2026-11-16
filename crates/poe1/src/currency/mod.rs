@@ -11,6 +11,7 @@ pub mod filter;
 pub mod fraction;
 
 mod alteration;
+mod annulment;
 mod augmentation;
 mod exalted;
 mod regal;
@@ -18,6 +19,7 @@ mod scouring;
 mod transmutation;
 
 pub use alteration::Alteration;
+pub use annulment::Annulment;
 pub use augmentation::Augmentation;
 pub use exalted::Exalted;
 pub use filter::{AbstractMod, Accept, ItemSetFilter, ModSelector, Tier};

@@ -260,7 +260,7 @@ fn two_policies_give_the_same_machine_two_answers() {
     let pattern = pattern(data);
     let filter = filter(&pattern);
     // A magic shield already holding a good prefix: the loop augments it, a reroll starts over.
-    let mut magic: ItemSpec = serde_json::from_str(
+    let magic: ItemSpec = serde_json::from_str(
         r#"{
             "base": "Supreme Spiked Shield",
             "itemLevel": 87,
@@ -270,7 +270,7 @@ fn two_policies_give_the_same_machine_two_answers() {
         }"#,
     )
     .expect("spec");
-    let item = Item::from_spec(data, &mut magic).expect("the item");
+    let item = Item::from_spec(data, &magic).expect("the item");
 
     let mass = |chances: &[(Stage, Fraction)], stage: Stage| {
         chances

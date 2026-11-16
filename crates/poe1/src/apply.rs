@@ -1046,6 +1046,23 @@ pub(crate) fn clear_changeable(data: &Data, protection: Protection, item: &mut I
     before - (item.prefixes.len() + item.suffixes.len())
 }
 
+/// The affix positions `protection` lets a removal take, prefixes before suffixes but otherwise in
+/// item order: the predicate is `Guard::can_change`, so a currency that removes one modifier at
+/// random cannot disagree with `Op::RemoveRandom` about fractures or about a lock the method
+/// respects.
+pub(crate) fn removable(data: &Data, protection: Protection, item: &Item) -> Vec<(Side, usize)> {
+    let guard = guard_for_protection(data, protection, item);
+    let mut positions = Vec::new();
+    for side in Side::BOTH {
+        for (i, a) in item.affixes(side).iter().enumerate() {
+            if guard.can_change(data, side, a) {
+                positions.push((side, i));
+            }
+        }
+    }
+    positions
+}
+
 fn guard_for_protection(data: &Data, p: Protection, item: &Item) -> Guard {
     let locks = p.locks == Policy::Respect;
     let tags = p.cannot_roll == Policy::Respect;
