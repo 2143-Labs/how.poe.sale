@@ -7,6 +7,7 @@
 
 use crate::data::{Data, Side};
 use crate::item::{Affix, Item};
+use crate::pattern::{Grade, Pattern};
 
 /// The three buckets a modifier falls into for a given goal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -171,6 +172,36 @@ pub struct ItemSetFilter {
 
 impl ItemSetFilter {
     pub fn new(desired: Vec<ModSelector>, good: Vec<ModSelector>, accept: Accept) -> ItemSetFilter {
+        ItemSetFilter {
+            desired,
+            good,
+            accept,
+        }
+    }
+
+    /// The same filter, taken from a pattern's classes: its `desired` classes become the desired
+    /// selectors and its `good` ones the good selectors, so a goal is written once, in the pattern
+    /// language the rest of the repository already speaks, and the step filter reads it.
+    pub fn from_pattern(pattern: &Pattern, accept: Accept) -> ItemSetFilter {
+        let mut desired = Vec::new();
+        let mut good = Vec::new();
+        for class in &pattern.classes {
+            let target = if matches!(class.grade, Grade::Desired) {
+                &mut desired
+            } else if matches!(class.grade, Grade::Good) {
+                &mut good
+            } else {
+                continue;
+            };
+            for (m, or_better, min) in class.mods() {
+                target.push(ModSelector {
+                    side: class.side,
+                    m,
+                    or_better,
+                    min,
+                });
+            }
+        }
         ItemSetFilter {
             desired,
             good,

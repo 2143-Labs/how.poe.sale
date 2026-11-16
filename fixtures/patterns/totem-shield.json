@@ -1,0 +1,171 @@
+{
+  "name": "totem-shield",
+  "item": {
+    "bases": [
+      "Supreme Spiked Shield"
+    ],
+    "itemLevelMin": 87,
+    "rarity": "rare",
+    "influences": [
+      "shaper"
+    ],
+    "corrupted": false
+  },
+  "implicits": [],
+  "classes": [
+    {
+      "id": "desired-prefix",
+      "label": "Desired Prefix (+1 to Summoned Totems)",
+      "side": "prefix",
+      "grade": "desired",
+      "matchers": [
+        {
+          "mod": "MaximumTotemUber1"
+        }
+      ]
+    },
+    {
+      "id": "good-prefix",
+      "label": "Good Prefix (T1/T2 life, T1 mana, T1/T2 block)",
+      "side": "prefix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "IncreasedLife10"
+        },
+        {
+          "mod": "IncreasedLife9"
+        },
+        {
+          "mod": "IncreasedMana12"
+        },
+        {
+          "mod": "LocalIncreasedBlockPercentage7"
+        },
+        {
+          "mod": "LocalIncreasedBlockPercentage6"
+        }
+      ]
+    },
+    {
+      "id": "any-other-prefix",
+      "label": "Any Other Prefix",
+      "side": "prefix",
+      "grade": "neutral",
+      "matchers": [
+        {
+          "any": true
+        }
+      ]
+    },
+    {
+      "id": "good-suffix",
+      "label": "Good Suffix (resistances, crit, block recovery, max res, ailment, suppression)",
+      "side": "suffix",
+      "grade": "good",
+      "matchers": [
+        {
+          "mod": "AllResistances6"
+        },
+        {
+          "mod": "AllResistances5"
+        },
+        {
+          "mod": "FireResist8"
+        },
+        {
+          "mod": "FireResist7"
+        },
+        {
+          "mod": "ColdResist8"
+        },
+        {
+          "mod": "ColdResist7"
+        },
+        {
+          "mod": "LightningResist8"
+        },
+        {
+          "mod": "LightningResist7"
+        },
+        {
+          "mod": "SpellCriticalStrikeChance6_"
+        },
+        {
+          "mod": "SpellCriticalStrikeChance5"
+        },
+        {
+          "mod": "RecoverEnergyShieldPercentOnBlockUber1"
+        },
+        {
+          "mod": "RecoverLifePercentOnBlockUber1_"
+        },
+        {
+          "mod": "MaximumFireResist3"
+        },
+        {
+          "mod": "MaximumColdResist3"
+        },
+        {
+          "mod": "MaximumLightningResist3"
+        },
+        {
+          "mod": "MaximumChaosResist3"
+        },
+        {
+          "mod": "MaximumAllResist2"
+        },
+        {
+          "mod": "ChanceToAvoidElementalStatusAilments4"
+        },
+        {
+          "mod": "ChanceToSuppressSpellsHigh5___"
+        },
+        {
+          "mod": "ChanceToSuppressSpellsHigh4_"
+        }
+      ]
+    },
+    {
+      "id": "any-other-suffix",
+      "label": "Any Other Suffix",
+      "side": "suffix",
+      "grade": "neutral",
+      "matchers": [
+        {
+          "any": true
+        }
+      ]
+    }
+  ],
+  "prefixes": [
+    [
+      "desired-prefix"
+    ],
+    [
+      "good-prefix",
+      "any-other-prefix"
+    ],
+    [
+      "any-other-prefix"
+    ]
+  ],
+  "suffixes": [
+    [
+      "good-suffix"
+    ],
+    [
+      "good-suffix",
+      "any-other-suffix"
+    ],
+    [
+      "any-other-suffix"
+    ]
+  ],
+  "notes": [
+    "The grades are the owner's three buckets: 'desired' is the totem prefix, 'good' is the rest of the list, everything else is 'any'.",
+    "The craft loop crosses rarities (a magic item from the transmute, a rare one from the regal), so the step filter reads only the classes and their grades; the slots describe the finished rare item.",
+    "Tier numbers follow the data: the top tier of a family is the one with the highest required level. 'T1/T2 life' is IncreasedLife10 and IncreasedLife9, so it is exactly the two highest tiers.",
+    "Slot one is the goal itself: the totem prefix must be there. A catch-all class in a slot would let any item satisfy the pattern, which is a step filter's job, not a goal's."
+  ]
+}

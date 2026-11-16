@@ -271,6 +271,18 @@ pub struct Pattern {
     pub notes: Vec<String>,
 }
 
+impl Class {
+    /// The modifiers this class names, with the `or_better` flag and value floors that came with
+    /// them. Only a `Mod` matcher has an id: `Crafted` and `Any` are categories, not modifiers, so
+    /// they are not listed here.
+    pub fn mods(&self) -> impl Iterator<Item = (u32, bool, Option<Vec<Option<i32>>>)> + '_ {
+        self.matchers.iter().filter_map(|m| match m {
+            Matcher::Mod { m, min, or_better } => Some((*m, *or_better, min.clone())),
+            _ => None,
+        })
+    }
+}
+
 impl Pattern {
     pub fn compile(data: &Data, spec: &PatternSpec) -> Result<Pattern, PatternError> {
         let name = &spec.name;

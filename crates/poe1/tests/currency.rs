@@ -265,3 +265,41 @@ fn the_totem_shield_chances() {
         Fraction::new(14_600, 96_475).unwrap()
     );
 }
+
+/// The goal is written once, in the pattern language, and the step filter reads it from there —
+/// no second vocabulary for "desired / good / any".
+#[test]
+fn the_goal_comes_from_the_pattern() {
+    let data = poe1::test_data();
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/patterns/totem-shield.json"
+    );
+    let spec: poe1::pattern::PatternSpec =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("the pattern fixture"))
+            .expect("pattern spec");
+    let pattern = poe1::pattern::Pattern::compile(data, &spec).expect("compiles");
+    let filter = ItemSetFilter::from_pattern(&pattern, Accept::DesiredOrGoodBothSides);
+
+    let mut magic = shield(data);
+    magic.rarity = Rarity::Magic;
+    let share = |side: Side, tier: Tier| {
+        side_chance(data, &magic, side, |m, _| {
+            filter.tier_of_mod(data, m) == tier
+        })
+        .expect("a side with a pool")
+    };
+    assert_eq!(
+        share(Side::Prefix, Tier::Desired),
+        Fraction::new(800, 64_800).unwrap()
+    );
+    assert_eq!(
+        share(Side::Prefix, Tier::Good),
+        Fraction::new(4_000, 64_800).unwrap()
+    );
+    assert_eq!(share(Side::Suffix, Tier::Desired), Fraction::ZERO);
+    assert_eq!(
+        share(Side::Suffix, Tier::Good),
+        Fraction::new(14_600, 96_475).unwrap()
+    );
+}
