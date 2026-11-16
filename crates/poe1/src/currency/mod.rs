@@ -13,6 +13,7 @@ pub mod fraction;
 mod alteration;
 mod annulment;
 mod augmentation;
+mod essence;
 mod exalted;
 mod regal;
 mod scouring;
@@ -21,6 +22,7 @@ mod transmutation;
 pub use alteration::Alteration;
 pub use annulment::Annulment;
 pub use augmentation::Augmentation;
+pub use essence::Essence;
 pub use exalted::Exalted;
 pub use filter::{AbstractMod, Accept, ItemSetFilter, ModSelector, Tier};
 pub use fraction::Fraction;
@@ -46,8 +48,10 @@ pub const REMOVAL_PROTECTION: Protection = Protection {
 
 /// A currency, in one struct and one file.
 pub trait Currency {
-    /// The method id the rules use, e.g. `currency/alteration`.
-    fn id(&self) -> &'static str;
+    /// The method id the rules use, e.g. `currency/alteration`. Borrowed from `self` rather than
+    /// `'static` because an essence is parameterised by which essence it is, and its id
+    /// (`essence/<name>`) is the one the generator declares for that essence.
+    fn id(&self) -> &str;
 
     /// One step: every item this currency can produce from `item`, with exact chances, after the
     /// optional filter has been applied to the set.
@@ -87,12 +91,22 @@ impl ItemOutputSet {
 
     /// Builds a set from weighted results, folding items that came out the same so the set is
     /// canonical and their weights add up.
-    pub fn new(data: &Data, weighted: Vec<Weighted>) -> ItemOutputSet {
+    /// `before` is the item the step was applied to: a result is settled against it, which drops
+    /// the display-only figures and the foresight the step invalidated (`apply::settle`, the rule
+    /// the op path already uses). A step that produced nothing is refused rather than returned as
+    /// a zero-total set — a set is a distribution, and an empty one silently loses the item's mass.
+    pub fn new(data: &Data, before: &Item, weighted: Vec<Weighted>) -> ItemOutputSet {
+        if weighted.is_empty() {
+            return ItemOutputSet::refused("the step produced no outcome");
+        }
         let mut folded: BTreeMap<Item, (u128, Option<(Side, u32)>)> = BTreeMap::new();
         for (mut item, weight, added) in weighted {
             // The engine's one form: a fixed roll is filled in, so two results that are the same
             // item fold together and compare equal to what the op-declared path produces.
             item.canonical(data);
+            // Display figures are a function of the rest of the item, and foresight is lost by any
+            // modification: both are settled here, once, for every currency.
+            crate::apply::settle(before, &mut item, false);
             let slot = folded.entry(item).or_insert((0, added));
             slot.0 = slot.0.saturating_add(weight);
         }
@@ -177,7 +191,11 @@ impl ItemOutputSet {
 ///
 /// Branch `i`'s results are multiplied by `branch_i × Π_{j≠i} total_j`, so every branch shares one
 /// denominator and the total is `Π_j total_j × Σ branch_j`. `None` if that would overflow.
-pub fn combine(data: &Data, branches: Vec<(u128, Vec<Weighted>)>) -> Option<ItemOutputSet> {
+pub fn combine(
+    data: &Data,
+    before: &Item,
+    branches: Vec<(u128, Vec<Weighted>)>,
+) -> Option<ItemOutputSet> {
     let totals: Vec<u128> = branches
         .iter()
         .map(|(_, results)| results.iter().map(|&(_, w, _)| w).sum())
@@ -194,7 +212,7 @@ pub fn combine(data: &Data, branches: Vec<(u128, Vec<Weighted>)>) -> Option<Item
             weighted.push((item, weight.checked_mul(scale)?, added));
         }
     }
-    Some(ItemOutputSet::new(data, weighted))
+    Some(ItemOutputSet::new(data, before, weighted))
 }
 
 /// The pools one random add reaches, one entry per side that can take a modifier, with the exact

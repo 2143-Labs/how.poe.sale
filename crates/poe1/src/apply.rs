@@ -309,8 +309,10 @@ fn group_conflict(data: &Data, item: &Item, m: u32) -> Option<String> {
         .map(|&g| format!("the item already has a {} modifier", data.group(g)))
 }
 
-/// The essence's modifier for the item's class.
-fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
+/// The essence's modifier for the item's class. Public in the crate so a currency written as code
+/// (`essence/*`) asks the same question the `essenceFits` requirement and `Op::AddEssence` ask,
+/// rather than looking the class/mod table up a second way.
+pub(crate) fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
     let class = data.base_at(item.base).class;
     data.essences[data.essence_by_name(essence)? as usize]
         .mods
@@ -1046,6 +1048,33 @@ pub(crate) fn clear_changeable(data: &Data, protection: Protection, item: &mut I
     before - (item.prefixes.len() + item.suffixes.len())
 }
 
+/// Why `m` cannot go on the item: a mod of another base domain, no room on its side, a group the
+/// item has, or no crafted room for a crafted modifier. Public in the crate so a currency written
+/// as code (`essence/*`) refuses for exactly the reasons `Op::AddMod` and `Op::AddEssence` do.
+pub(crate) fn cannot_place(data: &Data, item: &Item, m: u32) -> Option<String> {
+    let md = data.mod_at(m);
+    let side = md.side?;
+    let own_domain = matches!(
+        md.domain.as_str(),
+        "item" | "misc" | "abyss_jewel" | "flask" | "tincture"
+    );
+    if own_domain && md.domain != data.base_at(item.base).domain.repoe() {
+        return Some(format!(
+            "{} cannot go on a {}",
+            md.id,
+            item.class(data).name
+        ));
+    }
+    if room(data, item, side) == 0 {
+        return Some(open_text(Some(side)).into());
+    }
+    if let Some(reason) = group_conflict(data, item, m) {
+        return Some(reason);
+    }
+    (md.kind == ModKind::Crafted && item.crafted_count(data) >= item.crafted_limit(data))
+        .then(|| "the item already has as many crafted modifiers as it can hold".into())
+}
+
 /// The affix positions `protection` lets a removal take, prefixes before suffixes but otherwise in
 /// item order: the predicate is `Guard::can_change`, so a currency that removes one modifier at
 /// random cannot disagree with `Op::RemoveRandom` about fractures or about a lock the method
@@ -1114,7 +1143,7 @@ struct Run<'a> {
 /// ability to foresee"), except under `keeps_foresight`: the 3.30 patch notes say creating an
 /// Imprint or Mirroring is no longer Modifying the item, so those steps and the imprint restore
 /// leave it alone.
-fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
+pub(crate) fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
     let fed = before.prefixes != after.prefixes
         || before.suffixes != after.suffixes
         || before.implicits != after.implicits
@@ -1907,31 +1936,9 @@ impl Run<'_> {
         }
     }
 
-    /// Why `m` cannot go on the item: a mod of another base domain, no room on its side, a
-    /// group the item has, or no crafted room for a crafted modifier.
+    /// Why `m` cannot go on the item; see the free [`cannot_place`], which is the one rule.
     fn cannot_place(&self, item: &Item, m: u32) -> Option<String> {
-        let data = self.data;
-        let md = data.mod_at(m);
-        let side = md.side?;
-        let own_domain = matches!(
-            md.domain.as_str(),
-            "item" | "misc" | "abyss_jewel" | "flask" | "tincture"
-        );
-        if own_domain && md.domain != data.base_at(item.base).domain.repoe() {
-            return Some(format!(
-                "{} cannot go on a {}",
-                md.id,
-                item.class(data).name
-            ));
-        }
-        if room(data, item, side) == 0 {
-            return Some(open_text(Some(side)).into());
-        }
-        if let Some(reason) = group_conflict(data, item, m) {
-            return Some(reason);
-        }
-        (md.kind == ModKind::Crafted && item.crafted_count(data) >= item.crafted_limit(data))
-            .then(|| "the item already has as many crafted modifiers as it can hold".into())
+        cannot_place(self.data, item, m)
     }
 
     /// The weighted pool of one implicit or enchantment kind, normalised; `level` caps mod level

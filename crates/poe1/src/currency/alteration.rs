@@ -45,7 +45,7 @@ impl Currency for Alteration<'_> {
         ) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let Some(set) = combine(data, vec![(1, one), (1, two)]) else {
+        let Some(set) = combine(data, item, vec![(1, one), (1, two)]) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         match filter {

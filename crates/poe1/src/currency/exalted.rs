@@ -38,7 +38,7 @@ impl Currency for Exalted<'_> {
         let Some(weighted) = adds(data, item, &Pool::Natural, 1, SideReq::Any) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let set = ItemOutputSet::new(data, weighted);
+        let set = ItemOutputSet::new(data, item, weighted);
         match filter {
             Some(f) => set.filtered(data, f),
             None => set,

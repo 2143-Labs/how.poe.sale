@@ -51,7 +51,7 @@ impl Currency for Scouring<'_> {
                 _ => Rarity::Rare,
             };
         }
-        let set = ItemOutputSet::new(data, vec![(scoured, 1, None)]);
+        let set = ItemOutputSet::new(data, item, vec![(scoured, 1, None)]);
         match filter {
             Some(f) => set.filtered(data, f),
             None => set,

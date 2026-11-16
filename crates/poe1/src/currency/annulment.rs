@@ -55,7 +55,7 @@ impl Currency for Annulment<'_> {
                 (it, 1, None)
             })
             .collect();
-        let set = ItemOutputSet::new(data, weighted);
+        let set = ItemOutputSet::new(data, item, weighted);
         match filter {
             Some(f) => set.filtered(data, f),
             None => set,
