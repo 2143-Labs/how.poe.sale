@@ -52,10 +52,12 @@
 
 pub mod lumped;
 pub mod machine;
+pub mod priced;
 pub mod stage;
 
 pub use lumped::{Class, Depth, LumpError, Lumped};
 pub use machine::{Machine, MachineError, Snapshot};
+pub use priced::{Move, Next, Node, Priced, PricedError, Prices, Report, Transition};
 pub use stage::Stage;
 
 use crate::currency::{ItemSetFilter, Tier};
@@ -68,7 +70,7 @@ use crate::item::Item;
 /// currency reaches the machine by being registered there. The consts below are convenience for the
 /// seven ids this crate implements today; a policy may name any registered id, and a new currency
 /// needs a registry arm rather than a change to this vocabulary.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize)]
 pub struct CurrencyId(pub &'static str);
 
 impl CurrencyId {
