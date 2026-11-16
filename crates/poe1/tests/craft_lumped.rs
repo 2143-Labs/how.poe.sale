@@ -273,7 +273,11 @@ fn equal_classes_hash_and_print_alike_whatever_their_witness() {
     let next = Class::of(data, &filter, &with("IncreasedLife9"));
     assert_ne!(best.witness(), next.witness(), "the witnesses differ");
     assert_eq!(best, next, "the classes do not");
-    assert_eq!(format!("{best}"), format!("{next}"), "identity prints alike");
+    assert_eq!(
+        format!("{best}"),
+        format!("{next}"),
+        "identity prints alike"
+    );
     let mut set = std::collections::HashSet::new();
     set.insert(best);
     set.insert(next);
