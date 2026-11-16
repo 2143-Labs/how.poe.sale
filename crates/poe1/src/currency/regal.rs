@@ -1,9 +1,9 @@
 //! Orb of Regal: a magic item becomes rare and gains one modifier (`currency/regal`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter, adds, with_rarity};
+use super::{Currency, ItemOutputSet, ItemSetFilter, add_required, with_rarity};
 use crate::data::{Category, Data, Rarity};
 use crate::item::Item;
-use crate::method::{Pool, SideReq};
+use crate::method::Pool;
 
 /// The Orb of Regal, one step.
 pub struct Regal<'d> {
@@ -46,8 +46,8 @@ impl Currency for Regal<'_> {
             return ItemOutputSet::refused("an Orb of Regal cannot be used on a flask or tincture");
         }
         let rare = with_rarity(item, Rarity::Rare);
-        let Some(weighted) = adds(data, &rare, &Pool::Natural, 1, SideReq::Any) else {
-            return ItemOutputSet::refused("the chances overflow exact arithmetic");
+        let Some(weighted) = add_required(data, &rare, &Pool::Natural) else {
+            return ItemOutputSet::refused("no modifier can roll on this item");
         };
         let set = ItemOutputSet::new(data, item, weighted);
         match filter {

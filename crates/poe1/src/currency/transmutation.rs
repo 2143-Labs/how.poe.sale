@@ -1,7 +1,7 @@
 //! Orb of Transmutation: a normal item becomes magic holding one or two modifiers, half the time
 //! each way (`currency/transmutation` in `rules/methods.json`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine, with_rarity};
+use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine, half, with_rarity};
 use crate::data::{Data, Rarity};
 use crate::item::Item;
 use crate::method::{Pool, SideReq};
@@ -40,7 +40,7 @@ impl Currency for Transmutation<'_> {
         ) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let Some(set) = combine(data, item, vec![(1, one), (1, two)]) else {
+        let Some(set) = combine(data, item, vec![(half(), one), (half(), two)]) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         match filter {

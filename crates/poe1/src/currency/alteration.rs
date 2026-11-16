@@ -1,8 +1,8 @@
 //! Orb of Alteration: rerolls a magic item into one or two fresh modifiers, half the time each way
 //! (`currency/alteration` in `rules/methods.json`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine};
 use super::REMOVAL_PROTECTION;
+use super::{Currency, ItemOutputSet, ItemSetFilter, adds, combine, half};
 use crate::apply::clear_changeable;
 use crate::data::{Data, Rarity};
 use crate::item::Item;
@@ -45,7 +45,7 @@ impl Currency for Alteration<'_> {
         ) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
-        let Some(set) = combine(data, item, vec![(1, one), (1, two)]) else {
+        let Some(set) = combine(data, item, vec![(half(), one), (half(), two)]) else {
             return ItemOutputSet::refused("the chances overflow exact arithmetic");
         };
         match filter {

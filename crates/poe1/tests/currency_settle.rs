@@ -87,11 +87,17 @@ fn a_step_clears_foresight() {
     }
 }
 
+/// `empty.refused`: using a currency on an item it has nothing to change is refused, and the
+/// currency is not consumed. The Simplex amulet allows no explicit modifiers at all
+/// (`limits [0, 0]`), so an alteration's first draw has nothing to take: the step is a refusal, not
+/// a zero-total distribution whose mass vanishes.
+///
+/// This is the other side of the dead-end rule in `currency_chain`: a *later* draw that cannot
+/// happen inside a `chance` branch keeps what the earlier draw gave the item, but the first draw is
+/// what makes the step a use of the currency.
 #[test]
 fn a_step_that_produces_nothing_is_refused_not_an_empty_set() {
     let data = poe1::test_data();
-    // The Simplex amulet paste, forced to magic: its explicit pool is empty after a reroll clears
-    // what it can, which used to come back as a zero-total distribution whose mass then vanished.
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../fixtures/text/simplex-amulet.txt"
@@ -100,10 +106,18 @@ fn a_step_that_produces_nothing_is_refused_not_an_empty_set() {
     let parsed = poe1::text::parse(data, &text).expect("parse");
     let mut item = Item::from_spec(data, &parsed.spec).expect("item");
     item.rarity = Rarity::Magic;
-    let set = poe1::currency::Alteration::new(data).apply(&item, &None);
-    match &set {
+    assert_eq!(
+        item.limits(data),
+        [0, 0],
+        "the fixture must be the item with no explicit room"
+    );
+    match poe1::currency::Alteration::new(data).apply(&item, &None) {
         poe1::currency::ItemOutputSet::Refused(why) => {
             assert!(!why.is_empty(), "a refusal says why");
+            assert!(
+                why.contains("no outcome"),
+                "the refusal must say the step produced nothing: {why}"
+            );
         }
         other => panic!(
             "a step with no outcome must be refused, got {} outcomes / total {}",

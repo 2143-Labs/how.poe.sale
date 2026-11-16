@@ -1,10 +1,10 @@
 //! Orb of Augmentation: adds one modifier to a magic item that has room
 //! (`currency/augmentation`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter, adds, has_room};
+use super::{Currency, ItemOutputSet, ItemSetFilter, add_required, has_room};
 use crate::data::{Data, Rarity, Side};
 use crate::item::Item;
-use crate::method::{Pool, SideReq};
+use crate::method::Pool;
 
 /// The Orb of Augmentation, one step.
 pub struct Augmentation<'d> {
@@ -36,8 +36,8 @@ impl Currency for Augmentation<'_> {
         if !Side::BOTH.into_iter().any(|s| has_room(data, item, s)) {
             return ItemOutputSet::refused("the item has no room for another modifier");
         }
-        let Some(weighted) = adds(data, item, &Pool::Natural, 1, SideReq::Any) else {
-            return ItemOutputSet::refused("the chances overflow exact arithmetic");
+        let Some(weighted) = add_required(data, item, &Pool::Natural) else {
+            return ItemOutputSet::refused("no modifier can roll on this item");
         };
         let set = ItemOutputSet::new(data, item, weighted);
         match filter {

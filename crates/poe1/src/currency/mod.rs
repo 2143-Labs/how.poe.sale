@@ -62,6 +62,10 @@ pub trait Currency {
 /// added if it added one.
 pub type Weighted = (Item, u128, Option<(Side, u32)>);
 
+/// One result of a chain of draws: the item, its exact chance, and the first modifier the chain
+/// added. [`Weighted`] is the same thing multiplied out to one shared denominator by [`weigh`].
+pub type Mass = (Item, Fraction, Option<(Side, u32)>);
+
 /// One result of a step: the item, its share of the step as an integer weight, and the modifier the
 /// step added, if it added one.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -95,6 +99,12 @@ impl ItemOutputSet {
     /// the display-only figures and the foresight the step invalidated (`apply::settle`, the rule
     /// the op path already uses). A step that produced nothing is refused rather than returned as
     /// a zero-total set — a set is a distribution, and an empty one silently loses the item's mass.
+    ///
+    /// A set is not a place to decide "nothing changed": a reroll's one valid outcome can be the
+    /// item it started from (an essence on an item already holding that essence's modifier), and
+    /// that is a use of the currency. The two cases `empty.refused` cares about are decided where
+    /// the step can see them: a currency whose first draw has nothing to take comes back from
+    /// [`adds`] empty, and an unconditional add with an empty pool is refused by its own currency.
     pub fn new(data: &Data, before: &Item, weighted: Vec<Weighted>) -> ItemOutputSet {
         if weighted.is_empty() {
             return ItemOutputSet::refused("the step produced no outcome");
@@ -186,33 +196,72 @@ impl ItemOutputSet {
     }
 }
 
-/// Combines the branches of one step (`0.5 · one modifier`, `0.5 · two modifiers`) into one exact
-/// set: branch `i` contributes `branch_i` of the mass, spread over its own results by weight.
+/// Combines the branches of one step (`½ · one modifier`, `½ · two modifiers`) into one exact
+/// set: branch `i` contributes `share_i` of the mass, spread over its own results by chance.
 ///
-/// Branch `i`'s results are multiplied by `branch_i × Π_{j≠i} total_j`, so every branch shares one
-/// denominator and the total is `Π_j total_j × Σ branch_j`. `None` if that would overflow.
+/// The shares are fractions, not integers, because each branch's chances already are: a chain of
+/// two draws normalises every result against *its own* state's total, so a branch's results do not
+/// share one denominator that an integer scale could multiply through. Multiplying the exact
+/// chances by the exact share and putting the sum over one denominator keeps the combination as
+/// exact as the branches. `None` if a chance, the common denominator, or the total would overflow.
 pub fn combine(
     data: &Data,
     before: &Item,
-    branches: Vec<(u128, Vec<Weighted>)>,
+    branches: Vec<(Fraction, Vec<Mass>)>,
 ) -> Option<ItemOutputSet> {
-    let totals: Vec<u128> = branches
-        .iter()
-        .map(|(_, results)| results.iter().map(|&(_, w, _)| w).sum())
-        .collect();
-    let mut weighted = Vec::new();
-    for (i, (share, results)) in branches.into_iter().enumerate() {
-        let mut scale = share;
-        for (j, total) in totals.iter().enumerate() {
-            if j != i {
-                scale = scale.checked_mul(*total)?;
-            }
-        }
-        for (item, weight, added) in results {
-            weighted.push((item, weight.checked_mul(scale)?, added));
+    let mut mass = Vec::new();
+    for (share, results) in branches {
+        for (item, chance, added) in results {
+            mass.push((item, chance.checked_mul(share)?, added));
         }
     }
-    Some(ItemOutputSet::new(data, before, weighted))
+    Some(ItemOutputSet::new(data, before, weigh(mass)?))
+}
+
+/// One of the two equal branches of a magic-item reroll (`magic.mod-count`): half the time one
+/// modifier, half the time two (`currency/transmutation`, `currency/alteration`).
+fn half() -> Fraction {
+    Fraction::new(1, 2).expect("1/2 is a fraction")
+}
+
+/// Puts exact chances over one shared denominator, so a set can hold them as integer weights
+/// without rounding: the denominator is the least common multiple of the chances' own, and each
+/// weight is its chance multiplied out to it.
+///
+/// `None` when the common denominator, a weight, or the weights' total would overflow `u128`. A
+/// caller that cannot hold the answer exactly must refuse rather than return a rounded
+/// distribution, which is why this is checked all the way through.
+pub fn weigh(mass: Vec<Mass>) -> Option<Vec<Weighted>> {
+    let mut common = 1u128;
+    for &(_, chance, _) in &mass {
+        common = lcm(common, chance.den())?;
+    }
+    let mut out = Vec::with_capacity(mass.len());
+    for (item, chance, added) in mass {
+        out.push((
+            item,
+            chance.num().checked_mul(common / chance.den())?,
+            added,
+        ));
+    }
+    // The total is the number every report divides by, so it has to fit as well as the weights.
+    out.iter()
+        .try_fold(0u128, |total, &(_, weight, _)| total.checked_add(weight))?;
+    Some(out)
+}
+
+/// The least common multiple, or `None` when it does not fit.
+fn lcm(a: u128, b: u128) -> Option<u128> {
+    (a / gcd(a, b)).checked_mul(b)
+}
+
+fn gcd(mut a: u128, mut b: u128) -> u128 {
+    while b != 0 {
+        let rest = a % b;
+        a = b;
+        b = rest;
+    }
+    a
 }
 
 /// The pools one random add reaches, one entry per side that can take a modifier, with the exact
@@ -290,25 +339,55 @@ pub fn side_chance(
     Fraction::new(kept, total)
 }
 
-/// `n` random adds in a row, as one exact set; `None` if a weight would overflow.
-pub fn adds(
-    data: &Data,
-    item: &Item,
-    pool: &Pool,
-    n: usize,
-    want: SideReq,
-) -> Option<Vec<Weighted>> {
-    let mut acc = vec![(item.clone(), 1u128, None)];
-    for _ in 0..n {
-        let mut next = Vec::new();
-        for (it, w, first) in acc {
-            for (result, w2, added) in one_add(data, &it, pool, want) {
-                next.push((result, w.checked_mul(w2)?, first.or(added)));
+/// `n` random adds in a row, as exact chances. `None` if a chance would overflow.
+///
+/// Each draw is normalised against the state it is drawn on: a result of that draw keeps
+/// `weight / that state's total`, because the next draw's pool depends on what was just added, so
+/// different states have different totals. Multiplying raw weights across draws is only correct
+/// when every first-draw result leaves the same second-draw total, which is not true in general.
+///
+/// The first draw must happen: a step with nothing to take it has drawn no modifier, which is a
+/// refusal (claim `empty.refused`) — an empty vector, which [`combine`] turns into a refusal.
+///
+/// A *later* draw with nothing to take leaves the item as it is and the draws after it still run:
+/// that is what the op path does inside a `chance` branch (`currency/transmutation`,
+/// `currency/alteration`), where a dead end is a conditional no-op and not a lost path — an
+/// alteration on a magic item whose free side has no room keeps what the first draw gave it.
+///
+/// The reported modifier is the *first* one added; the later ones are the draws this chain exists
+/// to count.
+pub fn adds(data: &Data, item: &Item, pool: &Pool, n: usize, want: SideReq) -> Option<Vec<Mass>> {
+    let mut acc: Vec<Mass> = vec![(item.clone(), Fraction::ONE, None)];
+    for draw in 0..n {
+        let mut next: Vec<Mass> = Vec::new();
+        for (state, chance, first) in acc {
+            let branches = one_add(data, &state, pool, want);
+            if branches.is_empty() {
+                if draw == 0 {
+                    // Nothing at all can be drawn, so the currency has produced no modifier.
+                    return Some(Vec::new());
+                }
+                next.push((state, chance, first));
+                continue;
+            }
+            let total: u128 = branches.iter().map(|&(_, weight, _)| weight).sum();
+            for (result, weight, added) in branches {
+                let share = Fraction::new(weight, total)?;
+                next.push((result, chance.checked_mul(share)?, first.or(added)));
             }
         }
         acc = next;
     }
     Some(acc)
+}
+
+/// One add that cannot be skipped, for the currencies whose `addRandom` is not inside a `chance`
+/// branch (`currency/augmentation`, `-exalted`, `-regal`): an empty pool there refuses the method
+/// rather than adding nothing, so an item with room but nothing to draw yields `None` and the
+/// caller refuses with the reason.
+fn add_required(data: &Data, item: &Item, pool: &Pool) -> Option<Vec<Weighted>> {
+    let drawn = one_add(data, item, pool, SideReq::Any);
+    (!drawn.is_empty()).then_some(drawn)
 }
 
 /// The item with its rarity changed, leaving the affixes alone.
