@@ -8,10 +8,20 @@
 use std::collections::HashMap;
 
 pub mod alteration;
+pub mod annulment;
+pub mod augmentation;
+pub mod exalted;
+pub mod regal;
+pub mod scouring;
 pub mod transmutation;
 
 pub use crate::pool::{Mass, Weighted};
 pub use alteration::Alteration;
+pub use annulment::Annulment;
+pub use augmentation::Augmentation;
+pub use exalted::Exalted;
+pub use regal::Regal;
+pub use scouring::Scouring;
 pub use transmutation::Transmutation;
 
 use crate::data::Data;
@@ -213,6 +223,11 @@ pub fn registry<'d>(data: &'d Data, id: &str) -> Option<Box<dyn Currency + 'd>> 
     match id {
         "currency/transmutation" => Some(Box::new(Transmutation::new(data))),
         "currency/alteration" => Some(Box::new(Alteration::new(data))),
+        "currency/augmentation" => Some(Box::new(Augmentation::new(data))),
+        "currency/regal" => Some(Box::new(Regal::new(data))),
+        "currency/exalted" => Some(Box::new(Exalted::new(data))),
+        "currency/scouring" => Some(Box::new(Scouring::new(data))),
+        "currency/annulment" => Some(Box::new(Annulment::new(data))),
         _ => None,
     }
 }
