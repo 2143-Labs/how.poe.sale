@@ -4,6 +4,7 @@
 //! names come out of it exactly, one orb's step is exact, and nothing can roll past its side's room
 //! or repeat a modifier family.
 
+use simple::craft::{LoopPolicy, Machine, Stage};
 use simple::currency::{ItemOutputSet, registry};
 use simple::data::data;
 use simple::filter::{Accept, ItemSetFilter};
@@ -293,4 +294,55 @@ fn the_target_needs_the_totem_prefix_and_two_good_suffixes() {
     // A magic item never reaches it, whatever it holds.
     let magic = item_of(Rarity::Magic, &["MaximumTotemUber1"], &["AllResistances6"]);
     assert!(!target.reached(&filter, &magic));
+}
+
+/// The machine's row for one step, by stage.
+fn row(machine: &simple::craft::Machine<'_>) -> Vec<(simple::craft::Stage, Fraction)> {
+    machine.history().last().expect("a step was taken").clone()
+}
+
+fn mass(row: &[(simple::craft::Stage, Fraction)], stage: simple::craft::Stage) -> Fraction {
+    row.iter()
+        .find(|(label, _)| *label == stage)
+        .map(|(_, mass)| *mass)
+        .unwrap_or(Fraction::ZERO)
+}
+
+/// 3, again, through the machine: the first step from a normal shield is one transmutation, and it
+/// puts exactly 1/108 of the mass in the desired stage.
+#[test]
+fn the_first_machine_step_is_one_transmutation() {
+    let data = data();
+    let filter = shield_goal();
+    let target = Target::from_data(data);
+    let mut machine = Machine::new(data, &filter, &target);
+    machine.step(&LoopPolicy::new()).unwrap();
+
+    assert_eq!(machine.history().len(), 1);
+    let first = row(&machine);
+    assert_eq!(
+        mass(&first, Stage::Desired),
+        Fraction::new(1, 108).unwrap(),
+        "the totem prefix, one step in"
+    );
+    // One step is a whole chance: nothing is absorbed and nothing is dropped yet.
+    let whole = first
+        .iter()
+        .try_fold(Fraction::ZERO, |sum, &(_, mass)| sum.checked_add(mass))
+        .unwrap();
+    assert_eq!(whole, Fraction::ONE);
+    assert_eq!(machine.goal(), Fraction::ZERO);
+
+    // A normal item has two modifiers at most, so every outcome is magic with one or two.
+    assert!(
+        machine
+            .live()
+            .iter()
+            .all(|(item, _)| item.rarity == Rarity::Magic && item.explicits() <= 2)
+    );
+    // The desired stage really is the totem prefix, not a coincidence of labels.
+    assert!(machine.live().iter().all(|(item, _)| {
+        (Stage::classify(&filter, item) == Stage::Desired)
+            == item.affixes(Side::Prefix).iter().any(|a| a.m == totem())
+    }));
 }
