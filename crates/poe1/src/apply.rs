@@ -418,6 +418,32 @@ pub fn draw_weights(
     candidates(data, item, pool, side, ignore_limits, ignore_groups, true)
 }
 
+/// The mods of one implicit or enchantment kind a draw can take, as exact integer weights:
+/// `spawn × generation percent`, with each mod admitted exactly as `kind_pool` admits it —
+/// `level` caps the mod level at the item level, `extra` is the caller's own filter, and a zero
+/// weight is dropped.
+///
+/// This is `kind_pool` before normalisation, held as `u128` so a caller that must keep chances
+/// exactly (the per-currency model) divides by the total itself instead of accepting an `f64`
+/// rounding.
+pub(crate) fn kind_weights(
+    data: &Data,
+    item: &Item,
+    kind: ModKind,
+    level: bool,
+    extra: impl Fn(&ModData) -> bool,
+) -> Vec<(u32, u128)> {
+    let tags = item.tags(data);
+    data.mods_of_kind(kind)
+        .iter()
+        .filter_map(|&i| {
+            let m = data.mod_at(i);
+            let w = pool::weight_exact(m, &tags);
+            ((!level || m.level <= item.item_level) && extra(m) && w > 0).then_some((i, w))
+        })
+        .collect()
+}
+
 /// The pooled candidates with their exact integer weights, before normalisation: `spawn ×
 /// generation percent`, both straight out of data. `candidates` divides by the total to give the
 /// probabilities the engine uses; a caller that must hold exact chances divides by the same total
@@ -1134,6 +1160,22 @@ pub(crate) fn removable(data: &Data, protection: Protection, item: &Item) -> Vec
     positions
 }
 
+/// The affix positions a beastcraft fracture may take, prefixes before suffixes but otherwise in
+/// item order: every modifier that is not already fractured and is not an unrevealed `Veiled` one
+/// (a veiled modifier is not a modifier the item has yet). `Op::Fracture` and the currency written
+/// as code both read this, so they cannot disagree about which modifiers are on offer.
+pub(crate) fn fracturable(data: &Data, item: &Item) -> Vec<(Side, usize)> {
+    let mut positions = Vec::new();
+    for side in Side::BOTH {
+        for (i, a) in item.affixes(side).iter().enumerate() {
+            if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled {
+                positions.push((side, i));
+            }
+        }
+    }
+    positions
+}
+
 fn guard_for_protection(data: &Data, p: Protection, item: &Item) -> Guard {
     let locks = p.locks == Policy::Respect;
     let tags = p.cannot_roll == Policy::Respect;
@@ -1790,14 +1832,10 @@ impl Run<'_> {
             }
             Op::Fracture => {
                 let mut items = Vec::new();
-                for s in Side::BOTH {
-                    for (i, a) in item.affixes(s).iter().enumerate() {
-                        if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled {
-                            let mut it = item.clone();
-                            it.affixes_mut(s)[i].fractured = true;
-                            items.push(it);
-                        }
-                    }
+                for (side, index) in fracturable(data, item) {
+                    let mut it = item.clone();
+                    it.affixes_mut(side)[index].fractured = true;
+                    items.push(it);
                 }
                 if items.is_empty() {
                     return Err("no modifier can be fractured".into());
@@ -2024,7 +2062,8 @@ impl Run<'_> {
     }
 
     /// The weighted pool of one implicit or enchantment kind, normalised; `level` caps mod level
-    /// at the item level.
+    /// at the item level. The candidates are [`kind_weights`]' exact integers, so this cannot
+    /// disagree with a currency that draws from the same pool.
     fn kind_pool(
         &self,
         item: &Item,
@@ -2032,11 +2071,9 @@ impl Run<'_> {
         level: bool,
         extra: impl Fn(&crate::data::ModData) -> bool,
     ) -> Vec<(u32, f64)> {
-        let data = self.data;
-        let tags = item.tags(data);
-        let w: Vec<(u32, f64)> = pool::weighted(data, &[kind], &tags)
-            .filter(|(_, m, _)| (!level || m.level <= item.item_level) && extra(m))
-            .map(|(i, _, w)| (i, w))
+        let w: Vec<(u32, f64)> = kind_weights(self.data, item, kind, level, extra)
+            .into_iter()
+            .map(|(i, weight)| (i, weight as f64))
             .collect();
         pool::normalise(w)
     }

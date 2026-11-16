@@ -13,9 +13,9 @@
 //! skipped), plus four edge items the shields below never exercise: a magic item carrying display
 //! figures and foresight, a magic item with a fractured modifier, a magic item holding a crafted
 //! metamod, and a normal jewel. The currencies are every one this crate implements: transmutation,
-//! alteration, augmentation, regal, exalted, scouring, annulment, and one representative essence
-//! (`Deafening Essence of Hatred`). Each pair is one case, and each case asserts, in order and
-//! reporting only the first failure:
+//! alteration, augmentation, regal, exalted, scouring, annulment, one representative essence
+//! (`Deafening Essence of Hatred`), beastcraft fracture and the greater eldritch ember. Each pair
+//! is one case, and each case asserts, in order and reporting only the first failure:
 //!
 //! 1. the code refuses exactly when the op path refuses;
 //! 2. the code set is exact (its weights sum to its total);
@@ -41,10 +41,10 @@ use std::path::PathBuf;
 
 use poe1::apply::{Leaf, Params, apply};
 use poe1::currency::{
-    Alteration, Annulment, Augmentation, Currency, Essence, Exalted, ItemOutputSet, Regal,
-    Scouring, Transmutation,
+    Alteration, Annulment, Augmentation, Currency, Eldritch, Essence, Exalted, Fracture,
+    ItemOutputSet, Regal, Scouring, Transmutation,
 };
-use poe1::data::Data;
+use poe1::data::{Data, Eldritch as Kind};
 use poe1::item::{Item, ItemSpec};
 use poe1::test_data;
 
@@ -214,8 +214,7 @@ fn items(data: &Data) -> Vec<(String, Item)> {
     out
 }
 
-/// Every currency this crate implements. `fracture` and `eldritch` have no implementation in
-/// `crates/poe1/src/currency/`, so they have no case here.
+/// Every currency this crate implements.
 fn currencies<'d>(data: &'d Data) -> Vec<Box<dyn Currency + 'd>> {
     vec![
         Box::new(Transmutation::new(data)),
@@ -228,6 +227,11 @@ fn currencies<'d>(data: &'d Data) -> Vec<Box<dyn Currency + 'd>> {
         Box::new(
             Essence::named(data, "Deafening Essence of Hatred")
                 .expect("the bundle declares this essence"),
+        ),
+        Box::new(Fracture::new(data).expect("the bundle declares beast/fracture-talisman")),
+        Box::new(
+            Eldritch::new(data, Kind::Exarch, 5)
+                .expect("the bundle declares currency/greater-eldritch-ember"),
         ),
     ]
 }
