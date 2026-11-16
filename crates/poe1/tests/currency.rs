@@ -2,8 +2,8 @@
 
 use poe1::apply::draw_weights;
 use poe1::currency::{
-    Accept, Currency, Fraction, ItemOutputSet, ItemSetFilter, Tier, Transmutation,
-    REMOVAL_PROTECTION, side_chance,
+    Accept, Currency, Fraction, ItemOutputSet, ItemSetFilter, REMOVAL_PROTECTION, Tier,
+    Transmutation, side_chance,
 };
 use poe1::data::{Data, Rarity, Side};
 use poe1::item::{Item, ItemSpec};
@@ -185,7 +185,10 @@ fn a_filtered_step_renormalises_exactly() {
     let item = shield(data);
     let currency = Transmutation::new(data);
     let unfiltered = currency.apply(&item, &None);
-    assert!(unfiltered.exact(), "the step's own weights are a distribution");
+    assert!(
+        unfiltered.exact(),
+        "the step's own weights are a distribution"
+    );
 
     // The totem pattern's desired bucket, keeping only outcomes that hold the wanted prefix.
     let pattern = totem_pattern(data);
@@ -197,7 +200,10 @@ fn a_filtered_step_renormalises_exactly() {
         unfiltered.filtered(data, &filter),
         "every currency's filter arm is the set's filtered"
     );
-    assert!(filtered.exact(), "the renormalised weights still sum to the total");
+    assert!(
+        filtered.exact(),
+        "the renormalised weights still sum to the total"
+    );
 
     let kept: Vec<&poe1::currency::Outcome> = unfiltered
         .outcomes()

@@ -29,10 +29,9 @@ fn shield(data: &Data) -> Item {
 
 fn filter(data: &Data) -> ItemSetFilter {
     let path = common::root().join("fixtures/patterns/totem-shield.json");
-    let spec: PatternSpec = serde_json::from_str(
-        &std::fs::read_to_string(&path).expect("the pattern fixture"),
-    )
-    .expect("pattern spec");
+    let spec: PatternSpec =
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("the pattern fixture"))
+            .expect("pattern spec");
     let pattern = Pattern::compile(data, &spec).expect("the pattern compiles against this bundle");
     ItemSetFilter::from_pattern(&pattern, Accept::DesiredOrGoodBothSides)
 }
@@ -55,9 +54,9 @@ fn first_depth(data: &Data) -> Vec<(Stage, Fraction)> {
         Stage::Stop,
     ]
     .into_iter()
-        .map(|stage| (stage, depth.mass(stage)))
-        .filter(|(_, mass)| !mass.is_zero())
-        .collect()
+    .map(|stage| (stage, depth.mass(stage)))
+    .filter(|(_, mass)| !mass.is_zero())
+    .collect()
 }
 
 #[test]

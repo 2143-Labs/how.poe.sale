@@ -66,8 +66,7 @@ fn read_bundle(bundle: &std::path::Path) -> anyhow::Result<poe1::data::Data> {
             bundle.display(),
         )
     })?;
-    poe1::data::Data::from_json(&text)
-        .with_context(|| format!("loading {}", bundle.display()))
+    poe1::data::Data::from_json(&text).with_context(|| format!("loading {}", bundle.display()))
 }
 
 /// Everything both report subcommands need: the bundle, the fixtures, the pattern and the item,

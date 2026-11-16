@@ -562,10 +562,8 @@ impl<'d> Lumped<'d> {
                 )
                 .ok_or(MachineError::Overflow)?;
         }
-        let classes: Vec<(Class, Fraction)> = next
-            .iter()
-            .map(|(class, p)| (class.clone(), *p))
-            .collect();
+        let classes: Vec<(Class, Fraction)> =
+            next.iter().map(|(class, p)| (class.clone(), *p)).collect();
         // The sums a report reads are taken here, once, where an overflow can still be refused as
         // the step's error instead of panicking in `Depth::live` or `Depth::mass`.
         let live = classes

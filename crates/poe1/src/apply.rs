@@ -923,7 +923,11 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
             // the leaf says the model stopped *before* the step that would change the item, which
             // is not the same claim as "nothing can change it" — and `Pending { TooLarge }`
             // reports the input by construction.
-            if !run.changed && outcome.item().is_some_and(|item| unchanged(&inputs[0], item)) {
+            if !run.changed
+                && outcome
+                    .item()
+                    .is_some_and(|item| unchanged(&inputs[0], item))
+            {
                 let reason = run
                     .idle
                     .take()

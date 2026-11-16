@@ -47,8 +47,8 @@ fn an_influence_pool_draws_only_that_influences_prefixes() {
         influence: Influence::Shaper,
     };
 
-    let drawn = one_add(data, &item, &shaper, SideReq::Prefix)
-        .expect("the pool's weights fit in 128 bits");
+    let drawn =
+        one_add(data, &item, &shaper, SideReq::Prefix).expect("the pool's weights fit in 128 bits");
     assert!(!drawn.is_empty(), "the Shaper pool has prefixes to draw");
     for (_, _, added) in &drawn {
         let (side, m) = added.expect("a prefix draw adds a modifier");

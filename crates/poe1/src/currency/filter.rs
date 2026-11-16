@@ -266,7 +266,11 @@ impl ItemSetFilter {
         {
             return Tier::Desired;
         }
-        if self.good.iter().any(|s| s.matches_with(data, effect, affix)) {
+        if self
+            .good
+            .iter()
+            .any(|s| s.matches_with(data, effect, affix))
+        {
             return Tier::Good;
         }
         Tier::Any
