@@ -4,5 +4,16 @@
   },
   "Helmet": {
     "name": "Helmets"
+  },
+  "Shield": {
+    "name": "Shields",
+    "influence_tags": [
+      "shield_crusader",
+      "shield_elder",
+      "shield_basilisk",
+      "shield_eyrie",
+      "shield_shaper",
+      "shield_adjudicator"
+    ]
   }
 }

@@ -3,6 +3,7 @@
 
 mod bundle;
 mod methods;
+mod pool_report;
 mod raw;
 
 use std::collections::BTreeMap;
@@ -10,7 +11,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]";
+const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli pool-report --bundle <file> --base <name> --item-level <n> [--influence <name>] --out <file>";
 
 /// Parses `--flag value` pairs; any flag not in `names` is an error.
 fn flag_map(
@@ -227,6 +228,43 @@ fn main() -> anyhow::Result<()> {
                 )
             );
             Ok(())
+        }
+        "pool-report" => {
+            let mut given = flag_map(
+                args,
+                &["--bundle", "--base", "--item-level", "--influence", "--out"],
+            )?;
+            let mut required = |name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let bundle = required("--bundle")?;
+            let base = required("--base")?;
+            let level = required("--item-level")?;
+            let out = required("--out")?;
+            let influence = given.remove("--influence");
+            let base = base
+                .to_str()
+                .with_context(|| format!("{} is not a base name", base.display()))?;
+            let level: u8 = level
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--item-level {} is not a number", level.display()))?;
+            let influence = influence
+                .map(|name| {
+                    let text = name
+                        .to_str()
+                        .with_context(|| format!("{} is not an influence name", name.display()))?;
+                    pool_report::influence(text).with_context(|| format!("no influence {text:?}"))
+                })
+                .transpose()?;
+            let text = std::fs::read_to_string(&bundle)
+                .with_context(|| format!("reading {}", bundle.display()))?;
+            let data = poe1::data::Data::from_json(&text)
+                .with_context(|| format!("loading {}", bundle.display()))?;
+            let item = pool_report::item(&data, base, level, influence)?;
+            write(&out, pool_report::render(&data, &item).as_bytes())
         }
         other => bail!("unknown command {other}; {USAGE}"),
     }

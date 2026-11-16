@@ -35,6 +35,11 @@
       "id": "Helmet",
       "category": "armour",
       "maxSockets": 4
+    },
+    {
+      "id": "Shield",
+      "category": "armour",
+      "maxSockets": 3
     }
   ]
 }

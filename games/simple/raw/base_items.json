@@ -570,12 +570,8 @@
     "release_state": "released",
     "implicits": [],
     "tags": [
-      "bow",
-      "two_hand_weapon",
-      "twohand",
-      "ranged",
-      "weapon",
-      "default"
+      "simple_bow",
+      "simple_default"
     ],
     "requirements": {
       "level": 1
@@ -589,12 +585,47 @@
     "release_state": "released",
     "implicits": [],
     "tags": [
-      "helmet",
+      "simple_helmet",
+      "simple_default"
+    ],
+    "requirements": {
+      "level": 1
+    }
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt13": {
+    "domain": "item",
+    "item_class": "Shield",
+    "name": "Supreme Spiked Shield",
+    "drop_level": 70,
+    "release_state": "released",
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield2"
+    ],
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "top_tier_base_item_type",
+      "shield",
       "armour",
       "default"
     ],
     "requirements": {
-      "level": 1
+      "dexterity": 85,
+      "intelligence": 85,
+      "level": 70,
+      "strength": 0
+    },
+    "properties": {
+      "armour": null,
+      "evasion": {
+        "max": 278,
+        "min": 242
+      },
+      "energy_shield": {
+        "max": 57,
+        "min": 49
+      },
+      "ward": null
     }
   }
 }
