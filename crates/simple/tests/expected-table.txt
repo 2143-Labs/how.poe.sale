@@ -1,8 +1,11 @@
-pool  prefixes 64800  suffixes 96475
-      73 prefixes, 131 suffixes
+pool (shaper)                                                prefixes  64800      73   suffixes  96475      131
+pool (no influence)                                          prefixes  64000      72   suffixes  88475      121
+
 desired prefix 1/81 = 1.2346%
 good prefix 5/81 = 6.1728%
 good suffix 584/3859 = 15.1335%
+
+values  base_maximum_life 145-159  base_resist_all_elements_% 17-18  base_spell_suppression_chance_% 5
 
 depth     desired   good pair good prefix good suffix       other  spent rare       spare       reset        stop        goal
     1    0.925926    0.467082    1.543210    3.783364   93.280419    0.000000    0.000000    0.000000    0.000000    0.000000

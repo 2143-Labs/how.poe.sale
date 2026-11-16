@@ -24,6 +24,12 @@ impl Currency for Annulment<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be annulled");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be annulled");
+        }
         if !matches!(item.rarity, Rarity::Magic | Rarity::Rare) {
             return ItemOutputSet::refused("an Orb of Annulment needs a magic or rare item");
         }

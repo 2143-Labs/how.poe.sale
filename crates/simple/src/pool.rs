@@ -1,9 +1,18 @@
-//! The draw: which modifiers a side of an item can roll, and at what exact chance.
+//! The draw: which modifiers an item can roll, and at what exact chance.
 //!
-//! Two rules hold everything together.
+//! A modifier is in a side's pool only when every one of these holds:
 //!
-//! **A family cannot repeat.** A modifier is in a side's pool only when none of its groups is
-//! already held on the item, whatever side that other modifier sits on.
+//! - it is an explicit modifier on that side (`ModKind::side`), not an implicit;
+//! - its required level is at most the **item's** level (`item.item_level`), not the base's;
+//! - its weight on the base's tags **and** the item's influence tag is positive
+//!   ([`Data::weight_on`]) — this is why a Shaper shield rolls `MaximumTotemUber1` and a plain one
+//!   does not;
+//! - none of its groups is already held on the item, whatever side that other modifier sits on.
+//!
+//! Two further rules hold the arithmetic together.
+//!
+//! **A family cannot repeat.** The group rule above is the whole of it: a held group removes a
+//! modifier from both sides' pools.
 //!
 //! **The side is drawn first**, in equal shares among the sides that can take a modifier, and then
 //! the modifier on that side by weight. That is why [`one_add`] scales each side's weights by the
@@ -15,7 +24,7 @@ use crate::fraction::Fraction;
 use crate::item::{Affix, Item, Rarity, Side};
 
 /// One result of a draw and the integer weight that produced it. Every [`Weighted`] of one add
-/// shares one denominator, so the weights can be summed and divided by [`ItemOutputSet::total`].
+/// shares one denominator, so the weights can be summed and divided by [`crate::currency::ItemOutputSet::total`].
 pub type Weighted = (Item, u128, Option<(Side, u16)>);
 
 /// One result of a draw and its exact chance. Used where the results came from branches with
@@ -65,9 +74,13 @@ pub fn draw_weights(data: &Data, item: &Item, side: Side) -> Vec<(u16, u128)> {
     data.mods
         .iter()
         .enumerate()
-        .filter(|(_, m)| m.side == side && m.level <= data.base.item_level)
+        .filter(|(_, m)| m.kind.side() == Some(side))
+        .filter(|(_, m)| m.level <= u32::from(item.item_level))
         .filter(|(_, m)| !m.groups.iter().any(|group| held.contains(group)))
-        .map(|(m, _)| (m as u16, data.weight_on(m as u16)))
+        .map(|(m, _)| {
+            let m = m as u16;
+            (m, data.weight_on(m, item.base, item.influence))
+        })
         .filter(|&(_, weight)| weight > 0)
         .collect()
 }
@@ -102,7 +115,7 @@ pub fn one_add(data: &Data, item: &Item) -> Option<Vec<Weighted>> {
             .try_fold(1u128, |acc, (_, total)| acc.checked_mul(*total))?;
         for &(m, weight) in pool {
             let mut result = item.clone();
-            result.affixes_mut(*side).push(Affix::new(m));
+            result.affixes_mut(*side).push(Affix::at_range(data, m));
             out.push((result, weight.checked_mul(scale)?, Some((*side, m))));
         }
     }
@@ -183,27 +196,134 @@ pub fn side_chance(
 mod tests {
     use super::*;
     use crate::data::data;
+    use crate::item::Influence;
+    use crate::roll::Roll;
+
+    const BASE: &str = "Supreme Spiked Shield";
+    const SHAPER: Option<Influence> = Some(Influence::Shaper);
+
+    fn base(data: &Data) -> u16 {
+        data.base_of(BASE)
+    }
+
+    /// A fresh magic shield with no influence.
+    fn plain_magic(data: &Data) -> Item {
+        Item::of_base(data, base(data), 87, Rarity::Magic)
+    }
+
+    /// The same shield with the Shaper influence: the pool every chance in this crate is about.
+    fn shaper_magic(data: &Data) -> Item {
+        plain_magic(data).with_influence(Influence::Shaper)
+    }
 
     fn total(pool: &[(u16, u128)]) -> u128 {
         pool.iter().map(|&(_, weight)| weight).sum()
     }
 
+    fn ids(pool: &[(u16, u128)]) -> Vec<u16> {
+        pool.iter().map(|&(m, _)| m).collect()
+    }
+
     #[test]
-    fn a_magic_shield_rolls_the_whole_pool_on_either_side() {
+    fn a_shaper_magic_shield_rolls_the_whole_pool_on_either_side() {
         let data = data();
-        let magic = Item::new(Rarity::Magic);
-        assert_eq!(total(&draw_weights(data, &magic, Side::Prefix)), 64800);
-        assert_eq!(total(&draw_weights(data, &magic, Side::Suffix)), 96475);
+        let magic = shaper_magic(data);
+        let prefix = draw_weights(data, &magic, Side::Prefix);
+        let suffix = draw_weights(data, &magic, Side::Suffix);
+        assert_eq!(prefix.len(), 73);
+        assert_eq!(suffix.len(), 131);
+        assert_eq!(total(&prefix), 64800);
+        assert_eq!(total(&suffix), 96475);
         // A normal item has no room, so neither side has a pool.
-        let normal = Item::new(Rarity::Normal);
+        let normal = Item::of_base(data, base(data), 87, Rarity::Normal);
         assert!(draw_weights(data, &normal, Side::Prefix).is_empty());
         assert!(draw_weights(data, &normal, Side::Suffix).is_empty());
     }
 
     #[test]
+    fn the_shaper_influence_is_the_eleven_modifier_difference() {
+        let data = data();
+        let plain = plain_magic(data);
+        let shaper = shaper_magic(data);
+        let plain_prefix = draw_weights(data, &plain, Side::Prefix);
+        let plain_suffix = draw_weights(data, &plain, Side::Suffix);
+        let shaper_prefix = draw_weights(data, &shaper, Side::Prefix);
+        let shaper_suffix = draw_weights(data, &shaper, Side::Suffix);
+
+        // The same base without an influence is the smaller pool.
+        assert_eq!(plain_prefix.len(), 72);
+        assert_eq!(plain_suffix.len(), 121);
+        assert_eq!(total(&plain_prefix), 64000);
+        assert_eq!(total(&plain_suffix), 88475);
+
+        // Every modifier that only the influenced pool has weighs nothing without the influence,
+        // and there are exactly eleven of them: one prefix and ten suffixes.
+        let added: Vec<u16> = ids(&shaper_prefix)
+            .into_iter()
+            .chain(ids(&shaper_suffix))
+            .filter(|&m| data.weight_on(m, base(data), None) == 0)
+            .collect();
+        assert_eq!(added.len(), 11);
+        assert!(
+            added
+                .iter()
+                .all(|&m| data.weight_on(m, base(data), SHAPER) > 0)
+        );
+        assert!(
+            ids(&plain_prefix)
+                .iter()
+                .chain(&ids(&plain_suffix))
+                .all(|&m| { data.weight_on(m, base(data), SHAPER) > 0 }),
+            "nothing leaves the pool when the influence is added"
+        );
+    }
+
+    #[test]
+    fn the_totem_prefix_needs_the_shaper_influence() {
+        let data = data();
+        let totem = data.id_of("MaximumTotemUber1").unwrap();
+        assert!(
+            draw_weights(data, &plain_magic(data), Side::Prefix)
+                .iter()
+                .all(|&(m, _)| m != totem)
+        );
+        assert!(
+            draw_weights(data, &shaper_magic(data), Side::Prefix)
+                .iter()
+                .any(|&(m, _)| m == totem)
+        );
+    }
+
+    #[test]
+    fn item_level_gates_the_pool() {
+        let data = data();
+        let low =
+            Item::of_base(data, base(data), 60, Rarity::Magic).with_influence(Influence::Shaper);
+        let prefix = draw_weights(data, &low, Side::Prefix);
+        let suffix = draw_weights(data, &low, Side::Suffix);
+
+        assert!(
+            prefix
+                .iter()
+                .chain(&suffix)
+                .all(|&(m, _)| data.mod_at(m).level <= 60)
+        );
+        // Every modifier above level 60 is gone: 53 prefixes over 48000, 76 suffixes over 62600.
+        assert_eq!(prefix.len(), 53);
+        assert_eq!(total(&prefix), 48000);
+        assert_eq!(suffix.len(), 76);
+        assert_eq!(total(&suffix), 62600);
+
+        // The high pool is strictly larger on both sides.
+        let high = shaper_magic(data);
+        assert!(total(&draw_weights(data, &high, Side::Prefix)) > total(&prefix));
+        assert!(total(&draw_weights(data, &high, Side::Suffix)) > total(&suffix));
+    }
+
+    #[test]
     fn one_add_puts_both_sides_over_one_denominator() {
         let data = data();
-        let magic = Item::new(Rarity::Magic);
+        let magic = shaper_magic(data);
         let outcomes = one_add(data, &magic).unwrap();
         // Two sides, so every outcome's weight is scaled by the other side's total: the sum is
         // 64800·96475 twice, and each side contributes its own share of that.
@@ -222,12 +342,27 @@ mod tests {
             2 * prefix_total
         );
         assert_eq!(outcomes.len(), 204);
+        // Every drawn affix starts at its full range and is appended to its side.
+        for (item, _, added) in &outcomes {
+            let (side, m) = added.unwrap();
+            let affix = item.affix(m).unwrap();
+            assert_eq!(item.affixes(side).last(), Some(affix));
+            let stats = &data.mod_at(m).stats;
+            assert_eq!(affix.rolls.len(), stats.len());
+            assert!(
+                affix
+                    .rolls
+                    .iter()
+                    .zip(stats)
+                    .all(|(roll, &(_, min, max))| *roll == Roll::range(min, max).unwrap())
+            );
+        }
     }
 
     #[test]
     fn two_adds_are_normalised_against_their_own_state() {
         let data = data();
-        let magic = Item::new(Rarity::Magic);
+        let magic = shaper_magic(data);
         let results = adds(data, &magic, 2).unwrap();
         let total = results
             .iter()
@@ -241,6 +376,20 @@ mod tests {
         assert!(results.iter().all(|(item, _, _)| {
             item.affixes(Side::Prefix).len() == 1 && item.affixes(Side::Suffix).len() == 1
         }));
+        // Every drawn affix holds the mod's stats at their full range.
+        assert!(results.iter().all(|(item, _, _)| {
+            Side::BOTH.into_iter().all(|side| {
+                item.affixes(side).iter().all(|affix| {
+                    let stats = &data.mod_at(affix.m).stats;
+                    affix.rolls.len() == stats.len()
+                        && affix
+                            .rolls
+                            .iter()
+                            .zip(stats)
+                            .all(|(roll, &(_, min, max))| *roll == Roll::range(min, max).unwrap())
+                })
+            })
+        }));
     }
 
     #[test]
@@ -253,8 +402,10 @@ mod tests {
             data.mod_at(lower_life).groups,
             "the two life tiers share a group"
         );
-        let mut item = Item::new(Rarity::Rare);
-        item.affixes_mut(Side::Prefix).push(Affix::new(life));
+        let mut item =
+            Item::of_base(data, base(data), 87, Rarity::Rare).with_influence(Influence::Shaper);
+        item.affixes_mut(Side::Prefix)
+            .push(Affix::at_range(data, life));
         let pool = draw_weights(data, &item, Side::Prefix);
         assert!(
             !pool.iter().any(|&(m, _)| m == lower_life),
@@ -266,18 +417,39 @@ mod tests {
     #[test]
     fn a_step_with_nothing_to_draw_is_empty_not_a_no_op() {
         let data = data();
-        assert_eq!(adds(data, &Item::new(Rarity::Normal), 1), Some(Vec::new()));
-        assert_eq!(add_required(data, &Item::new(Rarity::Normal)), None);
+        let normal = Item::of_base(data, base(data), 87, Rarity::Normal);
+        assert_eq!(adds(data, &normal, 1), Some(Vec::new()));
+        assert_eq!(add_required(data, &normal), None);
     }
 
     #[test]
     fn side_chance_is_the_accepted_weight_over_the_pool() {
         let data = data();
-        let magic = Item::new(Rarity::Magic);
+        let magic = shaper_magic(data);
         let totem = data.id_of("MaximumTotemUber1").unwrap();
         assert_eq!(
             side_chance(data, &magic, Side::Prefix, |m| m == totem),
             Fraction::new(800, 64800)
+        );
+        assert_eq!(
+            side_chance(data, &magic, Side::Prefix, |m| m == totem),
+            Fraction::new(1, 81),
+            "800/64800 reduces to 1/81"
+        );
+        // No influence, no totem in the pool, so the chance is zero — not absent.
+        assert_eq!(
+            side_chance(data, &plain_magic(data), Side::Prefix, |m| m == totem),
+            Some(Fraction::ZERO)
+        );
+        // An item with no room has no pool to take a share of.
+        assert_eq!(
+            side_chance(
+                data,
+                &Item::of_base(data, base(data), 87, Rarity::Normal),
+                Side::Prefix,
+                |_| true
+            ),
+            None
         );
     }
 }

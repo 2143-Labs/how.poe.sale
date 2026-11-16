@@ -22,6 +22,12 @@ impl Currency for Regal<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be regaled");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be regaled");
+        }
         if item.rarity != Rarity::Magic {
             return ItemOutputSet::refused("an Orb of Regal needs a magic item");
         }

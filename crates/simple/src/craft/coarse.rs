@@ -1,16 +1,24 @@
 //! The lumped machine: it holds classes of items, so it can walk the loop for depth.
 //!
-//! A `Class` is exactly what a draw and the goal can read — the rarity, how many modifiers each side
-//! holds, how many of them are of each grade, and which groups are held — and nothing else. That is
-//! the whole argument for its exactness: a draw reads the rarity (room), the held groups (family
-//! exclusion), the side, the item level and the base tags, all of which are fixed or in the class,
-//! and the goal reads the grade counts. Two items in one class therefore have the same next
-//! distribution and the same goal status, so replacing each of them by one witness item loses no
-//! information and no mass.
+//! A `Class` is exactly what a draw and the goal can read — the base, the item level, the influence,
+//! the rarity, how many modifiers each side holds, how many of them are of each grade, and which
+//! groups are held — and nothing else. That is the whole argument for its exactness: a draw reads
+//! the rarity (room), the held groups (family exclusion), the side, the item level, the base's tags
+//! and the influence's tag, all of which are in the class, and the goal reads the grade counts. Two
+//! items in one class therefore have the same next distribution and the same goal status, so
+//! replacing each of them by one witness item loses no information and no mass.
+//!
+//! A class holds no value, no quality, no implicit and no corruption or mirroring flag, because no
+//! draw and no goal rule reads one. A Divine Orb is exactly the case that makes this matter: it
+//! changes a value and nothing a class records, so the lumped machine cannot represent its outcome
+//! and refuses it (below).
 //!
 //! The one orb that is not lumpable here is the Orb of Annulment: taking a modifier off loses which
-//! group went, so one class has several successor classes with different pools. [`Coarse::step`]
-//! refuses it by name rather than guessing. The loop never names it.
+//! group went, so one class has several successor classes with different pools. The Divine Orb is
+//! not lumpable either, for the opposite reason: it changes only values, which a class does not
+//! hold, so its whole effect is invisible to the state and a folded divine would silently move mass
+//! without changing the class. [`Coarse::step`] refuses both by name rather than guessing. The loop
+//! never names either.
 //!
 //! The state is large — the baseline craft fills about 953 000 classes by the sixth step — but it
 //! closes:
@@ -30,15 +38,28 @@ use std::rc::Rc;
 use crate::currency::{ItemOutputSet, registry};
 use crate::data::Data;
 use crate::filter::{ItemSetFilter, Tier};
-use crate::item::{Affix, Item, Rarity, Side};
+use crate::item::{Affix, Influence, Item, Rarity, Side};
 use crate::target::Target;
 
 use super::{Action, CurrencyId, MachineError, Policy, Stage};
 
 /// What a draw and the goal can read about an item.
+///
+/// A draw reads the rarity (room), the held groups (family exclusion), the side, the item level,
+/// the base's tags and the influence's tag, so those are fields; the goal reads the grade counts, so
+/// those are fields too. Nothing a draw or the goal does reads a value, a quality, an implicit or a
+/// flag, so none of those is a field: two items that differ only in a pinned value are one class and
+/// have identical successors. That equality is the reason the lumped machine is exact, and the
+/// reason it must refuse the Divine Orb, whose entire effect would vanish into the class.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Class {
     pub rarity: Rarity,
+    /// The base whose tags the pool matches.
+    pub base: u16,
+    /// The item level that gates which modifiers can roll.
+    pub item_level: u8,
+    /// The influence whose tag joins the base's when a pool is read, if the item has one.
+    pub influence: Option<Influence>,
     /// Modifiers held per side, indexed by [`Side::index`].
     pub counts: [u8; 2],
     /// Held modifiers per side per grade, indexed by grade rank: `tiers[side][2]` desired,
@@ -67,19 +88,24 @@ impl Class {
         groups.dedup();
         Class {
             rarity: item.rarity,
+            base: item.base,
+            item_level: item.item_level,
+            influence: item.influence,
             counts,
             tiers,
             groups,
         }
     }
 
-    /// An item of this class: the same rarity, the same number of modifiers per side and of each
-    /// grade, holding exactly the class's groups.
+    /// An item of this class: the same base, item level, influence and rarity, the same number of
+    /// modifiers per side and of each grade, holding exactly the class's groups.
     ///
     /// Which modifiers are chosen does not matter — every item of the class has the same pool and
     /// the same stage — but one has to be found, so the search backtracks over the candidates of
-    /// each slot. A class with no witness is a bug in [`Class::of`], which is why this panics rather
-    /// than returning a smaller item.
+    /// each slot. Each chosen modifier is at its full range, which is what a fresh roll is: values
+    /// are not part of the class, so any value would do and the range is the honest one. A class
+    /// with no witness is a bug in [`Class::of`], which is why this panics rather than returning a
+    /// smaller item.
     pub fn witness(&self, data: &Data, filter: &ItemSetFilter) -> Item {
         let mut slots: Vec<(Side, Tier)> = Vec::with_capacity(self.explicits() as usize);
         for side in Side::BOTH {
@@ -94,13 +120,17 @@ impl Class {
                 }
             }
         }
+        let mut start = Item::of_base(data, self.base, self.item_level, self.rarity);
+        if let Some(influence) = self.influence {
+            start = start.with_influence(influence);
+        }
         let mut fill = Fill {
             data,
             filter,
             slots,
             allowed: &self.groups,
             used: HashSet::new(),
-            item: Item::new(self.rarity),
+            item: start,
             budget: BUDGET,
         };
         assert!(fill.run(0), "no witness for class {self:?}");
@@ -191,7 +221,7 @@ impl Fill<'_> {
         let (side, tier) = self.slots[at];
         for (m, entry) in self.data.mods.iter().enumerate() {
             let m = m as u16;
-            if entry.side != side || self.filter.tier_of(m) != tier {
+            if entry.kind.side() != Some(side) || self.filter.tier_of(m) != tier {
                 continue;
             }
             if !entry
@@ -207,7 +237,8 @@ impl Fill<'_> {
             for group in &entry.groups {
                 self.used.insert(*group);
             }
-            self.item.affixes_mut(side).push(Affix::new(m));
+            let affix = Affix::at_range(self.data, m);
+            self.item.affixes_mut(side).push(affix);
             if self.run(at + 1) {
                 return true;
             }
@@ -245,10 +276,22 @@ pub struct Coarse<'a> {
 type Transitions = HashMap<(Class, &'static str), Rc<Vec<(Class, f64)>>>;
 
 impl<'a> Coarse<'a> {
-    /// A machine starting from one normal item at the whole chance.
-    pub fn new(data: &'a Data, filter: &'a ItemSetFilter, target: &'a Target) -> Coarse<'a> {
+    /// A machine starting from one normal item of the given base, item level and influence, at the
+    /// whole chance.
+    pub fn new(
+        data: &'a Data,
+        filter: &'a ItemSetFilter,
+        target: &'a Target,
+        base: u16,
+        item_level: u8,
+        influence: Option<Influence>,
+    ) -> Coarse<'a> {
+        let mut start = Item::of_base(data, base, item_level, Rarity::Normal);
+        if let Some(influence) = influence {
+            start = start.with_influence(influence);
+        }
         let mut live = BTreeMap::new();
-        live.insert(Class::of(data, filter, &Item::new(Rarity::Normal)), 1.0);
+        live.insert(Class::of(data, filter, &start), 1.0);
         Coarse {
             data,
             filter,
@@ -295,6 +338,11 @@ impl<'a> Coarse<'a> {
                 Action::Apply(id) => {
                     if id == CurrencyId::ANNULMENT {
                         return Err(MachineError::Refused("currency/annulment is not lumpable"));
+                    }
+                    if id == CurrencyId::DIVINE {
+                        return Err(MachineError::Refused(
+                            "currency/divine only changes values, which a class does not hold",
+                        ));
                     }
                     let key = (class.clone(), id.0);
                     if !self.transitions.contains_key(&key) {

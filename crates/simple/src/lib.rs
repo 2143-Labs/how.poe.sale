@@ -1,8 +1,10 @@
 //! A Path of Exile crafting model for one base: the Shaper Supreme Spiked Shield (`Totem Shield`).
 //!
-//! The crate holds the shield's 204 rollable modifiers (`data`), exact chances (`fraction`), the
-//! item a craft carries (`item`), the draw rule (`pool`), the seven crafting orbs (`currency`), the
-//! goal (`filter`, `target`), and two state machines that drive the orbs (`craft`).
+//! The crate holds the shield's 204 rollable modifiers and its base (`data`), exact chances
+//! (`fraction`), a stat's value as an interval (`roll`), the item a craft carries (`item`: base,
+//! item level, rarity, influence, quality, flags, implicits and the modifiers with their values),
+//! the draw rule (`pool`), the eight crafting orbs (`currency`), the goal (`filter`, `target`), and
+//! two state machines that drive the orbs (`craft`).
 //!
 //! `data/shield.json` was generated from the pinned 3.29 export by `data/gen_shield.py`; the export
 //! copy on `main` only carries the toy bases, so the generator was run against the copy that has the
@@ -15,4 +17,5 @@ pub mod filter;
 pub mod fraction;
 pub mod item;
 pub mod pool;
+pub mod roll;
 pub mod target;

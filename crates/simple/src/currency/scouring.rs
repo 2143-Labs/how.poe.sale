@@ -1,4 +1,6 @@
-//! Orb of Scouring: strips a magic or rare item back to normal (`currency/scouring`).
+//! Orb of Scouring: strips a magic or rare item's explicit modifiers and returns it to normal
+//! rarity, keeping the item itself — base, item level, influence, quality, flags and implicits
+//! (`currency/scouring`).
 
 use super::{Currency, ItemOutputSet, ItemSetFilter};
 use crate::data::Data;
@@ -23,13 +25,21 @@ impl Currency for Scouring<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be scoured");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be scoured");
+        }
         if !matches!(item.rarity, Rarity::Magic | Rarity::Rare) {
             return ItemOutputSet::refused("an Orb of Scouring needs a magic or rare item");
         }
         if item.explicits() == 0 {
             return ItemOutputSet::refused("the item has no explicit modifiers to scour");
         }
-        let scoured = Item::new(Rarity::Normal);
+        // Everything but the explicits survives: the same base, item level, influence, quality,
+        // flags and implicits, back at normal rarity. A scouring is not a fresh item.
+        let scoured = item.cleared().with_rarity(Rarity::Normal);
         let set = ItemOutputSet::new(vec![(scoured, 1, None)]);
         match filter {
             Some(filter) => set.filtered(filter),

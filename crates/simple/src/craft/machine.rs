@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use crate::currency::{ItemOutputSet, registry};
 use crate::data::Data;
 use crate::filter::ItemSetFilter;
-use crate::item::{Item, Rarity};
+use crate::item::{Influence, Item, Rarity};
 use crate::target::Target;
 
 use super::{Action, Policy, Stage};
@@ -62,13 +62,28 @@ pub struct Machine<'a> {
 }
 
 impl<'a> Machine<'a> {
-    /// A machine starting from one normal item at the whole chance.
-    pub fn new(data: &'a Data, filter: &'a ItemSetFilter, target: &'a Target) -> Machine<'a> {
+    /// A machine starting from one normal item of the given base, item level and influence, at the
+    /// whole chance.
+    ///
+    /// The starting item is built, not drawn: the base's implicits are already on it, because they
+    /// are part of the item and never part of a draw.
+    pub fn new(
+        data: &'a Data,
+        filter: &'a ItemSetFilter,
+        target: &'a Target,
+        base: u16,
+        item_level: u8,
+        influence: Option<Influence>,
+    ) -> Machine<'a> {
+        let mut start = Item::of_base(data, base, item_level, Rarity::Normal);
+        if let Some(influence) = influence {
+            start = start.with_influence(influence);
+        }
         Machine {
             data,
             filter,
             target,
-            live: vec![(Item::new(Rarity::Normal), 1.0)],
+            live: vec![(start, 1.0)],
             goal: 0.0,
             reached: 0.0,
             history: Vec::new(),

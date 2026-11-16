@@ -23,6 +23,12 @@ impl Currency for Alteration<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be altered");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be altered");
+        }
         if item.rarity != Rarity::Magic {
             return ItemOutputSet::refused("an Orb of Alteration needs a magic item");
         }

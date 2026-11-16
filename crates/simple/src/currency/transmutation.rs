@@ -23,6 +23,12 @@ impl Currency for Transmutation<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be transmuted");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be transmuted");
+        }
         if item.rarity != Rarity::Normal {
             return ItemOutputSet::refused("an Orb of Transmutation needs a normal item");
         }

@@ -22,6 +22,12 @@ impl Currency for Exalted<'_> {
     }
 
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
+        if item.corrupted {
+            return ItemOutputSet::refused("a corrupted item cannot be exalted");
+        }
+        if item.mirrored {
+            return ItemOutputSet::refused("a mirrored item cannot be exalted");
+        }
         if item.rarity != Rarity::Rare {
             return ItemOutputSet::refused("an Exalted Orb needs a rare item");
         }

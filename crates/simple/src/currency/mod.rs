@@ -1,15 +1,32 @@
-//! The seven crafting orbs, one file each, behind one trait.
+//! The eight crafting orbs, one file each, behind one trait.
 //!
 //! An orb answers one question: given this item, what can it become, and how often? The answer is
 //! an [`ItemOutputSet`] — exact integer weights over one denominator — or a refusal that names why
 //! the orb cannot be used. Nothing here rolls dice; the state machines
 //! ([`crate::craft`]) walk the sets.
+//!
+//! [`registry`] names exactly these eight ids and nothing else:
+//!
+//! - `currency/transmutation` — normal → magic, one or two modifiers
+//! - `currency/alteration` — magic rerolled, one or two fresh modifiers
+//! - `currency/augmentation` — one modifier added to a magic item
+//! - `currency/regal` — magic → rare, one modifier added
+//! - `currency/exalted` — one modifier added to a rare item
+//! - `currency/scouring` — everything stripped, back to normal
+//! - `currency/annulment` — one explicit modifier removed
+//! - `currency/divine` — every explicit value widened to its range
+//!
+//! Corruption and mirroring block all eight: an item either flagged is refused by every orb, with
+//! the reason naming the orb's own verb, because none of them may modify an item the game has
+//! locked. Each orb checks the two flags itself, in the same two guards, before it looks at the
+//! rarity.
 
 use std::collections::HashMap;
 
 pub mod alteration;
 pub mod annulment;
 pub mod augmentation;
+pub mod divine;
 pub mod exalted;
 pub mod regal;
 pub mod scouring;
@@ -19,6 +36,7 @@ pub use crate::pool::{Mass, Weighted};
 pub use alteration::Alteration;
 pub use annulment::Annulment;
 pub use augmentation::Augmentation;
+pub use divine::Divine;
 pub use exalted::Exalted;
 pub use regal::Regal;
 pub use scouring::Scouring;
@@ -228,6 +246,7 @@ pub fn registry<'d>(data: &'d Data, id: &str) -> Option<Box<dyn Currency + 'd>> 
         "currency/exalted" => Some(Box::new(Exalted::new(data))),
         "currency/scouring" => Some(Box::new(Scouring::new(data))),
         "currency/annulment" => Some(Box::new(Annulment::new(data))),
+        "currency/divine" => Some(Box::new(Divine::new(data))),
         _ => None,
     }
 }

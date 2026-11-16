@@ -34,6 +34,11 @@ impl CurrencyId {
     pub const EXALTED: CurrencyId = CurrencyId("currency/exalted");
     pub const SCOURING: CurrencyId = CurrencyId("currency/scouring");
     pub const ANNULMENT: CurrencyId = CurrencyId("currency/annulment");
+    /// The one orb that touches nothing but an affix's values. The loop never names it: a value is
+    /// not part of an item's class, so the lumped machine would have to forget the change — it
+    /// refuses the orb instead ([`coarse::Coarse::step`]). The concrete machine, which holds the
+    /// items themselves, can apply it.
+    pub const DIVINE: CurrencyId = CurrencyId("currency/divine");
 }
 
 /// What a step does: use an orb, or stop in one of three ways.
