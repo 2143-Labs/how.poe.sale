@@ -153,6 +153,8 @@ pub struct Row {
     pub chance: f64,
     /// `1 / chance`: how many times the step is run, on average, for one that goes on.
     pub tries: f64,
+    /// Every exit the method declares, with its wire and the share of runs that leave through it.
+    pub exits: Vec<(&'static str, Wire, f64)>,
     /// What one run of this step spends, from the mix of items it is handed.
     pub run: Spend,
     /// What it takes to get past this step, from the start of the craft, failed attempts included.
@@ -375,18 +377,31 @@ impl Craft {
                 .collect();
             let method = &*this.method;
             let run = method::run(method, kit, &handed)?;
-            let chance = run
-                .spend_into(&|node| {
-                    matches!(self.wire(kit, k, node), Some((_, Wire::Next | Wire::Done)))
+            let exits: Vec<(&'static str, Wire, f64)> = this
+                .wires
+                .iter()
+                .map(|&(exit, wire)| {
+                    let share = run
+                        .spend_into(&|node| {
+                            self.wire(kit, k, node).map(|(name, _)| name) == Some(exit)
+                        })
+                        .map(|(share, _)| share)
+                        .unwrap_or(0.0);
+                    (exit, wire, share)
                 })
-                .map(|(chance, _)| chance)
-                .unwrap_or(0.0);
+                .collect();
+            let chance = exits
+                .iter()
+                .filter(|(_, wire, _)| matches!(wire, Wire::Next | Wire::Done))
+                .map(|&(_, _, share)| share)
+                .sum();
             rows.push(Row {
                 step: k,
                 name: method.name(),
                 takes: method.takes(),
                 chance,
                 tries: 1.0 / chance,
+                exits,
                 run: run.spend(),
                 reach: past.spend(),
             });
