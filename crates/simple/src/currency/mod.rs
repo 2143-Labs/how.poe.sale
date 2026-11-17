@@ -44,6 +44,7 @@ pub use transmutation::Transmutation;
 
 use crate::cost::{Cost, CurrencyId};
 use crate::item::{Item, Rarity};
+use crate::node::Node;
 use crate::stock::{Chance, Dist, Refusal, Stock};
 
 /// One modelled orb, named by the id the game's rules use (`currency/alteration`).
@@ -124,6 +125,16 @@ pub const ON_ITEMS: [&dyn Currency<Item>; 8] = [
     &Scouring,
     &Annulment,
     &Divine,
+];
+
+/// The orbs that can be used on an abstract item, in the same order.
+pub const ON_NODES: [&dyn Currency<Node>; 6] = [
+    &Transmutation,
+    &Alteration,
+    &Augmentation,
+    &Regal,
+    &Exalted,
+    &Scouring,
 ];
 
 /// The orb a policy's id names, or `None` if this crate does not model it.
