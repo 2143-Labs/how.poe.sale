@@ -84,3 +84,66 @@ impl Cost {
         self
     }
 }
+
+/// Mean and second moments of orb counts, for something with more than one step.
+///
+/// A single use has a certain [`Cost`]. A loop does not: how many alterations it takes is a
+/// random count, and counts of different orbs move together (every failed attempt pays for a
+/// scouring and the alterations of the next one). The second moments are `E[X_a · X_b]` for every
+/// pair, so a weighted sum of counts has a spread too.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Spend {
+    pub mean: Cost,
+    second: BTreeMap<(CurrencyId, CurrencyId), f64>,
+}
+
+impl Spend {
+    /// Nothing spent.
+    pub fn none() -> Spend {
+        Spend::certain(&Cost::none())
+    }
+
+    /// A spend with no spread: exactly this cost, every time.
+    pub fn certain(cost: &Cost) -> Spend {
+        let mut second = BTreeMap::new();
+        for (a, x) in cost.iter() {
+            for (b, y) in cost.iter() {
+                second.insert((a, b), x * y);
+            }
+        }
+        Spend {
+            mean: cost.clone(),
+            second,
+        }
+    }
+
+    /// A spend from its moments: `mean[i]` is the mean count of `keys[i]`, and
+    /// `second[i · k + j]` is `E[X_i · X_j]`, `k` being the number of keys.
+    pub fn from_moments(keys: &[CurrencyId], mean: &[f64], second: &[f64]) -> Spend {
+        let mut spend = Spend::none();
+        for (i, &a) in keys.iter().enumerate() {
+            spend.mean.add(a, mean[i]);
+            for (j, &b) in keys.iter().enumerate() {
+                let moment = second[i * keys.len() + j];
+                if moment != 0.0 {
+                    spend.second.insert((a, b), moment);
+                }
+            }
+        }
+        spend
+    }
+
+    /// `E[X_a · X_b]`.
+    pub fn moment(&self, a: CurrencyId, b: CurrencyId) -> f64 {
+        self.second.get(&(a, b)).copied().unwrap_or(0.0)
+    }
+
+    pub fn covariance(&self, a: CurrencyId, b: CurrencyId) -> f64 {
+        self.moment(a, b) - self.mean.get(a) * self.mean.get(b)
+    }
+
+    /// The standard deviation of one orb's count.
+    pub fn sd(&self, id: CurrencyId) -> f64 {
+        self.covariance(id, id).max(0.0).sqrt()
+    }
+}
