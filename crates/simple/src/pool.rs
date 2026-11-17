@@ -22,14 +22,7 @@
 use crate::data::Data;
 use crate::fraction::Fraction;
 use crate::item::{Affix, Item, Rarity, Side};
-
-/// One result of a draw and the integer weight that produced it. Every [`Weighted`] of one add
-/// shares one denominator, so the weights can be summed and divided by [`crate::currency::ItemOutputSet::total`].
-pub type Weighted = (Item, u128, Option<(Side, u16)>);
-
-/// One result of a draw and its exact chance. Used where the results came from branches with
-/// different denominators, and by [`adds`], which multiplies chances rather than weights.
-pub type Mass = (Item, Fraction, Option<(Side, u16)>);
+use crate::stock::{Lock, Refusal, Stock};
 
 /// How many modifiers a side of an item of this rarity may hold.
 pub fn rarity_cap(rarity: Rarity) -> usize {
@@ -89,9 +82,9 @@ pub fn draw_weights(data: &Data, item: &Item, side: Side) -> Vec<(u16, u128)> {
 /// the modifier by weight on that side.
 ///
 /// `None` when a total or a scaled weight would overflow `u128`. An empty vector means no modifier
-/// can be added at all — a dead draw, which a caller of one add must treat as a refusal and a caller
-/// in the middle of [`adds`] must treat as a no-op.
-pub fn one_add(data: &Data, item: &Item) -> Option<Vec<Weighted>> {
+/// can be added at all — a dead draw, which [`crate::currency::adds`] reads as a refusal on its
+/// first draw and as a no-op later.
+pub fn one_add(data: &Data, item: &Item) -> Option<Vec<(Item, u128)>> {
     let sides: Vec<(Side, Vec<(u16, u128)>)> = Side::BOTH
         .into_iter()
         .map(|side| (side, draw_weights(data, item, side)))
@@ -116,57 +109,61 @@ pub fn one_add(data: &Data, item: &Item) -> Option<Vec<Weighted>> {
         for &(m, weight) in pool {
             let mut result = item.clone();
             result.affixes_mut(*side).push(Affix::at_range(data, m));
-            out.push((result, weight.checked_mul(scale)?, Some((*side, m))));
+            out.push((result, weight.checked_mul(scale)?));
         }
     }
     Some(out)
 }
 
-/// One add that cannot be skipped — the currencies whose "add a modifier" is not inside a coin flip
-/// (`currency/augmentation`, `currency/exalted`, `currency/regal`). An item with room but nothing
-/// left to draw yields `None`, which the currency refuses with the reason.
-pub fn add_required(data: &Data, item: &Item) -> Option<Vec<Weighted>> {
-    let drawn = one_add(data, item)?;
-    (!drawn.is_empty()).then_some(drawn)
-}
+/// An item as one kind of [`Stock`]: one add is [`one_add`], and its chances are exact fractions of
+/// the pool's weights.
+impl Stock for Item {
+    type Rules = Data;
+    type Chance = Fraction;
 
-/// `n` adds in a row, as exact chances.
-///
-/// Each draw is normalised against the state it is drawn on: the result of a draw keeps
-/// `weight / that state's total`, because the next draw's pool depends on what the draw just added,
-/// so different states have different totals. Multiplying raw weights across draws would only be
-/// right when every first-draw result left the same second-draw total, which is not true.
-///
-/// The first draw must happen: an empty result means nothing could be added, and [`crate::currency`]
-/// turns that into a refusal. A later draw with nothing left to take leaves the item as it is and
-/// the draws after it still run — an alteration on a shield whose free side has no modifier left
-/// keeps what the first draw gave it rather than producing nothing.
-///
-/// The reported modifier is the *first* one added.
-pub fn adds(data: &Data, item: &Item, n: usize) -> Option<Vec<Mass>> {
-    let mut state: Vec<Mass> = vec![(item.clone(), Fraction::ONE, None)];
-    for draw in 0..n {
-        let mut next: Vec<Mass> = Vec::new();
-        for (item, chance, first) in state {
-            let branches = one_add(data, &item)?;
-            if branches.is_empty() {
-                if draw == 0 {
-                    return Some(Vec::new());
-                }
-                next.push((item, chance, first));
-                continue;
-            }
-            let total = branches
-                .iter()
-                .try_fold(0u128, |sum, &(_, weight, _)| sum.checked_add(weight))?;
-            for (result, weight, added) in branches {
-                let share = Fraction::new(weight, total)?;
-                next.push((result, chance.checked_mul(share)?, first.or(added)));
-            }
-        }
-        state = next;
+    fn rarity(&self) -> Rarity {
+        self.rarity
     }
-    Some(state)
+
+    fn lock(&self) -> Option<Lock> {
+        if self.corrupted {
+            Some(Lock::Corrupted)
+        } else if self.mirrored {
+            Some(Lock::Mirrored)
+        } else {
+            None
+        }
+    }
+
+    fn held(&self, side: Side) -> usize {
+        self.affixes(side).len()
+    }
+
+    fn with_rarity(&self, rarity: Rarity) -> Self {
+        Item::with_rarity(self, rarity)
+    }
+
+    fn cleared(&self) -> Self {
+        Item::cleared(self)
+    }
+
+    fn add(&self, rules: &Data) -> Result<Vec<(Item, Fraction)>, Refusal> {
+        let Some(drawn) = one_add(rules, self) else {
+            return Err(Refusal("the chances do not fit in 128 bits"));
+        };
+        let total = drawn
+            .iter()
+            .try_fold(0u128, |sum, &(_, weight)| sum.checked_add(weight))
+            .ok_or(Refusal("the chances do not fit in 128 bits"))?;
+        drawn
+            .into_iter()
+            .map(|(item, weight)| {
+                Fraction::new(weight, total)
+                    .map(|chance| (item, chance))
+                    .ok_or(Refusal("the chances do not fit in 128 bits"))
+            })
+            .collect()
+    }
 }
 
 /// The exact share of one side's next draw that `want` would take: the accepted modifiers' weights
@@ -331,23 +328,27 @@ mod tests {
         let side_total = |side| -> u128 {
             outcomes
                 .iter()
-                .filter(|(item, _, _)| item.affixes(side).len() == 1)
-                .map(|&(_, weight, _)| weight)
+                .filter(|(item, _)| item.affixes(side).len() == 1)
+                .map(|&(_, weight)| weight)
                 .sum()
         };
         assert_eq!(side_total(Side::Prefix), prefix_total);
         assert_eq!(side_total(Side::Suffix), 64800u128 * 96475);
         assert_eq!(
-            outcomes.iter().map(|&(_, w, _)| w).sum::<u128>(),
+            outcomes.iter().map(|&(_, w)| w).sum::<u128>(),
             2 * prefix_total
         );
         assert_eq!(outcomes.len(), 204);
         // Every drawn affix starts at its full range and is appended to its side.
-        for (item, _, added) in &outcomes {
-            let (side, m) = added.unwrap();
-            let affix = item.affix(m).unwrap();
+        for (item, _) in &outcomes {
+            let side = if item.affixes(Side::Prefix).len() == 1 {
+                Side::Prefix
+            } else {
+                Side::Suffix
+            };
+            let affix = &item.affixes(side)[0];
             assert_eq!(item.affixes(side).last(), Some(affix));
-            let stats = &data.mod_at(m).stats;
+            let stats = &data.mod_at(affix.m).stats;
             assert_eq!(affix.rolls.len(), stats.len());
             assert!(
                 affix
@@ -363,21 +364,18 @@ mod tests {
     fn two_adds_are_normalised_against_their_own_state() {
         let data = data();
         let magic = shaper_magic(data);
-        let results = adds(data, &magic, 2).unwrap();
+        let results = crate::currency::adds(data, &magic, 2).unwrap();
         let total = results
             .iter()
-            .try_fold(Fraction::ZERO, |sum, &(_, chance, _)| {
-                sum.checked_add(chance)
-            })
+            .try_fold(Fraction::ZERO, |sum, (_, chance)| sum.checked_add(*chance))
             .unwrap();
         assert_eq!(total, Fraction::ONE, "two adds are a whole chance");
-        assert!(results.iter().all(|&(_, _, added)| added.is_some()));
         // Every result holds one modifier per side: a magic item has room for one of each.
-        assert!(results.iter().all(|(item, _, _)| {
+        assert!(results.iter().all(|(item, _)| {
             item.affixes(Side::Prefix).len() == 1 && item.affixes(Side::Suffix).len() == 1
         }));
         // Every drawn affix holds the mod's stats at their full range.
-        assert!(results.iter().all(|(item, _, _)| {
+        assert!(results.iter().all(|(item, _)| {
             Side::BOTH.into_iter().all(|side| {
                 item.affixes(side).iter().all(|affix| {
                     let stats = &data.mod_at(affix.m).stats;
@@ -418,8 +416,7 @@ mod tests {
     fn a_step_with_nothing_to_draw_is_empty_not_a_no_op() {
         let data = data();
         let normal = Item::of_base(data, base(data), 87, Rarity::Normal);
-        assert_eq!(adds(data, &normal, 1), Some(Vec::new()));
-        assert_eq!(add_required(data, &normal), None);
+        assert_eq!(crate::currency::adds(data, &normal, 1), Ok(Vec::new()));
     }
 
     #[test]

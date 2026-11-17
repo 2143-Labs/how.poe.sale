@@ -2,9 +2,9 @@
 //!
 //! A modifier is **desired**, **good**, or anything else — and "anything else" is not bad, it is
 //! simply not counted by the goal. The grades are the only vocabulary here: a filter is a list of
-//! desired ids, a list of good ids, and a rule saying which items it will take. The abstractions
-//! ([`AbstractMod`]) exist so a caller can widen a question — one modifier, then one modifier of a
-//! grade, then any modifier on a side — and never narrow it back.
+//! desired ids and a list of good ids. The abstractions ([`AbstractMod`]) exist so a caller can
+//! widen a question — one modifier, then one modifier of a grade, then any modifier on a side — and
+//! never narrow it back.
 
 use crate::data::Data;
 use crate::item::{Item, Side};
@@ -92,18 +92,7 @@ pub enum ModSelector {
     Any,
 }
 
-/// What the filter will take a finished step's item for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Accept {
-    /// Anything holding a desired modifier.
-    HasDesired,
-    /// Anything holding a desired modifier, or a good modifier on both sides.
-    DesiredOrGoodBothSides,
-    /// Anything.
-    Any,
-}
-
-/// The goal's modifier lists and acceptance rule.
+/// The goal's modifier lists.
 ///
 /// The filter is built from one pool ([`ItemSetFilter::from_data`]) and grades that pool's
 /// modifiers, so [`ItemSetFilter::tier_of`] is one lookup rather than a scan: a single draw grades
@@ -112,19 +101,17 @@ pub enum Accept {
 pub struct ItemSetFilter {
     desired: Vec<ModSelector>,
     good: Vec<ModSelector>,
-    pub accept: Accept,
     /// Every modifier's grade, indexed by modifier id.
     tiers: Vec<Tier>,
 }
 
 impl ItemSetFilter {
-    /// The shield's goal: the data file's desired and good ids, under the given acceptance rule.
-    pub fn from_data(data: &Data, accept: Accept) -> ItemSetFilter {
+    /// The shield's goal: the data file's desired and good ids.
+    pub fn from_data(data: &Data) -> ItemSetFilter {
         let selector = |m: u16| ModSelector::Mod(m);
         let mut filter = ItemSetFilter {
             desired: data.target.desired.iter().copied().map(selector).collect(),
             good: data.target.good.iter().copied().map(selector).collect(),
-            accept,
             tiers: Vec::new(),
         };
         filter.tiers = (0..data.mods.len() as u16)
@@ -169,39 +156,12 @@ impl ItemSetFilter {
         }
     }
 
-    /// The best grade on one side, or `None` when the side is empty.
-    pub fn best(&self, item: &Item, side: Side) -> Option<Tier> {
-        item.affixes(side)
-            .iter()
-            .map(|affix| self.tier_of(affix.m))
-            .max_by_key(|tier| tier.rank())
-    }
-
     /// Whether the item holds the modifier the craft is for.
     pub fn holds_desired(&self, item: &Item) -> bool {
         Side::BOTH
             .into_iter()
             .flat_map(|side| item.affixes(side).iter())
             .any(|affix| self.tier_of(affix.m) == Tier::Desired)
-    }
-
-    /// Whether both sides carry at least a good modifier.
-    pub fn good_both_sides(&self, item: &Item) -> bool {
-        Side::BOTH.into_iter().all(|side| {
-            self.best(item, side)
-                .is_some_and(|tier| tier.rank() >= Tier::Good.rank())
-        })
-    }
-
-    /// Whether the filter takes this item.
-    pub fn accepts(&self, item: &Item) -> bool {
-        match self.accept {
-            Accept::HasDesired => self.holds_desired(item),
-            Accept::DesiredOrGoodBothSides => {
-                self.holds_desired(item) || self.good_both_sides(item)
-            }
-            Accept::Any => true,
-        }
     }
 
     /// The grades on one side, best first.

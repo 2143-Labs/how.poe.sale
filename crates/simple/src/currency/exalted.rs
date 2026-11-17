@@ -1,46 +1,49 @@
 //! Exalted Orb: adds one modifier to a rare item that has room (`currency/exalted`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter};
-use crate::data::Data;
-use crate::item::{Item, Rarity, Side};
-use crate::pool::{add_required, room};
+use super::Applied;
+use super::{Currency, Named};
+use crate::cost::{Cost, CurrencyId};
+use crate::item::{Rarity, Side};
+use crate::pool;
+use crate::stock::{Dist, Lock, Refusal, Stock};
 
 /// The Exalted Orb, one step.
-pub struct Exalted<'d> {
-    data: &'d Data,
-}
+pub struct Exalted;
 
-impl<'d> Exalted<'d> {
-    pub fn new(data: &'d Data) -> Exalted<'d> {
-        Exalted { data }
+impl Named for Exalted {
+    fn id(&self) -> CurrencyId {
+        CurrencyId::EXALTED
+    }
+
+    fn works_on(&self) -> &'static [Rarity] {
+        &[Rarity::Rare]
     }
 }
 
-impl Currency for Exalted<'_> {
-    fn id(&self) -> &'static str {
-        "currency/exalted"
-    }
-
-    fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
-        if item.corrupted {
-            return ItemOutputSet::refused("a corrupted item cannot be exalted");
+impl<S: Stock> Currency<S> for Exalted {
+    fn apply(&self, rules: &S::Rules, state: &S) -> Result<Applied<S>, Refusal> {
+        if state.lock() == Some(Lock::Corrupted) {
+            return Err(Refusal("a corrupted item cannot be exalted"));
         }
-        if item.mirrored {
-            return ItemOutputSet::refused("a mirrored item cannot be exalted");
+        if state.lock() == Some(Lock::Mirrored) {
+            return Err(Refusal("a mirrored item cannot be exalted"));
         }
-        if item.rarity != Rarity::Rare {
-            return ItemOutputSet::refused("an Exalted Orb needs a rare item");
+        if state.rarity() != Rarity::Rare {
+            return Err(Refusal("an Exalted Orb needs a rare item"));
         }
-        if !Side::BOTH.into_iter().any(|side| room(item, side) > 0) {
-            return ItemOutputSet::refused("the item has no room for another modifier");
+        if !Side::BOTH
+            .into_iter()
+            .any(|side| pool::rarity_cap(state.rarity()) > state.held(side))
+        {
+            return Err(Refusal("the item has no room for another modifier"));
         }
-        let Some(weighted) = add_required(self.data, item) else {
-            return ItemOutputSet::refused("no modifier can roll on this item");
-        };
-        let set = ItemOutputSet::new(weighted);
-        match filter {
-            Some(filter) => set.filtered(filter),
-            None => set,
+        let drawn = state.add(rules)?;
+        if drawn.is_empty() {
+            return Err(Refusal("no modifier can roll on this item"));
         }
+        Ok(Applied {
+            outcomes: Dist::new(drawn)?,
+            cost: Cost::of(self.id(), 1.0),
+        })
     }
 }

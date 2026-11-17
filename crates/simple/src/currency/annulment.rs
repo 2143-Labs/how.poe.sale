@@ -1,56 +1,60 @@
 //! Orb of Annulment: removes one explicit modifier from a magic or rare item, in equal shares among
 //! the modifiers it may take (`currency/annulment`).
+//!
+//! It is item-only: an abstract item does not remember which group the removed modifier belonged
+//! to, so the same orb on it could not say what is left.
 
-use super::{Currency, ItemOutputSet, ItemSetFilter};
+use super::Applied;
+use super::{Currency, Named};
+use crate::cost::{Cost, CurrencyId};
 use crate::data::Data;
+use crate::fraction::Fraction;
 use crate::item::{Item, Rarity, Side};
+use crate::stock::{Dist, Lock, Refusal, Stock};
 
 /// The Orb of Annulment, one step: one modifier goes, each in the same share.
-pub struct Annulment<'d> {
-    // Every orb takes the pool, so the registry builds them alike; a removal reads no weight.
-    #[allow(dead_code)]
-    data: &'d Data,
-}
+pub struct Annulment;
 
-impl<'d> Annulment<'d> {
-    pub fn new(data: &'d Data) -> Annulment<'d> {
-        Annulment { data }
+impl Named for Annulment {
+    fn id(&self) -> CurrencyId {
+        CurrencyId::ANNULMENT
+    }
+
+    fn works_on(&self) -> &'static [Rarity] {
+        &[Rarity::Magic, Rarity::Rare]
     }
 }
 
-impl Currency for Annulment<'_> {
-    fn id(&self) -> &'static str {
-        "currency/annulment"
-    }
-
-    fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
-        if item.corrupted {
-            return ItemOutputSet::refused("a corrupted item cannot be annulled");
+impl Currency<Item> for Annulment {
+    fn apply(&self, _rules: &Data, state: &Item) -> Result<Applied<Item>, Refusal> {
+        if state.lock() == Some(Lock::Corrupted) {
+            return Err(Refusal("a corrupted item cannot be annulled"));
         }
-        if item.mirrored {
-            return ItemOutputSet::refused("a mirrored item cannot be annulled");
+        if state.lock() == Some(Lock::Mirrored) {
+            return Err(Refusal("a mirrored item cannot be annulled"));
         }
-        if !matches!(item.rarity, Rarity::Magic | Rarity::Rare) {
-            return ItemOutputSet::refused("an Orb of Annulment needs a magic or rare item");
+        if !matches!(state.rarity(), Rarity::Magic | Rarity::Rare) {
+            return Err(Refusal("an Orb of Annulment needs a magic or rare item"));
         }
-        if item.explicits() == 0 {
-            return ItemOutputSet::refused("the item has no explicit modifiers to annul");
+        if state.explicits() == 0 {
+            return Err(Refusal("the item has no explicit modifiers to annul"));
         }
-        // One outcome per held modifier, each at weight 1: the orb picks a modifier, not a side, so
-        // a side holding two of the item's four modifiers loses one twice as often. The rarity is
-        // left as it was — an annulment does not recompute it.
-        let mut weighted = Vec::with_capacity(item.explicits());
+        // One outcome per held modifier, each at the same share: the orb picks a modifier, not a
+        // side, so a side holding two of the item's four modifiers loses one twice as often. The
+        // rarity is left as it was — an annulment does not recompute it.
+        let held = state.explicits();
+        let share = Fraction::new(1, held as u128).expect("the item holds a modifier");
+        let mut parts = Vec::with_capacity(held);
         for side in Side::BOTH {
-            for index in 0..item.affixes(side).len() {
-                let mut result = item.clone();
+            for index in 0..state.affixes(side).len() {
+                let mut result = state.clone();
                 result.affixes_mut(side).remove(index);
-                weighted.push((result, 1, None));
+                parts.push((result, share));
             }
         }
-        let set = ItemOutputSet::new(weighted);
-        match filter {
-            Some(filter) => set.filtered(filter),
-            None => set,
-        }
+        Ok(Applied {
+            outcomes: Dist::new(parts)?,
+            cost: Cost::of(self.id(), 1.0),
+        })
     }
 }

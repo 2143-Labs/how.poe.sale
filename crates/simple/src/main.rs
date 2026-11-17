@@ -10,7 +10,7 @@
 //!   in its range, and intervals add exactly.
 
 use simple::data::data;
-use simple::filter::{Accept, ItemSetFilter, Tier};
+use simple::filter::{ItemSetFilter, Tier};
 use simple::item::{Affix, Influence, Item, Rarity, Side};
 use simple::pool::{draw_weights, side_chance};
 
@@ -40,7 +40,7 @@ fn main() {
     }
     println!();
 
-    let filter = ItemSetFilter::from_data(data, Accept::DesiredOrGoodBothSides);
+    let filter = ItemSetFilter::from_data(data);
     for (label, side, tier) in [
         ("desired prefix", Side::Prefix, Tier::Desired),
         ("good prefix", Side::Prefix, Tier::Good),

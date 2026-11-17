@@ -8,14 +8,18 @@
 //!
 //! Every chance is an exact [`Fraction`].
 
-use simple::currency::{ItemOutputSet, registry};
+use simple::cost::{Cost, CurrencyId};
+use simple::currency::{Applied, Currency, ON_ITEMS, find};
 use simple::data::{Data, data};
-use simple::filter::{Accept, ItemSetFilter, Tier};
+use simple::filter::{ItemSetFilter, Tier};
 use simple::fraction::Fraction;
 use simple::item::{Affix, Influence, Item, Rarity, Side};
 use simple::pool::{draw_weights, side_chance};
 use simple::roll::Roll;
+use simple::stock::Refusal;
 use simple::target::Target;
+
+mod common;
 
 /// The one base this crate models.
 const BASE: &str = "Supreme Spiked Shield";
@@ -47,7 +51,7 @@ fn totem() -> u16 {
 }
 
 fn shield_goal() -> ItemSetFilter {
-    ItemSetFilter::from_data(data(), Accept::DesiredOrGoodBothSides)
+    ItemSetFilter::from_data(data())
 }
 
 fn weight(pool: &[(u16, u128)]) -> u128 {
@@ -64,17 +68,17 @@ fn stat(totals: &[(u16, Roll)], data: &Data, id: &str) -> Roll {
 }
 
 /// The orb a policy would name, applied to one item.
-fn apply(id: &str, item: &Item) -> ItemOutputSet {
-    registry(data(), id)
-        .expect("a registered orb")
-        .apply(item, &None)
+fn apply(id: &'static str, item: &Item) -> Result<Applied<Item>, Refusal> {
+    find(&ON_ITEMS, CurrencyId(id))
+        .expect("a modelled orb")
+        .apply(data(), item)
 }
 
-/// Asserts that a set is a refusal with exactly this reason.
-fn assert_refused(set: &ItemOutputSet, why: &str) {
-    match set {
-        ItemOutputSet::Refused(got) => assert_eq!(*got, why),
-        ItemOutputSet::Outcomes { .. } => panic!("expected a refusal ({why}), got outcomes"),
+/// Asserts that a use is a refusal with exactly this reason.
+fn assert_refused(result: Result<Applied<Item>, Refusal>, why: &str) {
+    match result {
+        Err(Refusal(got)) => assert_eq!(got, why),
+        Ok(_) => panic!("expected a refusal ({why}), got outcomes"),
     }
 }
 
@@ -300,9 +304,11 @@ fn the_three_chances() {
 /// second, after a suffix (½·1/81), so 1/162 + 1/162 = 1/81. Together ½·1/162 + ½·1/81 = 1/108.
 #[test]
 fn one_transmute_is_one_in_one_hundred_and_eight() {
-    let set = apply("currency/transmutation", &shaper(Rarity::Normal));
+    let applied = apply("currency/transmutation", &shaper(Rarity::Normal))
+        .expect("a normal shield is transmuted");
     let totem = totem();
-    let chance = set
+    let chance = applied
+        .outcomes
         .chance(|item| item.affixes(Side::Prefix).iter().any(|a| a.m == totem))
         .expect("a transmutation always produces something");
     assert_eq!(chance, Fraction::new(1, 108).unwrap());
@@ -316,6 +322,21 @@ fn one_transmute_is_one_in_one_hundred_and_eight() {
 /// values a Divine still has room to widen.
 #[test]
 fn chances_are_whole_and_exact() {
+    for (id, item) in accepted_items() {
+        let applied = apply(id, &item).expect("an item the orb accepts");
+        assert!(applied.outcomes.is_whole(), "{id} produced an inexact set");
+        assert!(
+            !applied.outcomes.parts().is_empty(),
+            "{id} produced no outcome"
+        );
+    }
+}
+
+/// One item each orb accepts: a normal shield for the transmutation, a magic one for the
+/// alteration, a magic one with a free side for augmentation and regal, a rare one with room for
+/// the exalted orb, a rare one holding something for scouring and annulment, and a rare one whose
+/// values a Divine still has room to widen.
+fn accepted_items() -> Vec<(&'static str, Item)> {
     let data = data();
     let mut filled = shaper(Rarity::Magic);
     filled
@@ -332,7 +353,7 @@ fn chances_are_whole_and_exact() {
         .affixes_mut(Side::Prefix)
         .push(Affix::pinned(data, life, &[150]).expect("150 is in the mod's range"));
 
-    let cases: [(&str, Item); 8] = [
+    vec![
         ("currency/transmutation", shaper(Rarity::Normal)),
         ("currency/alteration", filled.clone()),
         ("currency/augmentation", filled.clone()),
@@ -341,17 +362,110 @@ fn chances_are_whole_and_exact() {
         ("currency/scouring", rare.clone()),
         ("currency/annulment", rare),
         ("currency/divine", pinned),
-    ];
-    for (id, item) in &cases {
-        let set = apply(id, item);
-        assert!(set.exact(), "{id} produced an inexact set");
+    ]
+}
+
+/// Every use of an orb the item accepts states one orb of its own kind as the cost.
+#[test]
+fn every_use_states_its_cost() {
+    for (id, item) in accepted_items() {
+        let applied = apply(id, &item).expect("an item the orb accepts");
         assert_eq!(
-            set.chance(|_| true),
-            Some(Fraction::ONE),
-            "{id}'s chances do not add up to a whole, or it refused an item it should take"
+            applied.cost,
+            Cost::of(CurrencyId(id), 1.0),
+            "{id} states another cost"
         );
-        assert!(!set.outcomes().is_empty(), "{id} produced no outcome");
     }
+}
+
+/// The rarity an orb refuses a stock for, one reason each.
+const RARITY_REASONS: [(&str, &str); 8] = [
+    (
+        "currency/transmutation",
+        "an Orb of Transmutation needs a normal item",
+    ),
+    (
+        "currency/alteration",
+        "an Orb of Alteration needs a magic item",
+    ),
+    (
+        "currency/augmentation",
+        "an Orb of Augmentation needs a magic item",
+    ),
+    ("currency/regal", "an Orb of Regal needs a magic item"),
+    ("currency/exalted", "an Exalted Orb needs a rare item"),
+    (
+        "currency/scouring",
+        "an Orb of Scouring needs a magic or rare item",
+    ),
+    (
+        "currency/annulment",
+        "an Orb of Annulment needs a magic or rare item",
+    ),
+    ("currency/divine", "a Divine Orb needs a magic or rare item"),
+];
+
+/// An orb's `works_on` and its rarity guard say the same thing: a shield of each rarity is refused
+/// with the orb's rarity reason exactly when the rarity is not in `works_on`.
+#[test]
+fn works_on_and_apply_agree() {
+    let data = data();
+    let life = data.id_of("IncreasedLife10").unwrap();
+    for (id, reason) in RARITY_REASONS {
+        let orb = find(&ON_ITEMS, CurrencyId(id)).expect("a modelled orb");
+        for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
+            let mut held = shaper(rarity);
+            if rarity != Rarity::Normal {
+                held.affixes_mut(Side::Prefix)
+                    .push(Affix::pinned(data, life, &[150]).expect("150 is in the mod's range"));
+            }
+            let accepted = orb.works_on().contains(&rarity);
+            match orb.apply(data, &held) {
+                Ok(_) => assert!(
+                    accepted,
+                    "{id} took a {} item it does not work on",
+                    rarity.name()
+                ),
+                Err(Refusal(why)) => {
+                    assert!(
+                        !accepted,
+                        "{id} refused a {} item it works on",
+                        rarity.name()
+                    );
+                    assert_eq!(why, reason, "{id} on a {} item", rarity.name());
+                }
+            }
+        }
+    }
+}
+
+/// A cost is a property of the use: `Restart` produces the same outcomes either way and states a
+/// different cost for a normal item than for anything else.
+#[test]
+fn a_cost_can_depend_on_the_input() {
+    let normal = shaper(Rarity::Normal);
+    let rare = shaper(Rarity::Rare);
+    let from_normal = common::Restart
+        .apply(data(), &normal)
+        .expect("a normal item restarts");
+    let from_rare = common::Restart
+        .apply(data(), &rare)
+        .expect("a rare item restarts");
+
+    assert_eq!(
+        from_normal.cost,
+        Cost::of(CurrencyId::TRANSMUTATION, 1.0),
+        "a normal item costs one transmutation"
+    );
+    assert_eq!(
+        from_rare.cost,
+        Cost::of(CurrencyId::SCOURING, 1.0).plus(&Cost::of(CurrencyId::TRANSMUTATION, 1.0)),
+        "anything else costs a scouring and a transmutation"
+    );
+    assert_eq!(
+        from_normal.outcomes, from_rare.outcomes,
+        "the same restart produces the same items either way"
+    );
 }
 
 /// The eight ids the crate models, and the only ones it models.
@@ -368,18 +482,24 @@ const ORBS: [(&str, &str); 8] = [
 
 #[test]
 fn the_registry_is_exactly_the_eight_orbs() {
+    let modelled: Vec<&'static str> = ON_ITEMS.iter().map(|orb| orb.id().0).collect();
+    let expected: Vec<&'static str> = ORBS.iter().map(|(id, _)| *id).collect();
+    assert_eq!(
+        modelled, expected,
+        "the modelled orbs are exactly the eight"
+    );
     for (id, _) in ORBS {
-        let orb = registry(data(), id).unwrap_or_else(|| panic!("{id} is not registered"));
-        assert_eq!(orb.id(), id, "the orb reports a different id than its key");
+        let orb = find(&ON_ITEMS, CurrencyId(id)).unwrap_or_else(|| panic!("{id} is not modelled"));
+        assert_eq!(
+            orb.id(),
+            CurrencyId(id),
+            "the orb reports a different id than its key"
+        );
     }
-    for id in [
-        "currency/alchemy",
-        "currency/chaos",
-        "currency/veiled-chaos",
-        "currency/essence",
-    ] {
-        assert!(registry(data(), id).is_none(), "{id} must not be modelled");
-    }
+    assert!(
+        find(&ON_ITEMS, CurrencyId("currency/chaos")).is_none(),
+        "currency/chaos must not be modelled"
+    );
 }
 
 /// 5 (v2). A corrupted or a mirrored item is locked: every one of the eight orbs refuses it, and
@@ -393,14 +513,14 @@ fn a_corrupted_or_mirrored_item_is_locked() {
         let mut corrupted = shaper(Rarity::Rare);
         corrupted.corrupted = true;
         assert_refused(
-            &apply(id, &corrupted),
+            apply(id, &corrupted),
             &format!("a corrupted item cannot be {verb}"),
         );
 
         let mut mirrored = shaper(Rarity::Rare);
         mirrored.mirrored = true;
         assert_refused(
-            &apply(id, &mirrored),
+            apply(id, &mirrored),
             &format!("a mirrored item cannot be {verb}"),
         );
     }
@@ -417,24 +537,23 @@ fn a_corrupted_or_mirrored_item_is_locked() {
 #[test]
 fn no_step_rolls_past_its_sides_room() {
     let data = data();
-    for outcome in apply("currency/transmutation", &shaper(Rarity::Normal)).outcomes() {
-        let item = &outcome.item;
+    let transmuted = apply("currency/transmutation", &shaper(Rarity::Normal))
+        .expect("a normal shield is transmuted");
+    for (item, _) in transmuted.outcomes.parts() {
         assert_eq!(item.rarity, Rarity::Magic);
         assert!(item.affixes(Side::Prefix).len() <= 1);
         assert!(item.affixes(Side::Suffix).len() <= 1);
     }
 
-    for outcome in apply("currency/augmentation", &{
-        let mut magic = shaper(Rarity::Magic);
-        magic
-            .affixes_mut(Side::Prefix)
-            .push(Affix::at_range(data, totem()));
-        magic
-    })
-    .outcomes()
-    {
-        assert_eq!(outcome.item.rarity, Rarity::Magic);
-        assert!(outcome.item.affixes(Side::Suffix).len() <= 1);
+    let mut magic = shaper(Rarity::Magic);
+    magic
+        .affixes_mut(Side::Prefix)
+        .push(Affix::at_range(data, totem()));
+    let augmented =
+        apply("currency/augmentation", &magic).expect("a magic shield with a free side");
+    for (item, _) in augmented.outcomes.parts() {
+        assert_eq!(item.rarity, Rarity::Magic);
+        assert!(item.affixes(Side::Suffix).len() <= 1);
     }
 
     // A magic item with one prefix is regalled into a rare item that may take a second prefix.
@@ -442,8 +561,8 @@ fn no_step_rolls_past_its_sides_room() {
     magic
         .affixes_mut(Side::Prefix)
         .push(Affix::at_range(data, totem()));
-    for outcome in apply("currency/regal", &magic).outcomes() {
-        let item = &outcome.item;
+    let regaled = apply("currency/regal", &magic).expect("a magic shield is regalled");
+    for (item, _) in regaled.outcomes.parts() {
         assert_eq!(item.rarity, Rarity::Rare);
         assert!(item.affixes(Side::Prefix).len() <= 3);
         assert!(item.affixes(Side::Suffix).len() <= 3);
@@ -463,7 +582,7 @@ fn no_step_rolls_past_its_sides_room() {
     assert_eq!(full.affixes(Side::Prefix).len(), 3);
     assert_eq!(full.affixes(Side::Suffix).len(), 3);
     assert_refused(
-        &apply("currency/exalted", &full),
+        apply("currency/exalted", &full),
         "the item has no room for another modifier",
     );
 }
@@ -479,10 +598,11 @@ fn a_family_cannot_repeat_through_any_orb() {
         .push(Affix::at_range(data, life));
 
     for id in ["currency/exalted", "currency/annulment"] {
-        for outcome in apply(id, &rare).outcomes() {
+        let applied = apply(id, &rare).expect("a rare shield with a free side");
+        for (item, _) in applied.outcomes.parts() {
             let held: Vec<u16> = Side::BOTH
                 .into_iter()
-                .flat_map(|side| outcome.item.affixes(side).iter().map(|a| a.m))
+                .flat_map(|side| item.affixes(side).iter().map(|a| a.m))
                 .collect();
             let repeated = held.iter().filter(|m| **m == lower_life).count();
             assert_eq!(repeated, 0, "{id} put a second life modifier on one item");
@@ -496,35 +616,24 @@ fn a_family_cannot_repeat_through_any_orb() {
     );
 }
 
-/// 7. The filter is a filter.
+/// 7. The filter is a question, and the distribution answers it without hiding mass.
 ///
-/// It keeps the outcomes holding the desired modifier and reports exactly the mass it kept, so no
-/// chance appears or vanishes.
+/// The chance that a transmutation's outcome holds the desired modifier is exactly `1/108`, and
+/// every outcome's chance is counted once: the set is a whole.
 #[test]
 fn the_filter_keeps_the_mass_it_reports() {
-    let data = data();
-    let set = apply("currency/transmutation", &shaper(Rarity::Normal));
-    let wants_desired = ItemSetFilter::from_data(data, Accept::HasDesired);
-    let chance = set
+    let wants_desired = ItemSetFilter::from_data(data());
+    let applied = apply("currency/transmutation", &shaper(Rarity::Normal))
+        .expect("a normal shield is transmuted");
+    let chance = applied
+        .outcomes
         .chance(|item| wants_desired.holds_desired(item))
         .expect("the step always produces something");
     assert_eq!(chance, Fraction::new(1, 108).unwrap());
-
-    let filtered = set.filtered(&wants_desired);
-    assert!(filtered.exact());
     assert!(
-        filtered
-            .outcomes()
-            .iter()
-            .all(|outcome| wants_desired.holds_desired(&outcome.item))
+        applied.outcomes.is_whole(),
+        "every outcome's chance is counted once"
     );
-    // The kept weights over the step's own total are the same chance, read the other way round.
-    assert_eq!(
-        Fraction::new(filtered.total(), set.total()).unwrap(),
-        chance
-    );
-    // The filtered set is renormalised: over its own total it is a whole chance.
-    assert_eq!(filtered.chance(|_| true).unwrap(), Fraction::ONE);
 }
 
 /// 6 (v2). The Divine Orb widens values and touches nothing else.
@@ -540,11 +649,14 @@ fn the_divine_widens_values_and_nothing_else() {
     rare.affixes_mut(Side::Prefix)
         .push(Affix::pinned(data, life, &[150]).expect("150 is in the mod's range"));
 
-    let set = apply("currency/divine", &rare);
-    assert!(set.exact());
-    assert_eq!(set.outcomes().len(), 1, "a Divine is deterministic");
-    assert_eq!(set.chance(|_| true), Some(Fraction::ONE));
-    let widened = &set.outcomes()[0].item;
+    let applied = apply("currency/divine", &rare).expect("a pinned value is widened");
+    assert!(applied.outcomes.is_whole());
+    assert_eq!(
+        applied.outcomes.parts().len(),
+        1,
+        "a Divine is deterministic"
+    );
+    let widened = &applied.outcomes.parts()[0].0;
     assert_eq!(
         widened
             .affix(life)
@@ -561,11 +673,11 @@ fn the_divine_widens_values_and_nothing_else() {
     assert_eq!(widened.implicits(), rare.implicits());
 
     assert_refused(
-        &apply("currency/divine", widened),
+        apply("currency/divine", widened),
         "the item's values are already as wide as a Divine can make them",
     );
     assert_refused(
-        &apply("currency/divine", &shaper(Rarity::Normal)),
+        apply("currency/divine", &shaper(Rarity::Normal)),
         "a Divine Orb needs a magic or rare item",
     );
 }

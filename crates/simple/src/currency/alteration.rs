@@ -1,50 +1,46 @@
 //! Orb of Alteration: rerolls a magic item into one or two fresh modifiers, half the time each way
 //! (`currency/alteration`).
 
-use super::{Currency, ItemOutputSet, ItemSetFilter, combine, half};
-use crate::data::Data;
-use crate::item::{Item, Rarity};
-use crate::pool::adds;
+use super::Applied;
+use super::{Currency, Named, adds, mix};
+use crate::cost::{Cost, CurrencyId};
+use crate::item::Rarity;
+use crate::stock::{Chance, Lock, Refusal, Stock};
 
 /// The Orb of Alteration, one step.
-pub struct Alteration<'d> {
-    data: &'d Data,
-}
+pub struct Alteration;
 
-impl<'d> Alteration<'d> {
-    pub fn new(data: &'d Data) -> Alteration<'d> {
-        Alteration { data }
+impl Named for Alteration {
+    fn id(&self) -> CurrencyId {
+        CurrencyId::ALTERATION
+    }
+
+    fn works_on(&self) -> &'static [Rarity] {
+        &[Rarity::Magic]
     }
 }
 
-impl Currency for Alteration<'_> {
-    fn id(&self) -> &'static str {
-        "currency/alteration"
-    }
-
-    fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet {
-        if item.corrupted {
-            return ItemOutputSet::refused("a corrupted item cannot be altered");
+impl<S: Stock> Currency<S> for Alteration {
+    fn apply(&self, rules: &S::Rules, state: &S) -> Result<Applied<S>, Refusal> {
+        if state.lock() == Some(Lock::Corrupted) {
+            return Err(Refusal("a corrupted item cannot be altered"));
         }
-        if item.mirrored {
-            return ItemOutputSet::refused("a mirrored item cannot be altered");
+        if state.lock() == Some(Lock::Mirrored) {
+            return Err(Refusal("a mirrored item cannot be altered"));
         }
-        if item.rarity != Rarity::Magic {
-            return ItemOutputSet::refused("an Orb of Alteration needs a magic item");
+        if state.rarity() != Rarity::Magic {
+            return Err(Refusal("an Orb of Alteration needs a magic item"));
         }
         // Every modifier goes before the new ones are drawn, so the pool the draws see is the pool
         // of an empty magic item, not of the item that was just emptied.
-        let fresh = item.cleared();
-        let (Some(one), Some(two)) = (adds(self.data, &fresh, 1), adds(self.data, &fresh, 2))
-        else {
-            return ItemOutputSet::refused("the chances do not fit in 128 bits");
-        };
-        let Some(set) = combine(vec![(half(), one), (half(), two)]) else {
-            return ItemOutputSet::refused("the chances do not fit in 128 bits");
-        };
-        match filter {
-            Some(filter) => set.filtered(filter),
-            None => set,
-        }
+        let fresh = state.cleared();
+        let outcomes = mix(vec![
+            (S::Chance::half(), adds(rules, &fresh, 1)?),
+            (S::Chance::half(), adds(rules, &fresh, 2)?),
+        ])?;
+        Ok(Applied {
+            outcomes,
+            cost: Cost::of(self.id(), 1.0),
+        })
     }
 }
