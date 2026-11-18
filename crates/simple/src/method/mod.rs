@@ -57,14 +57,16 @@ pub trait Method {
     /// Every exit, and the rarity an item leaves with.
     fn exits(&self) -> &'static [ExitSpec];
 
-    fn rule(&self, target: &Target, node: &Node) -> Move;
+    /// The one move this method makes at a node. It is handed the whole [`Kit`], not just the
+    /// target, because a rule can need to know what a side can still roll.
+    fn rule(&self, kit: &Kit, node: &Node) -> Move;
 }
 
 /// One node's move as arms: `Use` applies the currency, whose cost is certain; `Exit` ends the
 /// method.
 pub fn next(method: &dyn Method, kit: &Kit, node: &Node) -> Result<Next<Node>, SolveError> {
     let at = || format!("{} at {}", method.name(), node.label());
-    match method.rule(kit.target, node) {
+    match method.rule(kit, node) {
         Move::Exit(exit) => {
             let Some(spec) = method.exits().iter().find(|spec| spec.name == exit) else {
                 return Err(SolveError::BadExit {

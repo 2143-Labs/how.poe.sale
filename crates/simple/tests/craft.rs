@@ -77,57 +77,19 @@ fn means(spend: &Spend, want: [f64; 6], what: &str) {
 fn the_steps_cost_this() {
     let report = report();
     let names: Vec<&str> = report.rows.iter().map(|row| row.name.as_str()).collect();
-    assert_eq!(
-        names,
-        ["alt_aug_regal", "exalt_to(4)", "exalt_to(5)", "exalt_to(6)"]
-    );
+    assert_eq!(names, ["alt_aug_regal"]);
 
-    // Per step: chance, one run's counts, the counts to get past it, and its weighted value and sd.
+    // The goal is a rare shield holding the totem prefix, so the craft is one step: alt, aug and
+    // regal until it is there. Per step: chance, one run's counts, the counts to get past it, and
+    // its weighted value and sd.
     type Expected = (f64, [f64; 6], [f64; 6], f64, f64);
-    let expected: [Expected; 4] = [
-        (
-            1.0,
-            [1.560856, 167.011595, 0.520285, 1.560856, 0.0, 0.560856],
-            [1.560856, 167.011595, 0.520285, 1.560856, 0.0, 0.560856],
-            34.520406,
-            34.090741,
-        ),
-        (
-            0.289545977,
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.710454023],
-            [5.390702, 576.805096, 1.796901, 5.390702, 3.453683, 4.390702],
-            127.356746,
-            125.011341,
-        ),
-        (
-            0.250691894,
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.749308106],
-            [
-                21.503295,
-                2300.852604,
-                7.167765,
-                21.503295,
-                17.765564,
-                20.503295,
-            ],
-            517.493399,
-            513.216366,
-        ),
-        (
-            0.152938289,
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.847061711],
-            [
-                140.601125,
-                15044.320336,
-                46.867042,
-                140.601125,
-                122.700237,
-                139.601125,
-            ],
-            3399.521040,
-            3393.281490,
-        ),
-    ];
+    let expected: [Expected; 1] = [(
+        1.0,
+        [1.0, 80.0, 20.5, 1.0, 0.0, 0.0],
+        [1.0, 80.0, 20.5, 1.0, 0.0, 0.0],
+        17.545000,
+        17.107034,
+    )];
     for (row, (chance, run, reach, value, sd)) in report.rows.iter().zip(expected) {
         let what = format!("step {} {}", row.step, row.name);
         close(row.chance, chance, 1e-7, &format!("{what} chance"));
@@ -140,14 +102,7 @@ fn the_steps_cost_this() {
         assert_eq!(valued.unweighted, Cost::none());
     }
 
-    for (id, sd) in ORBS.into_iter().zip([
-        140.100232,
-        15044.820328,
-        47.033413,
-        140.100232,
-        120.499650,
-        140.100232,
-    ]) {
+    for (id, sd) in ORBS.into_iter().zip([0.0, 80.498447, 20.5, 0.0, 0.0, 0.0]) {
         close(
             report.total.sd(id),
             sd,
@@ -157,21 +112,15 @@ fn the_steps_cost_this() {
     }
 }
 
-/// The cost to get past a step is the cost to reach it plus one run of it, paid once per try.
+/// One step: getting past it is one run of it, and every step clears on its first try.
 #[test]
-fn reciprocals_carry_the_cost() {
+fn one_step_carries_its_whole_cost() {
     let report = report();
-    for pair in report.rows.windows(2) {
-        let (before, row) = (&pair[0], &pair[1]);
-        for id in ORBS {
-            close(
-                row.reach.mean.get(id),
-                (before.reach.mean.get(id) + row.run.mean.get(id)) / row.chance,
-                1e-9,
-                &format!("step {} {}", row.step, id.name()),
-            );
-        }
-    }
+    assert_eq!(report.rows.len(), 1);
+    let row = &report.rows[0];
+    close(row.chance, 1.0, 1e-12, "chance");
+    close(row.tries, 1.0, 1e-12, "tries");
+    assert_eq!(report.total, row.reach);
 }
 
 /// Solving each method on its own and nesting the answers gives what one chain of single orb uses
@@ -217,7 +166,7 @@ impl Method for HandsOnMagic {
         }]
     }
 
-    fn rule(&self, _target: &Target, node: &Node) -> Move {
+    fn rule(&self, _kit: &Kit, node: &Node) -> Move {
         match node.rarity {
             Rarity::Normal => Move::Use(CurrencyId::TRANSMUTATION),
             _ => Move::Exit("magic"),
@@ -289,11 +238,13 @@ fn rarity_is_checked_at_wiring_time() {
     assert_eq!(shield().check(), Ok(()));
 }
 
-/// Six moves the written strategy does not make would cost less, all on magic items in the first
-/// step, where it alters.
+/// One move the written strategy does not make would cost less: on a magic item that already holds
+/// the totem prefix, the augmentation buys a suffix before the regal, and regaling straight away
+/// would do the job for 0.05 chaos less. That is the price of the bonus suffix, and the only place
+/// the strategy is not the cheapest.
 #[test]
 fn the_other_moves_that_are_cheaper() {
-    use Tier::{Any, Good};
+    use Tier::Desired;
     let report = report();
     let magic = |prefix: &[Tier], suffix: &[Tier]| {
         let mut node = Node::fresh(Rarity::Magic);
@@ -305,34 +256,39 @@ fn the_other_moves_that_are_cheaper() {
         }
         node
     };
-    let expected: [(Node, CurrencyId, f64); 6] = [
-        (magic(&[Good], &[Good]), CurrencyId::REGAL, 3375.837),
-        (magic(&[], &[Good]), CurrencyId::AUGMENTATION, 3398.460),
-        (magic(&[Good], &[]), CurrencyId::REGAL, 3397.741),
-        (magic(&[], &[Good]), CurrencyId::REGAL, 3399.503),
-        (magic(&[], &[Any]), CurrencyId::AUGMENTATION, 3399.667),
-        (magic(&[Good], &[Any]), CurrencyId::REGAL, 3399.542),
-    ];
+    // 27 other moves were costed at 11 places; this is the one that comes out cheaper.
+    assert_eq!(report.others.len(), 27);
+    // node, the planned move and its cost to finish, the other move and its cost to finish.
+    let expected: [(Node, CurrencyId, f64, CurrencyId, f64); 1] = [(
+        magic(&[Desired], &[]),
+        CurrencyId::AUGMENTATION,
+        0.550,
+        CurrencyId::REGAL,
+        0.500,
+    )];
 
     let better: Vec<_> = report.others.iter().filter(|other| other.better).collect();
     assert_eq!(better.len(), expected.len(), "{better:#?}");
-    for other in &better {
-        assert_eq!(other.step, 0);
-        assert_eq!(other.planned, CurrencyId::ALTERATION);
-        let planned = weights().value(&Spend::certain(&other.planned_to_go)).value;
-        assert!((planned - 3399.701).abs() < 1e-3, "{planned}");
-    }
-    for (node, move_, cost) in expected {
+    for (node, planned_move, planned_cost, other_move, other_cost) in expected {
         let found = better
             .iter()
-            .find(|other| other.node == node && other.other == move_)
-            .unwrap_or_else(|| panic!("{} {} is not flagged", node.label(), move_.name()));
+            .find(|other| other.node == node && other.other == other_move)
+            .unwrap_or_else(|| panic!("{} {} is not flagged", node.label(), other_move.name()));
+        assert_eq!(found.step, 0);
+        assert_eq!(found.planned, planned_move);
+        let planned = weights().value(&Spend::certain(&found.planned_to_go)).value;
+        assert!(
+            (planned - planned_cost).abs() < 1e-3,
+            "{} {}: {planned} is not {planned_cost}",
+            node.label(),
+            planned_move.name()
+        );
         let got = weights().value(&Spend::certain(&found.other_to_go)).value;
         assert!(
-            (got - cost).abs() < 1e-3,
-            "{} {}: {got} is not {cost}",
+            (got - other_cost).abs() < 1e-3,
+            "{} {}: {got} is not {other_cost}",
             node.label(),
-            move_.name()
+            other_move.name()
         );
     }
 }

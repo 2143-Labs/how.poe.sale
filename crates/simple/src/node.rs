@@ -84,11 +84,12 @@ impl Node {
     }
 
     /// Whether this can still become the item the craft is for
-    /// ([`Target::side_reachable`] on each side).
+    /// ([`Target::side_reachable`] on each side, with the room this rarity gives).
     pub fn reachable(&self, target: &Target) -> bool {
+        let cap = crate::pool::rarity_cap(self.rarity);
         Side::BOTH
             .into_iter()
-            .all(|side| target.side_reachable(side, self.counts(side)))
+            .all(|side| target.side_reachable(side, self.counts(side), cap))
     }
 
     /// `rare desired+good / good`: the rarity, then the prefixes and the suffixes in draw order,

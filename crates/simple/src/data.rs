@@ -803,8 +803,8 @@ mod tests {
     #[test]
     fn every_target_modifier_resolves() {
         let data = data();
-        assert_eq!(data.target.prefixes, ["desired", "good", "any"]);
-        assert_eq!(data.target.suffixes, ["good", "good", "any"]);
+        assert_eq!(data.target.prefixes, ["desired"]);
+        assert!(data.target.suffixes.is_empty());
         assert!(!data.target.desired.is_empty());
         assert!(!data.target.good.is_empty());
         for m in data.target.desired.iter().chain(&data.target.good) {

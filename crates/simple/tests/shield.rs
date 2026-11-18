@@ -709,36 +709,38 @@ fn item_of(
     item
 }
 
-/// 8. The target: the totem prefix, and two good suffixes beside it.
+/// 8. The target: any rare shield that holds the totem prefix. Everything else is a bonus.
 #[test]
-fn the_target_needs_the_totem_prefix_and_two_good_suffixes() {
+fn the_target_is_the_totem_prefix_and_nothing_else() {
     let data = data();
     let filter = shield_goal();
     let target = Target::from_data(data);
-    assert_eq!(target.prefixes, [Tier::Desired, Tier::Good, Tier::Any]);
-    assert_eq!(target.suffixes, [Tier::Good, Tier::Good, Tier::Any]);
+    assert_eq!(target.prefixes, [Tier::Desired]);
+    assert!(target.suffixes.is_empty());
 
-    let reached = item_of(
+    // The totem prefix and nothing worth calling a second modifier: this is the item the craft
+    // is for, and the rest of the item is free.
+    let bare = item_of(
+        Some(Influence::Shaper),
+        Rarity::Rare,
+        &["MaximumTotemUber1", "AttackerTakesDamage1"],
+        &["LifeRegeneration1"],
+    );
+    assert!(
+        target.reached(&filter, &bare),
+        "the goal is the totem prefix"
+    );
+
+    // Good modifiers beside it are the bonus the alt and aug are for, and they change nothing.
+    let good_beside_it = item_of(
         Some(Influence::Shaper),
         Rarity::Rare,
         &["MaximumTotemUber1", "IncreasedLife10", "IncreasedMana12"],
         &["AllResistances6", "FireResist8", "ColdResist8"],
     );
-    assert!(
-        target.reached(&filter, &reached),
-        "this is the item the craft is for"
-    );
+    assert!(target.reached(&filter, &good_beside_it));
 
-    // Two suffixes is not three: the goal is a six-modifier rare item.
-    let short = item_of(
-        Some(Influence::Shaper),
-        Rarity::Rare,
-        &["MaximumTotemUber1", "IncreasedLife10", "IncreasedMana12"],
-        &["AllResistances6", "FireResist8"],
-    );
-    assert!(!target.reached(&filter, &short));
-
-    // Without the totem prefix the first floor is missed, however good the rest is.
+    // Without the totem prefix nothing else can make up for it.
     let no_totem = item_of(
         Some(Influence::Shaper),
         Rarity::Rare,
@@ -746,15 +748,6 @@ fn the_target_needs_the_totem_prefix_and_two_good_suffixes() {
         &["AllResistances6", "FireResist8", "ColdResist8"],
     );
     assert!(!target.reached(&filter, &no_totem));
-
-    // One good suffix is not two.
-    let one_good_suffix = item_of(
-        Some(Influence::Shaper),
-        Rarity::Rare,
-        &["MaximumTotemUber1", "IncreasedLife10", "IncreasedMana12"],
-        &["AllResistances6", "LifeRegeneration1", "StunRecovery1"],
-    );
-    assert!(!target.reached(&filter, &one_good_suffix));
 
     // A magic item never reaches it, whatever it holds.
     let magic = item_of(

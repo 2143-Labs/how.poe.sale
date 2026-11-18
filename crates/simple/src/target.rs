@@ -1,8 +1,10 @@
-//! The item the craft is for: three ordered grade floors on each side.
+//! The item the craft is for: the grade floors each side has to clear, best first.
 //!
-//! A floor list is read best-first, so `[desired, good, any]` on the prefixes says the best prefix
-//! must be the desired modifier and one more prefix must at least be good; `[good, good, any]` on
-//! the suffixes says two of the three suffixes must be good. Everything else on the item is free.
+//! A floor list is read best-first. `[desired]` says the side must hold the desired modifier and
+//! asks nothing else of it; `[desired, good]` says the best modifier on that side must be the
+//! desired one and a second must at least be good. A side with no floors is free, and everything
+//! on the item above the floors is a bonus — the floors are what the craft has to reach, not what
+//! the item may hold.
 //!
 //! The comparison is written once here, over per-grade counts, so a concrete item (whose grades a
 //! filter reads) and its abstract form (which holds nothing but grades) cannot disagree about what
@@ -11,81 +13,70 @@
 use crate::data::Data;
 use crate::filter::{ItemSetFilter, Tier};
 use crate::item::{Item, Rarity, Side};
+use crate::pool;
 
 /// The floors the craft has to clear, per side, best first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Target {
-    pub prefixes: [Tier; 3],
-    pub suffixes: [Tier; 3],
+    pub prefixes: Vec<Tier>,
+    pub suffixes: Vec<Tier>,
 }
 
 impl Target {
     /// The shield's goal, as the data file states it.
     pub fn from_data(data: &Data) -> Target {
-        Target {
+        let target = Target {
             prefixes: floors(&data.target.prefixes, "prefixes"),
             suffixes: floors(&data.target.suffixes, "suffixes"),
+        };
+        for side in Side::BOTH {
+            let floors = target.floors(side);
+            assert!(
+                floors.len() <= pool::rarity_cap(Rarity::Rare),
+                "crates/simple/data/shield.json: the {} floors ask for {} modifiers, and a rare \
+                 item holds {} at most",
+                side.name(),
+                floors.len(),
+                pool::rarity_cap(Rarity::Rare)
+            );
         }
+        target
     }
 
-    pub fn floors(&self, side: Side) -> [Tier; 3] {
+    pub fn floors(&self, side: Side) -> &[Tier] {
         match side {
-            Side::Prefix => self.prefixes,
-            Side::Suffix => self.suffixes,
+            Side::Prefix => &self.prefixes,
+            Side::Suffix => &self.suffixes,
         }
     }
 
-    /// Whether a rare item holding three modifiers a side clears that side's floors.
+    /// Whether a side holding these grade counts clears that side's floors.
     ///
     /// `counts` is indexed by grade — `counts[2]` desired, `counts[1]` good, `counts[0]` anything —
-    /// and its sum has to be three: the goal is a six-modifier rare item.
+    /// and the side's grades are read best first, so a side holding three modifiers is credited for
+    /// its best ones and the rest are free.
     pub fn side_reached(&self, side: Side, counts: [u8; 3]) -> bool {
         let floors = self.floors(side);
-        if counts.iter().sum::<u8>() as usize != floors.len() {
-            return false;
-        }
-        let mut available: Vec<Tier> = Vec::with_capacity(3);
-        for rank in (0..=2u8).rev() {
-            for _ in 0..counts[rank as usize] {
-                available.push(match rank {
-                    2 => Tier::Desired,
-                    1 => Tier::Good,
-                    _ => Tier::Any,
-                });
-            }
-        }
-        floors
-            .iter()
-            .zip(&available)
-            .all(|(floor, held)| held.rank() >= floor.rank())
+        let held = best_first(counts);
+        held.len() >= floors.len() && clears(floors, &held)
     }
 
     /// Whether a side holding these grade counts can still clear its floors, if every slot it has
-    /// left rolls the best grade there is.
+    /// left — `cap` modifiers a side at most — rolls the best grade there is.
     ///
     /// This reads the counts and nothing else — not which groups are held — so it is optimistic: a
     /// held low-tier life prefix blocks the good life prefixes, and this check does not know it.
     /// Reading only grade counts is what gives one answer for an item and for its abstract form.
-    pub fn side_reachable(&self, side: Side, counts: [u8; 3]) -> bool {
+    pub fn side_reachable(&self, side: Side, counts: [u8; 3], cap: usize) -> bool {
         let floors = self.floors(side);
-        let held = counts.iter().sum::<u8>() as usize;
-        if held > floors.len() {
-            return false;
+        let held: usize = counts.iter().map(|&n| n as usize).sum();
+        let mut available = best_first(counts);
+        for _ in held..cap {
+            available.push(Tier::Desired);
         }
-        let mut available: Vec<Tier> = vec![Tier::Desired; floors.len() - held];
-        for rank in (0..=2u8).rev() {
-            for _ in 0..counts[rank as usize] {
-                available.push(match rank {
-                    2 => Tier::Desired,
-                    1 => Tier::Good,
-                    _ => Tier::Any,
-                });
-            }
-        }
-        floors
-            .iter()
-            .zip(&available)
-            .all(|(floor, held)| held.rank() >= floor.rank())
+        available.sort_unstable_by_key(|tier| std::cmp::Reverse(tier.rank()));
+        available.truncate(floors.len());
+        clears(floors, &available)
     }
 
     /// Whether the item is the item the craft is for.
@@ -94,29 +85,46 @@ impl Target {
             return false;
         }
         Side::BOTH.into_iter().all(|side| {
-            let tiers = filter.tiers(item, side);
-            if tiers.len() != 3 {
-                return false;
-            }
-            self.floors(side)
-                .iter()
-                .zip(&tiers)
-                .all(|(floor, held)| held.rank() >= floor.rank())
+            let mut tiers = filter.tiers(item, side);
+            tiers.sort_unstable_by_key(|tier| std::cmp::Reverse(tier.rank()));
+            let floors = self.floors(side);
+            tiers.len() >= floors.len() && clears(floors, &tiers)
         })
     }
 }
 
-fn floors(names: &[String], side: &str) -> [Tier; 3] {
-    let parsed: Vec<Tier> = names
+/// Whether the best grades held clear the floors, both read best first.
+fn clears(floors: &[Tier], held: &[Tier]) -> bool {
+    floors
+        .iter()
+        .zip(held)
+        .all(|(floor, held)| held.rank() >= floor.rank())
+}
+
+/// The grades a side holds from its counts, best first.
+fn best_first(counts: [u8; 3]) -> Vec<Tier> {
+    let mut out = Vec::with_capacity(3);
+    for rank in (0..=2u8).rev() {
+        for _ in 0..counts[rank as usize] {
+            out.push(match rank {
+                2 => Tier::Desired,
+                1 => Tier::Good,
+                _ => Tier::Any,
+            });
+        }
+    }
+    out
+}
+
+fn floors(names: &[String], side: &str) -> Vec<Tier> {
+    names
         .iter()
         .map(|name| {
-            Tier::from_name(name)
-                .unwrap_or_else(|| panic!("crates/simple/data/shield.json: {name} is not a grade"))
+            Tier::from_name(name).unwrap_or_else(|| {
+                panic!("crates/simple/data/shield.json: {name} is not a grade, in {side}")
+            })
         })
-        .collect();
-    parsed.try_into().unwrap_or_else(|_| {
-        panic!("crates/simple/data/shield.json: the {side} floors are not three grades")
-    })
+        .collect()
 }
 
 #[cfg(test)]
@@ -128,15 +136,32 @@ mod tests {
     #[test]
     fn a_side_is_reachable_while_its_floors_can_still_be_cleared() {
         let target = Target::from_data(data());
-        assert_eq!(target.prefixes, [Tier::Desired, Tier::Good, Tier::Any]);
-        assert_eq!(target.suffixes, [Tier::Good, Tier::Good, Tier::Any]);
+        assert_eq!(target.prefixes, vec![Tier::Desired]);
+        assert_eq!(target.suffixes, Vec::new());
 
-        assert!(target.side_reachable(Side::Prefix, [0, 0, 0]));
-        assert!(!target.side_reachable(Side::Prefix, [3, 0, 0]));
-        assert!(target.side_reachable(Side::Prefix, [1, 0, 1]));
-        assert!(!target.side_reachable(Side::Prefix, [2, 0, 1]));
-        assert!(!target.side_reachable(Side::Suffix, [2, 0, 0]));
-        assert!(target.side_reachable(Side::Suffix, [1, 1, 0]));
+        // One desired prefix is the whole goal. A rare prefix side with room can still gain it,
+        // whatever it holds now; a full one that lacks it cannot.
+        for counts in [[0, 0, 0], [1, 0, 0], [2, 0, 0], [0, 0, 1], [0, 0, 3]] {
+            assert!(target.side_reachable(Side::Prefix, counts, 3), "{counts:?}");
+        }
+        assert!(!target.side_reachable(Side::Prefix, [3, 0, 0], 3));
+
+        // A magic side holds one modifier: it is out of room, so only the desired one counts.
+        assert!(!target.side_reachable(Side::Prefix, [1, 0, 0], 1));
+        assert!(!target.side_reachable(Side::Prefix, [0, 1, 0], 1));
+        assert!(target.side_reachable(Side::Prefix, [0, 0, 1], 1));
+        assert!(target.side_reachable(Side::Prefix, [0, 0, 0], 1));
+
+        // No floors on the suffixes: every suffix side is reached and reachable.
+        for counts in [[0, 0, 0], [3, 0, 0], [1, 1, 1], [0, 0, 3]] {
+            assert!(target.side_reached(Side::Suffix, counts), "{counts:?}");
+            for cap in [1, 3] {
+                assert!(
+                    target.side_reachable(Side::Suffix, counts, cap),
+                    "{counts:?}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -147,12 +172,34 @@ mod tests {
                 for good in 0..=3 - any {
                     let counts = [any, good, 3 - any - good];
                     assert_eq!(
-                        target.side_reachable(side, counts),
+                        target.side_reachable(side, counts, 3),
                         target.side_reached(side, counts),
                         "{side:?} {counts:?}"
                     );
                 }
             }
         }
+    }
+
+    #[test]
+    fn floors_of_more_than_one_grade_still_read_best_first() {
+        let target = Target {
+            prefixes: vec![Tier::Desired, Tier::Good],
+            suffixes: vec![Tier::Good, Tier::Good, Tier::Good],
+        };
+        // Two prefixes, one desired and one good, clear the prefix floors; a desired alone does
+        // not, because the second floor has no modifier under it yet.
+        assert!(target.side_reached(Side::Prefix, [0, 1, 1]));
+        assert!(!target.side_reached(Side::Prefix, [0, 0, 1]));
+        assert!(target.side_reachable(Side::Prefix, [0, 0, 1], 2));
+        assert!(!target.side_reachable(Side::Prefix, [1, 0, 1], 2));
+        // Extra modifiers above the floors are free: a good one in third place changes nothing.
+        assert!(target.side_reached(Side::Prefix, [1, 1, 1]));
+        assert!(!target.side_reached(Side::Prefix, [2, 0, 1]));
+        // Three good suffixes clear three good floors; two and an anything do not.
+        assert!(target.side_reached(Side::Suffix, [0, 3, 0]));
+        assert!(!target.side_reached(Side::Suffix, [1, 2, 0]));
+        assert!(!target.side_reached(Side::Suffix, [3, 0, 0]));
+        assert!(!target.side_reachable(Side::Suffix, [3, 0, 0], 3));
     }
 }

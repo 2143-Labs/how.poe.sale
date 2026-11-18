@@ -30,6 +30,11 @@ suffixes over 96 475; with no influence, 72 prefixes over 64 000 and 121 suffixe
 88 475. The difference is the 11 modifiers whose first matching tag is `shield_shaper`.
 The tag table still carries `shield_shaper`, because an item's influence finds its tag by
 name.
+
+The goal the file states is the totem prefix and nothing else: any rare shield that holds it
+is a valid finish, and every other modifier on the item is a bonus. The `desired` and `good`
+id lists say which modifiers count as which grade; the `prefixes` and `suffixes` lists are the
+grade floors, best first, and a side with no floors is free.
 """
 
 import json
@@ -274,8 +279,8 @@ def main(argv):
             ],
             "mods": out_mods,
             "target": {
-                "prefixes": ["desired", "good", "any"],
-                "suffixes": ["good", "good", "any"],
+                "prefixes": ["desired"],
+                "suffixes": [],
                 "desired": DESIRED,
                 "good": GOOD,
             },

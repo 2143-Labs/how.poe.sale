@@ -6967,15 +6967,9 @@
  ],
  "target": {
   "prefixes": [
-   "desired",
-   "good",
-   "any"
+   "desired"
   ],
-  "suffixes": [
-   "good",
-   "good",
-   "any"
-  ],
+  "suffixes": [],
   "desired": [
    "MaximumTotemUber1"
   ],

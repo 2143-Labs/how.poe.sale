@@ -48,38 +48,55 @@ fn alt_aug_regal_costs_this() {
     };
     let solved = run(&AltAugRegal, &kit, &[(Node::fresh(Rarity::Normal), 1.0)]).unwrap();
 
-    assert_eq!(solved.inside.len(), 13);
-    assert_eq!(solved.exits.len(), 7);
+    assert_eq!(solved.inside.len(), 12);
+    assert_eq!(solved.exits.len(), 8);
     for exit in &solved.exits {
         assert_eq!(exit.rarity, Rarity::Rare);
-        assert!(exit.holds(Tier::Desired) && exit.reachable(&target));
+        assert!(exit.holds(Tier::Desired) && exit.reached(&target));
     }
     close(solved.exit_chances().iter().sum(), 1.0, "the exits");
 
+    // 80 alterations, 20.5 augmentations, one transmutation and one regal: 17.545 chaos of orbs.
     let spend = solved.spend();
     for (id, mean) in [
-        (CurrencyId::TRANSMUTATION, 1.560856031),
-        (CurrencyId::ALTERATION, 167.011595286),
-        (CurrencyId::AUGMENTATION, 0.520285344),
-        (CurrencyId::REGAL, 1.560856031),
-        (CurrencyId::SCOURING, 0.560856031),
+        (CurrencyId::TRANSMUTATION, 1.0),
+        (CurrencyId::ALTERATION, 80.0),
+        (CurrencyId::AUGMENTATION, 20.5),
+        (CurrencyId::REGAL, 1.0),
     ] {
         close(spend.mean.get(id), mean, id.name());
     }
-    assert_eq!(spend.mean.get(CurrencyId::EXALTED), 0.0);
+    for id in [CurrencyId::EXALTED, CurrencyId::SCOURING] {
+        assert_eq!(spend.mean.get(id), 0.0, "{}", id.name());
+    }
     close(
         spend.sd(CurrencyId::ALTERATION),
-        167.510849,
+        80.498447190,
         "alteration sd",
     );
-    // A regal leaves the rare able to become the target 0.640674079 of the time, and the method
-    // is run until one does: the transmutations are a geometric count, whose spread is
-    // `sqrt(1 - p) / p`. The reference states it as 0.935636.
-    let alive = 1.0 / spend.mean.get(CurrencyId::REGAL);
-    close(alive, 0.640674079, "alive after the regal");
-    let spread = spend.sd(CurrencyId::TRANSMUTATION);
-    close(spread, (1.0 - alive).sqrt() / alive, "transmutation sd");
-    assert!((spread - 0.935636).abs() < 1e-6, "{spread}");
+    // Nothing is exalted, and nothing is scoured: the item is finished the moment it holds the
+    // desired modifier.
+    //
+    // One transmutation starts the craft and every item is regaled exactly once, so both are
+    // certain and have no spread.
+    for id in [CurrencyId::REGAL, CurrencyId::TRANSMUTATION] {
+        close(spend.mean.get(id), 1.0, id.name());
+        assert_eq!(spend.sd(id), 0.0, "{}", id.name());
+    }
+    // A transmutation or an alteration leaves one modifier half the time and two the other half,
+    // and a one-modifier item has the other side empty. A quarter of the rolls therefore leaves a
+    // suffix and nothing else, and every one of those is augmented, because the augmentation can
+    // be the totem prefix. A prefix and nothing else is altered instead: an augmentation there
+    // would add a suffix, which cannot be the totem and would be altered away. The one exception
+    // is the quarter-of-a-roll in 81 that holds the totem prefix alone: it is augmented to buy a
+    // second modifier before the regal.
+    let rolls = 1.0 + spend.mean.get(CurrencyId::ALTERATION);
+    let suffix_only = rolls / 4.0;
+    close(
+        spend.mean.get(CurrencyId::AUGMENTATION),
+        suffix_only * (1.0 + 1.0 / 81.0),
+        "augmentations",
+    );
 }
 
 /// Roll for the desired modifier with a currency whose cost depends on what it is used on: the
@@ -102,7 +119,7 @@ impl Method for RestartForDesired {
         }]
     }
 
-    fn rule(&self, _target: &Target, node: &Node) -> Move {
+    fn rule(&self, _kit: &Kit, node: &Node) -> Move {
         if node.rarity == Rarity::Rare {
             Move::Exit("rare")
         } else if node.rarity == Rarity::Magic && node.holds(Tier::Desired) {
@@ -193,7 +210,7 @@ impl Method for ExaltAnything {
         &[]
     }
 
-    fn rule(&self, _target: &Target, _node: &Node) -> Move {
+    fn rule(&self, _kit: &Kit, _node: &Node) -> Move {
         Move::Use(CurrencyId::EXALTED)
     }
 }

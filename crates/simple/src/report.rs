@@ -211,7 +211,7 @@ enum Cell {
 
 impl Cell {
     fn of(craft: &Craft, kit: &Kit, step: usize, node: &Node) -> Cell {
-        match craft.steps[step].method.rule(kit.target, node) {
+        match craft.steps[step].method.rule(kit, node) {
             Move::Exit(exit) => Cell::Exit(exit),
             Move::Use(id) if FORGETS.contains(&id) => Cell::Forgets(node.rarity, id),
             Move::Use(id) => Cell::Keeps(
