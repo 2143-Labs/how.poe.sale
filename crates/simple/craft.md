@@ -41,19 +41,21 @@ Whole craft, per orb: augmentation 25.74 ± 25.90, regal 51.17 ± 51.30, scourin
 
 ## Method: alt_aug_regal (step 0)
 
+One box per item the strategy passes through: the rarity, the prefixes and the suffixes it holds, the move the strategy makes with what it costs to finish from there, and every other move the item allows. Costs are chaos, as elsewhere in this report.
+
 ```mermaid
 flowchart TD
   b0["normal<br/>prefixes: -<br/>suffixes: -<br/>transmutation"]
   b1(["exit magic<br/>to done"])
-  b2["magic<br/>prefixes: good<br/>suffixes: -<br/>augmentation"]
-  b3["magic<br/>prefixes: any<br/>suffixes: -<br/>augmentation"]
-  b4["magic<br/>prefixes: -<br/>suffixes: good<br/>augmentation"]
-  b5["magic<br/>prefixes: -<br/>suffixes: any<br/>augmentation"]
+  b2["magic<br/>prefixes: good<br/>suffixes: -<br/>→ augmentation 54.0<br/>or alteration 53.5, scouring 53.8, regal 53.9"]
+  b3["magic<br/>prefixes: any<br/>suffixes: -<br/>→ augmentation 54.0<br/>or alteration 53.5, scouring 53.8, regal 53.9"]
+  b4["magic<br/>prefixes: -<br/>suffixes: good<br/>→ augmentation 53.3<br/>or alteration 53.5, scouring 53.8, regal 54.0"]
+  b5["magic<br/>prefixes: -<br/>suffixes: any<br/>→ augmentation 53.3<br/>or alteration 53.5, scouring 53.8, regal 54.0"]
   b6(["exit magic_pair<br/>to done"])
-  b7["magic<br/>prefixes: good<br/>suffixes: good<br/>regal"]
-  b8["magic<br/>prefixes: good<br/>suffixes: any<br/>regal"]
-  b9["magic<br/>prefixes: any<br/>suffixes: good<br/>regal"]
-  b10["magic<br/>prefixes: any<br/>suffixes: any<br/>regal"]
+  b7["magic<br/>prefixes: good<br/>suffixes: good<br/>→ regal 53.9<br/>or alteration 53.5, scouring 53.8"]
+  b8["magic<br/>prefixes: good<br/>suffixes: any<br/>→ regal 53.9<br/>or alteration 53.5, scouring 53.8"]
+  b9["magic<br/>prefixes: any<br/>suffixes: good<br/>→ regal 53.9<br/>or alteration 53.5, scouring 53.8"]
+  b10["magic<br/>prefixes: any<br/>suffixes: any<br/>→ regal 53.9<br/>or alteration 53.5, scouring 53.8"]
   b11(["exit rare<br/>to done"])
   b12["rare<br/>prefixes: any grades<br/>suffixes: any grades<br/>scouring"]
   b0 -->|"0.31%"| b1

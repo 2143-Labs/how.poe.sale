@@ -43,7 +43,7 @@ pub fn render(
     currencies(&mut out, kit, weights);
     steps(&mut out, craft, weights, report);
     for (step, row) in report.rows.iter().enumerate() {
-        method(&mut out, craft, kit, report, step, &row.name);
+        method(&mut out, craft, kit, report, step, &row.name, weights);
     }
     others(&mut out, weights, report);
     out
@@ -234,6 +234,10 @@ enum Cell {
     Exit(&'static str),
 }
 
+/// The moves an item allows: its own, then every other currency that works on it, each with what
+/// it would cost to finish the craft from there.
+type Options = Vec<(CurrencyId, f64, bool)>;
+
 impl Cell {
     fn of(craft: &Craft, kit: &Kit, step: usize, node: &Node) -> Cell {
         match craft.steps[step].method.rule(kit.target, node) {
@@ -251,7 +255,7 @@ impl Cell {
         }
     }
 
-    fn label(&self, craft: &Craft, step: usize) -> String {
+    fn label(&self, craft: &Craft, step: usize, options: Option<&Options>) -> String {
         match self {
             // A normal item holds no explicit modifiers, so both sides are empty.
             Cell::Forgets(Rarity::Normal, id) => {
@@ -274,13 +278,36 @@ impl Cell {
                             .join("+")
                     }
                 };
-                format!(
-                    "{}<br/>prefixes: {}<br/>suffixes: {}<br/>{}",
+                let mut label = format!(
+                    "{}<br/>prefixes: {}<br/>suffixes: {}<br/>→ {}",
                     rarity.name(),
                     side(&sides[0]),
                     side(&sides[1]),
                     id.name()
-                )
+                );
+                if let Some((_, cost, _)) =
+                    options.and_then(|o| o.iter().find(|(at, _, _)| at == id))
+                {
+                    label.push_str(&format!(" {cost:.1}"));
+                }
+                // Everything else the item allows, cheapest first, as one line.
+                let mut others: Vec<(CurrencyId, f64)> = options
+                    .map(|o| {
+                        o.iter()
+                            .filter(|(at, _, _)| at != id)
+                            .map(|&(at, cost, _)| (at, cost))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                others.sort_by(|a, b| a.1.total_cmp(&b.1));
+                if !others.is_empty() {
+                    let others: Vec<String> = others
+                        .iter()
+                        .map(|(at, cost)| format!("{} {cost:.1}", at.name()))
+                        .collect();
+                    label.push_str(&format!("<br/>or {}", others.join(", ")));
+                }
+                label
             }
             Cell::Exit(exit) => {
                 let to = craft.steps[step]
@@ -299,7 +326,15 @@ impl Cell {
     }
 }
 
-fn method(out: &mut String, craft: &Craft, kit: &Kit, report: &Report, step: usize, name: &str) {
+fn method(
+    out: &mut String,
+    craft: &Craft,
+    kit: &Kit,
+    report: &Report,
+    step: usize,
+    name: &str,
+    weights: &Weights,
+) {
     let flat = &report.flat;
     let mut boxes: Vec<Cell> = Vec::new();
     let mut index: HashMap<Cell, usize> = HashMap::new();
@@ -313,6 +348,30 @@ fn method(out: &mut String, craft: &Craft, kit: &Kit, report: &Report, step: usi
             boxes.len() - 1
         })
     };
+    // What every move at every place the craft passes would cost to finish, keyed by the item's
+    // grades so it lines up with the boxes.
+    let valued = |cost: &Cost| weights.value(&Spend::certain(cost)).value;
+    let mut options: HashMap<(Rarity, [Vec<Tier>; 2]), Options> = HashMap::new();
+    for other in &report.others {
+        if other.step != step {
+            continue;
+        }
+        let mut key = [Vec::new(), Vec::new()];
+        for (at, side) in Side::BOTH.into_iter().enumerate() {
+            key[at] = other.node.side(side).to_vec();
+            key[at].sort_unstable_by_key(|tier| std::cmp::Reverse(tier.rank()));
+        }
+        let entry = options.entry((other.node.rarity, key)).or_default();
+        for (id, cost, planned) in [
+            (other.planned, &other.planned_to_go, true),
+            (other.other, &other.other_to_go, false),
+        ] {
+            if !entry.iter().any(|(at, _, _)| *at == id) {
+                entry.push((id, valued(cost), planned));
+            }
+        }
+    }
+
     for (place, &visits) in flat.inside.iter().zip(&flat.visits) {
         let Place::At { step: at, node } = place else {
             continue;
@@ -346,9 +405,20 @@ fn method(out: &mut String, craft: &Craft, kit: &Kit, report: &Report, step: usi
     }
 
     let _ = writeln!(out, "## Method: {name} (step {step})\n");
+    let _ = writeln!(
+        out,
+        "One box per item the strategy passes through: the rarity, the prefixes and the suffixes it \
+         holds, the move the strategy makes with what it costs to finish from there, and every \
+         other move the item allows. Costs are {}, as elsewhere in this report.\n",
+        weights.unit
+    );
     let _ = writeln!(out, "```mermaid\nflowchart TD");
     for (at, found) in boxes.iter().enumerate() {
-        let label = found.label(craft, step);
+        let options = match found {
+            Cell::Keeps(rarity, sides, _) => options.get(&(*rarity, sides.clone())),
+            _ => None,
+        };
+        let label = found.label(craft, step, options);
         match found {
             Cell::Exit(_) => {
                 let _ = writeln!(out, "  b{at}([\"{label}\"])");
