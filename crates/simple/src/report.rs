@@ -253,10 +253,16 @@ impl Cell {
 
     fn label(&self, craft: &Craft, step: usize) -> String {
         match self {
-            Cell::Forgets(Rarity::Normal, id) => format!("normal<br/>{}", id.name()),
-            Cell::Forgets(rarity, id) => {
-                format!("{} (any grades)<br/>{}", rarity.name(), id.name())
+            // A normal item holds no explicit modifiers, so both sides are empty.
+            Cell::Forgets(Rarity::Normal, id) => {
+                format!("normal<br/>prefixes: -<br/>suffixes: -<br/>{}", id.name())
             }
+            // One box for every item of this rarity: the move throws away what it holds.
+            Cell::Forgets(rarity, id) => format!(
+                "{}<br/>prefixes: any grades<br/>suffixes: any grades<br/>{}",
+                rarity.name(),
+                id.name()
+            ),
             Cell::Keeps(rarity, sides, id) => {
                 let side = |held: &[Tier]| {
                     if held.is_empty() {
@@ -269,7 +275,7 @@ impl Cell {
                     }
                 };
                 format!(
-                    "{} {} / {}<br/>{}",
+                    "{}<br/>prefixes: {}<br/>suffixes: {}<br/>{}",
                     rarity.name(),
                     side(&sides[0]),
                     side(&sides[1]),

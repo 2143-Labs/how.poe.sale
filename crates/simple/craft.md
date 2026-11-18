@@ -43,19 +43,19 @@ Whole craft, per orb: augmentation 25.74 ± 25.90, regal 51.17 ± 51.30, scourin
 
 ```mermaid
 flowchart TD
-  b0["normal<br/>transmutation"]
+  b0["normal<br/>prefixes: -<br/>suffixes: -<br/>transmutation"]
   b1(["exit magic<br/>to done"])
-  b2["magic good / -<br/>augmentation"]
-  b3["magic any / -<br/>augmentation"]
-  b4["magic - / good<br/>augmentation"]
-  b5["magic - / any<br/>augmentation"]
+  b2["magic<br/>prefixes: good<br/>suffixes: -<br/>augmentation"]
+  b3["magic<br/>prefixes: any<br/>suffixes: -<br/>augmentation"]
+  b4["magic<br/>prefixes: -<br/>suffixes: good<br/>augmentation"]
+  b5["magic<br/>prefixes: -<br/>suffixes: any<br/>augmentation"]
   b6(["exit magic_pair<br/>to done"])
-  b7["magic good / good<br/>regal"]
-  b8["magic good / any<br/>regal"]
-  b9["magic any / good<br/>regal"]
-  b10["magic any / any<br/>regal"]
+  b7["magic<br/>prefixes: good<br/>suffixes: good<br/>regal"]
+  b8["magic<br/>prefixes: good<br/>suffixes: any<br/>regal"]
+  b9["magic<br/>prefixes: any<br/>suffixes: good<br/>regal"]
+  b10["magic<br/>prefixes: any<br/>suffixes: any<br/>regal"]
   b11(["exit rare<br/>to done"])
-  b12["rare (any grades)<br/>scouring"]
+  b12["rare<br/>prefixes: any grades<br/>suffixes: any grades<br/>scouring"]
   b0 -->|"0.31%"| b1
   b0 -->|"1.54%"| b2
   b0 -->|"23.15%"| b3
