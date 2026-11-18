@@ -48,53 +48,78 @@ fn alt_aug_regal_costs_this() {
     };
     let solved = run(&AltAugRegal, &kit, &[(Node::fresh(Rarity::Normal), 1.0)]).unwrap();
 
-    assert_eq!(solved.inside.len(), 12);
-    assert_eq!(solved.exits.len(), 8);
+    assert_eq!(solved.inside.len(), 25);
+    // Three ways to finish with a magic item, four rare ones, all of them holding the totem.
+    assert_eq!(solved.exits.len(), 7);
+    let mut magic = 0;
+    let mut rare = 0;
     for exit in &solved.exits {
-        assert_eq!(exit.rarity, Rarity::Rare);
-        assert!(exit.holds(Tier::Desired) && exit.reached(&target));
+        assert!(exit.holds(Tier::Desired), "{}", exit.label());
+        match exit.rarity {
+            Rarity::Magic => magic += 1,
+            Rarity::Rare => rare += 1,
+            other => panic!("{other:?}"),
+        }
     }
+    assert_eq!((magic, rare), (3, 4));
     close(solved.exit_chances().iter().sum(), 1.0, "the exits");
 
-    // 80 alterations, 20.5 augmentations, one transmutation and one regal: 17.545 chaos of orbs.
+    // 51.8 transmutations, 25.7 augmentations, 51.2 regals and 50.8 scourings: 53.308 chaos.
+    // No alteration: a magic item is augmented or regaled, never rerolled.
     let spend = solved.spend();
     for (id, mean) in [
-        (CurrencyId::TRANSMUTATION, 1.0),
-        (CurrencyId::ALTERATION, 80.0),
-        (CurrencyId::AUGMENTATION, 20.5),
-        (CurrencyId::REGAL, 1.0),
+        (CurrencyId::TRANSMUTATION, 51.804733254),
+        (CurrencyId::AUGMENTATION, 25.742475475),
+        (CurrencyId::REGAL, 51.165168646),
+        (CurrencyId::SCOURING, 50.804733254),
     ] {
         close(spend.mean.get(id), mean, id.name());
     }
-    for id in [CurrencyId::EXALTED, CurrencyId::SCOURING] {
-        assert_eq!(spend.mean.get(id), 0.0, "{}", id.name());
-    }
+    assert_eq!(spend.mean.get(CurrencyId::ALTERATION), 0.0);
+    assert_eq!(spend.mean.get(CurrencyId::EXALTED), 0.0);
     close(
-        spend.sd(CurrencyId::ALTERATION),
-        80.498447190,
-        "alteration sd",
+        spend.sd(CurrencyId::TRANSMUTATION),
+        51.302296774,
+        "transmutation sd",
     );
-    // Nothing is exalted, and nothing is scoured: the item is finished the moment it holds the
-    // desired modifier.
-    //
-    // One transmutation starts the craft and every item is regaled exactly once, so both are
-    // certain and have no spread.
-    for id in [CurrencyId::REGAL, CurrencyId::TRANSMUTATION] {
-        close(spend.mean.get(id), 1.0, id.name());
-        assert_eq!(spend.sd(id), 0.0, "{}", id.name());
-    }
-    // A transmutation or an alteration leaves one modifier half the time and two the other half,
-    // and a one-modifier item has the other side empty. A quarter of the rolls therefore leaves a
-    // suffix and nothing else, and every one of those is augmented, because the augmentation can
-    // be the totem prefix. A prefix and nothing else is altered instead: an augmentation there
-    // would add a suffix, which cannot be the totem and would be altered away. The one exception
-    // is the quarter-of-a-roll in 81 that holds the totem prefix alone: it is augmented to buy a
-    // second modifier before the regal.
-    let rolls = 1.0 + spend.mean.get(CurrencyId::ALTERATION);
-    let suffix_only = rolls / 4.0;
+    close(
+        spend.sd(CurrencyId::AUGMENTATION),
+        25.901873131,
+        "augmentation sd",
+    );
+
+    // Every cycle starts with one transmutation and ends in a regal, so all but the last are
+    // scoured: one fewer scouring than transmutation.
+    close(
+        spend.mean.get(CurrencyId::SCOURING),
+        spend.mean.get(CurrencyId::TRANSMUTATION) - 1.0,
+        "scourings",
+    );
+    // A regal either ends the craft as a rare or is scoured and the cycle starts again.
+    let rare_share: f64 = solved
+        .exits
+        .iter()
+        .zip(solved.exit_chances())
+        .filter(|(node, _)| node.rarity == Rarity::Rare)
+        .map(|(_, chance)| chance)
+        .sum();
+    close(
+        spend.mean.get(CurrencyId::REGAL),
+        spend.mean.get(CurrencyId::SCOURING) + rare_share,
+        "regals",
+    );
+    // A roll leaves one modifier half the time, and an item holding only the totem leaves at once
+    // instead of being augmented, so the augmentations are half the rolls less that exit.
+    let alone: f64 = solved
+        .exits
+        .iter()
+        .zip(solved.exit_chances())
+        .filter(|(node, _)| node.rarity == Rarity::Magic && node.modifiers() == 1)
+        .map(|(_, chance)| chance)
+        .sum();
     close(
         spend.mean.get(CurrencyId::AUGMENTATION),
-        suffix_only * (1.0 + 1.0 / 81.0),
+        spend.mean.get(CurrencyId::TRANSMUTATION) / 2.0 - alone,
         "augmentations",
     );
 }
@@ -119,7 +144,7 @@ impl Method for RestartForDesired {
         }]
     }
 
-    fn rule(&self, _kit: &Kit, node: &Node) -> Move {
+    fn rule(&self, _target: &Target, node: &Node) -> Move {
         if node.rarity == Rarity::Rare {
             Move::Exit("rare")
         } else if node.rarity == Rarity::Magic && node.holds(Tier::Desired) {
@@ -210,7 +235,7 @@ impl Method for ExaltAnything {
         &[]
     }
 
-    fn rule(&self, _kit: &Kit, _node: &Node) -> Move {
+    fn rule(&self, _target: &Target, _node: &Node) -> Move {
         Move::Use(CurrencyId::EXALTED)
     }
 }

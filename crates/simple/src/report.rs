@@ -136,13 +136,14 @@ fn steps(out: &mut String, craft: &Craft, weights: &Weights, report: &Report) {
     let _ = writeln!(out, "## Craft: {} (forward)\n", craft.name);
     let _ = writeln!(out, "```mermaid\nflowchart LR");
     for (step, row) in report.rows.iter().enumerate() {
-        let leaves = craft.steps[step]
-            .method
-            .exits()
-            .iter()
-            .map(|spec| spec.rarity.name())
-            .collect::<Vec<_>>()
-            .join(", ");
+        // The rarities the step can hand on, each named once.
+        let mut leaves: Vec<&'static str> = Vec::new();
+        for spec in craft.steps[step].method.exits() {
+            if !leaves.contains(&spec.rarity.name()) {
+                leaves.push(spec.rarity.name());
+            }
+        }
+        let leaves = leaves.join(", ");
         let valued = weights.value(&row.reach);
         let _ = writeln!(
             out,
@@ -154,21 +155,36 @@ fn steps(out: &mut String, craft: &Craft, weights: &Weights, report: &Report) {
             weights.unit
         );
     }
-    let total = weights.value(&report.total);
-    let _ = writeln!(
-        out,
-        "  target([\"target<br/>{:.1} ± {:.1} {}\"])",
-        total.value, total.sd, weights.unit
-    );
+    // Every exit wired out of the craft is one output box, so a craft that can finish three ways
+    // says so.
+    for (step, row) in report.rows.iter().enumerate() {
+        for &(exit, wire, share) in &row.exits {
+            if wire == Wire::Done {
+                let _ = writeln!(
+                    out,
+                    "  {}([\"{exit}<br/>{} done\"])",
+                    output_id(step, exit),
+                    percent(share)
+                );
+            }
+        }
+    }
     for (step, row) in report.rows.iter().enumerate() {
         for &(exit, wire, share) in &row.exits {
             let (to, arrow) = match wire {
-                Wire::Next => (format!("s{}", step + 1), "-->"),
-                Wire::Done => ("target".to_string(), "-->"),
-                Wire::To(to) if to > step => (format!("s{to}"), "-->"),
-                Wire::To(to) => (format!("s{to}"), "-.->"),
+                Wire::Next => (format!("s{}", step + 1), Some("-->")),
+                Wire::Done => (output_id(step, exit), None),
+                Wire::To(to) if to > step => (format!("s{to}"), Some("-->")),
+                Wire::To(to) => (format!("s{to}"), Some("-.->")),
             };
-            let _ = writeln!(out, "  s{step} {arrow}|\"{exit} {}\"| {to}", percent(share));
+            match arrow {
+                Some(arrow) => {
+                    let _ = writeln!(out, "  s{step} {arrow}|\"{exit} {}\"| {to}", percent(share));
+                }
+                None => {
+                    let _ = writeln!(out, "  s{step} --> {to}");
+                }
+            }
         }
     }
     let _ = writeln!(out, "```\n");
@@ -198,6 +214,15 @@ fn steps(out: &mut String, craft: &Craft, weights: &Weights, report: &Report) {
     let _ = writeln!(out, "Whole craft, per orb: {}\n", spread(&report.total));
 }
 
+/// The mermaid id of a step's output box: the exit's name, made safe for a node id.
+fn output_id(step: usize, exit: &str) -> String {
+    let safe: String = exit
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect();
+    format!("o{step}_{safe}")
+}
+
 /// One box of a method's diagram.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum Cell {
@@ -211,7 +236,7 @@ enum Cell {
 
 impl Cell {
     fn of(craft: &Craft, kit: &Kit, step: usize, node: &Node) -> Cell {
-        match craft.steps[step].method.rule(kit, node) {
+        match craft.steps[step].method.rule(kit.target, node) {
             Move::Exit(exit) => Cell::Exit(exit),
             Move::Use(id) if FORGETS.contains(&id) => Cell::Forgets(node.rarity, id),
             Move::Use(id) => Cell::Keeps(

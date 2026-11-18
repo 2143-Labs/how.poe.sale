@@ -250,7 +250,7 @@ impl Craft {
     /// exit at this node.
     pub fn wire(&self, kit: &Kit, step: usize, node: &Node) -> Option<(&'static str, Wire)> {
         let this = &self.steps[step];
-        let Move::Exit(exit) = this.method.rule(kit, node) else {
+        let Move::Exit(exit) = this.method.rule(kit.target, node) else {
             return None;
         };
         this.wires.iter().copied().find(|(name, _)| *name == exit)
@@ -420,7 +420,7 @@ impl Craft {
             let Place::At { step, node } = place else {
                 continue;
             };
-            let Move::Use(planned) = self.steps[*step].method.rule(kit, node) else {
+            let Move::Use(planned) = self.steps[*step].method.rule(kit.target, node) else {
                 continue;
             };
             for tool in kit.tools {

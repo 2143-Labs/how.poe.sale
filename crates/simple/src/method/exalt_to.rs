@@ -5,10 +5,11 @@
 //! the normal item leaves through `scrap`: what to do with it is the craft's decision, not this
 //! method's.
 
-use super::{ExitSpec, Kit, Method, Move};
+use super::{ExitSpec, Method, Move};
 use crate::cost::CurrencyId;
 use crate::item::Rarity;
 use crate::node::Node;
+use crate::target::Target;
 
 pub struct ExaltTo {
     /// How many modifiers the item holds when it leaves through `slammed`.
@@ -37,10 +38,10 @@ impl Method for ExaltTo {
         ]
     }
 
-    fn rule(&self, kit: &Kit, node: &Node) -> Move {
+    fn rule(&self, target: &Target, node: &Node) -> Move {
         if node.rarity != Rarity::Rare {
             Move::Exit("scrap")
-        } else if !node.reachable(kit.target) {
+        } else if !node.reachable(target) {
             Move::Use(CurrencyId::SCOURING)
         } else if node.modifiers() < usize::from(self.modifiers) {
             Move::Use(CurrencyId::EXALTED)

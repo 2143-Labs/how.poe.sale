@@ -79,16 +79,15 @@ fn the_steps_cost_this() {
     let names: Vec<&str> = report.rows.iter().map(|row| row.name.as_str()).collect();
     assert_eq!(names, ["alt_aug_regal"]);
 
-    // The goal is a rare shield holding the totem prefix, so the craft is one step: alt, aug and
-    // regal until it is there. Per step: chance, one run's counts, the counts to get past it, and
-    // its weighted value and sd.
+    // The craft stops the moment the totem appears, so it is one step with three ways out. Per
+    // step: chance, one run's counts, the counts to get past it, and its weighted value and sd.
     type Expected = (f64, [f64; 6], [f64; 6], f64, f64);
     let expected: [Expected; 1] = [(
         1.0,
-        [1.0, 80.0, 20.5, 1.0, 0.0, 0.0],
-        [1.0, 80.0, 20.5, 1.0, 0.0, 0.0],
-        17.545000,
-        17.107034,
+        [51.804733, 0.0, 25.742475, 51.165169, 0.0, 50.804733],
+        [51.804733, 0.0, 25.742475, 51.165169, 0.0, 50.804733],
+        53.308169,
+        53.611766,
     )];
     for (row, (chance, run, reach, value, sd)) in report.rows.iter().zip(expected) {
         let what = format!("step {} {}", row.step, row.name);
@@ -102,7 +101,10 @@ fn the_steps_cost_this() {
         assert_eq!(valued.unweighted, Cost::none());
     }
 
-    for (id, sd) in ORBS.into_iter().zip([0.0, 80.498447, 20.5, 0.0, 0.0, 0.0]) {
+    for (id, sd) in ORBS
+        .into_iter()
+        .zip([51.302297, 0.0, 25.901873, 51.304543, 0.0, 51.302297])
+    {
         close(
             report.total.sd(id),
             sd,
@@ -166,7 +168,7 @@ impl Method for HandsOnMagic {
         }]
     }
 
-    fn rule(&self, _kit: &Kit, node: &Node) -> Move {
+    fn rule(&self, _target: &Target, node: &Node) -> Move {
         match node.rarity {
             Rarity::Normal => Move::Use(CurrencyId::TRANSMUTATION),
             _ => Move::Exit("magic"),
@@ -211,7 +213,11 @@ fn rarity_is_checked_at_wiring_time() {
         steps: vec![
             Step {
                 method: Box::new(AltAugRegal),
-                wires: vec![("rare", Wire::Next)],
+                wires: vec![
+                    ("magic", Wire::Done),
+                    ("magic_pair", Wire::Done),
+                    ("rare", Wire::Next),
+                ],
             },
             Step {
                 method: Box::new(ExaltTo { modifiers: 4 }),
@@ -238,13 +244,11 @@ fn rarity_is_checked_at_wiring_time() {
     assert_eq!(shield().check(), Ok(()));
 }
 
-/// One move the written strategy does not make would cost less: on a magic item that already holds
-/// the totem prefix, the augmentation buys a suffix before the regal, and regaling straight away
-/// would do the job for 0.05 chaos less. That is the price of the bonus suffix, and the only place
-/// the strategy is not the cheapest.
+/// Fourteen moves the written strategy does not make would cost less. The biggest place is a full
+/// magic pair that lacks the totem: the strategy regals it, and altering it instead is cheaper.
 #[test]
 fn the_other_moves_that_are_cheaper() {
-    use Tier::Desired;
+    use Tier::Any;
     let report = report();
     let magic = |prefix: &[Tier], suffix: &[Tier]| {
         let mut node = Node::fresh(Rarity::Magic);
@@ -256,41 +260,43 @@ fn the_other_moves_that_are_cheaper() {
         }
         node
     };
-    // 27 other moves were costed at 11 places; this is the one that comes out cheaper.
-    assert_eq!(report.others.len(), 27);
-    // node, the planned move and its cost to finish, the other move and its cost to finish.
-    let expected: [(Node, CurrencyId, f64, CurrencyId, f64); 1] = [(
-        magic(&[Desired], &[]),
-        CurrencyId::AUGMENTATION,
-        0.550,
-        CurrencyId::REGAL,
-        0.500,
-    )];
-
+    // 36 other moves were costed at 15 places; 14 of them come out cheaper.
+    assert_eq!(report.others.len(), 36);
     let better: Vec<_> = report.others.iter().filter(|other| other.better).collect();
-    assert_eq!(better.len(), expected.len(), "{better:#?}");
-    for (node, planned_move, planned_cost, other_move, other_cost) in expected {
-        let found = better
-            .iter()
-            .find(|other| other.node == node && other.other == other_move)
-            .unwrap_or_else(|| panic!("{} {} is not flagged", node.label(), other_move.name()));
-        assert_eq!(found.step, 0);
-        assert_eq!(found.planned, planned_move);
-        let planned = weights().value(&Spend::certain(&found.planned_to_go)).value;
+    assert_eq!(better.len(), 14, "{better:#?}");
+    for other in &better {
+        assert_eq!(other.step, 0);
         assert!(
-            (planned - planned_cost).abs() < 1e-3,
-            "{} {}: {planned} is not {planned_cost}",
-            node.label(),
-            planned_move.name()
-        );
-        let got = weights().value(&Spend::certain(&found.other_to_go)).value;
-        assert!(
-            (got - other_cost).abs() < 1e-3,
-            "{} {}: {got} is not {other_cost}",
-            node.label(),
-            other_move.name()
+            matches!(other.planned, CurrencyId::AUGMENTATION | CurrencyId::REGAL),
+            "{} {}",
+            other.node.label(),
+            other.planned.name()
         );
     }
+
+    // The place the craft spends most of its time: a full pair of two anything modifiers, 40.71
+    // visits per finished item, where it regals and altering would cost 0.44 chaos less.
+    let found = better
+        .iter()
+        .find(|other| other.node == magic(&[Any], &[Any]) && other.other == CurrencyId::ALTERATION)
+        .unwrap_or_else(|| panic!("altering a full pair is not flagged"));
+    assert_eq!(found.planned, CurrencyId::REGAL);
+    close(found.visits, 40.71, 1e-3, "visits");
+    let planned = weights().value(&Spend::certain(&found.planned_to_go)).value;
+    close(planned, 53.930, 1e-3, "planned");
+    let other = weights().value(&Spend::certain(&found.other_to_go)).value;
+    close(other, 53.488, 1e-3, "other");
+
+    // A magic item with a free side is augmented before the regal, and regaling it straight away
+    // is cheaper by exactly the augmentation.
+    let pair = better
+        .iter()
+        .find(|other| other.node == magic(&[Any], &[]) && other.other == CurrencyId::REGAL)
+        .unwrap();
+    assert_eq!(pair.planned, CurrencyId::AUGMENTATION);
+    let planned = weights().value(&Spend::certain(&pair.planned_to_go)).value;
+    let other = weights().value(&Spend::certain(&pair.other_to_go)).value;
+    close(planned - other, 0.050, 1e-9, "the augmentation");
 }
 
 #[test]

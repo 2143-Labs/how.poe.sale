@@ -24,56 +24,87 @@ The strategy is written down and this says what it costs. A chance is used one s
 
 ```mermaid
 flowchart LR
-  s0["alt_aug_regal<br/>normal, magic → rare<br/>past this step: 17.5 ± 17.1 chaos"]
-  target(["target<br/>17.5 ± 17.1 chaos"])
-  s0 -->|"rare 100.00%"| target
+  s0["alt_aug_regal<br/>normal, magic → magic, rare<br/>past this step: 53.3 ± 53.6 chaos"]
+  o0_magic(["magic<br/>15.99% done"])
+  o0_magic_pair(["magic_pair<br/>47.97% done"])
+  o0_rare(["rare<br/>36.04% done"])
+  s0 --> o0_magic
+  s0 --> o0_magic_pair
+  s0 --> o0_rare
 ```
 
 | step | method | takes | chance | tries | one run costs | cost to get past it | chaos ± sd |
 |---|---|---|---|---|---|---|---|
-| 0 | alt_aug_regal | normal, magic | 100.00% | 1.00 | alteration 80.00, augmentation 20.50, regal 1.00, transmutation 1.00 | alteration 80.00, augmentation 20.50, regal 1.00, transmutation 1.00 | 17.5 ± 17.1 |
+| 0 | alt_aug_regal | normal, magic | 100.00% | 1.00 | augmentation 25.74, regal 51.17, scouring 50.80, transmutation 51.80 | augmentation 25.74, regal 51.17, scouring 50.80, transmutation 51.80 | 53.3 ± 53.6 |
 
-Whole craft, per orb: alteration 80.00 ± 80.50, augmentation 20.50 ± 20.50, regal 1.00 ± 0.00, transmutation 1.00 ± 0.00
+Whole craft, per orb: augmentation 25.74 ± 25.90, regal 51.17 ± 51.30, scouring 50.80 ± 51.30, transmutation 51.80 ± 51.30
 
 ## Method: alt_aug_regal (step 0)
 
 ```mermaid
 flowchart TD
   b0["normal<br/>transmutation"]
-  b1["magic desired / -<br/>augmentation"]
-  b2["magic (any grades)<br/>alteration"]
-  b3["magic - / good<br/>augmentation"]
-  b4["magic - / any<br/>augmentation"]
-  b5["magic desired / good<br/>regal"]
-  b6["magic desired / any<br/>regal"]
-  b7(["exit rare<br/>to done"])
+  b1(["exit magic<br/>to done"])
+  b2["magic good / -<br/>augmentation"]
+  b3["magic any / -<br/>augmentation"]
+  b4["magic - / good<br/>augmentation"]
+  b5["magic - / any<br/>augmentation"]
+  b6(["exit magic_pair<br/>to done"])
+  b7["magic good / good<br/>regal"]
+  b8["magic good / any<br/>regal"]
+  b9["magic any / good<br/>regal"]
+  b10["magic any / any<br/>regal"]
+  b11(["exit rare<br/>to done"])
+  b12["rare (any grades)<br/>scouring"]
   b0 -->|"0.31%"| b1
-  b0 -->|"74.07%"| b2
-  b0 -->|"3.78%"| b3
-  b0 -->|"21.22%"| b4
-  b0 -->|"0.09%"| b5
-  b0 -->|"0.52%"| b6
-  b1 -->|"15.13%"| b5
-  b1 -->|"84.87%"| b6
-  b2 -->|"0.31%"| b1
-  b2 -->|"74.07%"| b2
-  b2 -->|"3.78%"| b3
-  b2 -->|"21.22%"| b4
-  b2 -->|"0.09%"| b5
-  b2 -->|"0.52%"| b6
-  b3 -->|"1.23%"| b5
-  b3 -->|"98.77%"| b2
+  b0 -->|"1.54%"| b2
+  b0 -->|"23.15%"| b3
+  b0 -->|"3.78%"| b4
+  b0 -->|"21.22%"| b5
+  b0 -->|"0.62%"| b6
+  b0 -->|"0.47%"| b7
+  b0 -->|"2.62%"| b8
+  b0 -->|"7.01%"| b9
+  b0 -->|"39.29%"| b10
+  b2 -->|"15.13%"| b7
+  b2 -->|"84.87%"| b8
+  b3 -->|"15.13%"| b9
+  b3 -->|"84.87%"| b10
   b4 -->|"1.23%"| b6
-  b4 -->|"98.77%"| b2
-  b5 -->|"100.00%"| b7
-  b6 -->|"100.00%"| b7
+  b4 -->|"6.17%"| b7
+  b4 -->|"92.59%"| b9
+  b5 -->|"1.23%"| b6
+  b5 -->|"6.17%"| b8
+  b5 -->|"92.59%"| b10
+  b7 -->|"0.72%"| b11
+  b7 -->|"99.28%"| b12
+  b8 -->|"0.72%"| b11
+  b8 -->|"99.28%"| b12
+  b9 -->|"0.70%"| b11
+  b9 -->|"99.30%"| b12
+  b10 -->|"0.70%"| b11
+  b10 -->|"99.30%"| b12
+  b12 -->|"100.00%"| b0
 ```
 
 ## Other moves
 
-27 other moves checked at 11 places the craft passes through; 1 cost less to finish, by the weights.
+36 other moves checked at 24 places the craft passes through; 14 cost less to finish, by the weights.
 
 | step | item | visits | planned | to finish (chaos) | instead | to finish (chaos) |
 |---|---|---|---|---|---|---|
-| 0 | magic desired / - | 0.25 | augmentation | 0.55 | regal | 0.50 |
+| 0 | magic any / any | 40.71 | regal | 53.93 | alteration | 53.49 |
+| 0 | magic any / - | 11.99 | augmentation | 53.98 | alteration | 53.49 |
+| 0 | magic any / any | 40.71 | regal | 53.93 | scouring | 53.81 |
+| 0 | magic any / good | 7.26 | regal | 53.93 | alteration | 53.49 |
+| 0 | magic any / - | 11.99 | augmentation | 53.98 | scouring | 53.81 |
+| 0 | magic good / any | 2.71 | regal | 53.92 | alteration | 53.49 |
+| 0 | magic any / good | 7.26 | regal | 53.93 | scouring | 53.81 |
+| 0 | magic any / - | 11.99 | augmentation | 53.98 | regal | 53.93 |
+| 0 | magic good / - | 0.80 | augmentation | 53.97 | alteration | 53.49 |
+| 0 | magic good / any | 2.71 | regal | 53.92 | scouring | 53.81 |
+| 0 | magic good / good | 0.48 | regal | 53.92 | alteration | 53.49 |
+| 0 | magic good / - | 0.80 | augmentation | 53.97 | scouring | 53.81 |
+| 0 | magic good / good | 0.48 | regal | 53.92 | scouring | 53.81 |
+| 0 | magic good / - | 0.80 | augmentation | 53.97 | regal | 53.92 |
 
