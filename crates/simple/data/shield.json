@@ -86,9 +86,16 @@
    "groups": [
     "AttackerTakesDamageNoRange"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "physical_damage_to_return_to_melee_attacker",
@@ -118,9 +125,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -144,9 +154,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -170,9 +187,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -202,9 +226,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -227,9 +258,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -259,9 +297,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -286,9 +331,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -312,9 +360,16 @@
    "groups": [
     "IncreaseSpecificSocketedGemLevel"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_socketed_melee_gem_level_+",
@@ -340,9 +395,16 @@
    "groups": [
     "AttackerTakesDamageNoRange"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "physical_damage_to_return_to_melee_attacker",
@@ -372,9 +434,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -398,9 +463,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -424,9 +496,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -449,9 +528,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -474,9 +560,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -500,9 +593,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -526,9 +622,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -558,9 +661,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -585,9 +695,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -617,9 +734,16 @@
    "groups": [
     "AttackerTakesDamageNoRange"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "physical_damage_to_return_to_melee_attacker",
@@ -649,9 +773,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -675,9 +806,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -701,9 +835,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -726,9 +867,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -752,9 +900,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -778,9 +929,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -811,9 +969,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -844,9 +1009,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -876,9 +1048,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -909,9 +1088,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -936,9 +1122,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -968,9 +1161,16 @@
    "groups": [
     "AttackerTakesDamageNoRange"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "physical_damage_to_return_to_melee_attacker",
@@ -1000,9 +1200,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1026,9 +1233,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -1051,9 +1265,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -1077,9 +1294,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1109,9 +1333,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -1134,9 +1365,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1160,9 +1398,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -1186,9 +1427,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -1213,9 +1461,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -1245,9 +1500,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -1278,9 +1540,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -1311,9 +1580,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1343,9 +1619,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1376,9 +1659,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -1401,9 +1691,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1427,9 +1724,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -1453,9 +1753,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -1478,9 +1785,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1510,9 +1824,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1536,9 +1857,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -1563,9 +1891,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -1595,9 +1930,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -1620,9 +1962,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -1653,9 +2002,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_energy_shield",
@@ -1686,9 +2042,16 @@
    "groups": [
     "BaseLocalDefencesAndLife"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1719,9 +2082,16 @@
    "groups": [
     "IncreaseSpecificSocketedGemLevel"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_socketed_melee_gem_level_+",
@@ -1747,9 +2117,12 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -1773,9 +2146,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -1798,9 +2178,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1824,9 +2211,16 @@
    "groups": [
     "BaseLocalDefences"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_base_evasion_rating",
@@ -1856,9 +2250,16 @@
    "groups": [
     "AdditionalTotems"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "number_of_additional_totems_allowed",
@@ -1881,9 +2282,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -1908,9 +2316,16 @@
    "groups": [
     "IncreasedLife"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_life",
@@ -1934,9 +2349,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -1960,9 +2382,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -1985,9 +2414,16 @@
    "groups": [
     "SpellBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_block_%",
@@ -2010,9 +2446,16 @@
    "groups": [
     "DefencesPercentAndStunRecovery"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -2042,9 +2485,16 @@
    "groups": [
     "IncreasedMana"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_mana",
@@ -2068,9 +2518,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "dex_int_armour": 1000
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -2095,9 +2552,16 @@
    "groups": [
     "IncreasedShieldBlockPercentage"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_block_chance_+%",
@@ -2120,9 +2584,16 @@
    "groups": [
     "DefencesPercent"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_evasion_and_energy_shield_+%",
@@ -2147,9 +2618,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -2174,9 +2652,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -2199,9 +2684,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -2226,9 +2718,16 @@
    "groups": [
     "IncreasedAccuracy"
    ],
-   "weights": {
-    "dex_int_shield": 600
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "accuracy_rating",
@@ -2253,9 +2752,16 @@
    "groups": [
     "IncreasedAttackSpeed"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "attack_speed_+%",
@@ -2281,9 +2787,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -2306,9 +2819,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -2333,9 +2849,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -2360,9 +2883,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -2383,9 +2913,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -2409,9 +2946,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -2436,9 +2976,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -2461,9 +3008,16 @@
    "groups": [
     "IncreasedAttackSpeed"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "attack_speed_+%",
@@ -2489,9 +3043,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -2514,9 +3075,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -2542,9 +3110,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -2568,9 +3143,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -2595,9 +3177,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -2622,9 +3211,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -2649,9 +3245,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -2675,9 +3278,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -2698,9 +3308,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -2724,9 +3341,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -2751,9 +3371,16 @@
    "groups": [
     "IncreasedAccuracy"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "accuracy_rating",
@@ -2778,9 +3405,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -2806,9 +3440,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -2831,9 +3472,16 @@
    "groups": [
     "IncreasedAttackSpeed"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "attack_speed_+%",
@@ -2859,9 +3507,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -2884,9 +3539,16 @@
    "groups": [
     "AvoidElementalStatusAilments"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "avoid_all_elemental_status_%",
@@ -2913,9 +3575,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -2939,9 +3608,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -2966,9 +3642,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -2993,9 +3676,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -3020,9 +3710,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -3048,9 +3745,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -3071,9 +3775,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -3097,9 +3808,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -3123,9 +3841,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -3150,9 +3871,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -3175,9 +3903,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -3200,9 +3935,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -3226,9 +3968,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -3253,9 +4002,16 @@
    "groups": [
     "LocalAttributeRequirements"
    ],
-   "weights": {
-    "shield": 750
-   },
+   "weights": [
+    [
+     "shield",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_attribute_requirements_+%",
@@ -3276,9 +4032,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -3303,9 +4066,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -3330,9 +4100,16 @@
    "groups": [
     "IncreasedAccuracy"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "accuracy_rating",
@@ -3357,9 +4134,16 @@
    "groups": [
     "AvoidElementalStatusAilments"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "avoid_all_elemental_status_%",
@@ -3386,9 +4170,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -3414,9 +4205,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -3440,9 +4238,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -3463,9 +4268,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -3489,9 +4301,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -3514,9 +4333,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -3539,9 +4365,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -3566,9 +4395,16 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",
@@ -3589,9 +4425,16 @@
    "groups": [
     "EnergyShieldDelay"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_delay_-%",
@@ -3615,9 +4458,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -3641,9 +4491,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -3668,9 +4525,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -3695,9 +4559,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -3722,9 +4593,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -3747,9 +4625,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -3772,9 +4657,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -3799,9 +4687,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -3825,9 +4720,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -3851,9 +4753,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -3874,9 +4783,16 @@
    "groups": [
     "AvoidElementalStatusAilments"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "avoid_all_elemental_status_%",
@@ -3903,9 +4819,16 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",
@@ -3926,9 +4849,16 @@
    "groups": [
     "EnergyShieldDelay"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_delay_-%",
@@ -3952,9 +4882,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -3980,9 +4917,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -4006,9 +4950,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -4033,9 +4984,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -4060,9 +5018,16 @@
    "groups": [
     "IncreasedAccuracy"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "accuracy_rating",
@@ -4087,9 +5052,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -4114,9 +5086,16 @@
    "groups": [
     "LocalAttributeRequirements"
    ],
-   "weights": {
-    "shield": 750
-   },
+   "weights": [
+    [
+     "shield",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_attribute_requirements_+%",
@@ -4137,9 +5116,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -4163,9 +5149,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -4188,9 +5181,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -4213,9 +5213,16 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",
@@ -4236,9 +5243,16 @@
    "groups": [
     "EnergyShieldDelay"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_delay_-%",
@@ -4262,9 +5276,16 @@
    "groups": [
     "ChanceToChillAttackersOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "chill_attackers_for_4_seconds_on_block_%_chance",
@@ -4292,9 +5313,16 @@
    "groups": [
     "ChanceToShockAttackersOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "shock_attackers_for_4_seconds_on_block_%_chance",
@@ -4321,9 +5349,16 @@
    "groups": [
     "DisplaySocketedGemsGetReducedReservation"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_display_socketed_gems_have_mana_reservation_+%",
@@ -4348,9 +5383,16 @@
    "groups": [
     "GainRandomChargeOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "gain_random_charge_on_block",
@@ -4377,9 +5419,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -4404,9 +5449,16 @@
    "groups": [
     "MaximumChaosResistance"
    ],
-   "weights": {
-    "shield": 125
-   },
+   "weights": [
+    [
+     "shield",
+     125
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_chaos_damage_resistance_%",
@@ -4430,9 +5482,16 @@
    "groups": [
     "MaximumColdResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_cold_damage_resistance_%",
@@ -4457,9 +5516,16 @@
    "groups": [
     "MaximumFireResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_fire_damage_resistance_%",
@@ -4484,9 +5550,16 @@
    "groups": [
     "MaximumLightningResistance"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_lightning_damage_resistance_%",
@@ -4511,9 +5584,16 @@
    "groups": [
     "RecoverEnergyShieldPercentOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_%_gained_on_block",
@@ -4539,9 +5619,16 @@
    "groups": [
     "RecoverLifePercentOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "recover_%_of_maximum_life_on_block",
@@ -4567,9 +5654,16 @@
    "groups": [
     "RecoverManaPercentOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_%_gained_on_block",
@@ -4595,9 +5689,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -4622,9 +5723,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -4649,9 +5757,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -4676,9 +5791,16 @@
    "groups": [
     "AvoidElementalStatusAilments"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "avoid_all_elemental_status_%",
@@ -4705,9 +5827,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -4730,9 +5859,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -4755,9 +5891,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -4782,9 +5921,16 @@
    "groups": [
     "ChanceToChillAttackersOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "chill_attackers_for_4_seconds_on_block_%_chance",
@@ -4812,9 +5958,16 @@
    "groups": [
     "ChanceToShockAttackersOnBlock"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "shock_attackers_for_4_seconds_on_block_%_chance",
@@ -4841,9 +5994,16 @@
    "groups": [
     "IncreasedAccuracy"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "accuracy_rating",
@@ -4868,9 +6028,16 @@
    "groups": [
     "MaximumResistances"
    ],
-   "weights": {
-    "shield": 125
-   },
+   "weights": [
+    [
+     "shield",
+     125
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_maximum_all_resistances_%",
@@ -4893,9 +6060,16 @@
    "groups": [
     "MaximumChaosResistance"
    ],
-   "weights": {
-    "shield": 125
-   },
+   "weights": [
+    [
+     "shield",
+     125
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_chaos_damage_resistance_%",
@@ -4919,9 +6093,16 @@
    "groups": [
     "MaximumColdResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_cold_damage_resistance_%",
@@ -4946,9 +6127,16 @@
    "groups": [
     "MaximumFireResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_fire_damage_resistance_%",
@@ -4973,9 +6161,16 @@
    "groups": [
     "MaximumLightningResistance"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_lightning_damage_resistance_%",
@@ -5000,9 +6195,16 @@
    "groups": [
     "IncreasedAttackSpeed"
    ],
-   "weights": {
-    "dex_int_shield": 500
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "attack_speed_+%",
@@ -5028,9 +6230,16 @@
    "groups": [
     "SpellCriticalStrikeChanceIncrease"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "spell_critical_strike_chance_+%",
@@ -5056,9 +6265,16 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",
@@ -5079,9 +6295,16 @@
    "groups": [
     "EnergyShieldDelay"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_delay_-%",
@@ -5105,9 +6328,12 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "default": 1000
-   },
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -5132,9 +6358,16 @@
    "groups": [
     "ManaRegeneration"
    ],
-   "weights": {
-    "dex_int_shield": 1000
-   },
+   "weights": [
+    [
+     "dex_int_shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "mana_regeneration_rate_+%",
@@ -5158,9 +6391,16 @@
    "groups": [
     "StunRecovery"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_stun_recovery_+%",
@@ -5181,9 +6421,16 @@
    "groups": [
     "DisplaySocketedGemsGetReducedReservation"
    ],
-   "weights": {
-    "shield_shaper": 800
-   },
+   "weights": [
+    [
+     "shield_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "local_display_socketed_gems_have_mana_reservation_+%",
@@ -5208,9 +6455,16 @@
    "groups": [
     "ChaosResistance"
    ],
-   "weights": {
-    "armour": 250
-   },
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_chaos_damage_resistance_%",
@@ -5234,9 +6488,16 @@
    "groups": [
     "MaximumResistances"
    ],
-   "weights": {
-    "shield": 125
-   },
+   "weights": [
+    [
+     "shield",
+     125
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_maximum_all_resistances_%",
@@ -5259,9 +6520,16 @@
    "groups": [
     "MaximumChaosResistance"
    ],
-   "weights": {
-    "shield": 125
-   },
+   "weights": [
+    [
+     "shield",
+     125
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_chaos_damage_resistance_%",
@@ -5285,9 +6553,16 @@
    "groups": [
     "MaximumColdResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_cold_damage_resistance_%",
@@ -5312,9 +6587,16 @@
    "groups": [
     "MaximumFireResist"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_fire_damage_resistance_%",
@@ -5339,9 +6621,16 @@
    "groups": [
     "MaximumLightningResistance"
    ],
-   "weights": {
-    "shield": 250
-   },
+   "weights": [
+    [
+     "shield",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_maximum_lightning_damage_resistance_%",
@@ -5366,9 +6655,16 @@
    "groups": [
     "Dexterity"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_dexterity",
@@ -5391,9 +6687,16 @@
    "groups": [
     "Intelligence"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "additional_intelligence",
@@ -5416,9 +6719,16 @@
    "groups": [
     "LifeRegeneration"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_life_regeneration_rate_per_minute",
@@ -5443,9 +6753,16 @@
    "groups": [
     "ColdResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_cold_damage_resistance_%",
@@ -5470,9 +6787,16 @@
    "groups": [
     "FireResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_fire_damage_resistance_%",
@@ -5497,9 +6821,16 @@
    "groups": [
     "LightningResistance"
    ],
-   "weights": {
-    "armour": 1000
-   },
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_lightning_damage_resistance_%",
@@ -5524,9 +6855,16 @@
    "groups": [
     "AllResistances"
    ],
-   "weights": {
-    "shield": 1000
-   },
+   "weights": [
+    [
+     "shield",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_resist_all_elements_%",
@@ -5550,9 +6888,16 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",
@@ -5573,9 +6918,16 @@
    "groups": [
     "EnergyShieldDelay"
    ],
-   "weights": {
-    "dex_int_armour": 500
-   },
+   "weights": [
+    [
+     "dex_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
    "stats": [
     {
      "id": "energy_shield_delay_-%",
@@ -5599,7 +6951,7 @@
    "groups": [
     "ChanceToSuppressSpells"
    ],
-   "weights": {},
+   "weights": [],
    "stats": [
     {
      "id": "base_spell_suppression_chance_%",

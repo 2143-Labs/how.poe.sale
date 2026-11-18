@@ -14,14 +14,20 @@ There is exactly one base in the file. Its influence is not a property of the ba
 Shaper version of the shield is the same base with an influence on the item, and an
 influence contributes one extra tag (`shield_shaper` for the Shaper). So the pool rule is:
 a modifier can roll on the shield when it is a prefix or a suffix, its required level is at
-most the base's item level, and its spawn weights give a positive weight for one of the
-base's tags or for the influence's tag. In this export every such modifier carries exactly
-one positive weight among those tags and the rest are zero, so summing the positives and
-taking the first matching tag agree.
+most the base's item level, and its spawn weight on the item is positive.
+
+A modifier's spawn weights are an ordered list, and the first entry whose tag the item
+carries decides: its weight is the modifier's weight, and a zero there means the modifier
+cannot roll, whatever a later entry says. (RePoE documents this in `RePoE/docs/mods.md`:
+"The array elements are evaluated in order, the first element with a tag the item in
+question has is taken.") Summing the positive weights instead lets in 19 modifiers the
+game never rolls on this base, such as the suppression family, whose `shield: 0` comes
+before `dex_int_armour: 500`. The file keeps each modifier's entries on the item's tags
+in the export's order, zeros included, so the crate applies the same rule.
 
 The generator pins both pools: with Shaper influence, 73 prefixes over 64 800 and 131
 suffixes over 96 475; with no influence, 72 prefixes over 64 000 and 121 suffixes over
-88 475. The difference is the 11 modifiers whose only positive weight is `shield_shaper`.
+88 475. The difference is the 11 modifiers whose first matching tag is `shield_shaper`.
 The tag table still carries `shield_shaper`, because an item's influence finds its tag by
 name.
 """
@@ -93,13 +99,20 @@ def fail(msg):
     sys.exit("gen_shield: " + msg)
 
 
-def positive_weights(mod, tags):
-    """The mod's positive weights on `tags`, in the export's spawn-weight order."""
-    return {
-        w["tag"]: w["weight"]
+def weights_on(mod, tags):
+    """The mod's spawn weights on `tags`, in the export's order, zeros included."""
+    return [
+        [w["tag"], w["weight"]]
         for w in mod.get("spawn_weights", [])
-        if w["tag"] in tags and w["weight"] > 0
-    }
+        if w["tag"] in tags
+    ]
+
+
+def spawn_weight(mod, tags):
+    """The weight of the first spawn-weight entry whose tag is in `tags`; 0 when none is."""
+    for tag, weight in weights_on(mod, tags):
+        return weight
+    return 0
 
 
 def defence(prop):
@@ -154,47 +167,38 @@ def main(argv):
             continue
         if mod["required_level"] > ITEM_LEVEL:
             continue
-        weights = positive_weights(mod, pool_tags)
-        if not weights:
+        if spawn_weight(mod, pool_tags) == 0:
             continue
-        if len(weights) != 1:
-            fail(f"{key} has several positive spawn weights: {weights}")
-        explicit.append((key, mod, weights))
+        explicit.append((key, mod, weights_on(mod, pool_tags)))
     explicit.sort(key=lambda e: (e[1]["generation_type"] != "prefix", e[1]["required_level"], e[0]))
 
     for key, mod, _ in explicit:
         if not mod.get("stats"):
             fail(f"{key} has no stats")
-        if len(positive_weights(mod, pool_tags)) != 1:
-            fail(f"{key} does not have exactly one positive weight among the pool tags")
 
-    def pool(entries):
+    def pool(entries, tags):
         counts = {"prefix": 0, "suffix": 0}
         totals = {"prefix": 0, "suffix": 0}
-        for _, mod, weights in entries:
+        for _, mod, _ in entries:
             side = mod["generation_type"]
             counts[side] += 1
-            totals[side] += sum(weights.values())
+            totals[side] += spawn_weight(mod, tags)
         return counts, totals
 
     if len(explicit) != 204:
         fail(f"the pool has {len(explicit)} modifiers, expected 204")
-    shaper_counts, shaper_totals = pool(explicit)
+    shaper_counts, shaper_totals = pool(explicit, pool_tags)
     if shaper_counts != EXPECT_COUNTS:
         fail(f"shaper counts are {shaper_counts}, expected {EXPECT_COUNTS}")
     if shaper_totals != EXPECT_WEIGHTS:
         fail(f"shaper weight totals are {shaper_totals}, expected {EXPECT_WEIGHTS}")
 
-    plain = []
-    for key, mod, _ in explicit:
-        weights = positive_weights(mod, BASE_TAGS)
-        if weights:
-            plain.append((key, mod, weights))
+    plain = [entry for entry in explicit if spawn_weight(entry[1], BASE_TAGS) > 0]
     shaper_only = sorted(key for key, _, _ in explicit if key not in {p[0] for p in plain})
     if shaper_only != SHAPER_ONLY:
         fail(f"the shaper-only set is {shaper_only}, expected {SHAPER_ONLY}")
 
-    plain_counts, plain_totals = pool(plain)
+    plain_counts, plain_totals = pool(plain, BASE_TAGS)
     if plain_counts != EXPECT_PLAIN_COUNTS:
         fail(f"plain counts are {plain_counts}, expected {EXPECT_PLAIN_COUNTS}")
     if plain_totals != EXPECT_PLAIN_WEIGHTS:
@@ -223,7 +227,7 @@ def main(argv):
         intern_tag(tag)
     intern_tag(SHAPER_TAG)
     for _, mod, weights in explicit:
-        for tag in weights:
+        for tag, _ in weights:
             intern_tag(tag)
         for tag in mod.get("implicit_tags", []) + mod.get("adds_tags", []):
             intern_tag(tag)
@@ -233,7 +237,7 @@ def main(argv):
         fail(f"{IMPLICIT} is not in the export")
     if implicit_mod["generation_type"] != "unique":
         fail(f"{IMPLICIT} is {implicit_mod['generation_type']}, expected unique")
-    implicit_entry = mod_json(IMPLICIT, implicit_mod, "implicit", {})
+    implicit_entry = mod_json(IMPLICIT, implicit_mod, "implicit", [])
     if implicit_entry["stats"] != IMPLICIT_STATS:
         fail(f"{IMPLICIT} has stats {implicit_entry['stats']}, expected {IMPLICIT_STATS}")
     for tag in implicit_mod.get("implicit_tags", []) + implicit_mod.get("adds_tags", []):

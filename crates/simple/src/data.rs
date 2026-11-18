@@ -7,15 +7,21 @@
 //! There is one base. Its influence is not a property of the base but of the item: the Shaper
 //! version of the shield is this base with an [`Influence`] on the item, and an influence
 //! contributes one extra tag (`shield_shaper` for the Shaper). A pool is therefore always read for
-//! a base *and* an influence: [`Data::weight_on`] sums the modifier's weights over the base's tags
+//! a base *and* an influence: [`Data::weight_on`] reads the modifier's weight off the base's tags
 //! plus the influence's tag. That is the whole of the difference between the 204-modifier Shaper
-//! pool and the 193-modifier plain one; in this export every modifier has exactly one positive
-//! weight among those tags, which the generator asserts and [`Data::from_json`] re-checks.
+//! pool and the 193-modifier plain one.
+//!
+//! A modifier's spawn weights are an ordered list, and the **first** entry whose tag the item
+//! carries decides: its weight is the modifier's weight, and a zero there means the modifier
+//! cannot roll, whatever a later entry says. This is the game's rule as RePoE documents it
+//! (`RePoE/docs/mods.md`: "The array elements are evaluated in order, the first element with a
+//! tag the item in question has is taken"). The file keeps each modifier's entries in that order,
+//! zeros included.
 //!
 //! The tag table carries `shield_shaper` even though no base lists it, because an influence finds
 //! its tag by name.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::sync::LazyLock;
 
 use serde::Deserialize;
@@ -117,7 +123,8 @@ pub struct Mod {
     pub level: u32,
     /// Interned group ids: two modifiers in one group cannot sit on the same item.
     pub groups: Vec<u16>,
-    /// `(interned tag id, weight)`, positive weights only.
+    /// `(interned tag id, weight)` in the game's order, zeros included: the first entry whose tag
+    /// an item carries is the modifier's weight on it ([`Data::weight_on`]).
     pub weights: Vec<(u16, u128)>,
     /// `(interned stat id, min, max)`, in the export's stat order: a held affix's rolls follow it.
     pub stats: Vec<(u16, i32, i32)>,
@@ -253,22 +260,12 @@ impl Data {
 
             let mut weights = Vec::with_capacity(raw_weights.len());
             for (tag, weight) in raw_weights {
-                let tag = resolve_tag(&tag_index, &tag, &id)?;
-                if weight == 0 {
-                    return Err(format!("{id} has a zero spawn weight for a tag"));
+                let name = tag;
+                let tag = resolve_tag(&tag_index, &name, &id)?;
+                if weights.iter().any(|&(listed, _)| listed == tag) {
+                    return Err(format!("{id} lists a spawn weight for {name:?} twice"));
                 }
                 weights.push((tag, weight));
-            }
-            if !kind.is_implicit() {
-                let positive = weights
-                    .iter()
-                    .filter(|(tag, _)| base_tags.contains(tag))
-                    .count();
-                if positive > 1 {
-                    return Err(format!(
-                        "{id} has {positive} positive weights among the base's tags"
-                    ));
-                }
             }
 
             let mut implicit_tags = Vec::with_capacity(raw_implicit_tags.len());
@@ -431,8 +428,10 @@ impl Data {
             .map(|tag| tag as u16)
     }
 
-    /// The modifier's weight on a base with this influence: the sum of its weights over the tags
-    /// the base carries plus the influence's tag (none when `influence` is `None`).
+    /// The modifier's weight on a base with this influence: the weight of its first spawn-weight
+    /// entry whose tag the item carries, the item's tags being the base's plus the influence's
+    /// (none when `influence` is `None`). It is `0` when no entry matches, and `0` when the first
+    /// match is a zero, even if a later entry is positive.
     ///
     /// This is the number a draw uses. A Shaper-only modifier weighs `0` with no influence and its
     /// weight with `Some(Influence::Shaper)`. An influence whose tag the file does not know adds
@@ -440,12 +439,9 @@ impl Data {
     pub fn weight_on(&self, m: u16, base: u16, influence: Option<Influence>) -> u128 {
         let influence_tag = influence.and_then(|influence| self.influence_tag(influence));
         let base_tags = &self.base_at(base).tags;
-        self.mod_at(m)
-            .weights
-            .iter()
-            .filter(|(tag, _)| base_tags.contains(tag) || Some(*tag) == influence_tag)
-            .map(|&(_, weight)| weight)
-            .sum()
+        first_match(&self.mod_at(m).weights, |tag| {
+            base_tags.contains(&tag) || Some(tag) == influence_tag
+        })
     }
 
     /// The base with this name. Panics when the name is absent or names more than one base.
@@ -486,25 +482,23 @@ impl Data {
         })?;
         let base_tags = &self.base_at(base).tags;
 
-        // Every explicit modifier weighs on exactly one tag, and it is either a base tag or the
-        // influence tag. That is what makes the per-influence sums below complete.
-        for entry in &self.mods {
+        // Every explicit modifier in the file can roll on the Shaper shield, and none of its
+        // weights is on a tag the shield could never carry.
+        for (m, entry) in self.mods.iter().enumerate() {
             if entry.kind.side().is_none() {
                 continue;
             }
-            let [(tag, _)] = entry.weights.as_slice() else {
-                return Err(format!(
-                    "{} has {} positive weights, expected exactly 1",
-                    entry.id,
-                    entry.weights.len()
-                ));
-            };
-            if !base_tags.contains(tag) && *tag != shaper_tag {
-                return Err(format!(
-                    "{} weighs on {}, which is neither a base tag nor the Shaper tag",
-                    entry.id,
-                    self.tag_name(*tag)
-                ));
+            if self.weight_on(m as u16, base, Some(Influence::Shaper)) == 0 {
+                return Err(format!("{} cannot roll on the Shaper shield", entry.id));
+            }
+            for (tag, _) in &entry.weights {
+                if !base_tags.contains(tag) && *tag != shaper_tag {
+                    return Err(format!(
+                        "{} weighs on {}, which is neither a base tag nor the Shaper tag",
+                        entry.id,
+                        self.tag_name(*tag)
+                    ));
+                }
             }
         }
 
@@ -601,6 +595,14 @@ impl Data {
     }
 }
 
+/// The weight of the first entry whose tag the item carries; `0` when no entry matches.
+fn first_match(weights: &[(u16, u128)], carries: impl Fn(u16) -> bool) -> u128 {
+    weights
+        .iter()
+        .find(|&&(tag, _)| carries(tag))
+        .map_or(0, |&(_, weight)| weight)
+}
+
 fn resolve_tag(index: &HashMap<String, u16>, name: &str, owner: &str) -> Result<u16, String> {
     index
         .get(name)
@@ -685,7 +687,7 @@ struct RawMod {
     kind: String,
     level: u32,
     groups: Vec<String>,
-    weights: BTreeMap<String, u128>,
+    weights: Vec<(String, u128)>,
     stats: Vec<RawStat>,
     implicit_tags: Vec<String>,
     adds_tags: Vec<String>,
@@ -771,10 +773,8 @@ mod tests {
             .collect();
         assert_eq!(missing.len(), 11, "exactly the Shaper-only modifiers");
         assert!(missing.iter().all(|m| {
-            data.mod_at(*m)
-                .weights
-                .iter()
-                .all(|(tag, _)| data.tag_name(*tag) == "shield_shaper")
+            let (first, _) = data.mod_at(*m).weights[0];
+            data.tag_name(first) == "shield_shaper"
         }));
 
         let totem = data.id_of("MaximumTotemUber1").expect("the totem prefix");
@@ -881,6 +881,40 @@ mod tests {
                 assert!(!data.stat_id(*stat).is_empty());
                 assert!(min <= max);
             }
+        }
+    }
+
+    #[test]
+    fn the_first_matching_tag_decides_the_weight() {
+        // The suppression family on this shield: `shield: 0` comes before `dex_int_armour: 500`,
+        // so the modifier cannot roll, though summing the matches would give 500.
+        let blocked = [(3, 0), (0, 500), (5, 0)];
+        assert_eq!(first_match(&blocked, |tag| tag == 3 || tag == 0), 0);
+        // An item without the blocking tag reaches the next entry.
+        assert_eq!(first_match(&blocked, |tag| tag == 0 || tag == 5), 500);
+
+        // Two positive matches: the earlier one is the weight, not their sum.
+        let two = [(1, 500), (2, 1000)];
+        assert_eq!(first_match(&two, |_| true), 500);
+        assert_eq!(first_match(&two, |tag| tag == 2), 1000);
+
+        // No entry on a tag the item carries.
+        assert_eq!(first_match(&two, |tag| tag == 9), 0);
+        assert_eq!(first_match(&[], |_| true), 0);
+    }
+
+    #[test]
+    fn every_modifier_in_the_file_resolves_by_its_first_match() {
+        // The file lists zeros, so a sum and a first match can only agree if no modifier has a
+        // positive weight behind its first matching tag: pin that this file has none.
+        let data = data();
+        for (m, entry) in data.mods.iter().enumerate() {
+            if entry.kind.side().is_none() {
+                continue;
+            }
+            let first = data.weight_on(m as u16, 0, Some(Influence::Shaper));
+            let sum: u128 = entry.weights.iter().map(|&(_, weight)| weight).sum();
+            assert_eq!(first, sum, "{}", entry.id);
         }
     }
 

@@ -18,6 +18,13 @@
 //! the modifier on that side by weight. That is why [`one_add`] scales each side's weights by the
 //! *other* sides' totals: it puts every outcome of one add over one denominator
 //! (`k × Π totals` for `k` sides with room), so the shares stay integers and the total stays exact.
+//!
+//! The equal shares are a chosen simplification, not the game's rule. The evidence is that the
+//! game draws once from both sides' modifiers together, by weight, so the heavier side comes up
+//! more often (here the suffixes: about 60% of an add with both sides open, not 50%). The two
+//! rules differ only while both sides have room; with a side full, or on a magic item's second
+//! modifier, they are the same draw. The shield craft comes out about 5% cheaper under equal
+//! shares than under the pooled draw (3399.5 against about 3590 chaos).
 
 use crate::data::Data;
 use crate::fraction::Fraction;
