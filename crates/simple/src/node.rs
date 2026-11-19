@@ -27,6 +27,10 @@ pub struct Node {
     sides: [Vec<Tier>; 2],
     /// How many of each side's grades were placed rather than drawn.
     placed: [u8; 2],
+    /// Whether one of the held modifiers was placed by the bench rather than drawn. An item holds
+    /// at most one, so a flag is the whole of it; which modifier it is, and its family, are not
+    /// recorded.
+    crafted: bool,
 }
 
 impl Node {
@@ -36,11 +40,14 @@ impl Node {
             rarity,
             sides: [Vec::new(), Vec::new()],
             placed: [0, 0],
+            crafted: false,
         }
     }
 
     /// The item, graded. An item's affix order on a side is its draw order, so every modifier it
     /// holds is read as drawn — an essence's own modifier included.
+    ///
+    /// A node of an item is never crafted: the [`Item`] type does not record a bench modifier.
     pub fn of(filter: &ItemSetFilter, item: &Item) -> Node {
         Node {
             rarity: item.rarity,
@@ -51,6 +58,7 @@ impl Node {
                     .collect()
             }),
             placed: [0, 0],
+            crafted: false,
         }
     }
 
@@ -79,6 +87,19 @@ impl Node {
         node.sides[at].insert(usize::from(node.placed[at]), tier);
         node.placed[at] += 1;
         node
+    }
+
+    /// This node with one crafted modifier of a grade on a side: placed, not drawn, so the law's
+    /// history on that side does not include it. The flag is what stops a second bench use.
+    pub fn with_crafted(&self, side: Side, tier: Tier) -> Node {
+        let mut node = self.with_placed(side, tier);
+        node.crafted = true;
+        node
+    }
+
+    /// Whether the bench placed one of the modifiers held.
+    pub fn crafted(&self) -> bool {
+        self.crafted
     }
 
     /// How many modifiers of each grade the side holds, indexed by [`Tier::rank`].
@@ -175,6 +196,7 @@ impl Stock for Node {
             rarity,
             sides: self.sides.clone(),
             placed: self.placed,
+            crafted: self.crafted,
         }
     }
 

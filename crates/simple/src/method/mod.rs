@@ -11,15 +11,21 @@
 
 pub mod alt_aug_regal;
 pub mod alt_pair;
+pub mod alt_to_mod;
+pub mod bench_life;
 pub mod desired_pair;
 pub mod essence_spam;
 pub mod exalt_to;
+pub mod regal_to;
 
 pub use alt_aug_regal::AltAugRegal;
 pub use alt_pair::AltPair;
+pub use alt_to_mod::AltToMod;
+pub use bench_life::BenchLife;
 pub use desired_pair::DesiredPair;
 pub use essence_spam::EssenceSpam;
 pub use exalt_to::ExaltTo;
+pub use regal_to::RegalTo;
 
 use crate::chain::{Arm, Next, SolveError, Solved, solve};
 use crate::cost::{CurrencyId, Spend};
