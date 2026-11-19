@@ -4,7 +4,6 @@ use super::Applied;
 use super::{Currency, Named};
 use crate::cost::{Cost, CurrencyId};
 use crate::item::{Rarity, Side};
-use crate::pool;
 use crate::stock::{Dist, Lock, Refusal, Stock};
 
 /// The Exalted Orb, one step.
@@ -33,7 +32,7 @@ impl<S: Stock> Currency<S> for Exalted {
         }
         if !Side::BOTH
             .into_iter()
-            .any(|side| pool::rarity_cap(state.rarity()) > state.held(side))
+            .any(|side| state.cap(rules) > state.held(side))
         {
             return Err(Refusal("the item has no room for another modifier"));
         }

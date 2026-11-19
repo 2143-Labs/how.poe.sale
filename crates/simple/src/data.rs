@@ -27,6 +27,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 use crate::item::{Influence, Side};
+use crate::pool::Caps;
 
 /// The compiled-in data file.
 pub fn data() -> &'static Data {
@@ -102,6 +103,8 @@ pub struct Base {
     pub defences: [Option<(i32, i32)>; 3],
     /// The base's implicit modifiers, as modifier ids.
     pub implicits: Vec<u16>,
+    /// How many modifiers a side may hold at each rarity, read off the class ([`Caps::of`]).
+    pub caps: Caps,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -360,6 +363,7 @@ impl Data {
             bases.push(Base {
                 id,
                 name,
+                caps: Caps::of(&item_class),
                 item_class,
                 drop_level,
                 tags: base_tag_ids,

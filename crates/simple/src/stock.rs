@@ -112,6 +112,10 @@ pub trait Stock: Clone + Eq + std::hash::Hash {
     /// How many modifiers this side holds.
     fn held(&self, side: Side) -> usize;
 
+    /// How many modifiers a side of this stock may hold under these rules: its base's cap at its
+    /// rarity ([`crate::pool::Caps`]).
+    fn cap(&self, rules: &Self::Rules) -> usize;
+
     fn with_rarity(&self, rarity: Rarity) -> Self;
 
     /// The same stock with every explicit modifier gone, rarity kept.

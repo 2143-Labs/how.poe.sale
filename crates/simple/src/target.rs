@@ -13,13 +13,17 @@
 use crate::data::Data;
 use crate::filter::{ItemSetFilter, Tier};
 use crate::item::{Item, Rarity, Side};
-use crate::pool;
+use crate::pool::Caps;
 
-/// The floors the craft has to clear, per side, best first.
+/// The floors the craft has to clear, per side, best first, and how many modifiers a side of the
+/// item may hold.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Target {
     pub prefixes: Vec<Tier>,
     pub suffixes: Vec<Tier>,
+    /// The base's caps ([`crate::data::Base::caps`]): what [`crate::node::Node::reachable`] counts
+    /// the room left against.
+    pub caps: Caps,
 }
 
 impl Target {
@@ -28,16 +32,17 @@ impl Target {
         let target = Target {
             prefixes: floors(&data.target.prefixes, "prefixes"),
             suffixes: floors(&data.target.suffixes, "suffixes"),
+            caps: data.base_at(0).caps,
         };
         for side in Side::BOTH {
             let floors = target.floors(side);
             assert!(
-                floors.len() <= pool::rarity_cap(Rarity::Rare),
+                floors.len() <= target.caps.rare,
                 "crates/simple/data/shield.json: the {} floors ask for {} modifiers, and a rare \
                  item holds {} at most",
                 side.name(),
                 floors.len(),
-                pool::rarity_cap(Rarity::Rare)
+                target.caps.rare
             );
         }
         target
@@ -186,6 +191,7 @@ mod tests {
         let target = Target {
             prefixes: vec![Tier::Desired, Tier::Good],
             suffixes: vec![Tier::Good, Tier::Good, Tier::Good],
+            caps: data().base_at(0).caps,
         };
         // Two prefixes, one desired and one good, clear the prefix floors; a desired alone does
         // not, because the second floor has no modifier under it yet.

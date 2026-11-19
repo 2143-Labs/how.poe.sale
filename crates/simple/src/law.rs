@@ -14,8 +14,9 @@
 //! - the side is chosen first, in equal shares among the sides that can take a modifier
 //!   ([`crate::pool::one_add`]), so a side's draws do not depend on the other side's weights;
 //! - no family is on both sides, so one side's history takes nothing out of the other's pool
-//!   (checked: [`LawError::SharedGroup`]);
-//! - a side with room never runs out of modifiers within three draws (checked:
+//!   (checked by [`Law::new`]: [`LawError::SharedGroup`]; [`Law::sides_apart`] builds the tables
+//!   anyway, each side as if it were alone, and names the families it ignored);
+//! - a side with room never runs out of modifiers within the draws a rare side holds (checked:
 //!   [`LawError::DrySide`]);
 //! - a modifier's weight depends on the base, the item level and the influence, which the start
 //!   item fixes, and on nothing the item holds.
@@ -29,7 +30,7 @@ use crate::data::Data;
 use crate::filter::{ItemSetFilter, Tier};
 use crate::item::{Item, Rarity, Side};
 use crate::node::Node;
-use crate::pool::{draw_weights, rarity_cap};
+use crate::pool::{Caps, draw_weights};
 
 /// The grades, in the order a law lists them.
 const GRADES: [Tier; 3] = [Tier::Desired, Tier::Good, Tier::Any];
@@ -37,10 +38,14 @@ const GRADES: [Tier; 3] = [Tier::Desired, Tier::Good, Tier::Any];
 /// One side's table: history → the grades that can come next, each with its chance.
 type Table = HashMap<Vec<Tier>, Vec<(Tier, f64)>>;
 
-/// The table of each side.
+/// The table of each side, and the base's caps it was built for.
 #[derive(Clone, Debug)]
 pub struct Law {
     next: [Table; 2],
+    caps: Caps,
+    /// The families both sides can roll, which the tables ignore. Empty unless built by
+    /// [`Law::sides_apart`].
+    shared: Vec<String>,
 }
 
 /// Why an item cannot start a law.
@@ -80,13 +85,40 @@ struct Entry {
 
 impl Law {
     /// The law for the start item's base, item level and influence, under this grading.
+    ///
+    /// Refuses a pool where a family can roll on both sides ([`LawError::SharedGroup`]): there no
+    /// table over grades is exact (see [`Law::sides_apart`]).
     pub fn new(data: &Data, filter: &ItemSetFilter, start: &Item) -> Result<Law, LawError> {
+        Law::build(data, filter, start, false)
+    }
+
+    /// The law with each side read as if it were alone, even where a family can roll on both
+    /// sides; [`Law::shared`] names those families.
+    ///
+    /// On such a pool this is not the game's draw. A modifier of a shared family held on one side
+    /// takes the family out of the other side's pool ([`crate::pool::held_groups`]), so the other
+    /// side's next grade depends on which side holds it, and, three draws deep, on when it was
+    /// drawn — and a [`Node`] records neither. The law's chance is still the game's at a node none
+    /// of whose grades includes a modifier of a shared family, because no item that node stands
+    /// for holds one. A craft built on this law has to show that the chances its moves turn on are
+    /// of that kind, or say what the rest costs.
+    pub fn sides_apart(data: &Data, filter: &ItemSetFilter, start: &Item) -> Result<Law, LawError> {
+        Law::build(data, filter, start, true)
+    }
+
+    fn build(
+        data: &Data,
+        filter: &ItemSetFilter,
+        start: &Item,
+        apart: bool,
+    ) -> Result<Law, LawError> {
         if start.explicits() > 0 {
             return Err(LawError::NotCleared);
         }
         if start.corrupted || start.mirrored {
             return Err(LawError::Locked);
         }
+        let caps = data.base_at(start.base).caps;
         let rare = start.with_rarity(Rarity::Rare);
         let pools = Side::BOTH.map(|side| {
             draw_weights(data, &rare, side)
@@ -102,23 +134,42 @@ impl Law {
             .iter()
             .flat_map(|entry| entry.groups.iter().copied())
             .collect();
-        if let Some(shared) = pools[1]
-            .iter()
-            .flat_map(|entry| entry.groups.iter())
-            .find(|group| prefix_groups.contains(group))
-        {
-            return Err(LawError::SharedGroup(data.group_name(*shared).to_string()));
+        let mut shared: Vec<String> = Vec::new();
+        for group in pools[1].iter().flat_map(|entry| entry.groups.iter()) {
+            if !prefix_groups.contains(group) {
+                continue;
+            }
+            let name = data.group_name(*group).to_string();
+            if !apart {
+                return Err(LawError::SharedGroup(name));
+            }
+            if !shared.contains(&name) {
+                shared.push(name);
+            }
         }
         Ok(Law {
             next: [
-                side_law(&pools[0], Side::Prefix)?,
-                side_law(&pools[1], Side::Suffix)?,
+                side_law(&pools[0], Side::Prefix, caps.rare)?,
+                side_law(&pools[1], Side::Suffix, caps.rare)?,
             ],
+            caps,
+            shared,
         })
     }
 
+    /// The caps of the base the law was built for.
+    pub fn caps(&self) -> Caps {
+        self.caps
+    }
+
+    /// The families both sides can roll, which this law reads each side without. Empty for a law
+    /// from [`Law::new`].
+    pub fn shared(&self) -> &[String] {
+        &self.shared
+    }
+
     /// The grades that can come next on a side holding these grades, each with its chance, in the
-    /// order desired, good, any. Empty for a side holding three.
+    /// order desired, good, any. Empty for a side as full as a rare side can be.
     pub fn next(&self, side: Side, held: &[Tier]) -> &[(Tier, f64)] {
         self.next[side.index()]
             .get(held)
@@ -132,7 +183,7 @@ impl Law {
     pub fn add(&self, node: &Node) -> Vec<(Node, f64)> {
         let open: Vec<Side> = Side::BOTH
             .into_iter()
-            .filter(|&side| rarity_cap(node.rarity) > node.side(side).len())
+            .filter(|&side| self.caps.at(node.rarity) > node.side(side).len())
             .filter(|&side| !self.next(side, node.side(side)).is_empty())
             .collect();
         let share = 1.0 / open.len() as f64;
@@ -149,11 +200,11 @@ impl Law {
 /// One side's table. A level holds, for each history of that length, the mass of every set of
 /// families the history could be holding; histories are kept in the order they were first reached,
 /// so the sums are taken in the same order on every run.
-fn side_law(pool: &[Entry], side: Side) -> Result<Table, LawError> {
+fn side_law(pool: &[Entry], side: Side, draws: usize) -> Result<Table, LawError> {
     type Held = BTreeMap<Vec<u16>, f64>;
     let mut next = Table::new();
     let mut level: Vec<(Vec<Tier>, Held)> = vec![(Vec::new(), Held::from([(Vec::new(), 1.0)]))];
-    for _ in 0..rarity_cap(Rarity::Rare) {
+    for _ in 0..draws {
         let mut deeper: Vec<(Vec<Tier>, Held)> = Vec::new();
         for (history, held) in &level {
             let whole: f64 = held.values().sum();

@@ -84,9 +84,9 @@ impl Node {
     }
 
     /// Whether this can still become the item the craft is for
-    /// ([`Target::side_reachable`] on each side, with the room this rarity gives).
+    /// ([`Target::side_reachable`] on each side, with the room this rarity gives the target's base).
     pub fn reachable(&self, target: &Target) -> bool {
-        let cap = crate::pool::rarity_cap(self.rarity);
+        let cap = target.caps.at(self.rarity);
         Side::BOTH
             .into_iter()
             .all(|side| target.side_reachable(side, self.counts(side), cap))
@@ -132,6 +132,10 @@ impl Stock for Node {
 
     fn held(&self, side: Side) -> usize {
         self.side(side).len()
+    }
+
+    fn cap(&self, rules: &Law) -> usize {
+        rules.caps().at(self.rarity)
     }
 
     fn with_rarity(&self, rarity: Rarity) -> Node {
