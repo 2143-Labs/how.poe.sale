@@ -18,6 +18,7 @@ impl CurrencyId {
     pub const SCOURING: CurrencyId = CurrencyId("currency/scouring");
     pub const ANNULMENT: CurrencyId = CurrencyId("currency/annulment");
     pub const DIVINE: CurrencyId = CurrencyId("currency/divine");
+    pub const SHAPERS_EXALTED: CurrencyId = CurrencyId("currency/shapers_exalted");
 
     /// The id without its `currency/` prefix.
     pub fn name(self) -> &'static str {

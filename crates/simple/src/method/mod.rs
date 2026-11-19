@@ -11,9 +11,11 @@
 
 pub mod alt_aug_regal;
 pub mod exalt_to;
+pub mod shaper_slam;
 
 pub use alt_aug_regal::AltAugRegal;
 pub use exalt_to::ExaltTo;
+pub use shaper_slam::ShaperSlam;
 
 use crate::chain::{Arm, Next, SolveError, Solved, solve};
 use crate::cost::{CurrencyId, Spend};
