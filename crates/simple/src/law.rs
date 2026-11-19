@@ -21,6 +21,11 @@
 //! - a modifier's weight depends on the base, the item level and the influence, which the start
 //!   item fixes, and on nothing the item holds.
 //!
+//! A modifier a currency places rather than draws — an essence's own — leaves the law exact when
+//! its family is in neither side's pool: it takes a slot, and the draws after it see the pool of a
+//! cleared item. [`Law::placed`] names the modifiers that qualify, and a node keeps them out of the
+//! history the law reads ([`Node::drawn`]).
+//!
 //! The chances are `f64`: three draws deep, the exact fraction's denominator has hundreds of bits.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -38,7 +43,8 @@ const GRADES: [Tier; 3] = [Tier::Desired, Tier::Good, Tier::Any];
 /// One side's table: history → the grades that can come next, each with its chance.
 type Table = HashMap<Vec<Tier>, Vec<(Tier, f64)>>;
 
-/// The table of each side, and the base's caps it was built for.
+/// The table of each side, the base's caps it was built for, and the modifiers that can be placed
+/// without breaking it.
 #[derive(Clone, Debug)]
 pub struct Law {
     next: [Table; 2],
@@ -46,6 +52,8 @@ pub struct Law {
     /// The families both sides can roll, which the tables ignore. Empty unless built by
     /// [`Law::sides_apart`].
     shared: Vec<String>,
+    /// Essence-only modifier id → its side and grade.
+    placed: HashMap<String, (Side, Tier)>,
 }
 
 /// Why an item cannot start a law.
@@ -147,6 +155,24 @@ impl Law {
                 shared.push(name);
             }
         }
+        // An essence-only modifier whose family no pool modifier belongs to takes nothing out of
+        // either pool, so the draws after it are a cleared item's.
+        let pooled: HashSet<u16> = pools
+            .iter()
+            .flatten()
+            .flat_map(|entry| entry.groups.iter().copied())
+            .collect();
+        let placed = data
+            .mods
+            .iter()
+            .enumerate()
+            .filter(|(_, entry)| entry.essence_only)
+            .filter(|(_, entry)| !entry.groups.iter().any(|group| pooled.contains(group)))
+            .filter_map(|(m, entry)| {
+                let side = entry.kind.side()?;
+                Some((entry.id.clone(), (side, filter.tier_of(m as u16))))
+            })
+            .collect();
         Ok(Law {
             next: [
                 side_law(&pools[0], Side::Prefix, caps.rare)?,
@@ -154,6 +180,7 @@ impl Law {
             ],
             caps,
             shared,
+            placed,
         })
     }
 
@@ -177,19 +204,25 @@ impl Law {
             .unwrap_or(&[])
     }
 
+    /// The side and grade of an essence-only modifier that can be placed on a cleared item with
+    /// the law still exact after it, or `None` when the data lacks it or its family is in a pool.
+    pub fn placed(&self, modifier: &str) -> Option<(Side, Tier)> {
+        self.placed.get(modifier).copied()
+    }
+
     /// One random modifier added to a node: the side in equal shares among the sides that can take
-    /// one, then the grade by this law. Empty when no side can take a modifier. This is
-    /// [`crate::pool::one_add`] with the modifiers graded.
+    /// one, then the grade by this law, read from the side's drawn grades. Empty when no side can
+    /// take a modifier. This is [`crate::pool::one_add`] with the modifiers graded.
     pub fn add(&self, node: &Node) -> Vec<(Node, f64)> {
         let open: Vec<Side> = Side::BOTH
             .into_iter()
             .filter(|&side| self.caps.at(node.rarity) > node.side(side).len())
-            .filter(|&side| !self.next(side, node.side(side)).is_empty())
+            .filter(|&side| !self.next(side, node.drawn(side)).is_empty())
             .collect();
         let share = 1.0 / open.len() as f64;
         open.iter()
             .flat_map(|&side| {
-                self.next(side, node.side(side))
+                self.next(side, node.drawn(side))
                     .iter()
                     .map(move |&(tier, chance)| (node.with(side, tier), chance * share))
             })

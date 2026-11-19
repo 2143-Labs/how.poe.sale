@@ -513,15 +513,16 @@ impl Data {
 
         // Every explicit modifier in the file can roll on the base with no influence or with at
         // least one of the influences the file names, and none of its weights is on a tag the base
-        // could never carry.
+        // could never carry. An essence-only modifier is the exception to the first rule: it rolls
+        // nowhere, because an essence places it instead of drawing it.
         for (m, entry) in self.mods.iter().enumerate() {
             if entry.kind.side().is_none() {
                 continue;
             }
-            if influences
+            let rollable = influences
                 .iter()
-                .all(|&influence| self.weight_on(m as u16, base, influence) == 0)
-            {
+                .any(|&influence| self.weight_on(m as u16, base, influence) > 0);
+            if !entry.essence_only && !rollable {
                 return Err(format!("{} cannot roll on {}", entry.id, base_entry.name));
             }
             for (tag, _) in &entry.weights {

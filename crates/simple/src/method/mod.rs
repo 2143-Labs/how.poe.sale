@@ -12,11 +12,13 @@
 pub mod alt_aug_regal;
 pub mod alt_pair;
 pub mod desired_pair;
+pub mod essence_spam;
 pub mod exalt_to;
 
 pub use alt_aug_regal::AltAugRegal;
 pub use alt_pair::AltPair;
 pub use desired_pair::DesiredPair;
+pub use essence_spam::EssenceSpam;
 pub use exalt_to::ExaltTo;
 
 use crate::chain::{Arm, Next, SolveError, Solved, solve};

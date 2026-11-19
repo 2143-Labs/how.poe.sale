@@ -12,6 +12,7 @@ should include:
       "base": "Metadata/Items/Armours/Shields/ShieldDexInt13",
       "itemLevel": 87,
       "influences": ["shaper"],
+      "essenceMods": [...optional: essence-only modifier ids an essence can place...],
       "target": {"prefixes": ["desired"], "suffixes": [], "desired": [...], "good": [...]},
       "expect": {...optional pins the generator checks and fails on...}
     }
@@ -51,6 +52,12 @@ rest are interned by the crate when the file is read.
 The implicit modifiers are whatever the base lists, in the base's order, each with its own
 stats; nothing assumes a generation type. A base without `requirements` or without defence
 properties in the export gets zeros and nulls.
+
+An essence-only modifier has a spawn weight of zero everywhere, so the pool rule leaves it out;
+an essence places it instead of drawing it. Each id the spec lists in `essenceMods` is written
+after the explicit pool, with its zero weights on the item's tags, so the crate knows it and
+never draws it. It must be an essence-only prefix or suffix of the base's domain whose weight
+on the item is zero; it does not count toward any `expect` pin.
 
 The `expect` object pins what the generator must see; every key is optional and a mismatch is
 an error, not a correction:
@@ -170,6 +177,7 @@ def main(argv):
     base_id = spec["base"]
     item_level = spec["itemLevel"]
     influences = spec.get("influences", [])
+    essence_ids = spec.get("essenceMods", [])
     target = spec["target"]
     expect = spec.get("expect", {})
 
@@ -231,6 +239,21 @@ def main(argv):
         if implicit not in mods:
             fail(f"{implicit} is not in the export")
         implicit_entries.append(mod_json(implicit, mods[implicit], "implicit", []))
+
+    essence = []
+    for key in essence_ids:
+        if key not in mods:
+            fail(f"{key} is not in the export")
+        mod = mods[key]
+        if not mod["is_essence_only"]:
+            fail(f"{key} is not an essence-only modifier")
+        if mod["domain"] != base["domain"]:
+            fail(f"{key} is not of the base's domain")
+        if mod["generation_type"] not in ("prefix", "suffix"):
+            fail(f"{key} is neither a prefix nor a suffix")
+        if spawn_weight(mod, pool_tags) != 0:
+            fail(f"{key} can roll on the item, so it is already in the pool")
+        essence.append((key, mod, weights_on(mod, pool_tags)))
     explicit_ids = {key for key, _, _ in explicit}
     for entry in implicit_entries:
         if entry["id"] in explicit_ids:
@@ -250,7 +273,7 @@ def main(argv):
                 )
 
     # The goal names modifiers of the pool; a name that is not there cannot be a grade.
-    ids = explicit_ids
+    ids = explicit_ids | {key for key, _, _ in essence}
     for group in ("desired", "good"):
         for key in target[group]:
             if key not in ids:
@@ -271,7 +294,7 @@ def main(argv):
         intern_tag(tag)
     for tag in pool_tags[len(base_tags):]:
         intern_tag(tag)
-    for _, mod, weights in explicit:
+    for _, mod, weights in explicit + essence:
         for tag, _ in weights:
             intern_tag(tag)
         for tag in mod.get("implicit_tags", []) + mod.get("adds_tags", []):
@@ -317,7 +340,7 @@ def main(argv):
             ],
             "mods": [
                 mod_json(key, mod, mod["generation_type"], weights)
-                for key, mod, weights in explicit
+                for key, mod, weights in explicit + essence
             ]
             + implicit_entries,
             "target": {
