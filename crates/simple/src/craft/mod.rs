@@ -458,29 +458,37 @@ impl Craft {
             }
         }
         // Every landing at weight zero, so the chain knows what to finish from each. When one
-        // landing has no rule, the moves that land somewhere unruled are left out, one by one.
-        let entry_of = |moves: &[Alternative]| -> Vec<(Place, f64)> {
+        // landing has no rule, the moves that land somewhere unruled are left out: each distinct
+        // landing is tried once beside the start, and a move is kept when all of its landings solve.
+        let entry_of = |lands: &mut dyn Iterator<Item = &Place>| -> Vec<(Place, f64)> {
             let mut entry: Vec<(Place, f64)> = vec![(start.clone(), 1.0)];
-            entry.extend(
-                moves
-                    .iter()
-                    .flat_map(|alternative| alternative.lands.iter())
-                    .map(|(place, _)| (place.clone(), 0.0)),
-            );
+            entry.extend(lands.map(|place| (place.clone(), 0.0)));
             entry
         };
-        let (flat, moves, skipped) = match solve(&entry_of(&moves), &mut flat_next) {
+        let landings = |moves: &[Alternative]| -> Vec<(Place, f64)> {
+            entry_of(
+                &mut moves
+                    .iter()
+                    .flat_map(|alternative| alternative.lands.iter().map(|(place, _)| place)),
+            )
+        };
+        let (flat, moves, skipped) = match solve(&landings(&moves), &mut flat_next) {
             Ok(flat) => (flat, moves, 0),
             Err(_) => {
                 let before = moves.len();
+                let mut solves: HashMap<Place, bool> = HashMap::new();
                 let kept: Vec<Alternative> = moves
                     .into_iter()
                     .filter(|alternative| {
-                        solve(&entry_of(std::slice::from_ref(alternative)), &mut flat_next).is_ok()
+                        alternative.lands.iter().all(|(land, _)| {
+                            *solves.entry(land.clone()).or_insert_with(|| {
+                                solve(&entry_of(&mut std::iter::once(land)), &mut flat_next).is_ok()
+                            })
+                        })
                     })
                     .collect();
                 let skipped = before - kept.len();
-                (solve(&entry_of(&kept), &mut flat_next)?, kept, skipped)
+                (solve(&landings(&kept), &mut flat_next)?, kept, skipped)
             }
         };
         let visits: HashMap<&Place, f64> = flat

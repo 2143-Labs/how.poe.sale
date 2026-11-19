@@ -31,6 +31,10 @@ use crate::method::{
     Method, RegalTo, ShaperSlam,
 };
 
+/// The most steps a flattened craft may have: nesting a craft twice per level doubles the steps,
+/// so a few levels of that would otherwise exhaust memory.
+const MAX_STEPS: usize = 512;
+
 /// A craft as the page stores it: blocks wired exit to block, with the goal and prices it runs
 /// under.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -204,6 +208,17 @@ impl Flattener<'_> {
         let Some(entry) = spec.blocks.iter().position(|block| block.id == spec.entry) else {
             return Err(format!("the entry block \"{}\" does not exist", spec.entry));
         };
+        let mut ids: HashSet<&str> = HashSet::new();
+        for block in &spec.blocks {
+            if block.id == "done" {
+                return Err(format!(
+                    "block \"{prefix}done\": \"done\" names the craft's end"
+                ));
+            }
+            if !ids.insert(block.id.as_str()) {
+                return Err(format!("block \"{prefix}{}\" is defined twice", block.id));
+            }
+        }
         let start = start.map(parse_start).transpose()?;
         for wire in &spec.wires {
             if !spec.blocks.iter().any(|block| block.id == wire.from) {
@@ -329,6 +344,9 @@ impl Flattener<'_> {
                     .collect();
                 self.steps.push(Step { method, wires });
                 self.blocks.push(path);
+                if self.steps.len() > MAX_STEPS {
+                    return Err(format!("the craft has more than {MAX_STEPS} steps"));
+                }
                 if let Some(extra) = extra_for(&spec.kind) {
                     self.need(extra);
                 }
@@ -509,22 +527,23 @@ fn reachable(spec: &CraftSpec) -> HashSet<&str> {
 }
 
 /// Every wire to `done` from a reachable block, in wire order, named by its exit and suffixed
-/// `#2`, `#3` and so on when the name repeats.
+/// `#2`, `#3` and so on when the name is already taken (a nested craft's exit can itself be a
+/// suffixed name, so the suffix skips any name in use).
 fn named_outputs(spec: &CraftSpec) -> Vec<(String, &WireSpec)> {
     let reach = reachable(spec);
-    let mut counts: HashMap<&str, usize> = HashMap::new();
+    let mut used: HashSet<String> = HashSet::new();
     let mut outs = Vec::new();
     for wire in &spec.wires {
         if wire.to != "done" || !reach.contains(wire.from.as_str()) {
             continue;
         }
-        let count = counts.entry(wire.exit.as_str()).or_insert(0);
-        *count += 1;
-        let name = if *count == 1 {
-            wire.exit.clone()
-        } else {
-            format!("{}#{}", wire.exit, *count)
-        };
+        let mut name = wire.exit.clone();
+        let mut k = 1;
+        while used.contains(&name) {
+            k += 1;
+            name = format!("{}#{k}", wire.exit);
+        }
+        used.insert(name.clone());
         outs.push((name, wire));
     }
     outs

@@ -343,3 +343,61 @@ fn outputs_number_a_repeated_exit() {
         ["rare", "rare#2"]
     );
 }
+
+#[test]
+fn a_block_id_must_be_unique_and_not_done() {
+    let mut craft = builtin_craft("builtin:craft:flask");
+    craft["blocks"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "b1", "method": { "kind": "alt_pair" } }));
+    assert_eq!(error(&request(craft)), r#"block "b1" is defined twice"#);
+
+    let mut craft = builtin_craft("builtin:craft:flask");
+    craft["blocks"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "done", "method": { "kind": "alt_pair" } }));
+    assert_eq!(
+        error(&request(craft)),
+        r#"block "done": "done" names the craft's end"#
+    );
+}
+
+#[test]
+fn outputs_never_repeat_a_name() {
+    let inner: CraftSpec = serde_json::from_value(json!({
+        "id": "user:craft:inner", "name": "inner", "goal": "builtin:goal:jewel",
+        "prices": "builtin:prices:330", "start": "normal", "entry": "z1",
+        "blocks": [
+            { "id": "z1", "method": { "kind": "regal_to" } },
+            { "id": "z2", "method": { "kind": "desired_pair" } },
+        ],
+        "wires": [
+            { "from": "z1", "exit": "rare", "to": "done" },
+            { "from": "z1", "exit": "normal", "to": "z2" },
+            { "from": "z2", "exit": "rare", "to": "done" },
+        ],
+    }))
+    .unwrap();
+    let outer: CraftSpec = serde_json::from_value(json!({
+        "id": "user:craft:outer", "name": "outer", "goal": "builtin:goal:jewel",
+        "prices": "builtin:prices:330", "start": "normal", "entry": "y1",
+        "blocks": [
+            { "id": "y1", "method": { "kind": "regal_to" } },
+            { "id": "y2", "craft": "user:craft:inner" },
+        ],
+        "wires": [
+            { "from": "y1", "exit": "rare", "to": "done" },
+            { "from": "y1", "exit": "normal", "to": "y2" },
+            { "from": "y2", "exit": "rare", "to": "done" },
+            { "from": "y2", "exit": "rare#2", "to": "done" },
+        ],
+    }))
+    .unwrap();
+    let library = [inner, outer.clone()];
+    assert_eq!(
+        spec::outputs(&outer, &library).expect("outputs"),
+        ["rare", "rare#2", "rare#2#2"]
+    );
+}
