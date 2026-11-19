@@ -10,9 +10,11 @@
 //! methods together, so a magic item can never be handed to a method that exalts.
 
 pub mod alt_aug_regal;
+pub mod essence_spam;
 pub mod exalt_to;
 
 pub use alt_aug_regal::AltAugRegal;
+pub use essence_spam::EssenceSpam;
 pub use exalt_to::ExaltTo;
 
 use crate::chain::{Arm, Next, SolveError, Solved, solve};

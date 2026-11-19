@@ -8,6 +8,10 @@
 //! The order is kept because it matters: holding a modifier removes its whole family from later
 //! draws, so which grade comes next on a side depends on the grades already drawn there, and in
 //! which order (see [`crate::law`]).
+//!
+//! A modifier a currency puts on directly — an essence's own — is not a draw. It takes a slot and
+//! counts toward the goal, but the law's history on its side starts after it, so a side lists its
+//! placed grades first and remembers how many there are ([`Node::with_placed`], [`Node::drawn`]).
 
 use crate::filter::{ItemSetFilter, Tier};
 use crate::fraction::Fraction;
@@ -19,8 +23,10 @@ use crate::target::Target;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Node {
     pub rarity: Rarity,
-    /// Each side's grades, in draw order.
+    /// Each side's grades: the placed ones first, then the drawn ones in draw order.
     sides: [Vec<Tier>; 2],
+    /// How many of each side's grades were placed rather than drawn.
+    placed: [u8; 2],
 }
 
 impl Node {
@@ -29,10 +35,12 @@ impl Node {
         Node {
             rarity,
             sides: [Vec::new(), Vec::new()],
+            placed: [0, 0],
         }
     }
 
-    /// The item, graded. An item's affix order on a side is its draw order.
+    /// The item, graded. An item's affix order on a side is its draw order, so every modifier it
+    /// holds is read as drawn — an essence's own modifier included.
     pub fn of(filter: &ItemSetFilter, item: &Item) -> Node {
         Node {
             rarity: item.rarity,
@@ -42,18 +50,34 @@ impl Node {
                     .map(|affix| filter.tier_of(affix.m))
                     .collect()
             }),
+            placed: [0, 0],
         }
     }
 
-    /// The side's grades, in draw order.
+    /// The side's grades: the placed ones, then the drawn ones in draw order.
     pub fn side(&self, side: Side) -> &[Tier] {
         &self.sides[side.index()]
+    }
+
+    /// The side's drawn grades, in draw order: the history the law reads.
+    pub fn drawn(&self, side: Side) -> &[Tier] {
+        &self.sides[side.index()][usize::from(self.placed[side.index()])..]
     }
 
     /// This node with one more modifier of a grade drawn on a side.
     pub fn with(&self, side: Side, tier: Tier) -> Node {
         let mut node = self.clone();
         node.sides[side.index()].push(tier);
+        node
+    }
+
+    /// This node with one more modifier of a grade placed on a side: it takes a slot and counts
+    /// toward the goal, and it is not part of the side's history.
+    pub fn with_placed(&self, side: Side, tier: Tier) -> Node {
+        let mut node = self.clone();
+        let at = side.index();
+        node.sides[at].insert(usize::from(node.placed[at]), tier);
+        node.placed[at] += 1;
         node
     }
 
@@ -93,15 +117,23 @@ impl Node {
     }
 
     /// `rare desired+good / good`: the rarity, then the prefixes and the suffixes in draw order,
-    /// `-` for a side that holds nothing.
+    /// `-` for a side that holds nothing. A placed grade is in brackets: `[good]+desired`.
     pub fn label(&self) -> String {
         let side = |side: Side| {
             if self.side(side).is_empty() {
                 "-".to_string()
             } else {
+                let placed = usize::from(self.placed[side.index()]);
                 self.side(side)
                     .iter()
-                    .map(|tier| tier.name())
+                    .enumerate()
+                    .map(|(at, tier)| {
+                        if at < placed {
+                            format!("[{}]", tier.name())
+                        } else {
+                            tier.name().to_string()
+                        }
+                    })
                     .collect::<Vec<_>>()
                     .join("+")
             }
@@ -138,6 +170,7 @@ impl Stock for Node {
         Node {
             rarity,
             sides: self.sides.clone(),
+            placed: self.placed,
         }
     }
 

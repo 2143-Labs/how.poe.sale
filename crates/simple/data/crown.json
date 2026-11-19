@@ -1,0 +1,6299 @@
+{
+ "tags": [
+  "str_int_armour",
+  "not_for_sale",
+  "helmet",
+  "armour",
+  "default",
+  "helmet_shaper",
+  "physical_damage",
+  "damage",
+  "physical",
+  "resource",
+  "life",
+  "mana",
+  "defences",
+  "energy_shield",
+  "minion",
+  "gem",
+  "drop",
+  "support",
+  "influence_mod",
+  "power_charge",
+  "elemental_damage",
+  "caster_damage",
+  "elemental",
+  "cold",
+  "caster",
+  "has_caster_mod",
+  "lightning",
+  "resistance",
+  "fire",
+  "attack",
+  "has_attack_mod",
+  "attribute",
+  "flat_life_regen",
+  "chaos",
+  "ailment",
+  "skill",
+  "critical"
+ ],
+ "bases": [
+  {
+   "id": "Metadata/Items/Armours/Helmets/HelmetStrIntRitual3",
+   "name": "Archdemon Crown",
+   "itemClass": "Helmet",
+   "dropLevel": 75,
+   "tags": [
+    "str_int_armour",
+    "not_for_sale",
+    "helmet",
+    "armour",
+    "default"
+   ],
+   "influenceTags": {
+    "shaper": "helmet_shaper",
+    "elder": "helmet_elder",
+    "crusader": "helmet_crusader",
+    "redeemer": "helmet_eyrie",
+    "hunter": "helmet_basilisk",
+    "warlord": "helmet_adjudicator"
+   },
+   "requirements": {
+    "level": 75,
+    "strength": 79,
+    "dexterity": 0,
+    "intelligence": 79
+   },
+   "defences": {
+    "armour": [
+     185,
+     212
+    ],
+    "evasion": null,
+    "energyShield": [
+     38,
+     43
+    ],
+    "ward": null
+   },
+   "implicits": [
+    "SocketedActiveGemLevelSupportGemPenaltyImplicitR2"
+   ]
+  }
+ ],
+ "mods": [
+  {
+   "id": "AttackerTakesDamage1",
+   "name": "Thorny",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "AttackerTakesDamageNoRange"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_damage_to_return_to_melee_attacker",
+     "min": 1,
+     "max": 4
+    },
+    {
+     "id": "dummy_stat_display_nothing",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "damage",
+    "physical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Reflects (1-4) Physical Damage to Melee Attackers"
+  },
+  {
+   "id": "IncreasedLife0",
+   "name": "Hale",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 3,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(3-9) to maximum Life"
+  },
+  {
+   "id": "IncreasedMana1",
+   "name": "Beryl",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 15,
+     "max": 19
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(15-19) to maximum Mana"
+  },
+  {
+   "id": "LocalBaseArmourAndEnergyShield1",
+   "name": "Blessed",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 5,
+     "max": 9
+    },
+    {
+     "id": "local_energy_shield",
+     "min": 3,
+     "max": 4
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(5-9) to Armour\n+(3-4) to maximum Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery1",
+   "name": "Pixie's",
+   "kind": "prefix",
+   "level": 2,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 6,
+     "max": 13
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 6,
+     "max": 7
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-13)% increased Armour and Energy Shield\n(6-7)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield1",
+   "name": "Infixed",
+   "kind": "prefix",
+   "level": 3,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 15,
+     "max": 26
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-26)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "IncreasedLife1",
+   "name": "Healthy",
+   "kind": "prefix",
+   "level": 5,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 10,
+     "max": 24
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-24) to maximum Life"
+  },
+  {
+   "id": "AttackerTakesDamage2",
+   "name": "Spiny",
+   "kind": "prefix",
+   "level": 10,
+   "groups": [
+    "AttackerTakesDamageNoRange"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_damage_to_return_to_melee_attacker",
+     "min": 5,
+     "max": 10
+    },
+    {
+     "id": "dummy_stat_display_nothing",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "damage",
+    "physical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Reflects (5-10) Physical Damage to Melee Attackers"
+  },
+  {
+   "id": "IncreasedLife2",
+   "name": "Sanguine",
+   "kind": "prefix",
+   "level": 11,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 25,
+     "max": 39
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(25-39) to maximum Life"
+  },
+  {
+   "id": "IncreasedMana2",
+   "name": "Cobalt",
+   "kind": "prefix",
+   "level": 11,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 20,
+     "max": 24
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(20-24) to maximum Mana"
+  },
+  {
+   "id": "GlobalIncreaseMinionSpellSkillGemLevel1",
+   "name": "Taskmaster's",
+   "kind": "prefix",
+   "level": 14,
+   "groups": [
+    "IncreaseSpecificSocketedGemLevel"
+   ],
+   "weights": [
+    [
+     "helmet",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "minion_skill_gem_level_+",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   "implicitTags": [
+    "minion",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+1 to Level of all Minion Skill Gems"
+  },
+  {
+   "id": "IncreasedMana3",
+   "name": "Azure",
+   "kind": "prefix",
+   "level": 17,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 25,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(25-29) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife3",
+   "name": "Stalwart",
+   "kind": "prefix",
+   "level": 18,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 40,
+     "max": 54
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(40-54) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEnergyShield2_",
+   "name": "Anointed",
+   "kind": "prefix",
+   "level": 18,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 10,
+     "max": 27
+    },
+    {
+     "id": "local_energy_shield",
+     "min": 5,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-27) to Armour\n+(5-12) to maximum Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield2",
+   "name": "Ingrained",
+   "kind": "prefix",
+   "level": 19,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 27,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-42)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery2",
+   "name": "Gremlin's",
+   "kind": "prefix",
+   "level": 19,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 14,
+     "max": 20
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 8,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-20)% increased Armour and Energy Shield\n(8-9)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ItemFoundRarityIncreasePrefix1",
+   "name": "Magpie's",
+   "kind": "prefix",
+   "level": 20,
+   "groups": [
+    "ItemFoundRarityIncreasePrefix"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Rarity of Items found"
+  },
+  {
+   "id": "IncreasedMana4",
+   "name": "Sapphire",
+   "kind": "prefix",
+   "level": 23,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 30,
+     "max": 34
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-34) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife4",
+   "name": "Stout",
+   "kind": "prefix",
+   "level": 24,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 55,
+     "max": 69
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(55-69) to maximum Life"
+  },
+  {
+   "id": "IncreasedMana5",
+   "name": "Cerulean",
+   "kind": "prefix",
+   "level": 29,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 35,
+     "max": 39
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(35-39) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife5",
+   "name": "Robust",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 70,
+     "max": 84
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(70-84) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEnergyShield3",
+   "name": "Sanctified",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 28,
+     "max": 48
+    },
+    {
+     "id": "local_energy_shield",
+     "min": 13,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-48) to Armour\n+(13-22) to maximum Energy Shield"
+  },
+  {
+   "id": "LocalBaseArmourAndLife1",
+   "name": "Oyster's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 20,
+     "max": 32
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(20-32) to Armour\n+(18-23) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndLife1",
+   "name": "Monk's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 8,
+     "max": 10
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10) to maximum Energy Shield\n+(18-23) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndMana1",
+   "name": "Acolyte's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 8,
+     "max": 10
+    },
+    {
+     "id": "base_maximum_mana",
+     "min": 11,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10) to maximum Energy Shield\n+(11-15) to maximum Mana"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield3",
+   "name": "Instilled",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 43,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(43-55)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery3",
+   "name": "Boggart's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 21,
+     "max": 26
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 10,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-26)% increased Armour and Energy Shield\n(10-11)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "IncreasedMana6",
+   "name": "Aqua",
+   "kind": "prefix",
+   "level": 35,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 40,
+     "max": 44
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(40-44) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife6",
+   "name": "Rotund",
+   "kind": "prefix",
+   "level": 36,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 85,
+     "max": 99
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(85-99) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEnergyShield4",
+   "name": "Hallowed",
+   "kind": "prefix",
+   "level": 38,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 49,
+     "max": 85
+    },
+    {
+     "id": "local_energy_shield",
+     "min": 23,
+     "max": 28
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(49-85) to Armour\n+(23-28) to maximum Energy Shield"
+  },
+  {
+   "id": "ItemFoundRarityIncreasePrefix2",
+   "name": "Pirate's",
+   "kind": "prefix",
+   "level": 39,
+   "groups": [
+    "ItemFoundRarityIncreasePrefix"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 13,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(13-18)% increased Rarity of Items found"
+  },
+  {
+   "id": "IncreasedMana7",
+   "name": "Opalescent",
+   "kind": "prefix",
+   "level": 42,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 45,
+     "max": 49
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(45-49) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife7",
+   "name": "Virile",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 100,
+     "max": 114
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(100-114) to maximum Life"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield4",
+   "name": "Infused",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 56,
+     "max": 67
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(56-67)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery4",
+   "name": "Naga's",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 27,
+     "max": 32
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 12,
+     "max": 13
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-32)% increased Armour and Energy Shield\n(12-13)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LocalBaseArmourAndEnergyShield5",
+   "name": "Beatified",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 86,
+     "max": 145
+    },
+    {
+     "id": "local_energy_shield",
+     "min": 29,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(86-145) to Armour\n+(29-48) to maximum Energy Shield"
+  },
+  {
+   "id": "LocalBaseArmourAndLife2",
+   "name": "Urchin's",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 33,
+     "max": 48
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 24,
+     "max": 28
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-48) to Armour\n+(24-28) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndLife2",
+   "name": "Prior's",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 11,
+     "max": 15
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 24,
+     "max": 28
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(11-15) to maximum Energy Shield\n+(24-28) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndMana2",
+   "name": "Deacon's",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 11,
+     "max": 15
+    },
+    {
+     "id": "base_maximum_mana",
+     "min": 16,
+     "max": 19
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(11-15) to maximum Energy Shield\n+(16-19) to maximum Mana"
+  },
+  {
+   "id": "IncreasedMana8",
+   "name": "Gentian",
+   "kind": "prefix",
+   "level": 51,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 50,
+     "max": 54
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(50-54) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife8",
+   "name": "Athlete's",
+   "kind": "prefix",
+   "level": 54,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 115,
+     "max": 129
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(115-129) to maximum Life"
+  },
+  {
+   "id": "IncreasedMana9",
+   "name": "Chalybeous",
+   "kind": "prefix",
+   "level": 60,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 55,
+     "max": 59
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(55-59) to maximum Mana"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield5",
+   "name": "Inculcated",
+   "kind": "prefix",
+   "level": 60,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 68,
+     "max": 79
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(68-79)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery5",
+   "name": "Djinn's",
+   "kind": "prefix",
+   "level": 60,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 33,
+     "max": 38
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 14,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(33-38)% increased Armour and Energy Shield\n(14-15)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ItemFoundRarityIncreasePrefix3",
+   "name": "Dragon's",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "ItemFoundRarityIncreasePrefix"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 19,
+     "max": 24
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(19-24)% increased Rarity of Items found"
+  },
+  {
+   "id": "LocalBaseArmourAndLife3",
+   "name": "Nautilus's",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 49,
+     "max": 96
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 29,
+     "max": 33
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(49-96) to Armour\n+(29-33) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndLife3_",
+   "name": "Abbot's",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 16,
+     "max": 25
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 29,
+     "max": 33
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(16-25) to maximum Energy Shield\n+(29-33) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEnergyShieldAndMana3",
+   "name": "Priest's",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_energy_shield",
+     "min": 16,
+     "max": 25
+    },
+    {
+     "id": "base_maximum_mana",
+     "min": 20,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana",
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(16-25) to maximum Energy Shield\n+(20-22) to maximum Mana"
+  },
+  {
+   "id": "IncreasedLife9",
+   "name": "Fecund",
+   "kind": "prefix",
+   "level": 64,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 130,
+     "max": 144
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(130-144) to maximum Life"
+  },
+  {
+   "id": "AreaOfEffectSupportedUber1_",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "AreaOfEffect"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_skill_area_of_effect_+%",
+     "min": 7,
+     "max": 9
+    },
+    {
+     "id": "local_display_socketed_gems_get_increased_area_level",
+     "min": 16,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(7-9)% increased Area of Effect\nSocketed Gems are Supported by Level 16 Increased Area of Effect"
+  },
+  {
+   "id": "ChanceToGainPowerChargeOnKillUber1",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "PowerChargeOnKillChance"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "add_power_charge_on_kill_%_chance",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "power_charge",
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(4-6)% chance to gain a Power Charge on Kill"
+  },
+  {
+   "id": "SpellAddedColdDamageUber1",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "SpellAddedColdDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_cold_damage",
+     "min": 14,
+     "max": 18
+    },
+    {
+     "id": "spell_maximum_added_cold_damage",
+     "min": 27,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "cold",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (14-18) to (27-32) Cold Damage to Spells"
+  },
+  {
+   "id": "SpellAddedLightningDamageUber1",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "SpellAddedLightningDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_lightning_damage",
+     "min": 2,
+     "max": 5
+    },
+    {
+     "id": "spell_maximum_added_lightning_damage",
+     "min": 58,
+     "max": 61
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "lightning",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (2-5) to (58-61) Lightning Damage to Spells"
+  },
+  {
+   "id": "IncreasedMana10",
+   "name": "Mazarine",
+   "kind": "prefix",
+   "level": 69,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 60,
+     "max": 64
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(60-64) to maximum Mana"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield6",
+   "name": "Interpolated",
+   "kind": "prefix",
+   "level": 72,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 80,
+     "max": 91
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(80-91)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "AreaOfEffectSupportedUber2",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "AreaOfEffect"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_skill_area_of_effect_+%",
+     "min": 10,
+     "max": 12
+    },
+    {
+     "id": "local_display_socketed_gems_get_increased_area_level",
+     "min": 18,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-12)% increased Area of Effect\nSocketed Gems are Supported by Level 18 Increased Area of Effect"
+  },
+  {
+   "id": "GlobalIncreaseMinionSpellSkillGemLevel2",
+   "name": "Overseer's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "IncreaseSpecificSocketedGemLevel"
+   ],
+   "weights": [
+    [
+     "helmet",
+     25
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "minion_skill_gem_level_+",
+     "min": 2,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "minion",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+2 to Level of all Minion Skill Gems"
+  },
+  {
+   "id": "IncreasedMana11",
+   "name": "Blue",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 65,
+     "max": 68
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(65-68) to maximum Mana"
+  },
+  {
+   "id": "SpellAddedColdDamageUber2",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "SpellAddedColdDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_cold_damage",
+     "min": 17,
+     "max": 23
+    },
+    {
+     "id": "spell_maximum_added_cold_damage",
+     "min": 34,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "cold",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (17-23) to (34-40) Cold Damage to Spells"
+  },
+  {
+   "id": "SpellAddedLightningDamageUber2",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "SpellAddedLightningDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_lightning_damage",
+     "min": 2,
+     "max": 6
+    },
+    {
+     "id": "spell_maximum_added_lightning_damage",
+     "min": 73,
+     "max": 77
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "lightning",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (2-6) to (73-77) Lightning Damage to Spells"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShieldAndStunRecovery6",
+   "name": "Seraphim's",
+   "kind": "prefix",
+   "level": 78,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 39,
+     "max": 42
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 16,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(39-42)% increased Armour and Energy Shield\n(16-17)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "IncreasedMana12",
+   "name": "Zaffre",
+   "kind": "prefix",
+   "level": 81,
+   "groups": [
+    "IncreasedMana"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_mana",
+     "min": 69,
+     "max": 73
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(69-73) to maximum Mana"
+  },
+  {
+   "id": "AreaOfEffectSupportedUber3",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 83,
+   "groups": [
+    "AreaOfEffect"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_skill_area_of_effect_+%",
+     "min": 13,
+     "max": 15
+    },
+    {
+     "id": "local_display_socketed_gems_get_increased_area_level",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(13-15)% increased Area of Effect\nSocketed Gems are Supported by Level 20 Increased Area of Effect"
+  },
+  {
+   "id": "SpellAddedColdDamageUber3",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 83,
+   "groups": [
+    "SpellAddedColdDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_cold_damage",
+     "min": 21,
+     "max": 28
+    },
+    {
+     "id": "spell_maximum_added_cold_damage",
+     "min": 41,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "cold",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (21-28) to (41-48) Cold Damage to Spells"
+  },
+  {
+   "id": "ChanceToGainPowerChargeOnKillUber2",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "PowerChargeOnKillChance"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "add_power_charge_on_kill_%_chance",
+     "min": 7,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "power_charge",
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(7-10)% chance to gain a Power Charge on Kill"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEnergyShield7",
+   "name": "Inspired",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_energy_shield_+%",
+     "min": 92,
+     "max": 100
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(92-100)% increased Armour and Energy Shield"
+  },
+  {
+   "id": "SpellAddedLightningDamageUber3",
+   "name": "The Shaper's",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "SpellAddedLightningDamageUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_minimum_added_lightning_damage",
+     "min": 2,
+     "max": 7
+    },
+    {
+     "id": "spell_maximum_added_lightning_damage",
+     "min": 88,
+     "max": 93
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "caster_damage",
+    "influence_mod",
+    "damage",
+    "elemental",
+    "lightning",
+    "caster"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Adds (2-7) to (88-93) Lightning Damage to Spells"
+  },
+  {
+   "id": "ColdResist1",
+   "name": "of the Inuit",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist1",
+   "name": "of the Whelpling",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Fire Resistance"
+  },
+  {
+   "id": "IncreasedAccuracyNew1_",
+   "name": "of Steadiness",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 50,
+     "max": 100
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(50-100) to Accuracy Rating"
+  },
+  {
+   "id": "Intelligence1",
+   "name": "of the Pupil",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-12) to Intelligence"
+  },
+  {
+   "id": "LifeRegeneration1",
+   "name": "of the Newt",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 60,
+     "max": 120
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (1-2) Life per second"
+  },
+  {
+   "id": "LightningResist1",
+   "name": "of the Cloud",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Lightning Resistance"
+  },
+  {
+   "id": "Strength1",
+   "name": "of the Brute",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-12) to Strength"
+  },
+  {
+   "id": "StunRecovery1",
+   "name": "of Thick Skin",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 11,
+     "max": 13
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(11-13)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ItemFoundRarityIncrease1",
+   "name": "of Plunder",
+   "kind": "suffix",
+   "level": 3,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 6,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-10)% increased Rarity of Items found"
+  },
+  {
+   "id": "LifeRegeneration2",
+   "name": "of the Lizard",
+   "kind": "suffix",
+   "level": 7,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 126,
+     "max": 480
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (2.1-8) Life per second"
+  },
+  {
+   "id": "LightRadiusAndAccuracyNew1",
+   "name": "of Shining",
+   "kind": "suffix",
+   "level": 8,
+   "groups": [
+    "LightRadiusAndAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "light_radius_+%",
+     "min": 5,
+     "max": 5
+    },
+    {
+     "id": "accuracy_rating_+%",
+     "min": 9,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "5% increased Light Radius\n(9-11)% increased Global Accuracy Rating"
+  },
+  {
+   "id": "Intelligence2",
+   "name": "of the Student",
+   "kind": "suffix",
+   "level": 11,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 13,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(13-17) to Intelligence"
+  },
+  {
+   "id": "Strength2",
+   "name": "of the Wrestler",
+   "kind": "suffix",
+   "level": 11,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 13,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(13-17) to Strength"
+  },
+  {
+   "id": "FireResist2",
+   "name": "of the Salamander",
+   "kind": "suffix",
+   "level": 12,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist2",
+   "name": "of the Squall",
+   "kind": "suffix",
+   "level": 13,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist2",
+   "name": "of the Seal",
+   "kind": "suffix",
+   "level": 14,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Cold Resistance"
+  },
+  {
+   "id": "LightRadiusAndAccuracyNew2",
+   "name": "of Light",
+   "kind": "suffix",
+   "level": 15,
+   "groups": [
+    "LightRadiusAndAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "light_radius_+%",
+     "min": 10,
+     "max": 10
+    },
+    {
+     "id": "accuracy_rating_+%",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "10% increased Light Radius\n(12-15)% increased Global Accuracy Rating"
+  },
+  {
+   "id": "ChaosResist1",
+   "name": "of the Lost",
+   "kind": "suffix",
+   "level": 16,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 5,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(5-10)% to Chaos Resistance"
+  },
+  {
+   "id": "StunRecovery2",
+   "name": "of Stone Skin",
+   "kind": "suffix",
+   "level": 17,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LifeRegeneration3",
+   "name": "of the Flatworm",
+   "kind": "suffix",
+   "level": 19,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 486,
+     "max": 960
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (8.1-16) Life per second"
+  },
+  {
+   "id": "IncreasedAccuracyNew2",
+   "name": "of Precision",
+   "kind": "suffix",
+   "level": 20,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 100,
+     "max": 165
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(100-165) to Accuracy Rating"
+  },
+  {
+   "id": "Intelligence3",
+   "name": "of the Prodigy",
+   "kind": "suffix",
+   "level": 22,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 18,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-22) to Intelligence"
+  },
+  {
+   "id": "Strength3",
+   "name": "of the Bear",
+   "kind": "suffix",
+   "level": 22,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 18,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-22) to Strength"
+  },
+  {
+   "id": "FireResist3",
+   "name": "of the Drake",
+   "kind": "suffix",
+   "level": 24,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist3",
+   "name": "of the Storm",
+   "kind": "suffix",
+   "level": 25,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist3",
+   "name": "of the Penguin",
+   "kind": "suffix",
+   "level": 26,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Cold Resistance"
+  },
+  {
+   "id": "StunRecovery3",
+   "name": "of Iron Skin",
+   "kind": "suffix",
+   "level": 28,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 17,
+     "max": 19
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(17-19)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ChaosResist2",
+   "name": "of Banishment",
+   "kind": "suffix",
+   "level": 30,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 11,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(11-15)% to Chaos Resistance"
+  },
+  {
+   "id": "ItemFoundRarityIncrease2",
+   "name": "of Raiding",
+   "kind": "suffix",
+   "level": 30,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 11,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(11-14)% increased Rarity of Items found"
+  },
+  {
+   "id": "LightRadiusAndAccuracy3",
+   "name": "of Radiance",
+   "kind": "suffix",
+   "level": 30,
+   "groups": [
+    "LightRadiusAndAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "light_radius_+%",
+     "min": 15,
+     "max": 15
+    },
+    {
+     "id": "accuracy_rating_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "15% increased Light Radius\n(16-20)% increased Global Accuracy Rating"
+  },
+  {
+   "id": "LifeRegeneration4",
+   "name": "of the Starfish",
+   "kind": "suffix",
+   "level": 31,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 966,
+     "max": 1440
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (16.1-24) Life per second"
+  },
+  {
+   "id": "Intelligence4",
+   "name": "of the Augur",
+   "kind": "suffix",
+   "level": 33,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 23,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(23-27) to Intelligence"
+  },
+  {
+   "id": "Strength4",
+   "name": "of the Lion",
+   "kind": "suffix",
+   "level": 33,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 23,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(23-27) to Strength"
+  },
+  {
+   "id": "FireResist4",
+   "name": "of the Kiln",
+   "kind": "suffix",
+   "level": 36,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Fire Resistance"
+  },
+  {
+   "id": "ReducedLocalAttributeRequirements1",
+   "name": "of the Worthy",
+   "kind": "suffix",
+   "level": 36,
+   "groups": [
+    "LocalAttributeRequirements"
+   ],
+   "weights": [
+    [
+     "helmet",
+     650
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_attribute_requirements_+%",
+     "min": -18,
+     "max": -18
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "18% reduced Attribute Requirements"
+  },
+  {
+   "id": "LightningResist4",
+   "name": "of the Thunderhead",
+   "kind": "suffix",
+   "level": 37,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist4",
+   "name": "of the Yeti",
+   "kind": "suffix",
+   "level": 38,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Cold Resistance"
+  },
+  {
+   "id": "IncreasedAccuracyNew3",
+   "name": "of the Sniper",
+   "kind": "suffix",
+   "level": 40,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 166,
+     "max": 250
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(166-250) to Accuracy Rating"
+  },
+  {
+   "id": "StunRecovery4",
+   "name": "of Steel Skin",
+   "kind": "suffix",
+   "level": 42,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 20,
+     "max": 22
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-22)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ChaosResist3",
+   "name": "of Eviction",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(16-20)% to Chaos Resistance"
+  },
+  {
+   "id": "Intelligence5",
+   "name": "of the Philosopher",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 28,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-32) to Intelligence"
+  },
+  {
+   "id": "LifeRegeneration5",
+   "name": "of the Hydra",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 1446,
+     "max": 1920
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (24.1-32) Life per second"
+  },
+  {
+   "id": "Strength5",
+   "name": "of the Gorilla",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 28,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-32) to Strength"
+  },
+  {
+   "id": "EnergyShieldRechargeRate1",
+   "name": "of Allaying",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "EnergyShieldRegeneration"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "energy_shield_recharge_rate_+%",
+     "min": 24,
+     "max": 26
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(24-26)% increased Energy Shield Recharge Rate"
+  },
+  {
+   "id": "LifeRegenerationRate1",
+   "name": "of Esprit",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 9,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(9-11)% increased Life Regeneration rate"
+  },
+  {
+   "id": "FireResist5",
+   "name": "of the Furnace",
+   "kind": "suffix",
+   "level": 48,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist5",
+   "name": "of the Tempest",
+   "kind": "suffix",
+   "level": 49,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist5",
+   "name": "of the Walrus",
+   "kind": "suffix",
+   "level": 50,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Cold Resistance"
+  },
+  {
+   "id": "ItemFoundRarityIncrease3",
+   "name": "of Archaeology",
+   "kind": "suffix",
+   "level": 53,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 15,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-20)% increased Rarity of Items found"
+  },
+  {
+   "id": "Intelligence6",
+   "name": "of the Sage",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 33,
+     "max": 37
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-37) to Intelligence"
+  },
+  {
+   "id": "LifeRegeneration6",
+   "name": "of the Troll",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 1926,
+     "max": 2880
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (32.1-48) Life per second"
+  },
+  {
+   "id": "Strength6",
+   "name": "of the Goliath",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 33,
+     "max": 37
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-37) to Strength"
+  },
+  {
+   "id": "ChaosResist4",
+   "name": "of Expulsion",
+   "kind": "suffix",
+   "level": 56,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 21,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(21-25)% to Chaos Resistance"
+  },
+  {
+   "id": "StunRecovery5",
+   "name": "of Adamantite Skin",
+   "kind": "suffix",
+   "level": 56,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 23,
+     "max": 25
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(23-25)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "EnergyShieldRechargeRate2",
+   "name": "of Diffusion",
+   "kind": "suffix",
+   "level": 57,
+   "groups": [
+    "EnergyShieldRegeneration"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "energy_shield_recharge_rate_+%",
+     "min": 27,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-29)% increased Energy Shield Recharge Rate"
+  },
+  {
+   "id": "LifeRegenerationRate2",
+   "name": "of Perpetuity",
+   "kind": "suffix",
+   "level": 57,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Life Regeneration rate"
+  },
+  {
+   "id": "ColdResist6",
+   "name": "of the Polar Bear",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist6",
+   "name": "of the Volcano",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Fire Resistance"
+  },
+  {
+   "id": "IncreasedAccuracyNew4",
+   "name": "of the Marksman",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 251,
+     "max": 350
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(251-350) to Accuracy Rating"
+  },
+  {
+   "id": "LightningResist6",
+   "name": "of the Maelstrom",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Lightning Resistance"
+  },
+  {
+   "id": "ReducedLocalAttributeRequirements2",
+   "name": "of the Apt",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "LocalAttributeRequirements"
+   ],
+   "weights": [
+    [
+     "helmet",
+     650
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_attribute_requirements_+%",
+     "min": -32,
+     "max": -32
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "32% reduced Attribute Requirements"
+  },
+  {
+   "id": "ChaosResist5",
+   "name": "of Exile",
+   "kind": "suffix",
+   "level": 65,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 26,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(26-30)% to Chaos Resistance"
+  },
+  {
+   "id": "Intelligence7",
+   "name": "of the Savant",
+   "kind": "suffix",
+   "level": 66,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 38,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(38-42) to Intelligence"
+  },
+  {
+   "id": "Strength7",
+   "name": "of the Leviathan",
+   "kind": "suffix",
+   "level": 66,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 38,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(38-42) to Strength"
+  },
+  {
+   "id": "AddedManaRegenerationUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "ManaRegeneration"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_mana_regeneration_rate_per_minute",
+     "min": 180,
+     "max": 300
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "influence_mod",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (3-5) Mana per second"
+  },
+  {
+   "id": "EnergyShieldRechargeRate3",
+   "name": "of Dispersal",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "EnergyShieldRegeneration"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "energy_shield_recharge_rate_+%",
+     "min": 30,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(30-32)% increased Energy Shield Recharge Rate"
+  },
+  {
+   "id": "IncreasedChillEffectSupportedUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_ailment_effect_+%",
+     "min": 8,
+     "max": 12
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_hypothermia",
+     "min": 16,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "cold",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Effect of Cold Ailments\nSocketed Gems are Supported by Level 16 Hypothermia"
+  },
+  {
+   "id": "IncreasedShockEffectSupportedUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_ailment_effect_+%",
+     "min": 8,
+     "max": 12
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_innervate_level",
+     "min": 16,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "lightning",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Effect of Lightning Ailments\nSocketed Gems are Supported by Level 16 Innervate"
+  },
+  {
+   "id": "LifeRegeneration7",
+   "name": "of Ryslatha",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 2886,
+     "max": 3840
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (48.1-64) Life per second"
+  },
+  {
+   "id": "LifeRegenerationRate3",
+   "name": "of Vivification",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 15,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-17)% increased Life Regeneration rate"
+  },
+  {
+   "id": "ManaRegenerationUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "ManaRegeneration"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mana_regeneration_rate_+%",
+     "min": 41,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "influence_mod",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-55)% increased Mana Regeneration Rate"
+  },
+  {
+   "id": "MineDamageTrapUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 20,
+     "max": 25
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_level_x_trap_and_mine_damage",
+     "min": 16,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-25)% increased Mine Damage\nSocketed Gems are Supported by Level 16 Trap And Mine Damage"
+  },
+  {
+   "id": "MineDamageUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 20,
+     "max": 25
+    },
+    {
+     "id": "local_display_socketed_gems_get_remote_mine_level",
+     "min": 18,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-25)% increased Mine Damage\nSocketed Gems are Supported by Level 18 Blastchain Mine"
+  },
+  {
+   "id": "SocketedSpellCriticalStrikeChanceUber1_",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "SocketedCriticalStrikeChance"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_display_socketed_spells_additional_critical_strike_chance",
+     "min": 100,
+     "max": 100
+    }
+   ],
+   "implicitTags": [
+    "skill",
+    "influence_mod",
+    "caster",
+    "critical",
+    "gem"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Socketed Spells have +1% to Critical Strike Chance"
+  },
+  {
+   "id": "ColdResist7",
+   "name": "of the Ice",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist7",
+   "name": "of the Magma",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist7",
+   "name": "of the Lightning",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Lightning Resistance"
+  },
+  {
+   "id": "Intelligence8",
+   "name": "of the Virtuoso",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 43,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(43-50) to Intelligence"
+  },
+  {
+   "id": "LifeRegeneration8_",
+   "name": "of the Phoenix",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 3846,
+     "max": 5760
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (64.1-96) Life per second"
+  },
+  {
+   "id": "Strength8",
+   "name": "of the Titan",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 43,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(43-50) to Strength"
+  },
+  {
+   "id": "IncreasedAccuracyNew5_",
+   "name": "of the Ranger",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 351,
+     "max": 480
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(351-480) to Accuracy Rating"
+  },
+  {
+   "id": "IncreasedChillEffectSupportedUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_ailment_effect_+%",
+     "min": 13,
+     "max": 16
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_hypothermia",
+     "min": 18,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "cold",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(13-16)% increased Effect of Cold Ailments\nSocketed Gems are Supported by Level 18 Hypothermia"
+  },
+  {
+   "id": "IncreasedShockEffectSupportedUber2___",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_ailment_effect_+%",
+     "min": 13,
+     "max": 16
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_innervate_level",
+     "min": 18,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "lightning",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(13-16)% increased Effect of Lightning Ailments\nSocketed Gems are Supported by Level 18 Innervate"
+  },
+  {
+   "id": "ItemFoundRarityIncrease4",
+   "name": "of Excavation",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 21,
+     "max": 26
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-26)% increased Rarity of Items found"
+  },
+  {
+   "id": "ManaRegenerationUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "ManaRegeneration"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mana_regeneration_rate_+%",
+     "min": 56,
+     "max": 70
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "influence_mod",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(56-70)% increased Mana Regeneration Rate"
+  },
+  {
+   "id": "MineDamageTrapUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 26,
+     "max": 30
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_level_x_trap_and_mine_damage",
+     "min": 18,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-30)% increased Mine Damage\nSocketed Gems are Supported by Level 18 Trap And Mine Damage"
+  },
+  {
+   "id": "MineDamageUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 26,
+     "max": 30
+    },
+    {
+     "id": "local_display_socketed_gems_get_remote_mine_level",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-30)% increased Mine Damage\nSocketed Gems are Supported by Level 20 Blastchain Mine"
+  },
+  {
+   "id": "SocketedSpellCriticalStrikeChanceUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "SocketedCriticalStrikeChance"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_display_socketed_spells_additional_critical_strike_chance",
+     "min": 200,
+     "max": 200
+    }
+   ],
+   "implicitTags": [
+    "skill",
+    "influence_mod",
+    "caster",
+    "critical",
+    "gem"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Socketed Spells have +2% to Critical Strike Chance"
+  },
+  {
+   "id": "EnergyShieldRechargeRate4",
+   "name": "of Buffering",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "EnergyShieldRegeneration"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "energy_shield_recharge_rate_+%",
+     "min": 33,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(33-35)% increased Energy Shield Recharge Rate"
+  },
+  {
+   "id": "LifeRegenerationRate4",
+   "name": "of Youth",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 18,
+     "max": 19
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(18-19)% increased Life Regeneration rate"
+  },
+  {
+   "id": "LifeRegeneration9",
+   "name": "of Recuperation",
+   "kind": "suffix",
+   "level": 78,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 5766,
+     "max": 7680
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (96.1-128) Life per second"
+  },
+  {
+   "id": "StunRecovery6",
+   "name": "of Corundum Skin",
+   "kind": "suffix",
+   "level": 79,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 26,
+     "max": 28
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-28)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "AddedManaRegenerationUber2",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "ManaRegeneration"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_mana_regeneration_rate_per_minute",
+     "min": 360,
+     "max": 480
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "influence_mod",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (6-8) Mana per second"
+  },
+  {
+   "id": "IncreasedChillEffectSupportedUber3",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_ailment_effect_+%",
+     "min": 17,
+     "max": 20
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_hypothermia",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "cold",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(17-20)% increased Effect of Cold Ailments\nSocketed Gems are Supported by Level 20 Hypothermia"
+  },
+  {
+   "id": "IncreasedShockEffectSupportedUber3_",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "HelmetAilmentUber"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     800
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_ailment_effect_+%",
+     "min": 17,
+     "max": 20
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_x_innervate_level",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "elemental",
+    "lightning",
+    "ailment",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(17-20)% increased Effect of Lightning Ailments\nSocketed Gems are Supported by Level 20 Innervate"
+  },
+  {
+   "id": "MineDamageTrapUber3",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 31,
+     "max": 35
+    },
+    {
+     "id": "local_display_socketed_gems_supported_by_level_x_trap_and_mine_damage",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% increased Mine Damage\nSocketed Gems are Supported by Level 20 Trap And Mine Damage"
+  },
+  {
+   "id": "MineDamageUber3",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "MineSupported"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 31,
+     "max": 35
+    },
+    {
+     "id": "local_display_socketed_gems_get_remote_mine_level",
+     "min": 22,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "support",
+    "influence_mod",
+    "damage",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% increased Mine Damage\nSocketed Gems are Supported by Level 22 Blastchain Mine"
+  },
+  {
+   "id": "ChaosResist6",
+   "name": "of Bameth",
+   "kind": "suffix",
+   "level": 81,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(31-35)% to Chaos Resistance"
+  },
+  {
+   "id": "Intelligence9",
+   "name": "of the Genius",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(51-55) to Intelligence"
+  },
+  {
+   "id": "Strength9",
+   "name": "of the Gods",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(51-55) to Strength"
+  },
+  {
+   "id": "ColdResist8",
+   "name": "of Haast",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist8",
+   "name": "of Tzteosh",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist8",
+   "name": "of Ephij",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Lightning Resistance"
+  },
+  {
+   "id": "SocketedSpellCriticalStrikeChanceUber3",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "SocketedCriticalStrikeChance"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_display_socketed_spells_additional_critical_strike_chance",
+     "min": 300,
+     "max": 300
+    }
+   ],
+   "implicitTags": [
+    "skill",
+    "influence_mod",
+    "caster",
+    "critical",
+    "gem"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "Socketed Spells have +3% to Critical Strike Chance"
+  },
+  {
+   "id": "EnemyElementalDamageTakenAuraUber1",
+   "name": "of Shaping",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "LocalDisplayNearbyEnemyElementalDamageTaken"
+   ],
+   "weights": [
+    [
+     "helmet_shaper",
+     400
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_display_nearby_enemy_elemental_damage_taken_+%",
+     "min": 6,
+     "max": 6
+    },
+    {
+     "id": "elemental_damage_taken_+%",
+     "min": 6,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "influence_mod",
+    "damage",
+    "elemental"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Nearby Enemies take 6% increased Elemental Damage\n6% increased Elemental Damage taken"
+  },
+  {
+   "id": "EnergyShieldRechargeRate5______",
+   "name": "of Ardour",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "EnergyShieldRegeneration"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "energy_shield_recharge_rate_+%",
+     "min": 36,
+     "max": 38
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "energy_shield"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-38)% increased Energy Shield Recharge Rate"
+  },
+  {
+   "id": "IncreasedAccuracyNew6",
+   "name": "of Lioneye",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "IncreasedAccuracy"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating",
+     "min": 481,
+     "max": 600
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [
+    "has_attack_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(481-600) to Accuracy Rating"
+  },
+  {
+   "id": "Intelligence10",
+   "name": "of the Polymath",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "helmet",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 56,
+     "max": 60
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(56-60) to Intelligence"
+  },
+  {
+   "id": "LifeRegenerationRate5",
+   "name": "of Everlasting",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_int_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 20,
+     "max": 21
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-21)% increased Life Regeneration rate"
+  },
+  {
+   "id": "SocketedGemsDealMoreElementalDamageEssence1",
+   "name": "of the Essence",
+   "kind": "suffix",
+   "level": 63,
+   "groups": [
+    "Supported"
+   ],
+   "weights": [
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_display_socketed_gems_elemental_damage_+%_final",
+     "min": 30,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "skill",
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": true,
+   "text": "Socketed Gems deal 30% more Elemental Damage"
+  },
+  {
+   "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+   "name": "",
+   "kind": "implicit",
+   "level": 45,
+   "groups": [
+    "IncreaseSocketedGemLevel"
+   ],
+   "weights": [],
+   "stats": [
+    {
+     "id": "local_socketed_active_skill_gem_level_+",
+     "min": 2,
+     "max": 2
+    },
+    {
+     "id": "local_socketed_support_gem_level_+",
+     "min": -2,
+     "max": -2
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+2 to Level of Socketed Skill Gems\n-2 to Level of Socketed Support Gems"
+  }
+ ],
+ "target": {
+  "prefixes": [
+   "good"
+  ],
+  "suffixes": [
+   "desired",
+   "good",
+   "good"
+  ],
+  "desired": [
+   "IncreasedChillEffectSupportedUber3",
+   "IncreasedChillEffectSupportedUber2"
+  ],
+  "good": [
+   "SocketedGemsDealMoreElementalDamageEssence1",
+   "SocketedSpellCriticalStrikeChanceUber3",
+   "SocketedSpellCriticalStrikeChanceUber2",
+   "SocketedSpellCriticalStrikeChanceUber1_",
+   "IncreasedLife9",
+   "IncreasedLife8",
+   "AreaOfEffectSupportedUber3",
+   "AreaOfEffectSupportedUber2",
+   "AreaOfEffectSupportedUber1_"
+  ]
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "base": "Metadata/Items/Armours/Helmets/HelmetStrIntRitual3",
+ "itemLevel": 86,
+ "influences": ["shaper"],
+ "essenceMods": ["SocketedGemsDealMoreElementalDamageEssence1"],
+ "target": {
+  "prefixes": ["good"],
+  "suffixes": ["desired", "good", "good"],
+  "desired": [
+   "IncreasedChillEffectSupportedUber3",
+   "IncreasedChillEffectSupportedUber2"
+  ],
+  "good": [
+   "SocketedGemsDealMoreElementalDamageEssence1",
+   "SocketedSpellCriticalStrikeChanceUber3",
+   "SocketedSpellCriticalStrikeChanceUber2",
+   "SocketedSpellCriticalStrikeChanceUber1_",
+   "IncreasedLife9",
+   "IncreasedLife8",
+   "AreaOfEffectSupportedUber3",
+   "AreaOfEffectSupportedUber2",
+   "AreaOfEffectSupportedUber1_"
+  ]
+ },
+ "expect": {
+  "mods": 176,
+  "counts": {"prefix": 67, "suffix": 109},
+  "weights": {"prefix": 55375, "suffix": 85000},
+  "implicits": [
+   {
+    "id": "SocketedActiveGemLevelSupportGemPenaltyImplicitR2",
+    "stats": [
+     {"id": "local_socketed_active_skill_gem_level_+", "min": 2, "max": 2},
+     {"id": "local_socketed_support_gem_level_+", "min": -2, "max": -2}
+    ]
+   }
+  ]
+ }
+}

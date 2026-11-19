@@ -18,6 +18,8 @@ impl CurrencyId {
     pub const SCOURING: CurrencyId = CurrencyId("currency/scouring");
     pub const ANNULMENT: CurrencyId = CurrencyId("currency/annulment");
     pub const DIVINE: CurrencyId = CurrencyId("currency/divine");
+    /// Essence of Horror, under the id the repository's other engine gives it.
+    pub const ESSENCE_OF_HORROR: CurrencyId = CurrencyId("essence/essence-of-horror");
 
     /// The id without its `currency/` prefix.
     pub fn name(self) -> &'static str {
