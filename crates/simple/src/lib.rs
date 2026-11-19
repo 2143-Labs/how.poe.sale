@@ -15,11 +15,14 @@
 //! was run against the full export. The generated file is compiled in, so nothing here reads the
 //! export.
 
+pub mod api;
+pub mod bases;
 pub mod chain;
 pub mod cost;
 pub mod craft;
 pub mod currency;
 pub mod data;
+pub mod diagram;
 pub mod filter;
 pub mod fraction;
 pub mod item;

@@ -62,7 +62,7 @@ fn prices() -> Weights {
 /// Policy A: a full item that misses goes back to `alt_to_mod`, which scours it.
 fn restart() -> Craft {
     Craft {
-        name: "boots_restart",
+        name: "boots_restart".to_string(),
         start: Rarity::Normal,
         steps: vec![
             Step {

@@ -1,33 +1,20 @@
 //! The craft as text: Markdown, with Mermaid diagrams.
 //!
-//! Nothing here computes a chance or a cost; it prints a [`Report`]. The one thing it decides is
-//! how to merge the places of a method for its diagram: a place whose move forgets what the item
-//! holds (transmutation, alteration, scouring) is one box per rarity and move, and a place whose
-//! move keeps the item is one box per rarity, grade counts and move.
+//! Nothing here computes a chance or a cost; it prints a [`Report`], and each method's
+//! [`crate::diagram::Diagram`].
 
-use std::collections::HashMap;
 use std::fmt::Write;
 
-use crate::chain::Next;
-use crate::cost::{Cost, CurrencyId, Spend};
-use crate::craft::{Craft, Place, Report, Wire};
+use crate::cost::{Cost, Spend};
+use crate::craft::{Craft, Report, Wire};
 use crate::data::Data;
+use crate::diagram::{BoxKind, diagram};
 use crate::filter::{ItemSetFilter, Tier};
 use crate::item::{Item, Rarity, Side};
-use crate::method::{Kit, Move};
+use crate::method::Kit;
 use crate::node::Node;
 use crate::pool::{draw_weights, side_chance};
 use crate::weights::Weights;
-
-/// The moves that forget what the item holds.
-const FORGETS: [CurrencyId; 3] = [
-    CurrencyId::TRANSMUTATION,
-    CurrencyId::ALTERATION,
-    CurrencyId::SCOURING,
-];
-
-/// Fewer visits than this is rounding: the craft does not pass through the place.
-const VISITED: f64 = 1e-12;
 
 /// The whole report. `start` is the cleared item the law was built from.
 pub fn render(
@@ -223,106 +210,61 @@ fn output_id(step: usize, exit: &str) -> String {
     format!("o{step}_{safe}")
 }
 
-/// One box of a method's diagram.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-enum Cell {
-    /// A move that forgets what the item holds.
-    Forgets(Rarity, CurrencyId),
-    /// A move that keeps the item: the grades held per side, best first.
-    Keeps(Rarity, [Vec<Tier>; 2], CurrencyId),
-    /// Leaving the method.
-    Exit(&'static str),
-}
-
-/// The moves an item allows: its own, then every other currency that works on it, each with what
-/// it would cost to finish the craft from there.
-type Options = Vec<(CurrencyId, f64, bool)>;
-
-impl Cell {
-    fn of(craft: &Craft, kit: &Kit, step: usize, node: &Node) -> Cell {
-        match craft.steps[step].method.rule(kit.target, node) {
-            Move::Exit(exit) => Cell::Exit(exit),
-            Move::Use(id) if FORGETS.contains(&id) => Cell::Forgets(node.rarity, id),
-            Move::Use(id) => Cell::Keeps(
-                node.rarity,
-                Side::BOTH.map(|side| {
-                    let mut held = node.side(side).to_vec();
-                    held.sort_by_key(|tier| std::cmp::Reverse(tier.rank()));
-                    held
-                }),
-                id,
-            ),
-        }
-    }
-
-    fn label(&self, craft: &Craft, step: usize, options: Option<&Options>) -> String {
-        match self {
-            // A normal item holds no explicit modifiers, so both sides are empty.
-            Cell::Forgets(Rarity::Normal, id) => {
-                format!("normal<br/>prefixes: -<br/>suffixes: -<br/>{}", id.name())
-            }
-            // One box for every item of this rarity: the move throws away what it holds.
-            Cell::Forgets(rarity, id) => format!(
-                "{}<br/>prefixes: any grades<br/>suffixes: any grades<br/>{}",
+/// One box of a method's diagram, as a Mermaid label.
+fn label(kind: &BoxKind) -> String {
+    match kind {
+        // A normal item holds no explicit modifiers, so both sides are empty.
+        BoxKind::Forgets {
+            rarity: Rarity::Normal,
+            currency,
+        } => format!(
+            "normal<br/>prefixes: -<br/>suffixes: -<br/>{}",
+            currency.name()
+        ),
+        // One box for every item of this rarity: the move throws away what it holds.
+        BoxKind::Forgets { rarity, currency } => format!(
+            "{}<br/>prefixes: any grades<br/>suffixes: any grades<br/>{}",
+            rarity.name(),
+            currency.name()
+        ),
+        BoxKind::Keeps {
+            rarity,
+            sides,
+            currency,
+            cost,
+            options,
+        } => {
+            let side = |held: &[Tier]| {
+                if held.is_empty() {
+                    "-".to_string()
+                } else {
+                    held.iter()
+                        .map(|tier| tier.name())
+                        .collect::<Vec<_>>()
+                        .join("+")
+                }
+            };
+            let mut label = format!(
+                "{}<br/>prefixes: {}<br/>suffixes: {}<br/>→ {}",
                 rarity.name(),
-                id.name()
-            ),
-            Cell::Keeps(rarity, sides, id) => {
-                let side = |held: &[Tier]| {
-                    if held.is_empty() {
-                        "-".to_string()
-                    } else {
-                        held.iter()
-                            .map(|tier| tier.name())
-                            .collect::<Vec<_>>()
-                            .join("+")
-                    }
-                };
-                let mut label = format!(
-                    "{}<br/>prefixes: {}<br/>suffixes: {}<br/>→ {}",
-                    rarity.name(),
-                    side(&sides[0]),
-                    side(&sides[1]),
-                    id.name()
-                );
-                if let Some((_, cost, _)) =
-                    options.and_then(|o| o.iter().find(|(at, _, _)| at == id))
-                {
-                    label.push_str(&format!(" {cost:.1}"));
-                }
-                // Everything else the item allows, cheapest first, as one line.
-                let mut others: Vec<(CurrencyId, f64)> = options
-                    .map(|o| {
-                        o.iter()
-                            .filter(|(at, _, _)| at != id)
-                            .map(|&(at, cost, _)| (at, cost))
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                others.sort_by(|a, b| a.1.total_cmp(&b.1));
-                if !others.is_empty() {
-                    let others: Vec<String> = others
-                        .iter()
-                        .map(|(at, cost)| format!("{} {cost:.1}", at.name()))
-                        .collect();
-                    label.push_str(&format!("<br/>or {}", others.join(", ")));
-                }
-                label
+                side(&sides[0]),
+                side(&sides[1]),
+                currency.name()
+            );
+            if let Some(cost) = cost {
+                label.push_str(&format!(" {cost:.1}"));
             }
-            Cell::Exit(exit) => {
-                let to = craft.steps[step]
-                    .wires
+            // Everything else the item allows, cheapest first, as one line.
+            if !options.is_empty() {
+                let others: Vec<String> = options
                     .iter()
-                    .find(|(name, _)| name == exit)
-                    .map(|&(_, wire)| match wire {
-                        Wire::Next => format!("step {}", step + 1),
-                        Wire::To(to) => format!("step {to}"),
-                        Wire::Done => "done".to_string(),
-                    })
-                    .unwrap_or_default();
-                format!("exit {exit}<br/>to {to}")
+                    .map(|(at, cost)| format!("{} {cost:.1}", at.name()))
+                    .collect();
+                label.push_str(&format!("<br/>or {}", others.join(", ")));
             }
+            label
         }
+        BoxKind::Exit { exit, to } => format!("exit {exit}<br/>to {to}"),
     }
 }
 
@@ -335,75 +277,7 @@ fn method(
     name: &str,
     weights: &Weights,
 ) {
-    let flat = &report.flat;
-    let mut boxes: Vec<Cell> = Vec::new();
-    let mut index: HashMap<Cell, usize> = HashMap::new();
-    let mut weight: Vec<f64> = Vec::new();
-    let mut edges: Vec<((usize, usize), f64)> = Vec::new();
-    let mut edge_at: HashMap<(usize, usize), usize> = HashMap::new();
-    let mut slot = |found: Cell, boxes: &mut Vec<Cell>, weight: &mut Vec<f64>| {
-        *index.entry(found.clone()).or_insert_with(|| {
-            boxes.push(found);
-            weight.push(0.0);
-            boxes.len() - 1
-        })
-    };
-    // What every move at every place the craft passes would cost to finish, keyed by the item's
-    // grades so it lines up with the boxes.
-    let valued = |cost: &Cost| weights.value(&Spend::certain(cost)).value;
-    let mut options: HashMap<(Rarity, [Vec<Tier>; 2]), Options> = HashMap::new();
-    for other in &report.others {
-        if other.step != step {
-            continue;
-        }
-        let mut key = [Vec::new(), Vec::new()];
-        for (at, side) in Side::BOTH.into_iter().enumerate() {
-            key[at] = other.node.side(side).to_vec();
-            key[at].sort_unstable_by_key(|tier| std::cmp::Reverse(tier.rank()));
-        }
-        let entry = options.entry((other.node.rarity, key)).or_default();
-        for (id, cost, planned) in [
-            (other.planned, &other.planned_to_go, true),
-            (other.other, &other.other_to_go, false),
-        ] {
-            if !entry.iter().any(|(at, _, _)| *at == id) {
-                entry.push((id, valued(cost), planned));
-            }
-        }
-    }
-
-    for (place, &visits) in flat.inside.iter().zip(&flat.visits) {
-        let Place::At { step: at, node } = place else {
-            continue;
-        };
-        if *at != step || visits <= VISITED {
-            continue;
-        }
-        let from = slot(Cell::of(craft, kit, step, node), &mut boxes, &mut weight);
-        weight[from] += visits;
-        let Ok(Next::Arms(arms)) = craft.flat_next(kit, place) else {
-            continue;
-        };
-        for arm in arms {
-            let Place::At {
-                step: to_step,
-                node: to,
-            } = &arm.to
-            else {
-                continue;
-            };
-            if *to_step != step {
-                continue;
-            }
-            let to = slot(Cell::of(craft, kit, step, to), &mut boxes, &mut weight);
-            let at = *edge_at.entry((from, to)).or_insert_with(|| {
-                edges.push(((from, to), 0.0));
-                edges.len() - 1
-            });
-            edges[at].1 += visits * arm.chance;
-        }
-    }
-
+    let drawn = diagram(craft, kit, report, step, weights);
     let _ = writeln!(out, "## Method: {name} (step {step})\n");
     let _ = writeln!(
         out,
@@ -413,26 +287,24 @@ fn method(
         weights.unit
     );
     let _ = writeln!(out, "```mermaid\nflowchart TD");
-    for (at, found) in boxes.iter().enumerate() {
-        let options = match found {
-            Cell::Keeps(rarity, sides, _) => options.get(&(*rarity, sides.clone())),
-            _ => None,
-        };
-        let label = found.label(craft, step, options);
-        match found {
-            Cell::Exit(_) => {
-                let _ = writeln!(out, "  b{at}([\"{label}\"])");
+    for (at, cell) in drawn.boxes.iter().enumerate() {
+        let text = label(&cell.kind);
+        match cell.kind {
+            BoxKind::Exit { .. } => {
+                let _ = writeln!(out, "  b{at}([\"{text}\"])");
             }
             _ => {
-                let _ = writeln!(out, "  b{at}[\"{label}\"]");
+                let _ = writeln!(out, "  b{at}[\"{text}\"]");
             }
         }
     }
-    for &((from, to), mass) in &edges {
+    for edge in &drawn.edges {
         let _ = writeln!(
             out,
-            "  b{from} -->|\"{}\"| b{to}",
-            percent(mass / weight[from])
+            "  b{} -->|\"{}\"| b{}",
+            edge.from,
+            percent(edge.share),
+            edge.to
         );
     }
     let _ = writeln!(out, "```\n");
@@ -466,6 +338,13 @@ fn others(out: &mut String, weights: &Weights, report: &Report) {
         places.len(),
         better.len()
     );
+    if report.skipped > 0 {
+        let _ = writeln!(
+            out,
+            "{} other moves could not be priced: the craft has no rule for where they land.\n",
+            report.skipped
+        );
+    }
     if better.is_empty() {
         return;
     }

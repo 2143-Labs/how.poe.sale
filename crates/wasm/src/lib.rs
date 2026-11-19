@@ -229,6 +229,39 @@ impl Bridge {
     }
 }
 
+/// The Craft planner's engine: the JSON views of `simple::api`. It holds nothing; every base is
+/// compiled into `simple`.
+#[wasm_bindgen]
+pub struct CraftBridge;
+
+#[wasm_bindgen]
+impl CraftBridge {
+    #[wasm_bindgen(constructor)]
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> CraftBridge {
+        console_error_panic_hook::set_once();
+        CraftBridge
+    }
+
+    /// The bases, methods, currencies and built-in presets.
+    pub fn catalog(&self) -> Result<String, JsValue> {
+        let view = simple::api::catalog().map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// Every explicit modifier of a base.
+    pub fn mods(&self, base: &str) -> Result<String, JsValue> {
+        let view = simple::api::mods(base).map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+
+    /// A craft, costed: `request` is a JSON `RunRequest`.
+    pub fn run(&self, request: &str) -> Result<String, JsValue> {
+        let view = simple::api::run(request).map_err(js_error)?;
+        serde_json::to_string(&view).map_err(js_error)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};

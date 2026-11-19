@@ -11,7 +11,7 @@ use crate::method::AltAugRegal;
 
 pub fn shield() -> Craft {
     Craft {
-        name: "shield",
+        name: "shield".to_string(),
         start: Rarity::Normal,
         steps: vec![Step {
             method: Box::new(AltAugRegal),

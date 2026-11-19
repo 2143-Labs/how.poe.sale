@@ -256,7 +256,7 @@ fn without_the_augmentation_the_alteration_count_is_the_catalogue_figure() {
 
 fn craft() -> Craft {
     Craft {
-        name: "boots",
+        name: "boots".to_string(),
         start: Rarity::Normal,
         steps: vec![
             Step {

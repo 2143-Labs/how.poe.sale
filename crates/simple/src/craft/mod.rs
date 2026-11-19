@@ -16,6 +16,7 @@
 //!   would cost from there, so a place where the written strategy is not the cheapest is visible.
 
 pub mod shield;
+pub mod spec;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -45,7 +46,7 @@ pub struct Step {
 }
 
 pub struct Craft {
-    pub name: &'static str,
+    pub name: String,
     /// The rarity of the item the craft starts from, which holds no modifiers.
     pub start: Rarity,
     pub steps: Vec<Step>,
@@ -183,6 +184,9 @@ pub struct Report {
     /// The spend of the whole craft: the last row's `reach`.
     pub total: Spend,
     pub others: Vec<Other>,
+    /// How many other moves were left out of [`Report::others`] because the craft has no rule for
+    /// where they land (a step handed an item its method cannot move on).
+    pub skipped: usize,
     /// The craft as one chain of single orb uses, solved from the start. It also holds every
     /// place an other move can land on, at weight zero.
     pub flat: Solved<Place>,
@@ -453,14 +457,32 @@ impl Craft {
                 });
             }
         }
-        let mut entry: Vec<(Place, f64)> = vec![(start, 1.0)];
-        entry.extend(
-            moves
-                .iter()
-                .flat_map(|alternative| alternative.lands.iter())
-                .map(|(place, _)| (place.clone(), 0.0)),
-        );
-        let flat = solve(&entry, &mut flat_next)?;
+        // Every landing at weight zero, so the chain knows what to finish from each. When one
+        // landing has no rule, the moves that land somewhere unruled are left out, one by one.
+        let entry_of = |moves: &[Alternative]| -> Vec<(Place, f64)> {
+            let mut entry: Vec<(Place, f64)> = vec![(start.clone(), 1.0)];
+            entry.extend(
+                moves
+                    .iter()
+                    .flat_map(|alternative| alternative.lands.iter())
+                    .map(|(place, _)| (place.clone(), 0.0)),
+            );
+            entry
+        };
+        let (flat, moves, skipped) = match solve(&entry_of(&moves), &mut flat_next) {
+            Ok(flat) => (flat, moves, 0),
+            Err(_) => {
+                let before = moves.len();
+                let kept: Vec<Alternative> = moves
+                    .into_iter()
+                    .filter(|alternative| {
+                        solve(&entry_of(std::slice::from_ref(alternative)), &mut flat_next).is_ok()
+                    })
+                    .collect();
+                let skipped = before - kept.len();
+                (solve(&entry_of(&kept), &mut flat_next)?, kept, skipped)
+            }
+        };
         let visits: HashMap<&Place, f64> = flat
             .inside
             .iter()
@@ -510,6 +532,7 @@ impl Craft {
             rows,
             total,
             others,
+            skipped,
             flat,
         })
     }

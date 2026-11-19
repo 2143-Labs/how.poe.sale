@@ -132,7 +132,7 @@ fn with_kit<T>(f: impl FnOnce(&Kit<'_>) -> T) -> T {
 
 fn craft() -> Craft {
     Craft {
-        name: "shaper_slam",
+        name: "shaper_slam".to_string(),
         start: Rarity::Normal,
         steps: vec![Step {
             method: Box::new(ShaperSlam),

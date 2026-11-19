@@ -179,7 +179,7 @@ impl Method for HandsOnMagic {
 #[test]
 fn rarity_is_checked_at_wiring_time() {
     let magic_into_exalt = Craft {
-        name: "magic into exalt",
+        name: "magic into exalt".to_string(),
         start: Rarity::Normal,
         steps: vec![
             Step {
@@ -208,7 +208,7 @@ fn rarity_is_checked_at_wiring_time() {
     );
 
     let unwired = Craft {
-        name: "unwired",
+        name: "unwired".to_string(),
         start: Rarity::Normal,
         steps: vec![
             Step {

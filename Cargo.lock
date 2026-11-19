@@ -991,6 +991,7 @@ dependencies = [
  "console_error_panic_hook",
  "poe1",
  "serde_json",
+ "simple",
  "wasm-bindgen",
 ]
 
