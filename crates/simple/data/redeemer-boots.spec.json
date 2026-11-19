@@ -1,0 +1,113 @@
+{
+ "base": "Metadata/Items/Armours/Boots/BootsAtlas2",
+ "itemLevel": 86,
+ "influences": [
+  "redeemer"
+ ],
+ "target": {
+  "prefixes": [
+   "any",
+   "any",
+   "any"
+  ],
+  "suffixes": [
+   "desired",
+   "good",
+   "good"
+  ],
+  "desired": [
+   "OnslaughtOnKillInfluence1",
+   "OnslaughtOnKillInfluence2_"
+  ],
+  "good": [
+   "FireResist1",
+   "FireResist2",
+   "FireResist3",
+   "FireResist4",
+   "FireResist5",
+   "FireResist6",
+   "FireResist7",
+   "FireResist8",
+   "ColdResist1",
+   "ColdResist2",
+   "ColdResist3",
+   "ColdResist4",
+   "ColdResist5",
+   "ColdResist6",
+   "ColdResist7",
+   "ColdResist8",
+   "LightningResist1",
+   "LightningResist2",
+   "LightningResist3",
+   "LightningResist4",
+   "LightningResist5",
+   "LightningResist6",
+   "LightningResist7",
+   "LightningResist8",
+   "ChaosResist1",
+   "ChaosResist2",
+   "ChaosResist3",
+   "ChaosResist4",
+   "ChaosResist5",
+   "ChaosResist6",
+   "Strength1",
+   "Strength2",
+   "Strength3",
+   "Strength4",
+   "Strength5",
+   "Strength6",
+   "Strength7",
+   "Strength8",
+   "Strength9",
+   "Dexterity1",
+   "Dexterity2",
+   "Dexterity3",
+   "Dexterity4",
+   "Dexterity5",
+   "Dexterity6",
+   "Dexterity7",
+   "Dexterity8",
+   "Dexterity9",
+   "ChanceToSuppressSpells1_",
+   "ChanceToSuppressSpells2",
+   "ChanceToSuppressSpells3",
+   "ChanceToSuppressSpells4",
+   "ChanceToSuppressSpells5__"
+  ]
+ },
+ "expect": {
+  "mods": 127,
+  "counts": {
+   "prefix": 45,
+   "suffix": 82
+  },
+  "weights": {
+   "prefix": 38750,
+   "suffix": 59600
+  },
+  "plainMods": 114,
+  "plainCounts": {
+   "prefix": 38,
+   "suffix": 76
+  },
+  "plainWeights": {
+   "prefix": 36000,
+   "suffix": 56600
+  },
+  "influenceOnly": [
+   "AvoidProjectilesInfluence1",
+   "AvoidProjectilesInfluence2",
+   "ElusiveOnCriticalStrikeInfluence1",
+   "EnduranceChargeOnKillInfluence1",
+   "EnduranceChargeOnKillInfluence2",
+   "IncreasedAilmentEffectOnEnemiesInfluence1",
+   "IncreasedAilmentEffectOnEnemiesInfluence2",
+   "OnslaughtOnKillInfluence1",
+   "OnslaughtOnKillInfluence2_",
+   "PhysicalAddedAsExtraColdBootsInfluence1",
+   "PhysicalAddedAsExtraColdBootsInfluence2",
+   "SocketedColdGemLevelInfluence1",
+   "UnaffectedByChilledGroundInfluence1"
+  ]
+ }
+}

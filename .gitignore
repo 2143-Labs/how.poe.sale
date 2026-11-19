@@ -9,3 +9,4 @@ web/dist/
 web/src/wasm/pkg/
 web/public/data/
 .direnv/
+__pycache__/

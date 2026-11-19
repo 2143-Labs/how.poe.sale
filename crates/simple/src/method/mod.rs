@@ -15,6 +15,7 @@ pub mod alt_to_mod;
 pub mod bench_life;
 pub mod desired_pair;
 pub mod essence_spam;
+pub mod exalt_full;
 pub mod exalt_to;
 pub mod regal_to;
 
@@ -24,6 +25,7 @@ pub use alt_to_mod::AltToMod;
 pub use bench_life::BenchLife;
 pub use desired_pair::DesiredPair;
 pub use essence_spam::EssenceSpam;
+pub use exalt_full::ExaltFull;
 pub use exalt_to::ExaltTo;
 pub use regal_to::RegalTo;
 
