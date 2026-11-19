@@ -98,18 +98,6 @@ impl Influence {
             Influence::Warlord => "warlord",
         }
     }
-
-    /// The item tag an influenced pool matches its spawn weights against.
-    pub fn tag(self) -> &'static str {
-        match self {
-            Influence::Shaper => "shield_shaper",
-            Influence::Elder => "shield_elder",
-            Influence::Crusader => "shield_crusader",
-            Influence::Redeemer => "shield_redeemer",
-            Influence::Hunter => "shield_hunter",
-            Influence::Warlord => "shield_warlord",
-        }
-    }
 }
 
 /// The three rarities a craft here moves between. Influenced, fractured and corrupted states are

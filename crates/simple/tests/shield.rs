@@ -10,7 +10,7 @@
 
 use simple::cost::{Cost, CurrencyId};
 use simple::currency::{Applied, Currency, ON_ITEMS, find};
-use simple::data::{Data, data};
+use simple::data::{Data, ModKind, data};
 use simple::filter::{ItemSetFilter, Tier};
 use simple::fraction::Fraction;
 use simple::item::{Affix, Influence, Item, Rarity, Side};
@@ -757,4 +757,150 @@ fn the_target_is_the_totem_prefix_and_nothing_else() {
         &["AllResistances6"],
     );
     assert!(!target.reached(&filter, &magic));
+}
+
+// ---------------------------------------------------------------------------------------------
+// The data file's pins, moved out of `src/data.rs` so the loader holds nothing shield-only.
+// ---------------------------------------------------------------------------------------------
+
+/// The pool of one side as `(modifiers, weight)` pairs, on a fresh rare shield: an empty item, so
+/// nothing is held and nothing is filtered out.
+fn pool(data: &Data, influence: Option<Influence>) -> Vec<(u16, u128)> {
+    let item = item(Rarity::Rare, influence);
+    Side::BOTH
+        .into_iter()
+        .flat_map(|side| draw_weights(data, &item, side))
+        .collect()
+}
+
+/// The counts and weight totals of a pool, per side.
+fn split(data: &Data, entries: &[(u16, u128)]) -> ((usize, usize), (u128, u128)) {
+    let mut counts = (0, 0);
+    let mut totals = (0, 0);
+    for &(m, weight) in entries {
+        let index = data.mod_at(m).kind.side().expect("an explicit").index();
+        if index == 0 {
+            counts.0 += 1;
+            totals.0 += weight;
+        } else {
+            counts.1 += 1;
+            totals.1 += weight;
+        }
+    }
+    (counts, totals)
+}
+
+/// 9. The data file's pinned pool: 204 explicit modifiers with Shaper influence and 11 fewer
+///    without, and the implicit the base carries.
+#[test]
+fn the_shield_pins_the_pool_and_the_implicit() {
+    let data = data();
+    assert_eq!(
+        data.mods.len(),
+        205,
+        "204 explicit modifiers and one implicit"
+    );
+
+    let shaper_pool = pool(data, Some(Influence::Shaper));
+    assert_eq!(shaper_pool.len(), 204);
+    assert_eq!(split(data, &shaper_pool), ((73, 131), (64_800, 96_475)));
+
+    let plain_pool = pool(data, None);
+    assert_eq!(plain_pool.len(), 193);
+    assert_eq!(split(data, &plain_pool), ((72, 121), (64_000, 88_475)));
+
+    let missing: Vec<u16> = shaper_pool
+        .iter()
+        .map(|&(m, _)| m)
+        .filter(|m| !plain_pool.iter().any(|&(plain, _)| plain == *m))
+        .collect();
+    assert_eq!(missing.len(), 11, "exactly the Shaper-only modifiers");
+    assert!(missing.iter().all(|m| {
+        let (first, _) = data.mod_at(*m).weights[0];
+        data.tag_name(first) == "shield_shaper"
+    }));
+
+    let implicit = data
+        .id_of("ChanceToDodgeSpellsImplicitShield2")
+        .expect("the base's implicit");
+    let entry = data.mod_at(implicit);
+    assert_eq!(entry.kind, ModKind::Implicit);
+    assert!(entry.kind.is_implicit());
+    assert_eq!(entry.kind.side(), None);
+    let stat = data
+        .stat_ids
+        .iter()
+        .position(|id| id == "base_spell_suppression_chance_%")
+        .expect("the implicit's stat") as u16;
+    assert_eq!(entry.stats, vec![(stat, 5, 5)]);
+    assert!(data.base_at(base()).implicits.contains(&implicit));
+}
+
+/// The base the crate ships is the Shaper Supreme Spiked Shield, and its influence tags are the
+/// shield class's.
+#[test]
+fn the_base_is_the_shaper_supreme_spiked_shield() {
+    let data = data();
+    assert_eq!(data.bases.len(), 1);
+    let index = base();
+    let base = data.base_at(index);
+    assert_eq!(base.name, "Supreme Spiked Shield");
+    assert_eq!(base.item_class, "Shield");
+    assert_eq!(base.drop_level, 70);
+    assert_eq!(base.defences, [None, Some((242, 278)), Some((49, 57))]);
+    assert_eq!(data.base_of("Supreme Spiked Shield"), index);
+    assert_eq!(data.base_id(&base.id), Some(index));
+
+    // The base itself carries none of the influence tags; they live on the base class.
+    for (influence, tag) in &base.influence_tags {
+        assert!(!base.tags.contains(tag), "{influence:?} is not a base tag");
+        assert!(!data.tag_name(*tag).is_empty());
+    }
+    let shaper_tag = data
+        .influence_tag(Influence::Shaper)
+        .expect("the shield class is influenceable");
+    assert_eq!(data.tag_name(shaper_tag), "shield_shaper");
+    let elder_tag = data
+        .influence_tag(Influence::Elder)
+        .expect("the shield class is influenceable");
+    assert_eq!(data.tag_name(elder_tag), "shield_elder");
+    assert!(data.tags.iter().any(|tag| tag == "shield_shaper"));
+}
+
+/// The influence changes exactly what it should: a Shaper-only modifier weighs nothing without it,
+/// a shared modifier weighs the same either way.
+#[test]
+fn the_shaper_tag_decides_the_influenced_weight() {
+    let data = data();
+    let totem = data.id_of("MaximumTotemUber1").expect("the totem prefix");
+    assert_eq!(data.weight_on(totem, base(), Some(Influence::Shaper)), 800);
+    assert_eq!(data.weight_on(totem, base(), None), 0);
+
+    let life = data.id_of("IncreasedLife10").expect("the life prefix");
+    assert_eq!(data.weight_on(life, base(), Some(Influence::Shaper)), 1000);
+    assert_eq!(data.weight_on(life, base(), None), 1000);
+
+    assert_eq!(data.target.prefixes, ["desired"]);
+    assert!(data.target.suffixes.is_empty());
+    assert!(!data.target.desired.is_empty());
+    assert!(!data.target.good.is_empty());
+    for m in data.target.desired.iter().chain(&data.target.good) {
+        assert!(data.mods.get(*m as usize).is_some());
+        assert!(data.id_of(&data.mod_at(*m).id).is_some());
+    }
+}
+
+/// The file lists zeros, so a sum and a first match can only agree if no modifier has a positive
+/// weight behind its first matching tag: pin that this file has none.
+#[test]
+fn every_shield_modifier_resolves_by_its_first_match() {
+    let data = data();
+    for (m, entry) in data.mods.iter().enumerate() {
+        if entry.kind.side().is_none() {
+            continue;
+        }
+        let first = data.weight_on(m as u16, base(), Some(Influence::Shaper));
+        let sum: u128 = entry.weights.iter().map(|&(_, weight)| weight).sum();
+        assert_eq!(first, sum, "{}", entry.id);
+    }
 }

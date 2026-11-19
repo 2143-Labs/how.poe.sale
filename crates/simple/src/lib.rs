@@ -10,9 +10,10 @@
 //! one file each (`method`), the craft that wires them and reports what each step costs (`craft`),
 //! the rough worth of one orb (`weights`), and the craft printed as Markdown (`report`).
 //!
-//! `data/shield.json` was generated from the pinned 3.29 export by `data/gen_shield.py`; the export
-//! copy on `main` only carries the toy bases, so the generator was run against the copy that has the
-//! shield. The generated file is compiled in, so nothing here reads the export.
+//! `data/shield.json` was generated from the pinned 3.29 export by `data/gen_base.py`, given
+//! `data/shield.spec.json`; the export copy on `main` only carries the toy bases, so the generator
+//! was run against the full export. The generated file is compiled in, so nothing here reads the
+//! export.
 
 pub mod chain;
 pub mod cost;

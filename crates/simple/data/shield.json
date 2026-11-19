@@ -54,6 +54,14 @@
     "armour",
     "default"
    ],
+   "influenceTags": {
+    "shaper": "shield_shaper",
+    "elder": "shield_elder",
+    "crusader": "shield_crusader",
+    "redeemer": "shield_eyrie",
+    "hunter": "shield_basilisk",
+    "warlord": "shield_adjudicator"
+   },
    "requirements": {
     "level": 70,
     "strength": 0,
