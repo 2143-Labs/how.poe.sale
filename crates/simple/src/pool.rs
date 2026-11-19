@@ -31,18 +31,46 @@ use crate::fraction::Fraction;
 use crate::item::{Affix, Item, Rarity, Side};
 use crate::stock::{Lock, Refusal, Stock};
 
-/// How many modifiers a side of an item of this rarity may hold.
-pub fn rarity_cap(rarity: Rarity) -> usize {
-    match rarity {
-        Rarity::Normal => 0,
-        Rarity::Magic => 1,
-        Rarity::Rare => 3,
+/// How many modifiers a side of an item may hold, at each rarity: none on a normal item, one on a
+/// magic item, and on a rare item three — or two, on a jewel.
+///
+/// The game sets the rare number per item class (claim `classes.affix-limits`: jewels "of any kind"
+/// hold at most two prefixes and two suffixes), so it belongs to the base: [`Caps::of`] reads it
+/// off the class once, when the data is loaded, into [`crate::data::Base::caps`]. Every rule that
+/// counts room reads that one value — the draw ([`room`]), the orbs' room checks
+/// ([`Stock::cap`]), the law ([`crate::law::Law::caps`]) and the target
+/// ([`crate::target::Target::caps`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Caps {
+    pub magic: usize,
+    pub rare: usize,
+}
+
+impl Caps {
+    /// The caps of an item class: two a side for a rare jewel or abyss jewel, three for any other.
+    pub fn of(item_class: &str) -> Caps {
+        match item_class {
+            "Jewel" | "AbyssJewel" => Caps { magic: 1, rare: 2 },
+            _ => Caps { magic: 1, rare: 3 },
+        }
+    }
+
+    /// How many modifiers a side of an item of this rarity may hold.
+    pub fn at(self, rarity: Rarity) -> usize {
+        match rarity {
+            Rarity::Normal => 0,
+            Rarity::Magic => self.magic,
+            Rarity::Rare => self.rare,
+        }
     }
 }
 
 /// How many more modifiers this side may take.
-pub fn room(item: &Item, side: Side) -> usize {
-    rarity_cap(item.rarity).saturating_sub(item.affixes(side).len())
+pub fn room(data: &Data, item: &Item, side: Side) -> usize {
+    data.base_at(item.base)
+        .caps
+        .at(item.rarity)
+        .saturating_sub(item.affixes(side).len())
 }
 
 /// Every group held on the item, both sides together, sorted. A modifier whose groups touch this
@@ -67,7 +95,7 @@ pub fn held_groups(data: &Data, item: &Item) -> Vec<u16> {
 /// Empty when the side has no room, or when nothing is left to roll — an item holding every group
 /// the base can roll has an empty pool on both sides.
 pub fn draw_weights(data: &Data, item: &Item, side: Side) -> Vec<(u16, u128)> {
-    if room(item, side) == 0 {
+    if room(data, item, side) == 0 {
         return Vec::new();
     }
     let held = held_groups(data, item);
@@ -144,6 +172,10 @@ impl Stock for Item {
 
     fn held(&self, side: Side) -> usize {
         self.affixes(side).len()
+    }
+
+    fn cap(&self, rules: &Data) -> usize {
+        rules.base_at(self.base).caps.at(self.rarity)
     }
 
     fn with_rarity(&self, rarity: Rarity) -> Self {
