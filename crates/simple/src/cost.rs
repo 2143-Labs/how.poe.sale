@@ -19,6 +19,14 @@ impl CurrencyId {
     pub const ANNULMENT: CurrencyId = CurrencyId("currency/annulment");
     pub const DIVINE: CurrencyId = CurrencyId("currency/divine");
 
+    /// A crafting-bench option as a currency, named by the option rather than by an orb: one use
+    /// adds the option's chosen modifier with certainty.
+    pub const BENCH: CurrencyId = CurrencyId("bench/EinharMasterIncreasedLife4");
+
+    /// The Orb of Alchemy. Not modelled as a currency here; it is the key the export prices the
+    /// bench life option in, so it is a cost key and nothing more.
+    pub const ALCHEMY: CurrencyId = CurrencyId("currency/alchemy");
+
     /// The id without its `currency/` prefix.
     pub fn name(self) -> &'static str {
         self.0.strip_prefix("currency/").unwrap_or(self.0)

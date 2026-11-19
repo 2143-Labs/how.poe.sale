@@ -4,8 +4,8 @@
  "influences": ["hunter"],
  "target": {
   "prefixes": [],
-  "suffixes": [],
-  "desired": [],
+  "suffixes": ["desired"],
+  "desired": ["TailwindOnCriticalStrikeInfluence1"],
   "good": []
  }
 }

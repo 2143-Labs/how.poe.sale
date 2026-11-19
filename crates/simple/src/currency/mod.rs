@@ -19,6 +19,8 @@
 //! Six orbs are written once for every [`Stock`]: transmutation, alteration, augmentation, regal,
 //! exalted and scouring. Annulment and Divine are item-only, because one forgets which group left
 //! the item and the other changes only values, so neither can be reproduced on an abstract item.
+//! The crafting bench ([`Bench`]) is node-only: it places a chosen modifier on an abstract item,
+//! and a concrete item has nowhere to record that it did.
 //!
 //! Corruption and mirroring block all eight: an item either flagged is refused by every orb, with
 //! the reason naming the orb's own verb, because none of them may modify an item the game has
@@ -27,6 +29,7 @@
 pub mod alteration;
 pub mod annulment;
 pub mod augmentation;
+pub mod bench;
 pub mod divine;
 pub mod exalted;
 pub mod regal;
@@ -36,6 +39,7 @@ pub mod transmutation;
 pub use alteration::Alteration;
 pub use annulment::Annulment;
 pub use augmentation::Augmentation;
+pub use bench::Bench;
 pub use divine::Divine;
 pub use exalted::Exalted;
 pub use regal::Regal;
