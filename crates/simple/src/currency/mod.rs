@@ -28,6 +28,10 @@
 //!
 //! An essence ([`Essence`]) is a currency too, but in neither list: the modifier it places depends
 //! on the base's class, so a caller builds one for the essence and the base it holds.
+//!
+//! A ninth orb, `currency/shapers_exalted` ([`ShapersExalted`]), sits beside the eight and in
+//! neither list: what it adds to an abstract item is not the law's pool, so it is built from the
+//! start item a law is built from rather than written as a constant.
 
 pub mod alteration;
 pub mod annulment;
@@ -38,6 +42,7 @@ pub mod essence;
 pub mod exalted;
 pub mod regal;
 pub mod scouring;
+pub mod shapers_exalted;
 pub mod transmutation;
 
 pub use alteration::Alteration;
@@ -49,6 +54,7 @@ pub use essence::{ESSENCE_OF_HORROR, Essence};
 pub use exalted::Exalted;
 pub use regal::Regal;
 pub use scouring::Scouring;
+pub use shapers_exalted::ShapersExalted;
 pub use transmutation::Transmutation;
 
 use crate::cost::{Cost, CurrencyId};

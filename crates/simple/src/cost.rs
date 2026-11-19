@@ -29,6 +29,8 @@ impl CurrencyId {
     /// bench life option in, so it is a cost key and nothing more.
     pub const ALCHEMY: CurrencyId = CurrencyId("currency/alchemy");
 
+    pub const SHAPERS_EXALTED: CurrencyId = CurrencyId("currency/shapers_exalted");
+
     /// The id without its `currency/` prefix.
     pub fn name(self) -> &'static str {
         self.0.strip_prefix("currency/").unwrap_or(self.0)
