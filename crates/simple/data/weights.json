@@ -1,0 +1,13 @@
+{
+  "unit": "chaos",
+  "weights": {
+    "currency/transmutation": 0.02,
+    "currency/alteration": 0.2,
+    "currency/augmentation": 0.05,
+    "currency/regal": 0.5,
+    "currency/exalted": 2,
+    "currency/scouring": 0.5,
+    "currency/chaos": 1,
+    "currency/divine": 100
+  }
+}

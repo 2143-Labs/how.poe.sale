@@ -694,6 +694,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
+name = "simple"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -983,6 +991,7 @@ dependencies = [
  "console_error_panic_hook",
  "poe1",
  "serde_json",
+ "simple",
  "wasm-bindgen",
 ]
 

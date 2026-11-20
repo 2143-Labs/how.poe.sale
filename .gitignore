@@ -1,7 +1,12 @@
 target/
 result*
 data/
+# The simple crate compiles its pool in (`include_str!`), so its data is source, not a build
+# product: the rule above matches any directory called `data`, and this one is tracked.
+!crates/simple/data/
 web/node_modules/
 web/dist/
 web/src/wasm/pkg/
 web/public/data/
+.direnv/
+__pycache__/

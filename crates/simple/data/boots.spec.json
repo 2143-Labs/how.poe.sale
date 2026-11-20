@@ -1,0 +1,11 @@
+{
+ "base": "Metadata/Items/Armours/Boots/BootsAtlas1",
+ "itemLevel": 86,
+ "influences": ["hunter"],
+ "target": {
+  "prefixes": [],
+  "suffixes": ["desired"],
+  "desired": ["TailwindOnCriticalStrikeInfluence1"],
+  "good": []
+ }
+}

@@ -1,0 +1,64 @@
+{
+ "base": "Metadata/Items/Armours/Shields/ShieldDexInt13",
+ "itemLevel": 87,
+ "influences": ["shaper"],
+ "target": {
+  "prefixes": ["desired"],
+  "suffixes": [],
+  "desired": ["MaximumTotemUber1"],
+  "good": [
+   "IncreasedLife10",
+   "IncreasedLife9",
+   "IncreasedMana12",
+   "LocalIncreasedBlockPercentage7",
+   "LocalIncreasedBlockPercentage6",
+   "AllResistances6",
+   "AllResistances5",
+   "FireResist8",
+   "FireResist7",
+   "ColdResist8",
+   "ColdResist7",
+   "LightningResist8",
+   "LightningResist7",
+   "SpellCriticalStrikeChance6_",
+   "SpellCriticalStrikeChance5",
+   "RecoverEnergyShieldPercentOnBlockUber1",
+   "RecoverLifePercentOnBlockUber1_",
+   "MaximumFireResist3",
+   "MaximumColdResist3",
+   "MaximumLightningResist3",
+   "MaximumChaosResist3",
+   "MaximumAllResist2",
+   "ChanceToAvoidElementalStatusAilments4",
+   "ChanceToSuppressSpellsHigh5___",
+   "ChanceToSuppressSpellsHigh4_"
+  ]
+ },
+ "expect": {
+  "mods": 204,
+  "counts": {"prefix": 73, "suffix": 131},
+  "weights": {"prefix": 64800, "suffix": 96475},
+  "plainMods": 193,
+  "plainCounts": {"prefix": 72, "suffix": 121},
+  "plainWeights": {"prefix": 64000, "suffix": 88475},
+  "influenceOnly": [
+   "ChanceToChillAttackersOnBlockUber1",
+   "ChanceToChillAttackersOnBlockUber2",
+   "ChanceToShockAttackersOnBlockUber1",
+   "ChanceToShockAttackersOnBlockUber2",
+   "DisplaySocketedGemsGetReducedReservationUber1",
+   "DisplaySocketedGemsGetReducedReservationUber2",
+   "GainRandomChargeOnBlockUber1__",
+   "MaximumTotemUber1",
+   "RecoverEnergyShieldPercentOnBlockUber1",
+   "RecoverLifePercentOnBlockUber1_",
+   "RecoverManaPercentOnBlockUber1"
+  ],
+  "implicits": [
+   {
+    "id": "ChanceToDodgeSpellsImplicitShield2",
+    "stats": [{"id": "base_spell_suppression_chance_%", "min": 5, "max": 5}]
+   }
+  ]
+ }
+}

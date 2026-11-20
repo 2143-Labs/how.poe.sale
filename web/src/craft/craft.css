@@ -1,0 +1,44 @@
+/* The craft planner's own sizes. Everything else comes from styles.css. */
+
+.craft-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 420px);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1400px) {
+  .craft-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.craft-canvas {
+  height: 560px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0e0f14;
+  border: 1px solid var(--border);
+}
+
+.diagram-canvas {
+  height: 520px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0e0f14;
+  border: 1px solid var(--border);
+}
+
+/* A block's filter select stays inside the block: a long filter name is cut, not spilled. */
+.node-filter {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.node-filter select {
+  min-width: 0;
+  width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+}

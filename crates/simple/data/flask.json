@@ -1,0 +1,4197 @@
+{
+ "tags": [
+  "utility_flask",
+  "flask",
+  "default",
+  "critical",
+  "elemental",
+  "resistance",
+  "speed",
+  "defences",
+  "armour",
+  "evasion",
+  "resource",
+  "life",
+  "attack",
+  "energy_shield",
+  "caster",
+  "fire",
+  "cold",
+  "lightning",
+  "ailment"
+ ],
+ "bases": [
+  {
+   "id": "Metadata/Items/Flasks/FlaskUtility6",
+   "name": "Quicksilver Flask",
+   "itemClass": "UtilityFlask",
+   "dropLevel": 4,
+   "tags": [
+    "utility_flask",
+    "flask",
+    "default"
+   ],
+   "influenceTags": {},
+   "requirements": {
+    "level": 0,
+    "strength": 0,
+    "dexterity": 0,
+    "intelligence": 0
+   },
+   "defences": {
+    "armour": null,
+    "evasion": null,
+    "energyShield": null,
+    "ward": null
+   },
+   "implicits": []
+  }
+ ],
+ "mods": [
+  {
+   "id": "FlaskExtraCharges1",
+   "name": "Wide",
+   "kind": "prefix",
+   "level": 2,
+   "groups": [
+    "FlaskNumCharges"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_extra_max_charges",
+     "min": 16,
+     "max": 19
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(16-19) to Maximum Charges"
+  },
+  {
+   "id": "FlaskChargesAddedIncreasePercent1",
+   "name": "Constant",
+   "kind": "prefix",
+   "level": 3,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% increased Charge Recovery"
+  },
+  {
+   "id": "FlaskChanceRechargeOnCrit1",
+   "name": "Medic's",
+   "kind": "prefix",
+   "level": 8,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_recharge_on_crit_%",
+     "min": 11,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(11-15)% chance to gain a Flask Charge when you deal a Critical Strike"
+  },
+  {
+   "id": "FlaskChargesUsed1",
+   "name": "Apprentice's",
+   "kind": "prefix",
+   "level": 14,
+   "groups": [
+    "FlaskChargesUsed"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_used_+%",
+     "min": -16,
+     "max": -14
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-14)% reduced Charges per use"
+  },
+  {
+   "id": "FlaskEffectReducedDuration1",
+   "name": "Abecedarian's",
+   "kind": "prefix",
+   "level": 20,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": -38,
+     "max": -33
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": 25,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(38-33)% reduced Duration\n25% increased effect"
+  },
+  {
+   "id": "FlaskIncreasedDuration2",
+   "name": "Investigator's",
+   "kind": "prefix",
+   "level": 20,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% increased Duration"
+  },
+  {
+   "id": "FlaskIncreasedRecoveryReducedEffect1_",
+   "name": "Doled",
+   "kind": "prefix",
+   "level": 20,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 37,
+     "max": 42
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": -25,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(37-42)% increased Charge Recovery\n25% reduced effect"
+  },
+  {
+   "id": "FlaskExtraCharges2__",
+   "name": "Plentiful",
+   "kind": "prefix",
+   "level": 22,
+   "groups": [
+    "FlaskNumCharges"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_extra_max_charges",
+     "min": 20,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(20-23) to Maximum Charges"
+  },
+  {
+   "id": "FlaskChargesAddedIncreasePercent2_",
+   "name": "Continuous",
+   "kind": "prefix",
+   "level": 23,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 21,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-25)% increased Charge Recovery"
+  },
+  {
+   "id": "FlaskChanceRechargeOnCrit2",
+   "name": "Physician's",
+   "kind": "prefix",
+   "level": 26,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_recharge_on_crit_%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% chance to gain a Flask Charge when you deal a Critical Strike"
+  },
+  {
+   "id": "FlaskFullRechargeOnHit2_",
+   "name": "Transgressor's",
+   "kind": "prefix",
+   "level": 29,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_gain_X_charges_when_hit",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain 1 Charge when you are Hit by an Enemy"
+  },
+  {
+   "id": "FlaskChargesUsed2",
+   "name": "Scholar's",
+   "kind": "prefix",
+   "level": 31,
+   "groups": [
+    "FlaskChargesUsed"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_used_+%",
+     "min": -19,
+     "max": -17
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(19-17)% reduced Charges per use"
+  },
+  {
+   "id": "FlaskIncreasedDuration3_",
+   "name": "Analyst's",
+   "kind": "prefix",
+   "level": 36,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": 21,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-25)% increased Duration"
+  },
+  {
+   "id": "FlaskIncreasedRecoveryReducedEffect2_",
+   "name": "Provisioned",
+   "kind": "prefix",
+   "level": 36,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 43,
+     "max": 48
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": -25,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(43-48)% increased Charge Recovery\n25% reduced effect"
+  },
+  {
+   "id": "FlaskExtraCharges3_",
+   "name": "Bountiful",
+   "kind": "prefix",
+   "level": 42,
+   "groups": [
+    "FlaskNumCharges"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_extra_max_charges",
+     "min": 24,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-27) to Maximum Charges"
+  },
+  {
+   "id": "FlaskChargesAddedIncreasePercent3_",
+   "name": "Endless",
+   "kind": "prefix",
+   "level": 43,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 26,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-30)% increased Charge Recovery"
+  },
+  {
+   "id": "FlaskChanceRechargeOnCrit3___",
+   "name": "Doctor's",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_recharge_on_crit_%",
+     "min": 21,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-25)% chance to gain a Flask Charge when you deal a Critical Strike"
+  },
+  {
+   "id": "FlaskChargesUsed3__",
+   "name": "Practitioner's",
+   "kind": "prefix",
+   "level": 48,
+   "groups": [
+    "FlaskChargesUsed"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_used_+%",
+     "min": -22,
+     "max": -20
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(22-20)% reduced Charges per use"
+  },
+  {
+   "id": "FlaskEffectReducedDuration2",
+   "name": "Dabbler's",
+   "kind": "prefix",
+   "level": 50,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": -32,
+     "max": -28
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": 25,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(32-28)% reduced Duration\n25% increased effect"
+  },
+  {
+   "id": "FlaskIncreasedDuration4",
+   "name": "Examiner's",
+   "kind": "prefix",
+   "level": 52,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": 26,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-30)% increased Duration"
+  },
+  {
+   "id": "FlaskIncreasedRecoveryReducedEffect3____",
+   "name": "Measured",
+   "kind": "prefix",
+   "level": 52,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 49,
+     "max": 54
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": -25,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(49-54)% increased Charge Recovery\n25% reduced effect"
+  },
+  {
+   "id": "FlaskChanceRechargeOnCrit4",
+   "name": "Specialist's",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_recharge_on_crit_%",
+     "min": 26,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-30)% chance to gain a Flask Charge when you deal a Critical Strike"
+  },
+  {
+   "id": "FlaskExtraCharges4__",
+   "name": "Abundant",
+   "kind": "prefix",
+   "level": 62,
+   "groups": [
+    "FlaskNumCharges"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_extra_max_charges",
+     "min": 28,
+     "max": 31
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-31) to Maximum Charges"
+  },
+  {
+   "id": "FlaskChargesAddedIncreasePercent4_",
+   "name": "Bottomless",
+   "kind": "prefix",
+   "level": 63,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 31,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-45)% increased Charge Recovery"
+  },
+  {
+   "id": "FlaskFullRechargeOnHit4_",
+   "name": "Masochist's",
+   "kind": "prefix",
+   "level": 63,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_gain_X_charges_when_hit",
+     "min": 2,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain 2 Charges when you are Hit by an Enemy"
+  },
+  {
+   "id": "FlaskChargesUsed4__",
+   "name": "Brewer's",
+   "kind": "prefix",
+   "level": 65,
+   "groups": [
+    "FlaskChargesUsed"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_used_+%",
+     "min": -25,
+     "max": -23
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(25-23)% reduced Charges per use"
+  },
+  {
+   "id": "FlaskIncreasedDuration5__",
+   "name": "Clinician's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% increased Duration"
+  },
+  {
+   "id": "FlaskIncreasedRecoveryReducedEffect4_",
+   "name": "Allocated",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 55,
+     "max": 60
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": -25,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(55-60)% increased Charge Recovery\n25% reduced effect"
+  },
+  {
+   "id": "FlaskChanceRechargeOnCrit5",
+   "name": "Surgeon's",
+   "kind": "prefix",
+   "level": 80,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_recharge_on_crit_%",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% chance to gain a Flask Charge when you deal a Critical Strike"
+  },
+  {
+   "id": "FlaskEffectReducedDuration3",
+   "name": "Alchemist's",
+   "kind": "prefix",
+   "level": 80,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": -27,
+     "max": -23
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": 25,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-23)% reduced Duration\n25% increased effect"
+  },
+  {
+   "id": "FlaskFullRechargeOnHit5___",
+   "name": "Flagellant's",
+   "kind": "prefix",
+   "level": 80,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_gain_X_charges_when_hit",
+     "min": 3,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain 3 Charges when you are Hit by an Enemy"
+  },
+  {
+   "id": "FlaskChargesUsed5",
+   "name": "Chemist's",
+   "kind": "prefix",
+   "level": 82,
+   "groups": [
+    "FlaskChargesUsed"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_used_+%",
+     "min": -28,
+     "max": -26
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(28-26)% reduced Charges per use"
+  },
+  {
+   "id": "FlaskExtraCharges5",
+   "name": "Ample",
+   "kind": "prefix",
+   "level": 82,
+   "groups": [
+    "FlaskNumCharges"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_extra_max_charges",
+     "min": 32,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(32-35) to Maximum Charges"
+  },
+  {
+   "id": "FlaskChargesAddedIncreasePercent5__",
+   "name": "Perpetual",
+   "kind": "prefix",
+   "level": 83,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "default",
+     600
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% increased Charge Recovery"
+  },
+  {
+   "id": "FlaskIncreasedDuration6",
+   "name": "Experimenter's",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "FlaskRecoverySpeed"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_duration_+%",
+     "min": 36,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-40)% increased Duration"
+  },
+  {
+   "id": "FlaskIncreasedRecoveryReducedEffect5",
+   "name": "Rationed",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "FlaskRechargeRate"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_charges_added_+%",
+     "min": 61,
+     "max": 66
+    },
+    {
+     "id": "local_flask_effect_+%",
+     "min": -25,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(61-66)% increased Charge Recovery\n25% reduced effect"
+  },
+  {
+   "id": "FlaskBuffResistancesWhileHealing",
+   "name": "of the Crystal",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_resistances_+%_while_healing",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-14)% additional Elemental Resistances during Effect"
+  },
+  {
+   "id": "FlaskBuffStunRecoveryWhileHealing",
+   "name": "of Stiffness",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_stun_recovery_+%_while_healing",
+     "min": 51,
+     "max": 56
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-56)% increased Block and Stun Recovery during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidChillFreeze1_",
+   "name": "of the Orca",
+   "kind": "suffix",
+   "level": 4,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_chill_%_during_flask_effect",
+     "min": 31,
+     "max": 35
+    },
+    {
+     "id": "local_avoid_freeze_%_during_flask_effect",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% chance to Avoid being Chilled during Effect\n(31-35)% chance to Avoid being Frozen during Effect"
+  },
+  {
+   "id": "FlaskBuffChillFreezeDuration1",
+   "name": "of the Rabbit",
+   "kind": "suffix",
+   "level": 4,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_chill_effect_+%_during_flask_effect",
+     "min": -41,
+     "max": -36
+    },
+    {
+     "id": "local_self_freeze_duration_+%_during_flask_effect",
+     "min": -41,
+     "max": -36
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-36)% reduced Effect of Chill on you during Effect\n(41-36)% reduced Freeze Duration on you during Effect"
+  },
+  {
+   "id": "FlaskFreezeAndChillImmunityDuringEffect",
+   "name": "of the Deer",
+   "kind": "suffix",
+   "level": 4,
+   "groups": [
+    "FlaskFreezeAndChillImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_freeze_and_chill_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -49,
+     "max": -45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Freeze and Chill during Effect\n(49-45)% less Duration"
+  },
+  {
+   "id": "FlaskBuffMovementSpeedWhileHealing",
+   "name": "of the Hare",
+   "kind": "suffix",
+   "level": 5,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_movement_speed_+%_while_healing",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Movement Speed during Effect"
+  },
+  {
+   "id": "FlaskBuffArmourWhileHealing1",
+   "name": "of the Abalone",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_armour_+%_while_healing",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% increased Armour during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidIgnite1",
+   "name": "of the Guppy",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_ignite_%_during_flask_effect",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% chance to Avoid being Ignited during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidShock1",
+   "name": "of Tree Moss",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_shock_%_during_flask_effect",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% chance to Avoid being Shocked during Effect"
+  },
+  {
+   "id": "FlaskBuffEvasionWhileHealing",
+   "name": "of the Gazelle",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_evasion_+%_while_healing",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% increased Evasion Rating during Effect"
+  },
+  {
+   "id": "FlaskBuffShockEffect1",
+   "name": "of the Plover",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_shock_effect_+%_during_flask_effect",
+     "min": -41,
+     "max": -36
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-36)% reduced Effect of Shock on you during Effect"
+  },
+  {
+   "id": "FlaskIgniteImmunityDuringEffect_",
+   "name": "of the Urchin",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskIgniteImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_dispels_burning_and_ignite_immunity_during_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -49,
+     "max": -45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Ignite during Effect\nRemoves Burning on use\n(49-45)% less Duration"
+  },
+  {
+   "id": "FlaskShockImmunityDuringEffect",
+   "name": "of the Conger",
+   "kind": "suffix",
+   "level": 6,
+   "groups": [
+    "FlaskShockImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_shock_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -49,
+     "max": -45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Shock during Effect\n(49-45)% less Duration"
+  },
+  {
+   "id": "FlaskBleedingAndCorruptedBloodImmunityDuringEffect_1",
+   "name": "of the Lizard",
+   "kind": "suffix",
+   "level": 8,
+   "groups": [
+    "FlaskBleedingAndCorruptedBloodImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_bleeding_and_corrupted_blood_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -49,
+     "max": -45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Bleeding and Corrupted Blood during Effect\n(49-45)% less Duration"
+  },
+  {
+   "id": "FlaskBuffCurseEffect1",
+   "name": "of the Petrel",
+   "kind": "suffix",
+   "level": 8,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_curse_effect_+%_during_flask_effect",
+     "min": -41,
+     "max": -36
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-36)% reduced Effect of Curses on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAttackLifeLeechWhileHealing1",
+   "name": "of Bloodshed",
+   "kind": "suffix",
+   "level": 10,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_life_leech_from_attack_damage_permyriad_while_healing",
+     "min": 40,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "resource",
+    "life",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.4% of Attack Damage Leeched as Life during Effect"
+  },
+  {
+   "id": "FlaskBuffSpellEnergyShieldLeechWhileHealing1",
+   "name": "of Diverting",
+   "kind": "suffix",
+   "level": 10,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_energy_shield_leech_from_spell_damage_permyriad_while_healing",
+     "min": 40,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "energy_shield",
+    "caster"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.4% of Spell Damage Leeched as Energy Shield during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidStunWhileHealing1_",
+   "name": "of Composure",
+   "kind": "suffix",
+   "level": 12,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_avoid_stun_chance_%_during_flask_effect",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-35)% Chance to Avoid being Stunned during Effect"
+  },
+  {
+   "id": "FlaskBuffFreezeShockIgniteChanceWhileHealing1_",
+   "name": "of Foisting",
+   "kind": "suffix",
+   "level": 12,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_chance_to_freeze_shock_ignite_%_while_healing",
+     "min": 19,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "fire",
+    "cold",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(19-22)% chance to Freeze, Shock and Ignite during Effect"
+  },
+  {
+   "id": "FlaskPoisonImmunityDuringEffect",
+   "name": "of the Skunk",
+   "kind": "suffix",
+   "level": 16,
+   "groups": [
+    "FlaskPoisonImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_poison_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -49,
+     "max": -45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Poison during Effect\n(49-45)% less Duration"
+  },
+  {
+   "id": "FlaskBuffCriticalChanceWhileHealing1_",
+   "name": "of Stinging",
+   "kind": "suffix",
+   "level": 18,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_critical_strike_chance_+%_during_flask_effect",
+     "min": 26,
+     "max": 31
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-31)% increased Critical Strike Chance during Effect"
+  },
+  {
+   "id": "FlaskBuffStunRecoveryWhileHealing2",
+   "name": "of Bracing",
+   "kind": "suffix",
+   "level": 19,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_stun_recovery_+%_while_healing",
+     "min": 57,
+     "max": 62
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(57-62)% increased Block and Stun Recovery during Effect"
+  },
+  {
+   "id": "FlaskBuffAttackLifeLeechWhileHealing2",
+   "name": "of Gore",
+   "kind": "suffix",
+   "level": 20,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_life_leech_from_attack_damage_permyriad_while_healing",
+     "min": 50,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "resource",
+    "life",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.5% of Attack Damage Leeched as Life during Effect"
+  },
+  {
+   "id": "FlaskBuffSpellEnergyShieldLeechWhileHealing2_",
+   "name": "of Depletion",
+   "kind": "suffix",
+   "level": 20,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_energy_shield_leech_from_spell_damage_permyriad_while_healing",
+     "min": 50,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "energy_shield",
+    "caster"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.5% of Spell Damage Leeched as Energy Shield during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidChillFreeze2",
+   "name": "of the Sea Lion",
+   "kind": "suffix",
+   "level": 23,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_chill_%_during_flask_effect",
+     "min": 36,
+     "max": 40
+    },
+    {
+     "id": "local_avoid_freeze_%_during_flask_effect",
+     "min": 36,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-40)% chance to Avoid being Chilled during Effect\n(36-40)% chance to Avoid being Frozen during Effect"
+  },
+  {
+   "id": "FlaskBuffChillFreezeDuration2_",
+   "name": "of the Cat",
+   "kind": "suffix",
+   "level": 23,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_chill_effect_+%_during_flask_effect",
+     "min": -47,
+     "max": -42
+    },
+    {
+     "id": "local_self_freeze_duration_+%_during_flask_effect",
+     "min": -47,
+     "max": -42
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(47-42)% reduced Effect of Chill on you during Effect\n(47-42)% reduced Freeze Duration on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidIgnite2",
+   "name": "of the Goldfish",
+   "kind": "suffix",
+   "level": 25,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_ignite_%_during_flask_effect",
+     "min": 36,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-40)% chance to Avoid being Ignited during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidShock2_",
+   "name": "of Turf Moss",
+   "kind": "suffix",
+   "level": 25,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_shock_%_during_flask_effect",
+     "min": 36,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-40)% chance to Avoid being Shocked during Effect"
+  },
+  {
+   "id": "FlaskBuffShockEffect2",
+   "name": "of the Sandpiper",
+   "kind": "suffix",
+   "level": 25,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_shock_effect_+%_during_flask_effect",
+     "min": -47,
+     "max": -42
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(47-42)% reduced Effect of Shock on you during Effect"
+  },
+  {
+   "id": "FlaskBuffCurseEffect2",
+   "name": "of the Mockingbird",
+   "kind": "suffix",
+   "level": 27,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_curse_effect_+%_during_flask_effect",
+     "min": -47,
+     "max": -42
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(47-42)% reduced Effect of Curses on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidStunWhileHealing2",
+   "name": "of Surefootedness",
+   "kind": "suffix",
+   "level": 29,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_avoid_stun_chance_%_during_flask_effect",
+     "min": 36,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(36-40)% Chance to Avoid being Stunned during Effect"
+  },
+  {
+   "id": "FlaskBuffArmourWhileHealing2",
+   "name": "of the Tortoise",
+   "kind": "suffix",
+   "level": 32,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_armour_+%_while_healing",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% increased Armour during Effect"
+  },
+  {
+   "id": "FlaskBuffEvasionWhileHealing2",
+   "name": "of the Antelope",
+   "kind": "suffix",
+   "level": 32,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_evasion_+%_while_healing",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% increased Evasion Rating during Effect"
+  },
+  {
+   "id": "FlaskBuffFreezeShockIgniteChanceWhileHealing2____",
+   "name": "of Imposing",
+   "kind": "suffix",
+   "level": 32,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_chance_to_freeze_shock_ignite_%_while_healing",
+     "min": 23,
+     "max": 26
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "fire",
+    "cold",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(23-26)% chance to Freeze, Shock and Ignite during Effect"
+  },
+  {
+   "id": "FlaskBuffCriticalChanceWhileHealing2_",
+   "name": "of Piercing",
+   "kind": "suffix",
+   "level": 34,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_critical_strike_chance_+%_during_flask_effect",
+     "min": 32,
+     "max": 37
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(32-37)% increased Critical Strike Chance during Effect"
+  },
+  {
+   "id": "FlaskBuffStunRecoveryWhileHealing3",
+   "name": "of Ballast",
+   "kind": "suffix",
+   "level": 37,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_stun_recovery_+%_while_healing",
+     "min": 63,
+     "max": 68
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(63-68)% increased Block and Stun Recovery during Effect"
+  },
+  {
+   "id": "FlaskFreezeAndChillImmunityDuringEffect2",
+   "name": "of the Walrus",
+   "kind": "suffix",
+   "level": 38,
+   "groups": [
+    "FlaskFreezeAndChillImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_freeze_and_chill_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -44,
+     "max": -40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Freeze and Chill during Effect\n(44-40)% less Duration"
+  },
+  {
+   "id": "FlaskBuffAttackLifeLeechWhileHealing3",
+   "name": "of Carnage",
+   "kind": "suffix",
+   "level": 40,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_life_leech_from_attack_damage_permyriad_while_healing",
+     "min": 60,
+     "max": 60
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "resource",
+    "life",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.6% of Attack Damage Leeched as Life during Effect"
+  },
+  {
+   "id": "FlaskBuffSpellEnergyShieldLeechWhileHealing3_____",
+   "name": "of Tapping",
+   "kind": "suffix",
+   "level": 40,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_energy_shield_leech_from_spell_damage_permyriad_while_healing",
+     "min": 60,
+     "max": 60
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "energy_shield",
+    "caster"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.6% of Spell Damage Leeched as Energy Shield during Effect"
+  },
+  {
+   "id": "FlaskIgniteImmunityDuringEffect2",
+   "name": "of the Mussel",
+   "kind": "suffix",
+   "level": 40,
+   "groups": [
+    "FlaskIgniteImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_dispels_burning_and_ignite_immunity_during_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -44,
+     "max": -40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Ignite during Effect\nRemoves Burning on use\n(44-40)% less Duration"
+  },
+  {
+   "id": "FlaskShockImmunityDuringEffect2___",
+   "name": "of the Moray",
+   "kind": "suffix",
+   "level": 40,
+   "groups": [
+    "FlaskShockImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_shock_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -44,
+     "max": -40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Shock during Effect\n(44-40)% less Duration"
+  },
+  {
+   "id": "FlaskBuffResistancesWhileHealing3",
+   "name": "of the Kaleidoscope",
+   "kind": "suffix",
+   "level": 41,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_resistances_+%_while_healing",
+     "min": 15,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-17)% additional Elemental Resistances during Effect"
+  },
+  {
+   "id": "FlaskBleedingAndCorruptedBloodImmunityDuringEffect2_",
+   "name": "of the Skink",
+   "kind": "suffix",
+   "level": 42,
+   "groups": [
+    "FlaskBleedingAndCorruptedBloodImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_bleeding_and_corrupted_blood_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -44,
+     "max": -40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Bleeding and Corrupted Blood during Effect\n(44-40)% less Duration"
+  },
+  {
+   "id": "FlaskBuffAvoidChillFreeze3",
+   "name": "of the Narwhal",
+   "kind": "suffix",
+   "level": 42,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_chill_%_during_flask_effect",
+     "min": 41,
+     "max": 45
+    },
+    {
+     "id": "local_avoid_freeze_%_during_flask_effect",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% chance to Avoid being Chilled during Effect\n(41-45)% chance to Avoid being Frozen during Effect"
+  },
+  {
+   "id": "FlaskBuffChillFreezeDuration3_",
+   "name": "of the Fox",
+   "kind": "suffix",
+   "level": 42,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_chill_effect_+%_during_flask_effect",
+     "min": -52,
+     "max": -48
+    },
+    {
+     "id": "local_self_freeze_duration_+%_during_flask_effect",
+     "min": -52,
+     "max": -48
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(52-48)% reduced Effect of Chill on you during Effect\n(52-48)% reduced Freeze Duration on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidIgnite3",
+   "name": "of the Carp",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_ignite_%_during_flask_effect",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% chance to Avoid being Ignited during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidShock3",
+   "name": "of Tooth Moss",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_shock_%_during_flask_effect",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% chance to Avoid being Shocked during Effect"
+  },
+  {
+   "id": "FlaskBuffShockEffect3___",
+   "name": "of the Cormorant",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_shock_effect_+%_during_flask_effect",
+     "min": -52,
+     "max": -48
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(52-48)% reduced Effect of Shock on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidStunWhileHealing3",
+   "name": "of Persistence",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_avoid_stun_chance_%_during_flask_effect",
+     "min": 41,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(41-45)% Chance to Avoid being Stunned during Effect"
+  },
+  {
+   "id": "FlaskBuffCurseEffect3_",
+   "name": "of the Curlew",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_curse_effect_+%_during_flask_effect",
+     "min": -52,
+     "max": -48
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(52-48)% reduced Effect of Curses on you during Effect"
+  },
+  {
+   "id": "FlaskPoisonImmunityDuringEffect2",
+   "name": "of the Hedgehog",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "FlaskPoisonImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_poison_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -44,
+     "max": -40
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Poison during Effect\n(44-40)% less Duration"
+  },
+  {
+   "id": "FlaskBuffCriticalChanceWhileHealing3",
+   "name": "of Rupturing",
+   "kind": "suffix",
+   "level": 50,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_critical_strike_chance_+%_during_flask_effect",
+     "min": 38,
+     "max": 43
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(38-43)% increased Critical Strike Chance during Effect"
+  },
+  {
+   "id": "FlaskBuffFreezeShockIgniteChanceWhileHealing3",
+   "name": "of Wreaking",
+   "kind": "suffix",
+   "level": 52,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_chance_to_freeze_shock_ignite_%_while_healing",
+     "min": 27,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "fire",
+    "cold",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-30)% chance to Freeze, Shock and Ignite during Effect"
+  },
+  {
+   "id": "FlaskBuffStunRecoveryWhileHealing4",
+   "name": "of Counterpoise",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_stun_recovery_+%_while_healing",
+     "min": 69,
+     "max": 74
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(69-74)% increased Block and Stun Recovery during Effect"
+  },
+  {
+   "id": "FlaskBuffArmourWhileHealing3",
+   "name": "of the Pangolin",
+   "kind": "suffix",
+   "level": 58,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_armour_+%_while_healing",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% increased Armour during Effect"
+  },
+  {
+   "id": "FlaskBuffEvasionWhileHealing3_",
+   "name": "of the Ibex",
+   "kind": "suffix",
+   "level": 58,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_evasion_+%_while_healing",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% increased Evasion Rating during Effect"
+  },
+  {
+   "id": "FlaskBuffAttackLifeLeechWhileHealing4",
+   "name": "of Butchery",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_life_leech_from_attack_damage_permyriad_while_healing",
+     "min": 70,
+     "max": 70
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "resource",
+    "life",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.7% of Attack Damage Leeched as Life during Effect"
+  },
+  {
+   "id": "FlaskBuffSpellEnergyShieldLeechWhileHealing4",
+   "name": "of Siphoning",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_energy_shield_leech_from_spell_damage_permyriad_while_healing",
+     "min": 70,
+     "max": 70
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "energy_shield",
+    "caster"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.7% of Spell Damage Leeched as Energy Shield during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidChillFreeze4",
+   "name": "of the Beluga",
+   "kind": "suffix",
+   "level": 61,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_chill_%_during_flask_effect",
+     "min": 46,
+     "max": 50
+    },
+    {
+     "id": "local_avoid_freeze_%_during_flask_effect",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% chance to Avoid being Chilled during Effect\n(46-50)% chance to Avoid being Frozen during Effect"
+  },
+  {
+   "id": "FlaskBuffChillFreezeDuration4",
+   "name": "of the Sable",
+   "kind": "suffix",
+   "level": 61,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_chill_effect_+%_during_flask_effect",
+     "min": -59,
+     "max": -52
+    },
+    {
+     "id": "local_self_freeze_duration_+%_during_flask_effect",
+     "min": -59,
+     "max": -52
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(59-52)% reduced Effect of Chill on you during Effect\n(59-52)% reduced Freeze Duration on you during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidIgnite4___",
+   "name": "of the Catfish",
+   "kind": "suffix",
+   "level": 63,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_ignite_%_during_flask_effect",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% chance to Avoid being Ignited during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidShock4_____",
+   "name": "of Plume Moss",
+   "kind": "suffix",
+   "level": 63,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_shock_%_during_flask_effect",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% chance to Avoid being Shocked during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidStunWhileHealing4",
+   "name": "of Relentlessness",
+   "kind": "suffix",
+   "level": 63,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_avoid_stun_chance_%_during_flask_effect",
+     "min": 46,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(46-50)% Chance to Avoid being Stunned during Effect"
+  },
+  {
+   "id": "FlaskBuffShockEffect4",
+   "name": "of the Sanderling",
+   "kind": "suffix",
+   "level": 63,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_shock_effect_+%_during_flask_effect",
+     "min": -59,
+     "max": -52
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(59-52)% reduced Effect of Shock on you during Effect"
+  },
+  {
+   "id": "FlaskBuffCurseEffect4",
+   "name": "of the Kakapo",
+   "kind": "suffix",
+   "level": 65,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_curse_effect_+%_during_flask_effect",
+     "min": -59,
+     "max": -52
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(59-52)% reduced Effect of Curses on you during Effect"
+  },
+  {
+   "id": "FlaskBuffMovementSpeedWhileHealing2",
+   "name": "of the Lynx",
+   "kind": "suffix",
+   "level": 65,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_movement_speed_+%_while_healing",
+     "min": 9,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(9-11)% increased Movement Speed during Effect"
+  },
+  {
+   "id": "FlaskBuffCriticalChanceWhileHealing4__",
+   "name": "of Penetrating",
+   "kind": "suffix",
+   "level": 66,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_critical_strike_chance_+%_during_flask_effect",
+     "min": 44,
+     "max": 49
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(44-49)% increased Critical Strike Chance during Effect"
+  },
+  {
+   "id": "FlaskBuffFreezeShockIgniteChanceWhileHealing4_",
+   "name": "of Infliction",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_chance_to_freeze_shock_ignite_%_while_healing",
+     "min": 31,
+     "max": 34
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "fire",
+    "cold",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(31-34)% chance to Freeze, Shock and Ignite during Effect"
+  },
+  {
+   "id": "FlaskFreezeAndChillImmunityDuringEffect3__",
+   "name": "of the Penguin",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "FlaskFreezeAndChillImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_freeze_and_chill_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -39,
+     "max": -35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Freeze and Chill during Effect\n(39-35)% less Duration"
+  },
+  {
+   "id": "FlaskBuffStunRecoveryWhileHealing5",
+   "name": "of Stabilisation",
+   "kind": "suffix",
+   "level": 73,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_stun_recovery_+%_while_healing",
+     "min": 75,
+     "max": 80
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(75-80)% increased Block and Stun Recovery during Effect"
+  },
+  {
+   "id": "FlaskIgniteImmunityDuringEffect3",
+   "name": "of the Starfish",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "FlaskIgniteImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_dispels_burning_and_ignite_immunity_during_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -39,
+     "max": -35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Ignite during Effect\nRemoves Burning on use\n(39-35)% less Duration"
+  },
+  {
+   "id": "FlaskShockImmunityDuringEffect3",
+   "name": "of the Eel",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "FlaskShockImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_shock_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -39,
+     "max": -35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Shock during Effect\n(39-35)% less Duration"
+  },
+  {
+   "id": "FlaskBleedingAndCorruptedBloodImmunityDuringEffect3___",
+   "name": "of the Iguana",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "FlaskBleedingAndCorruptedBloodImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_bleeding_and_corrupted_blood_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -39,
+     "max": -35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Bleeding and Corrupted Blood during Effect\n(39-35)% less Duration"
+  },
+  {
+   "id": "FlaskPoisonImmunityDuringEffect3",
+   "name": "of the Opossum",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "FlaskPoisonImmunityDuringEffect"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_immune_to_poison_during_flask_effect",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "id": "local_flask_duration_+%_final",
+     "min": -39,
+     "max": -35
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Immunity to Poison during Effect\n(39-35)% less Duration"
+  },
+  {
+   "id": "FlaskBuffAttackLifeLeechWhileHealing5",
+   "name": "of Bloodletting",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_life_leech_from_attack_damage_permyriad_while_healing",
+     "min": 80,
+     "max": 80
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "resource",
+    "life",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.8% of Attack Damage Leeched as Life during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidChillFreeze5",
+   "name": "of the Seal",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_chill_%_during_flask_effect",
+     "min": 51,
+     "max": 55
+    },
+    {
+     "id": "local_avoid_freeze_%_during_flask_effect",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% chance to Avoid being Chilled during Effect\n(51-55)% chance to Avoid being Frozen during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidStunWhileHealing5",
+   "name": "of Tenaciousness",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_avoid_stun_chance_%_during_flask_effect",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% Chance to Avoid being Stunned during Effect"
+  },
+  {
+   "id": "FlaskBuffChillFreezeDuration5",
+   "name": "of the Bear",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_chill_effect_+%_during_flask_effect",
+     "min": -65,
+     "max": -60
+    },
+    {
+     "id": "local_self_freeze_duration_+%_during_flask_effect",
+     "min": -65,
+     "max": -60
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(65-60)% reduced Effect of Chill on you during Effect\n(65-60)% reduced Freeze Duration on you during Effect"
+  },
+  {
+   "id": "FlaskBuffSpellEnergyShieldLeechWhileHealing5",
+   "name": "of Draining",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_energy_shield_leech_from_spell_damage_permyriad_while_healing",
+     "min": 80,
+     "max": 80
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "energy_shield",
+    "caster"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "0.8% of Spell Damage Leeched as Energy Shield during Effect"
+  },
+  {
+   "id": "FlaskBuffResistancesWhileHealing5_",
+   "name": "of the Rainbow",
+   "kind": "suffix",
+   "level": 81,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_resistances_+%_while_healing",
+     "min": 18,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "elemental",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(18-20)% additional Elemental Resistances during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidIgnite5_",
+   "name": "of the Sunfish",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_ignite_%_during_flask_effect",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% chance to Avoid being Ignited during Effect"
+  },
+  {
+   "id": "FlaskBuffAvoidShock5",
+   "name": "of Bog Moss",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_avoid_shock_%_during_flask_effect",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(51-55)% chance to Avoid being Shocked during Effect"
+  },
+  {
+   "id": "FlaskBuffCriticalChanceWhileHealing5",
+   "name": "of Incision",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_critical_strike_chance_+%_during_flask_effect",
+     "min": 50,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(50-55)% increased Critical Strike Chance during Effect"
+  },
+  {
+   "id": "FlaskBuffShockEffect5",
+   "name": "of the Heron",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_shock_effect_+%_during_flask_effect",
+     "min": -65,
+     "max": -60
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(65-60)% reduced Effect of Shock on you during Effect"
+  },
+  {
+   "id": "FlaskBuffArmourWhileHealing4",
+   "name": "of the Armadillo",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_armour_+%_while_healing",
+     "min": 56,
+     "max": 60
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(56-60)% increased Armour during Effect"
+  },
+  {
+   "id": "FlaskBuffCurseEffect5",
+   "name": "of the Owl",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     600
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_self_curse_effect_+%_during_flask_effect",
+     "min": -65,
+     "max": -60
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(65-60)% reduced Effect of Curses on you during Effect"
+  },
+  {
+   "id": "FlaskBuffEvasionWhileHealing4",
+   "name": "of the Impala",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     750
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_evasion_+%_while_healing",
+     "min": 56,
+     "max": 60
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(56-60)% increased Evasion Rating during Effect"
+  },
+  {
+   "id": "FlaskBuffMovementSpeedWhileHealing3",
+   "name": "of the Cheetah",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "FlaskBuffWhileHealing"
+   ],
+   "weights": [
+    [
+     "utility_flask",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_flask_movement_speed_+%_while_healing",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "flask",
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Movement Speed during Effect"
+  }
+ ],
+ "target": {
+  "prefixes": [
+   "desired"
+  ],
+  "suffixes": [
+   "desired"
+  ],
+  "desired": [
+   "FlaskChargesUsed1",
+   "FlaskChargesUsed2",
+   "FlaskChargesUsed3__",
+   "FlaskChargesUsed4__",
+   "FlaskChargesUsed5",
+   "FlaskFreezeAndChillImmunityDuringEffect",
+   "FlaskFreezeAndChillImmunityDuringEffect2",
+   "FlaskFreezeAndChillImmunityDuringEffect3__"
+  ],
+  "good": []
+ }
+}

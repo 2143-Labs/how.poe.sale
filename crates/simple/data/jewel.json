@@ -1,0 +1,3796 @@
+{
+ "tags": [
+  "jewel",
+  "not_str",
+  "not_int",
+  "not_for_sale",
+  "dexjewel",
+  "default",
+  "attack",
+  "speed",
+  "axe",
+  "specific_weapon",
+  "melee_mod",
+  "damage",
+  "block",
+  "dual_wielding_mod",
+  "shield_mod",
+  "bow",
+  "two_handed_mod",
+  "chaos_damage",
+  "chaos",
+  "claw",
+  "one_handed_mod",
+  "elemental",
+  "cold",
+  "critical",
+  "elemental_damage",
+  "dagger",
+  "ailment",
+  "fire",
+  "flask",
+  "defences",
+  "evasion",
+  "resource",
+  "mana",
+  "lightning",
+  "life",
+  "physical_damage",
+  "physical",
+  "sword",
+  "attribute",
+  "resistance",
+  "caster",
+  "bleed",
+  "curse",
+  "dot_multi",
+  "has_caster_mod",
+  "poison"
+ ],
+ "bases": [
+  {
+   "id": "Metadata/Items/Jewels/JewelDex",
+   "name": "Viridian Jewel",
+   "itemClass": "Jewel",
+   "dropLevel": 20,
+   "tags": [
+    "jewel",
+    "not_str",
+    "not_int",
+    "not_for_sale",
+    "dexjewel",
+    "default"
+   ],
+   "influenceTags": {},
+   "requirements": {
+    "level": 0,
+    "strength": 0,
+    "dexterity": 0,
+    "intelligence": 0
+   },
+   "defences": {
+    "armour": null,
+    "evasion": null,
+    "energyShield": null,
+    "ward": null
+   },
+   "implicits": []
+  }
+ ],
+ "mods": [
+  {
+   "id": "AxeAttackSpeedJewel",
+   "name": "Cleaving",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponSpeed"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "axe_attack_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "axe",
+    "specific_weapon",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Attack Speed with Axes"
+  },
+  {
+   "id": "AxeDamageJewel",
+   "name": "Sinister",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "axe_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "axe",
+    "specific_weapon",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Damage with Axes"
+  },
+  {
+   "id": "BlockDualWieldingJewel",
+   "name": "Parrying",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FormBlock"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "block_while_dual_wielding_%",
+     "min": 2,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "block"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(2-3)% Chance to Block Attack Damage while Dual Wielding"
+  },
+  {
+   "id": "BlockShieldJewel",
+   "name": "Shielding",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FormBlock"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "shield_block_%",
+     "min": 2,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "block"
+   ],
+   "addsTags": [
+    "shield_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(2-3)% Chance to Block Attack Damage while holding a Shield"
+  },
+  {
+   "id": "BowAttackSpeedJewel",
+   "name": "Volleying",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "bow_attack_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "bow",
+    "specific_weapon",
+    "two_handed_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Attack Speed with Bows"
+  },
+  {
+   "id": "BowDamageJewel",
+   "name": "Fierce",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "bow_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "bow",
+    "specific_weapon",
+    "two_handed_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Damage with Bows"
+  },
+  {
+   "id": "ChaosDamageJewel",
+   "name": "Chaotic",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ChaosDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     200
+    ]
+   ],
+   "stats": [
+    {
+     "id": "chaos_damage_+%",
+     "min": 9,
+     "max": 13
+    }
+   ],
+   "implicitTags": [
+    "chaos_damage",
+    "damage",
+    "chaos"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(9-13)% increased Chaos Damage"
+  },
+  {
+   "id": "ClawAttackSpeedJewel",
+   "name": "Ripping",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "claw_attack_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "claw",
+    "specific_weapon",
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Attack Speed with Claws"
+  },
+  {
+   "id": "ClawDamageJewel",
+   "name": "Savage",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "claw_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "claw",
+    "specific_weapon",
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Damage with Claws"
+  },
+  {
+   "id": "ColdCritChanceJewel",
+   "name": "Avalanching",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ColdCritChance"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_critical_strike_chance_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Critical Strike Chance with Cold Skills"
+  },
+  {
+   "id": "ColdCritMultiplier",
+   "name": "Arctic",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ColdCritMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_critical_strike_multiplier_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "cold",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier with Cold Skills"
+  },
+  {
+   "id": "ColdDamageJewel",
+   "name": "Chilling",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ColdDamagePercentage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "cold"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Cold Damage"
+  },
+  {
+   "id": "DaggerAttackSpeedJewel",
+   "name": "Slicing",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "dagger_attack_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "dagger",
+    "specific_weapon",
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Attack Speed with Daggers"
+  },
+  {
+   "id": "DaggerDamageJewel",
+   "name": "Lethal",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "dagger_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "dagger",
+    "specific_weapon",
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Damage with Daggers"
+  },
+  {
+   "id": "DualWieldingAttackSpeedJewel",
+   "name": "Harmonic",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attack_speed_while_dual_wielding_+%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(4-6)% increased Attack Speed while Dual Wielding"
+  },
+  {
+   "id": "DualWieldingCritChanceJewel",
+   "name": "Technical",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritChance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "critical_strike_chance_while_dual_wielding_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Attack Critical Strike Chance while Dual Wielding"
+  },
+  {
+   "id": "DualWieldingCritMultiplierJewel",
+   "name": "Puncturing",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "global_critical_strike_multiplier_while_dual_wielding_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier while Dual Wielding"
+  },
+  {
+   "id": "DualWieldingMeleeDamageJewel",
+   "name": "Gladiator's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_while_dual_wielding_+%",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Attack Damage while Dual Wielding"
+  },
+  {
+   "id": "DualWieldingSpellBlockForJewel",
+   "name": "Dissipating",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FormSpellBlock"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "spell_block_while_dual_wielding_%",
+     "min": 2,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "block"
+   ],
+   "addsTags": [
+    "dual_wielding_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(2-3)% Chance to Block Spell Damage while Dual Wielding"
+  },
+  {
+   "id": "FasterAilmentDamageJewel",
+   "name": "Decrepifying",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FasterAilmentDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damaging_ailments_deal_damage_+%_faster",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Damaging Ailments deal damage (4-6)% faster"
+  },
+  {
+   "id": "FireCritChanceJewel",
+   "name": "Incinerating",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FireCritChance"
+   ],
+   "weights": [
+    [
+     "not_str",
+     200
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_critical_strike_chance_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Critical Strike Chance with Fire Skills"
+  },
+  {
+   "id": "FireCritMultiplier",
+   "name": "Infernal",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FireCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_str",
+     200
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_critical_strike_multiplier_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "fire",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier with Fire Skills"
+  },
+  {
+   "id": "FireDamageJewel",
+   "name": "Flaming",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FireDamagePercentage"
+   ],
+   "weights": [
+    [
+     "not_str",
+     400
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "fire"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Fire Damage"
+  },
+  {
+   "id": "FlaskDurationJewel",
+   "name": "Prolonging",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "BeltFlaskDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "flask_duration_+%",
+     "min": 6,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "flask"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-10)% increased Flask Effect Duration"
+  },
+  {
+   "id": "IncreasedEvasionJewel",
+   "name": "Evasive",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "EvasionRatingPercent"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "evasion_rating_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Evasion Rating"
+  },
+  {
+   "id": "IncreasedManaRegenJewel",
+   "name": "Energetic",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ManaRegeneration"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mana_regeneration_rate_+%",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-15)% increased Mana Regeneration Rate"
+  },
+  {
+   "id": "LightningCritChanceJewel",
+   "name": "Thundering",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "LightningCritChance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     200
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_critical_strike_chance_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Critical Strike Chance with Lightning Skills"
+  },
+  {
+   "id": "LightningCritMultiplier",
+   "name": "Surging",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "LightningCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_int",
+     200
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_critical_strike_multiplier_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "lightning",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier with Lightning Skills"
+  },
+  {
+   "id": "LightningDamageJewel",
+   "name": "Humming",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "LightningDamagePercentage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     400
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "lightning_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "lightning"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Lightning Damage"
+  },
+  {
+   "id": "ManaReservationEfficiencyJewel",
+   "name": "Cerebral",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "ReducedManaReservationsCost"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_mana_reservation_efficiency_+%",
+     "min": 2,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(2-3)% increased Mana Reservation Efficiency of Skills"
+  },
+  {
+   "id": "MineDamageJewel",
+   "name": "Sabotage",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "DamageForm"
+   ],
+   "weights": [
+    [
+     "not_str",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Mine Damage"
+  },
+  {
+   "id": "MineLaySpeedJewel",
+   "name": "Arming",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MineLaySpeed"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mine_laying_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Mine Throwing Speed"
+  },
+  {
+   "id": "OneHandCritMultiplierJewel_",
+   "name": "Piercing",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "one_handed_melee_critical_strike_multiplier_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "melee_mod",
+    "one_handed_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier with One Handed Melee Weapons"
+  },
+  {
+   "id": "OneHandedCritChanceJewel",
+   "name": "Harming",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritChance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "one_handed_melee_critical_strike_chance_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Critical Strike Chance with One Handed Melee Weapons"
+  },
+  {
+   "id": "OneHandedMeleeAttackSpeedJewel",
+   "name": "Bandit's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeSpeed"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "one_handed_melee_attack_speed_+%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(4-6)% increased Attack Speed with One Handed Melee Weapons"
+  },
+  {
+   "id": "OneHandedMeleeDamageJewel",
+   "name": "Soldier's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_+%_with_one_handed_weapons",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "one_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Damage with One Handed Weapons"
+  },
+  {
+   "id": "PercentIncreasedLifeJewel",
+   "name": "Vivid",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MaximumLifeIncreasePercent"
+   ],
+   "weights": [
+    [
+     "not_str",
+     350
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "maximum_life_+%",
+     "min": 5,
+     "max": 7
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(5-7)% increased maximum Life"
+  },
+  {
+   "id": "PercentIncreasedManaJewel",
+   "name": "Enlightened",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MaximumManaIncreasePercent"
+   ],
+   "weights": [
+    [
+     "not_str",
+     500
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "maximum_mana_+%",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-10)% increased maximum Mana"
+  },
+  {
+   "id": "PhysicalDamageJewel",
+   "name": "Sharpened",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "PhysicalDamagePercent"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "damage",
+    "physical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Global Physical Damage"
+  },
+  {
+   "id": "PhysicalDamageWhileHoldingAShield",
+   "name": "Flanking",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attack_damage_+%_while_holding_a_shield",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "shield_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Attack Damage while holding a Shield"
+  },
+  {
+   "id": "ShieldAttackSpeedJewel",
+   "name": "Charging",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeSpeed"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     400
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attack_speed_+%_while_holding_shield",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "shield_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(4-6)% increased Attack Speed while holding a Shield"
+  },
+  {
+   "id": "ShieldSpellBlockJewel",
+   "name": "Thwarting",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "FormSpellBlock"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "shield_spell_block_%",
+     "min": 2,
+     "max": 3
+    }
+   ],
+   "implicitTags": [
+    "block"
+   ],
+   "addsTags": [
+    "shield_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(2-3)% Chance to Block Spell Damage while holding a Shield"
+  },
+  {
+   "id": "SwordAttackSpeedJewel",
+   "name": "Fencing",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponSpeed"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "sword_attack_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "sword",
+    "specific_weapon",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Attack Speed with Swords"
+  },
+  {
+   "id": "SwordDamageJewel",
+   "name": "Vicious",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "SpecificWeaponDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "sword_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "sword",
+    "specific_weapon",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Damage with Swords"
+  },
+  {
+   "id": "TotemDamageJewel",
+   "name": "Shaman's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "TotemDamage"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "totem_damage_+%",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-16)% increased Totem Damage"
+  },
+  {
+   "id": "TotemLifeJewel",
+   "name": "Carved",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "IncreasedTotemLife"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "totem_life_+%",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Totem Life"
+  },
+  {
+   "id": "TrapDamageJewel",
+   "name": "Trapping",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "DamageForm"
+   ],
+   "weights": [
+    [
+     "not_str",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "trap_damage_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Trap Damage"
+  },
+  {
+   "id": "TrapThrowSpeedJewel",
+   "name": "Honed",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "TrapThrowSpeed"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "trap_throwing_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Trap Throwing Speed"
+  },
+  {
+   "id": "TwoHandCritMultiplierJewel",
+   "name": "Rupturing",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "two_handed_melee_critical_strike_multiplier_+",
+     "min": 15,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "two_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(15-18)% to Critical Strike Multiplier with Two Handed Melee Weapons"
+  },
+  {
+   "id": "TwoHandedCritChanceJewel",
+   "name": "Sundering",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeCritChance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "two_handed_melee_critical_strike_chance_+%",
+     "min": 14,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "two_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(14-18)% increased Critical Strike Chance with Two Handed Melee Weapons"
+  },
+  {
+   "id": "TwoHandedMeleeAttackSpeedJewel",
+   "name": "Warrior's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeSpeed"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "two_handed_melee_attack_speed_+%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [
+    "two_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(4-6)% increased Attack Speed with Two Handed Melee Weapons"
+  },
+  {
+   "id": "TwoHandedMeleeDamageJewel",
+   "name": "Champion's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MeleeTypeDamage"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_+%_with_two_handed_weapons",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "two_handed_mod",
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Damage with Two Handed Weapons"
+  },
+  {
+   "id": "AccuracyAndCritsJewel",
+   "name": "of Deadliness",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AccuracyAndCrits"
+   ],
+   "weights": [
+    [
+     "default",
+     150
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating_+%",
+     "min": 6,
+     "max": 10
+    },
+    {
+     "id": "critical_strike_chance_+%",
+     "min": 6,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-10)% increased Global Accuracy Rating\n(6-10)% increased Global Critical Strike Chance"
+  },
+  {
+   "id": "AllAttributesJewel",
+   "name": "of Adaption",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AllAttributes"
+   ],
+   "weights": [
+    [
+     "default",
+     300
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_all_attributes",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-8) to all Attributes"
+  },
+  {
+   "id": "AllResistancesJewel",
+   "name": "of Resistance",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AllResistances"
+   ],
+   "weights": [
+    [
+     "default",
+     300
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_resist_all_elements_%",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10)% to all Elemental Resistances"
+  },
+  {
+   "id": "AreaDamageJewel",
+   "name": "of Blasting",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AreaDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "area_damage_+%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-12)% increased Area Damage"
+  },
+  {
+   "id": "AttackAndCastSpeedJewel",
+   "name": "of Zeal",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AttackCastSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attack_and_cast_speed_+%",
+     "min": 2,
+     "max": 4
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "caster",
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(2-4)% increased Attack and Cast Speed"
+  },
+  {
+   "id": "AttackSpeedJewel",
+   "name": "of Berserking",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "IncreasedAttackSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attack_speed_+%",
+     "min": 3,
+     "max": 5
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(3-5)% increased Attack Speed"
+  },
+  {
+   "id": "BleedChanceAndDurationForJewel__",
+   "name": "of Bleeding",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AilmentChanceAndDuration"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "bleed_on_hit_with_attacks_%",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": "base_bleed_duration_+%",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "bleed",
+    "physical",
+    "attack",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Attacks have (3-5)% chance to cause Bleeding\n(12-16)% increased Bleeding Duration"
+  },
+  {
+   "id": "BleedDamageForJewel",
+   "name": "of Haemophilia",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "BleedingDamage"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "bleeding_damage_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "bleed",
+    "damage",
+    "physical",
+    "attack",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% increased Damage with Bleeding"
+  },
+  {
+   "id": "BleedDurationOnYouJewel",
+   "name": "of Stemming",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ReducedBleedDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "self_bleed_duration_+%",
+     "min": -35,
+     "max": -30
+    }
+   ],
+   "implicitTags": [
+    "bleed",
+    "physical",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(35-30)% reduced Bleed Duration on you"
+  },
+  {
+   "id": "BurningDamageForJewel",
+   "name": "of Combusting",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "BurnDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "burn_damage_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "fire",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% increased Burning Damage"
+  },
+  {
+   "id": "ChaosResistanceJewel",
+   "name": "of Order",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 7,
+     "max": 13
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(7-13)% to Chaos Resistance"
+  },
+  {
+   "id": "ChillEffectOnYouJewel",
+   "name": "of the Snowbreather",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ChillEffectivenessOnSelf"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "chill_effectiveness_on_self_+%",
+     "min": -35,
+     "max": -30
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(35-30)% reduced Effect of Chill on you"
+  },
+  {
+   "id": "ColdLightningResistanceJewel",
+   "name": "of Shelter",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ColdAndLightningResistance"
+   ],
+   "weights": [
+    [
+     "not_str",
+     450
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_and_lightning_damage_resistance_%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-12)% to Cold and Lightning Resistances"
+  },
+  {
+   "id": "ColdResistanceJewel",
+   "name": "of the Beast",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-15)% to Cold Resistance"
+  },
+  {
+   "id": "CriticalStrikeChanceJewel",
+   "name": "of Menace",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "CriticalStrikeChanceIncrease"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "critical_strike_chance_+%",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Global Critical Strike Chance"
+  },
+  {
+   "id": "CriticalStrikeMultiplierJewel",
+   "name": "of Potency",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "CriticalStrikeMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_critical_strike_multiplier_+",
+     "min": 9,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(9-12)% to Global Critical Strike Multiplier"
+  },
+  {
+   "id": "CurseEffectOnYouJewel",
+   "name": "of Hexwarding",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ReducedCurseEffect"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "curse_effect_on_self_+%",
+     "min": -30,
+     "max": -25
+    }
+   ],
+   "implicitTags": [
+    "curse"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(30-25)% reduced Effect of Curses on you"
+  },
+  {
+   "id": "DamageJewel",
+   "name": "of Wounding",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageForm"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_+%",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-10)% increased Damage"
+  },
+  {
+   "id": "DamageOverTimeJewel",
+   "name": "of Entropy",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DegenerationDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_over_time_+%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-12)% increased Damage over Time"
+  },
+  {
+   "id": "DexterityIntelligenceJewel",
+   "name": "of Cunning",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DexterityIntelligence"
+   ],
+   "weights": [
+    [
+     "not_str",
+     450
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity_and_intelligence",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10) to Dexterity and Intelligence"
+  },
+  {
+   "id": "DexterityJewel",
+   "name": "of Dexterity",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-16) to Dexterity"
+  },
+  {
+   "id": "ElementalCritChanceJewel",
+   "name": "of the Apocalypse",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ElementalCritChance"
+   ],
+   "weights": [
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "elemental_critical_strike_chance_+%",
+     "min": 10,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-14)% increased Critical Strike Chance with Elemental Skills"
+  },
+  {
+   "id": "ElementalCritMultiplier",
+   "name": "of the Elements",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ElementalCritMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "elemental_critical_strike_multiplier_+",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-15)% to Critical Strike Multiplier with Elemental Skills"
+  },
+  {
+   "id": "FireColdResistanceJewel",
+   "name": "of the Hearth",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FireAndColdResistance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     450
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_and_cold_damage_resistance_%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-12)% to Fire and Cold Resistances"
+  },
+  {
+   "id": "FireLightningResistanceJewel",
+   "name": "of Insulation",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FireAndLightningResistance"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_and_lightning_damage_resistance_%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-12)% to Fire and Lightning Resistances"
+  },
+  {
+   "id": "FireResistanceJewel",
+   "name": "of the Dragon",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "not_str",
+     300
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-15)% to Fire Resistance"
+  },
+  {
+   "id": "FreezeChanceAndDurationJewel",
+   "name": "of Freezing",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AilmentChanceAndDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chance_to_freeze_%",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": "freeze_duration_+%",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(3-5)% chance to Freeze\n(12-16)% increased Freeze Duration on Enemies"
+  },
+  {
+   "id": "IgniteChanceAndDurationJewel",
+   "name": "of Burning",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AilmentChanceAndDuration"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chance_to_ignite_%",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": "ignite_duration_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(3-5)% chance to Ignite\n(6-8)% increased Ignite Duration on Enemies"
+  },
+  {
+   "id": "IgniteDurationOnYouJewel",
+   "name": "of the Flameruler",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ReducedSelfIgniteDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_self_ignite_duration_-%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(30-35)% reduced Ignite Duration on you"
+  },
+  {
+   "id": "ImpaleChanceForJewel_",
+   "name": "of Impaling",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ImpaleOnHit"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "attacks_impale_on_hit_%_chance",
+     "min": 5,
+     "max": 7
+    }
+   ],
+   "implicitTags": [
+    "physical",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(5-7)% chance to Impale Enemies on Hit with Attacks"
+  },
+  {
+   "id": "IntelligenceJewel",
+   "name": "of Intelligence",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Intelligence"
+   ],
+   "weights": [
+    [
+     "not_int",
+     300
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_intelligence",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-16) to Intelligence"
+  },
+  {
+   "id": "JewelChaosNonAilmentDamageOverTimeMultiplier2",
+   "name": "of Atrophy",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageOverTimeMultiplier"
+   ],
+   "weights": [
+    [
+     "not_str",
+     300
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "chaos_dot_multiplier_+",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "dot_multi",
+    "chaos_damage",
+    "damage",
+    "chaos"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-8)% to Chaos Damage over Time Multiplier"
+  },
+  {
+   "id": "JewelColdDamageOverTimeMultiplier1",
+   "name": "of Gelidity",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageOverTimeMultiplier"
+   ],
+   "weights": [
+    [
+     "not_str",
+     300
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "cold_dot_multiplier_+",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "dot_multi",
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "cold"
+   ],
+   "addsTags": [
+    "has_caster_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(6-8)% to Cold Damage over Time Multiplier"
+  },
+  {
+   "id": "JewelFireDamageOverTimeMultiplier1",
+   "name": "of Zealousness",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageOverTimeMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     300
+    ]
+   ],
+   "stats": [
+    {
+     "id": "fire_dot_multiplier_+",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "dot_multi",
+    "elemental_damage",
+    "damage",
+    "elemental",
+    "fire"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-8)% to Fire Damage over Time Multiplier"
+  },
+  {
+   "id": "JewelGlobalDamageOverTimeMultiplier1",
+   "name": "of Acrimony",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "GlobalDamageOverTimeMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     300
+    ]
+   ],
+   "stats": [
+    {
+     "id": "dot_multiplier_+",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "dot_multi",
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(4-6)% to Damage over Time Multiplier"
+  },
+  {
+   "id": "JewelPhysicalDamageOverTimeMultiplier1",
+   "name": "of Exsanguinating",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageOverTimeMultiplier"
+   ],
+   "weights": [
+    [
+     "default",
+     300
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_dot_multiplier_+",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "dot_multi",
+    "physical_damage",
+    "damage",
+    "physical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-8)% to Physical Damage over Time Multiplier"
+  },
+  {
+   "id": "KnockbackChanceJewel_",
+   "name": "of Fending",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Knockback"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_global_chance_to_knockback_%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(4-6)% chance to Knock Enemies Back on hit"
+  },
+  {
+   "id": "LifeRecoupJewel",
+   "name": "of Infusion",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageTakenGainedAsLife"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "damage_taken_goes_to_life_over_4_seconds_%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(4-6)% of Damage taken Recouped as Life"
+  },
+  {
+   "id": "LightningResistanceJewel",
+   "name": "of Grounding",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     300
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-15)% to Lightning Resistance"
+  },
+  {
+   "id": "ManaCostEfficiencyJewel",
+   "name": "of Efficiency",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "CostEfficiency"
+   ],
+   "weights": [
+    [
+     "not_int",
+     300
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_mana_cost_efficiency_+%",
+     "min": 10,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-15)% increased Mana Cost Efficiency"
+  },
+  {
+   "id": "ManaLeechPermyriadSuffixJewel",
+   "name": "of Thirsting",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ManaLeech"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mana_leech_from_physical_attack_damage_permyriad",
+     "min": 20,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana",
+    "physical",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(0.2-0.4)% of Physical Attack Damage Leeched as Mana"
+  },
+  {
+   "id": "ManaOnHitJewel",
+   "name": "of Absorption",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ManaGainPerTarget"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "mana_gain_per_target",
+     "min": 1,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "mana",
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain (1-2) Mana per Enemy Hit with Attacks"
+  },
+  {
+   "id": "MaximumColdResistanceJewel",
+   "name": "of the Kraken",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "MaximumColdResist"
+   ],
+   "weights": [
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_cold_damage_resistance_%",
+     "min": 1,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(1-2)% to maximum Cold Resistance"
+  },
+  {
+   "id": "MaximumFireResistanceJewel",
+   "name": "of the Phoenix",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "MaximumFireResist"
+   ],
+   "weights": [
+    [
+     "not_str",
+     60
+    ],
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_fire_damage_resistance_%",
+     "min": 1,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(1-2)% to maximum Fire Resistance"
+  },
+  {
+   "id": "MaximumLightningResistanceJewel",
+   "name": "of the Leviathan",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "MaximumLightningResistance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     60
+    ],
+    [
+     "default",
+     100
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_lightning_damage_resistance_%",
+     "min": 1,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(1-2)% to maximum Lightning Resistance"
+  },
+  {
+   "id": "MeleeCritChanceJewel",
+   "name": "of Weight",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FormCritChance"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "melee_critical_strike_chance_+%",
+     "min": 10,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(10-14)% increased Melee Critical Strike Chance"
+  },
+  {
+   "id": "MeleeCritMultiplier",
+   "name": "of Demolishing",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FormCritMultiplier"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "melee_weapon_critical_strike_multiplier_+",
+     "min": 12,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack",
+    "critical"
+   ],
+   "addsTags": [
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "+(12-15)% to Melee Critical Strike Multiplier"
+  },
+  {
+   "id": "MeleeDamageJewel_",
+   "name": "of Combat",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageForm"
+   ],
+   "weights": [
+    [
+     "not_int",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "melee_damage_+%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "damage",
+    "attack"
+   ],
+   "addsTags": [
+    "melee_mod"
+   ],
+   "essenceOnly": false,
+   "text": "(10-12)% increased Melee Damage"
+  },
+  {
+   "id": "PercentIncreasedAccuracyJewel",
+   "name": "of Precision",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "IncreasedAccuracyPercent"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "accuracy_rating_+%",
+     "min": 10,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "attack"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-14)% increased Global Accuracy Rating"
+  },
+  {
+   "id": "PoisonChanceAndDurationForJewel",
+   "name": "of Poisoning",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AilmentChanceAndDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chance_to_poison_on_hit_%",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": "base_poison_duration_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "poison",
+    "chaos",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(3-5)% chance to Poison on Hit\n(6-8)% increased Poison Duration"
+  },
+  {
+   "id": "PoisonDamageForJewel",
+   "name": "of Venom",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "PoisonDamage"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_poison_damage_+%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "chaos_damage",
+    "poison",
+    "damage",
+    "chaos",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(16-20)% increased Damage with Poison"
+  },
+  {
+   "id": "PoisonDurationOnYouJewel",
+   "name": "of Neutralisation",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ReducedPoisonDuration"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "self_poison_duration_+%",
+     "min": -35,
+     "max": -30
+    }
+   ],
+   "implicitTags": [
+    "poison",
+    "chaos",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(35-30)% reduced Poison Duration on you"
+  },
+  {
+   "id": "ProjectileDamageJewel",
+   "name": "of Archery",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "DamageForm"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "projectile_damage_+%",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "damage"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-12)% increased Projectile Damage"
+  },
+  {
+   "id": "ProjectileSpeedJewel",
+   "name": "of Soaring",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ProjectileSpeed"
+   ],
+   "weights": [
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_projectile_speed_+%",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-8)% increased Projectile Speed"
+  },
+  {
+   "id": "ShockChanceAndDurationJewel",
+   "name": "of Shocking",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "AilmentChanceAndDuration"
+   ],
+   "weights": [
+    [
+     "not_int",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chance_to_shock_%",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": "shock_duration_+%",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(3-5)% chance to Shock\n(12-16)% increased Shock Duration on Enemies"
+  },
+  {
+   "id": "ShockEffectOnYouJewel",
+   "name": "of the Stormdweller",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ShockEffect"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "shocked_effect_on_self_+%",
+     "min": -35,
+     "max": -30
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(35-30)% reduced Effect of Shock on you"
+  },
+  {
+   "id": "StrengthDexterityJewel",
+   "name": "of Athletics",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StrengthDexterity"
+   ],
+   "weights": [
+    [
+     "not_int",
+     450
+    ],
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength_and_dexterity",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10) to Strength and Dexterity"
+  },
+  {
+   "id": "StrengthIntelligenceJewel",
+   "name": "of Spirit",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StrengthIntelligence"
+   ],
+   "weights": [
+    [
+     "default",
+     250
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength_and_intelligence",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-10) to Strength and Intelligence"
+  },
+  {
+   "id": "StrengthJewel",
+   "name": "of Strength",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "not_str",
+     300
+    ],
+    [
+     "default",
+     500
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 12,
+     "max": 16
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-16) to Strength"
+  },
+  {
+   "id": "StunDurationJewel",
+   "name": "of Stunning",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StunDurationIncreasePercent"
+   ],
+   "weights": [
+    [
+     "not_str",
+     200
+    ],
+    [
+     "default",
+     400
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_duration_+%",
+     "min": 10,
+     "max": 14
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-14)% increased Stun Duration on Enemies"
+  },
+  {
+   "id": "StunRecoveryJewel",
+   "name": "of Recovery",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "not_str",
+     200
+    ],
+    [
+     "default",
+     400
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 25,
+     "max": 35
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(25-35)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "TotemElementalResistancesJewel",
+   "name": "of Runes",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "TotemElementalResistances"
+   ],
+   "weights": [
+    [
+     "not_str",
+     250
+    ],
+    [
+     "default",
+     350
+    ]
+   ],
+   "stats": [
+    {
+     "id": "totem_elemental_resistance_%",
+     "min": 6,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Totems gain +(6-10)% to all Elemental Resistances"
+  }
+ ],
+ "target": {
+  "prefixes": [
+   "desired",
+   "any"
+  ],
+  "suffixes": [
+   "desired",
+   "any"
+  ],
+  "desired": [
+   "PercentIncreasedLifeJewel",
+   "AttackSpeedJewel"
+  ],
+  "good": []
+ }
+}
