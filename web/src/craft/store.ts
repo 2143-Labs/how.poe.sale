@@ -13,15 +13,15 @@ import {
   type Kind,
   type Library,
 } from './library'
-import type { Catalog, CraftSpec, GoalSpec, ModView, PriceSpec, RunView } from './types'
+import type { Catalog, CraftSpec, FilterSpec, ModView, PriceSpec, RunView } from './types'
 
-export type Tab = 'craft' | 'goal' | 'prices'
+export type Tab = 'craft' | 'filters' | 'prices'
 
 export interface CraftState {
   catalog: Catalog
   /** The built-ins merged with the user's presets. */
   library: Library
-  /** The preset each editor shows: a craft, its goal and its price list. */
+  /** The preset each editor shows: a craft, its goal filter and its price list. */
   selected: Record<Kind, string>
   tab: Tab
   result: RunView | null
@@ -31,11 +31,11 @@ export interface CraftState {
   busy: boolean
   /** One base's modifiers, once they have been fetched. */
   mods: Record<string, ModView[]>
-  /** Picks a preset. Picking a craft also picks the goal and prices it names. */
+  /** Picks a preset. Picking a craft also picks the goal filter and prices it names. */
   select(kind: Kind, id: string): void
   setTab(tab: Tab): void
-  /** Replaces the user's goal with this id. A built-in goal is left alone. */
-  updateGoal(goal: GoalSpec): void
+  /** Replaces the user's filter with this one. A built-in filter is left alone. */
+  updateFilter(filter: FilterSpec): void
   updatePrices(prices: PriceSpec): void
   updateCraft(craft: CraftSpec): void
   /** Copies a preset and selects the copy. */
@@ -65,13 +65,13 @@ export interface CraftDeps {
 /** The wait after an edit before the engine is asked again. */
 const WAIT = 300
 
-/** The triple a page opens on: a craft, and the goal and prices that craft names. */
+/** The triple a page opens on: a craft, and the goal filter and prices that craft names. */
 function openingSelection(library: Library): Record<Kind, string> {
   const craft = find(library, 'craft', DEFAULTS.craft) ?? library.crafts[0]
   if (!craft) return { ...DEFAULTS }
   return {
     craft: craft.id,
-    goal: find(library, 'goal', craft.goal) ? craft.goal : DEFAULTS.goal,
+    filter: find(library, 'filter', craft.goal) ? craft.goal : DEFAULTS.filter,
     prices: find(library, 'prices', craft.prices) ? craft.prices : DEFAULTS.prices,
   }
 }
@@ -82,7 +82,7 @@ function openingSelection(library: Library): Record<Kind, string> {
  * typist asks the engine once, and only the newest run may write its answer.
  */
 export function createCraftStore(deps: CraftDeps): CraftStore {
-  const loaded = load(deps.storage, deps.catalog.builtins)
+  const loaded = load(deps.storage, deps.catalog.builtins, deps.catalog.bases)
   /** The bases whose modifier table is being fetched, so each is asked for once. */
   const fetching = new Set<string>()
 
@@ -97,10 +97,13 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
     }
 
     /** Replaces one preset in place, saves, and asks for a fresh run. */
-    const replace = (library: Library, kind: Kind, entry: GoalSpec | PriceSpec | CraftSpec) => {
+    const replace = (library: Library, kind: Kind, entry: FilterSpec | PriceSpec | CraftSpec) => {
       const next: Library =
-        kind === 'goal'
-          ? { ...library, goals: library.goals.map((goal) => (goal.id === entry.id ? (entry as GoalSpec) : goal)) }
+        kind === 'filter'
+          ? {
+              ...library,
+              filters: library.filters.map((filter) => (filter.id === entry.id ? (entry as FilterSpec) : filter)),
+            }
           : kind === 'prices'
             ? {
                 ...library,
@@ -132,7 +135,7 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
         if (kind === 'craft') {
           const craft = find(state.library, 'craft', id)
           if (craft) {
-            selected.goal = find(state.library, 'goal', craft.goal) ? craft.goal : DEFAULTS.goal
+            selected.filter = find(state.library, 'filter', craft.goal) ? craft.goal : DEFAULTS.filter
             selected.prices = find(state.library, 'prices', craft.prices) ? craft.prices : DEFAULTS.prices
           }
         }
@@ -144,9 +147,9 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
         set({ tab })
       },
 
-      updateGoal(goal) {
-        if (isBuiltin(goal.id)) return
-        replace(get().library, 'goal', goal)
+      updateFilter(filter) {
+        if (isBuiltin(filter.id)) return
+        replace(get().library, 'filter', filter)
       },
 
       updatePrices(prices) {
@@ -158,9 +161,9 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
         if (isBuiltin(craft.id)) return
         const state = get()
         if (state.selected.craft === craft.id) {
-          // The craft names its own goal and prices, so the other two tabs follow its header.
+          // The craft names its own goal filter and prices, so the other two tabs follow its header.
           const selected: Record<Kind, string> = { ...state.selected }
-          if (find(state.library, 'goal', craft.goal)) selected.goal = craft.goal
+          if (find(state.library, 'filter', craft.goal)) selected.filter = craft.goal
           if (find(state.library, 'prices', craft.prices)) selected.prices = craft.prices
           set({ selected })
         }
@@ -182,7 +185,7 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
           selected[kind] = DEFAULTS[kind]
           if (kind === 'craft') {
             const craft = find(result.library, 'craft', DEFAULTS.craft)
-            selected.goal = craft?.goal ?? DEFAULTS.goal
+            selected.filter = craft?.goal ?? DEFAULTS.filter
             selected.prices = craft?.prices ?? DEFAULTS.prices
           }
         }
@@ -197,7 +200,7 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
 
       importLibrary(text) {
         try {
-          const library = importJson(text, get().library)
+          const library = importJson(text, get().library, deps.catalog.bases)
           set({ library: persist(library) })
           schedule()
           return null
@@ -231,18 +234,22 @@ export function createCraftStore(deps: CraftDeps): CraftStore {
     }
   })
 
-  /** Runs the selected triple, and writes the answer only when no newer run has been asked for. */
+  /** Runs the selected craft, under every filter the library knows and the prices it is costed at. */
   async function run(token: number) {
     const state = store.getState()
     const craft = find(state.library, 'craft', state.selected.craft)
-    const goal = find(state.library, 'goal', state.selected.goal)
-    const prices = find(state.library, 'prices', state.selected.prices)
-    if (!craft || !goal || !prices) {
-      store.setState({ result: null, error: 'the selected craft, goal or price list is missing' })
+    const prices = find(state.library, 'prices', state.selected.prices) ?? (craft && find(state.library, 'prices', craft.prices))
+    if (!craft || !prices) {
+      store.setState({ result: null, error: 'the selected craft or price list is missing' })
       return
     }
     try {
-      const result = await deps.client.run({ goal, prices, craft, library: state.library.crafts })
+      const result = await deps.client.run({
+        filters: state.library.filters,
+        prices,
+        craft,
+        library: state.library.crafts,
+      })
       if (token === attempt) store.setState({ result, error: null })
     } catch (reason: unknown) {
       if (token !== attempt) return

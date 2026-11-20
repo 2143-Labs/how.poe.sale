@@ -39,6 +39,8 @@ type BlockData = {
   method: MethodView | null
   craftName: string | null
   exits: BlockExit[]
+  /** The filters on the goal's base, which a method block may pick instead of the craft's goal. */
+  filters: { id: string; name: string }[]
   readOnly: boolean
 }
 
@@ -50,6 +52,7 @@ type CraftNode = StartNode | BlockNode | DoneNode
 interface Actions {
   setStart: (start: string) => void
   setMethod: (block: BlockSpec, method: MethodSpec) => void
+  setFilter: (block: BlockSpec, filter: string | null) => void
 }
 
 const ActionsContext = createContext<Actions | null>(null)
@@ -141,7 +144,8 @@ function Params({ block, method, readOnly }: { block: BlockSpec; method: MethodV
 
 /** One block: a method with its controls and exits, or a saved craft with its outputs. */
 function BlockNode({ data, selected }: NodeProps<BlockNode>) {
-  const { block, method, craftName, exits, readOnly } = data
+  const { block, method, craftName, exits, filters, readOnly } = data
+  const actions = useActions()
   return (
     <div className={['solution-node', selected ? 'is-selected' : ''].filter(Boolean).join(' ')}>
       <Handle type="target" position={Position.Top} id="in" />
@@ -152,6 +156,24 @@ function BlockNode({ data, selected }: NodeProps<BlockNode>) {
         {method?.needs && <span className="badge">{method.needs}</span>}
       </div>
       {method && <Params block={block} method={method} readOnly={readOnly} />}
+      {method && (
+        <label className="check node-filter">
+          filter
+          <select
+            value={block.filter ?? ''}
+            disabled={readOnly}
+            onChange={(event) => actions.setFilter(block, event.target.value === '' ? null : event.target.value)}
+          >
+            <option value="">craft goal</option>
+            {filters.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {!method && <p className="hint">its own filters</p>}
       <ul className="chips">
         {exits.map((exit) => (
           <li key={exit.name} className="chip chip-other">
@@ -256,7 +278,7 @@ function layoutOf(spec: CraftSpec, catalog: Catalog, library: Library): { nodes:
   return { nodes, edges }
 }
 
-/** A craft as a graph: blocks wired exit to block, with the goal and prices it runs under. */
+/** A craft as a graph: blocks wired exit to block, with the goal filter and prices it runs under. */
 export function CraftEditor() {
   const catalog = useCraft((state) => state.catalog)
   const library = useCraft((state) => state.library)
@@ -271,6 +293,9 @@ export function CraftEditor() {
 
   const craft = find(library, 'craft', craftId)
   const readOnly = craft ? isBuiltin(craft.id) : true
+  /** The craft's base is its goal filter's base, and its influence must be one that base offers. */
+  const goal = craft ? find(library, 'filter', craft.goal) : undefined
+  const baseInfluences = goal ? (catalog.bases.find((entry) => entry.key === goal.base)?.influences ?? []) : []
 
   // A change to any block, wire or nested output moves the blocks the page has not placed.
   const shape = useMemo(() => {
@@ -320,6 +345,11 @@ export function CraftEditor() {
       position: positions.done ?? { x: 0, y: 600 },
       deletable: false,
     }
+    const filters = goal
+      ? library.filters
+          .filter((filter) => filter.base === goal.base)
+          .map((filter) => ({ id: filter.id, name: filter.name }))
+      : []
     const blocks: BlockNode[] = craft.blocks.map((block, index) => {
       const nested = block.craft ? find(library, 'craft', block.craft) : undefined
       return {
@@ -330,6 +360,7 @@ export function CraftEditor() {
           method: methodOf(block, catalog),
           craftName: nested?.name ?? null,
           exits: blockExits(block, catalog, library),
+          filters,
           readOnly,
         },
         position: block.position
@@ -383,6 +414,13 @@ export function CraftEditor() {
         updateCraft({
           ...craft,
           blocks: craft.blocks.map((entry) => (entry.id === block.id ? { ...entry, method } : entry)),
+        })
+      },
+      setFilter(block, filter) {
+        if (readOnly) return
+        updateCraft({
+          ...craft,
+          blocks: craft.blocks.map((entry) => (entry.id === block.id ? { ...entry, filter } : entry)),
         })
       },
     }
@@ -454,13 +492,36 @@ export function CraftEditor() {
             value={spec.goal}
             disabled={readOnly}
             onChange={(event) => {
-              updateCraft({ ...spec, goal: event.target.value })
-              select('goal', event.target.value)
+              const next = event.target.value
+              const chosen = find(library, 'filter', next)
+              const offered = chosen ? (catalog.bases.find((entry) => entry.key === chosen.base)?.influences ?? []) : []
+              // A craft cannot keep an influence the new goal's base does not offer, nor a block
+              // filter for another base: those blocks go back to reading the goal.
+              const influence = spec.influence !== 'none' && !offered.includes(spec.influence) ? 'none' : spec.influence
+              const rebased = chosen !== undefined && goal !== undefined && chosen.base !== goal.base
+              const blocks = rebased ? spec.blocks.map((block) => ({ ...block, filter: null })) : spec.blocks
+              updateCraft({ ...spec, goal: next, influence, blocks })
+              select('filter', next)
             }}
           >
-            {library.goals.map((goal) => (
-              <option key={goal.id} value={goal.id}>
-                {goal.name}
+            {library.filters.map((filter) => (
+              <option key={filter.id} value={filter.id}>
+                {filter.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="inline-field">
+          Influence
+          <select
+            value={spec.influence}
+            disabled={readOnly}
+            onChange={(event) => updateCraft({ ...spec, influence: event.target.value })}
+          >
+            <option value="none">none</option>
+            {baseInfluences.map((influence) => (
+              <option key={influence} value={influence}>
+                {influence}
               </option>
             ))}
           </select>
@@ -494,7 +555,7 @@ export function CraftEditor() {
               key={method.kind}
               type="button"
               onClick={() =>
-                add({ id: nextId(spec.blocks), method: defaultMethod(method, catalog), craft: null, position: null })
+                add({ id: nextId(spec.blocks), method: defaultMethod(method, catalog), craft: null, filter: null, position: null })
               }
             >
               {method.label}
@@ -506,7 +567,7 @@ export function CraftEditor() {
               <button
                 key={candidate.id}
                 type="button"
-                onClick={() => add({ id: nextId(spec.blocks), method: null, craft: candidate.id, position: null })}
+                onClick={() => add({ id: nextId(spec.blocks), method: null, craft: candidate.id, filter: null, position: null })}
               >
                 {candidate.name}
               </button>

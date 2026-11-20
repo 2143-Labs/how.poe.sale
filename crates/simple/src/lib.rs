@@ -5,7 +5,8 @@
 //! item level, rarity, influence, quality, flags, implicits and the modifiers with their values),
 //! the draw rule (`pool`), what a currency can be used on (`stock`), what one use costs (`cost`),
 //! the eight crafting orbs (`currency`), the goal (`filter`, `target`), the abstract item a
-//! craft is planned on (`node`) with the law of its next modifier's grade (`law`), the solver that
+//! craft is planned on (`node`) with the law of its next modifier's grade (`law`), the classes a
+//! craft of several mod filters grades its modifiers by (`classes`), the solver that
 //! carries chance, cost and spread through a loop (`chain`), the methods a craft is made of,
 //! one file each (`method`), the craft that wires them and reports what each step costs (`craft`),
 //! the rough worth of one orb (`weights`), and the craft printed as Markdown (`report`).
@@ -18,6 +19,7 @@
 pub mod api;
 pub mod bases;
 pub mod chain;
+pub mod classes;
 pub mod cost;
 pub mod craft;
 pub mod currency;

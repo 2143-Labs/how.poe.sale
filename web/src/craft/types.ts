@@ -49,20 +49,21 @@ export interface EssenceView {
   base: string
 }
 
-/** The goal a run is for: a base, the grade floors each side has to clear, and the modifiers each grade is made of. */
-export interface GoalSpec {
+/**
+ * A modifier filter: a base, the grade floors each side has to clear, and the modifiers each
+ * grade is made of. A craft runs under its goal filter, and every method block may pick its own.
+ */
+export interface FilterSpec {
   id: string
   name: string
   base: string
-  /** `"none"` or one of the base's offered influences. */
-  influence: string
   /** Grade names, best first: the prefix side's floors. */
   prefixes: string[]
   /** Grade names, best first: the suffix side's floors. */
   suffixes: string[]
-  /** The modifier ids the goal calls desired. */
+  /** The modifier ids the filter calls desired. */
   desired: string[]
-  /** The modifier ids the goal calls good. */
+  /** The modifier ids the filter calls good. */
   good: string[]
 }
 
@@ -80,6 +81,8 @@ export interface BlockSpec {
   method: MethodSpec | null
   /** The id of the craft this block inlines, when it is a craft block. */
   craft: string | null
+  /** A method block's own filter, or `null` for the craft's goal. Craft blocks ignore it. */
+  filter?: string | null
   /** Where the page drew the block, kept for the next visit. */
   position: [number, number] | null
 }
@@ -89,7 +92,7 @@ export interface MethodSpec {
   kind: string
   /** `exalt_to`: how many modifiers the item holds when it leaves. */
   modifiers: number | null
-  /** `alt_to_mod`: whether an augmentation fills an empty side the goal wants a desired modifier on. */
+  /** `alt_to_mod`: whether an augmentation fills an empty side the filter wants a desired modifier on. */
   augment: boolean | null
   /** `essence_spam`: the essence to use, by its short id (`essence-of-horror`). */
   essence: string | null
@@ -103,12 +106,14 @@ export interface WireSpec {
   to: string
 }
 
-/** A craft as the page stores it: blocks wired exit to block, with the goal and prices it runs under. */
+/** A craft as the page stores it: blocks wired exit to block, with the goal filter and prices it runs under. */
 export interface CraftSpec {
   id: string
   name: string
-  /** The id of the goal the craft is built for. */
+  /** The id of the goal filter the craft is built for, and the base it is on. */
   goal: string
+  /** `"none"`, or one of the goal filter's base's offered influences. */
+  influence: string
   /** The id of the price list the craft is costed at. */
   prices: string
   /** The rarity the craft starts from: `normal`, `magic` or `rare`. */
@@ -125,7 +130,7 @@ export interface CapsView {
   rare: number
 }
 
-/** One base, its caps, and the goal its data file states. */
+/** One base, its caps, and the goal filter its data file states. */
 export interface BaseView {
   key: string
   label: string
@@ -133,7 +138,7 @@ export interface BaseView {
   itemClass: string
   influences: string[]
   caps: CapsView
-  goal: GoalSpec
+  goal: FilterSpec
 }
 
 /** One explicit modifier of a base's pool. */
@@ -154,9 +159,9 @@ export interface ModView {
   essenceOnly: boolean
 }
 
-/** The presets a page starts from: one goal per base and one more, two price lists, eight crafts. */
+/** The presets a page starts from: one filter per base and three more, two price lists, nine crafts. */
 export interface Builtins {
-  goals: GoalSpec[]
+  filters: FilterSpec[]
   prices: PriceSpec[]
   crafts: CraftSpec[]
 }
@@ -171,9 +176,10 @@ export interface Catalog {
   builtins: Builtins
 }
 
-/** One run: the goal it is for, the prices its orbs are weighed at, the craft to cost, and the library it nests. */
+/** One run: every filter the library knows, the prices the orbs are weighed at, the craft to cost, and the library it nests. */
 export interface RunRequest {
-  goal: GoalSpec
+  /** Every filter the library holds, built-in and the user's own: a block may name any of them. */
+  filters: FilterSpec[]
   prices: PriceSpec
   craft: CraftSpec
   library: CraftSpec[]
@@ -217,6 +223,8 @@ export interface StepView {
   /** The block's path in the spec, e.g. `b2/b1` for a step inside a nested craft. */
   block: string
   name: string
+  /** The filter's name the step reads: its block's own, or the craft's goal. */
+  filter: string
   takes: string[]
   /** The share of this step's runs that leave through a wire. */
   chance: number
@@ -304,6 +312,14 @@ export interface CheckedView {
   skipped: number
 }
 
+/** The goal a run was graded against: the filter, its name, and the share of items that meet it. */
+export interface GoalView {
+  /** The goal filter's id. */
+  filter: string
+  name: string
+  share: number
+}
+
 /** One run's report: what the craft costs, step by step, with every way out and every other move. */
 export interface RunView {
   /** The craft's name. */
@@ -312,6 +328,7 @@ export interface RunView {
   unit: string
   /** The law's warning, then the compile's. */
   warnings: string[]
+  goal: GoalView
   total: SpendView
   steps: StepView[]
   /** Every exit wired out of the craft. */

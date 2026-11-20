@@ -23,6 +23,7 @@
 
 use super::Applied;
 use super::{Currency, Named};
+use crate::classes::{Class, Classes, Grade};
 use crate::cost::{Cost, CurrencyId};
 use crate::data::Data;
 use crate::filter::{ItemSetFilter, Tier};
@@ -40,10 +41,11 @@ const OVERFLOW: Refusal = Refusal("the chances do not fit in 128 bits");
 
 /// The Shaper's Exalted Orb, one step.
 #[derive(Clone, Debug)]
-pub struct ShapersExalted {
+pub struct ShapersExalted<G: Grade = Tier> {
     /// What the orb adds to an abstract item: per side, each grade with its share of the side's
-    /// Shaper weight, in the order desired, good, any. Empty for a side with no Shaper modifier.
-    grades: [Vec<(Tier, f64)>; 2],
+    /// Shaper weight, in the order the law lists the grades. Empty for a side with no Shaper
+    /// modifier.
+    grades: [Vec<(G, f64)>; 2],
 }
 
 impl ShapersExalted {
@@ -57,47 +59,69 @@ impl ShapersExalted {
         filter: &ItemSetFilter,
         start: &Item,
     ) -> Result<ShapersExalted, Refusal> {
-        if start.influence.is_some() {
-            return Err(Refusal(
-                "a Shaper's Exalted Orb needs an item with no influence",
-            ));
-        }
-        let rare = start.with_rarity(Rarity::Rare);
-        let own: Vec<u16> = Side::BOTH
-            .into_iter()
-            .flat_map(|side| draw_weights(data, &rare, side))
-            .flat_map(|(m, _)| data.mod_at(m).groups.iter().copied())
-            .collect();
-        let pools = Side::BOTH.map(|side| shaper_pool(data, &rare, side));
-        if pools.iter().flatten().any(|&(m, _)| {
-            data.mod_at(m)
-                .groups
-                .iter()
-                .any(|group| own.contains(group))
-        }) {
-            return Err(Refusal(
-                "a Shaper modifier shares a family with the item's own pool",
-            ));
-        }
-        let grades: [Vec<(Tier, f64)>; 2] = pools.map(|pool| {
-            let total: u128 = pool.iter().map(|&(_, weight)| weight).sum();
-            GRADES
-                .into_iter()
-                .filter_map(|tier| {
-                    let weight: u128 = pool
-                        .iter()
-                        .filter(|&&(m, _)| filter.tier_of(m) == tier)
-                        .map(|&(_, weight)| weight)
-                        .sum();
-                    (weight > 0).then_some((tier, weight as f64 / total as f64))
-                })
-                .collect()
-        });
-        Ok(ShapersExalted { grades })
+        build(data, &GRADES, &|m| filter.tier_of(m), start)
     }
 }
 
-impl Named for ShapersExalted {
+impl ShapersExalted<Class> {
+    /// [`ShapersExalted::new`] with each modifier graded by its class in a run.
+    pub fn classed(
+        data: &Data,
+        classes: &Classes,
+        start: &Item,
+    ) -> Result<ShapersExalted<Class>, Refusal> {
+        build(data, &classes.all(), &|m| classes.of(m), start)
+    }
+}
+
+/// The orb for a start item, with every Shaper modifier graded by `grade`; `order` lists every
+/// grade in the order a law lists them.
+fn build<G: Grade>(
+    data: &Data,
+    order: &[G],
+    grade: &dyn Fn(u16) -> G,
+    start: &Item,
+) -> Result<ShapersExalted<G>, Refusal> {
+    if start.influence.is_some() {
+        return Err(Refusal(
+            "a Shaper's Exalted Orb needs an item with no influence",
+        ));
+    }
+    let rare = start.with_rarity(Rarity::Rare);
+    let own: Vec<u16> = Side::BOTH
+        .into_iter()
+        .flat_map(|side| draw_weights(data, &rare, side))
+        .flat_map(|(m, _)| data.mod_at(m).groups.iter().copied())
+        .collect();
+    let pools = Side::BOTH.map(|side| shaper_pool(data, &rare, side));
+    if pools.iter().flatten().any(|&(m, _)| {
+        data.mod_at(m)
+            .groups
+            .iter()
+            .any(|group| own.contains(group))
+    }) {
+        return Err(Refusal(
+            "a Shaper modifier shares a family with the item's own pool",
+        ));
+    }
+    let grades: [Vec<(G, f64)>; 2] = pools.map(|pool| {
+        let total: u128 = pool.iter().map(|&(_, weight)| weight).sum();
+        order
+            .iter()
+            .filter_map(|&class| {
+                let weight: u128 = pool
+                    .iter()
+                    .filter(|&&(m, _)| grade(m) == class)
+                    .map(|&(_, weight)| weight)
+                    .sum();
+                (weight > 0).then_some((class, weight as f64 / total as f64))
+            })
+            .collect()
+    });
+    Ok(ShapersExalted { grades })
+}
+
+impl<G: Grade> Named for ShapersExalted<G> {
     fn id(&self) -> CurrencyId {
         CurrencyId::SHAPERS_EXALTED
     }
@@ -107,7 +131,7 @@ impl Named for ShapersExalted {
     }
 }
 
-impl Currency<Item> for ShapersExalted {
+impl<G: Grade> Currency<Item> for ShapersExalted<G> {
     fn apply(&self, rules: &Data, state: &Item) -> Result<Applied<Item>, Refusal> {
         usable(state)?;
         if state.influence.is_some() {
@@ -153,8 +177,8 @@ impl Currency<Item> for ShapersExalted {
 /// The abstract item: the side in equal shares among the sides with room that have a Shaper
 /// modifier, then the grade at the share [`ShapersExalted::new`] found. The law is not read: the
 /// orb does not draw from the item's pool.
-impl Currency<Node> for ShapersExalted {
-    fn apply(&self, rules: &Law, state: &Node) -> Result<Applied<Node>, Refusal> {
+impl<G: Grade> Currency<Node<G>> for ShapersExalted<G> {
+    fn apply(&self, rules: &Law<G>, state: &Node<G>) -> Result<Applied<Node<G>>, Refusal> {
         usable(state)?;
         if !Side::BOTH
             .into_iter()
@@ -170,7 +194,7 @@ impl Currency<Node> for ShapersExalted {
             return Err(Refusal("no Shaper modifier can roll on this item"));
         }
         let share = 1.0 / open.len() as f64;
-        let parts: Vec<(Node, f64)> = open
+        let parts: Vec<(Node<G>, f64)> = open
             .iter()
             .flat_map(|&side| {
                 self.grades[side.index()]

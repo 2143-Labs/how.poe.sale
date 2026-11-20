@@ -50,22 +50,24 @@ function Floors({ title, floors, cap, grades, disabled, onChange }: FloorsProps)
   )
 }
 
-/** The goal a run is built for: its base, influence, grade floors and the modifiers each grade is made of. */
-export function GoalEditor() {
+/** A modifier filter: its base, grade floors and the modifiers each grade is made of. */
+export function FilterEditor() {
   const catalog = useCraft((state) => state.catalog)
   const library = useCraft((state) => state.library)
-  const goalId = useCraft((state) => state.selected.goal)
+  const filterId = useCraft((state) => state.selected.filter)
   const mods = useCraft((state) => state.mods)
   const loadMods = useCraft((state) => state.loadMods)
-  const updateGoal = useCraft((state) => state.updateGoal)
+  const updateFilter = useCraft((state) => state.updateFilter)
   const duplicate = useCraft((state) => state.duplicate)
   const [query, setQuery] = useState('')
 
-  const goal = find(library, 'goal', goalId)
-  const baseKey = goal?.base ?? ''
+  const filter = find(library, 'filter', filterId)
+  const baseKey = filter?.base ?? ''
   const base = catalog.bases.find((entry) => entry.key === baseKey)
   const list = mods[baseKey] ?? []
-  const readOnly = goal ? isBuiltin(goal.id) : true
+  const readOnly = filter ? isBuiltin(filter.id) : true
+  /** The influence the table weighs under: the first the base offers, which is the one the catalog uses. */
+  const influence = base?.influences[0]
 
   useEffect(() => {
     if (baseKey) loadMods(baseKey)
@@ -82,27 +84,27 @@ export function GoalEditor() {
     )
   }, [list, query])
 
-  if (!goal || !base) return <p className="hint">No goal is selected.</p>
+  if (!filter || !base) return <p className="hint">No filter is selected.</p>
 
   function toggle(mod: ModView, kind: 'desired' | 'good', on: boolean) {
-    if (!goal) return
-    const desired = goal.desired.filter((id) => id !== mod.id)
-    const good = goal.good.filter((id) => id !== mod.id)
+    if (!filter) return
+    const desired = filter.desired.filter((id) => id !== mod.id)
+    const good = filter.good.filter((id) => id !== mod.id)
     if (on) {
       if (kind === 'desired') desired.push(mod.id)
       else good.push(mod.id)
     }
-    updateGoal({ ...goal, desired, good })
+    updateFilter({ ...filter, desired, good })
   }
 
   return (
     <div>
       <div className="panel-header">
-        <h2>{goal.name}</h2>
+        <h2>{filter.name}</h2>
         {readOnly && (
           <>
             <span className="badge">built-in</span>
-            <button type="button" onClick={() => duplicate('goal', goal.id)}>
+            <button type="button" onClick={() => duplicate('filter', filter.id)}>
               Duplicate to edit
             </button>
           </>
@@ -112,9 +114,9 @@ export function GoalEditor() {
       <label className="field">
         <span>Base</span>
         <select
-          value={goal.base}
+          value={filter.base}
           disabled={readOnly}
-          onChange={(event) => updateGoal({ ...goal, base: event.target.value, desired: [], good: [] })}
+          onChange={(event) => updateFilter({ ...filter, base: event.target.value, desired: [], good: [] })}
         >
           {catalog.bases.map((entry) => (
             <option key={entry.key} value={entry.key}>
@@ -124,37 +126,21 @@ export function GoalEditor() {
         </select>
       </label>
 
-      <label className="field">
-        <span>Influence</span>
-        <select
-          value={goal.influence}
-          disabled={readOnly}
-          onChange={(event) => updateGoal({ ...goal, influence: event.target.value })}
-        >
-          <option value="none">none</option>
-          {base.influences.map((influence) => (
-            <option key={influence} value={influence}>
-              {influence}
-            </option>
-          ))}
-        </select>
-      </label>
-
       <Floors
         title="Prefix floors"
-        floors={goal.prefixes}
+        floors={filter.prefixes}
         cap={base.caps.rare}
         grades={catalog.grades}
         disabled={readOnly}
-        onChange={(floors) => updateGoal({ ...goal, prefixes: floors })}
+        onChange={(floors) => updateFilter({ ...filter, prefixes: floors })}
       />
       <Floors
         title="Suffix floors"
-        floors={goal.suffixes}
+        floors={filter.suffixes}
         cap={base.caps.rare}
         grades={catalog.grades}
         disabled={readOnly}
-        onChange={(floors) => updateGoal({ ...goal, suffixes: floors })}
+        onChange={(floors) => updateFilter({ ...filter, suffixes: floors })}
       />
 
       <h3>Modifiers</h3>
@@ -174,6 +160,7 @@ export function GoalEditor() {
             <th className="num">Level</th>
             <th>Group</th>
             <th className="num">Weight</th>
+            {influence && <th className="num">Weight ({influence})</th>}
             <th>Desired</th>
             <th>Good</th>
           </tr>
@@ -191,13 +178,12 @@ export function GoalEditor() {
               <td>{mod.text}</td>
               <td className="num">{mod.level}</td>
               <td>{mod.group}</td>
-              <td className="num">
-                {goal.influence === 'none' ? mod.weightPlain : (mod.weightInfluenced ?? '—')}
-              </td>
+              <td className="num">{mod.weightPlain}</td>
+              {influence && <td className="num">{mod.weightInfluenced ?? '—'}</td>}
               <td>
                 <input
                   type="checkbox"
-                  checked={goal.desired.includes(mod.id)}
+                  checked={filter.desired.includes(mod.id)}
                   disabled={readOnly}
                   onChange={(event) => toggle(mod, 'desired', event.target.checked)}
                 />
@@ -205,7 +191,7 @@ export function GoalEditor() {
               <td>
                 <input
                   type="checkbox"
-                  checked={goal.good.includes(mod.id)}
+                  checked={filter.good.includes(mod.id)}
                   disabled={readOnly}
                   onChange={(event) => toggle(mod, 'good', event.target.checked)}
                 />

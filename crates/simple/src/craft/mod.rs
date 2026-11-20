@@ -21,10 +21,12 @@ pub mod spec;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::chain::{Arm, Next, SolveError, Solved, solve};
+use crate::chain::{Arm, Next, SolveError, Solved, solve_named};
+use crate::classes::Grade;
 use crate::cost::{Cost, CurrencyId, Spend};
+use crate::filter::Tier;
 use crate::item::Rarity;
-use crate::method::{self, Kit, Method, Move};
+use crate::method::{self, Kit, Move, StepMethod};
 use crate::node::Node;
 use crate::weights::Weights;
 
@@ -39,24 +41,26 @@ pub enum Wire {
     Done,
 }
 
-pub struct Step {
-    pub method: Box<dyn Method>,
+/// One step: a method, over nodes of grade `G` (a filter's [`Tier`] unless the craft runs several
+/// filters, see [`crate::method::Through`]).
+pub struct Step<G: Grade = Tier> {
+    pub method: Box<dyn StepMethod<G>>,
     /// One wire per exit the method declares.
     pub wires: Vec<(&'static str, Wire)>,
 }
 
-pub struct Craft {
+pub struct Craft<G: Grade = Tier> {
     pub name: String,
     /// The rarity of the item the craft starts from, which holds no modifiers.
     pub start: Rarity,
-    pub steps: Vec<Step>,
+    pub steps: Vec<Step<G>>,
 }
 
 /// Where an item is in a craft.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum Place {
-    At { step: usize, node: Node },
-    Done(Node),
+pub enum Place<G: Grade = Tier> {
+    At { step: usize, node: Node<G> },
+    Done(Node<G>),
 }
 
 /// Why a craft cannot be reported.
@@ -164,9 +168,9 @@ pub struct Row {
 
 /// One place the craft passes through, and one move it could make there instead of its own.
 #[derive(Clone, Debug)]
-pub struct Other {
+pub struct Other<G: Grade = Tier> {
     pub step: usize,
-    pub node: Node,
+    pub node: Node<G>,
     /// How often the craft is at this place, per finished item.
     pub visits: f64,
     pub planned: CurrencyId,
@@ -179,27 +183,30 @@ pub struct Other {
     pub better: bool,
 }
 
-pub struct Report {
+pub struct Report<G: Grade = Tier> {
     pub rows: Vec<Row>,
     /// The spend of the whole craft: the last row's `reach`.
     pub total: Spend,
-    pub others: Vec<Other>,
+    pub others: Vec<Other<G>>,
     /// How many other moves were left out of [`Report::others`] because the craft has no rule for
     /// where they land (a step handed an item its method cannot move on).
     pub skipped: usize,
     /// The craft as one chain of single orb uses, solved from the start. It also holds every
     /// place an other move can land on, at weight zero.
-    pub flat: Solved<Place>,
+    pub flat: Solved<Place<G>>,
 }
 
 /// A move the craft could make at a place instead of its own: what it costs, and where it lands.
-struct Alternative {
-    place: Place,
+struct Alternative<G: Grade> {
+    place: Place<G>,
     planned: CurrencyId,
     other: CurrencyId,
     cost: Cost,
-    lands: Vec<(Place, f64)>,
+    lands: Vec<(Place<G>, f64)>,
 }
+
+/// One place's move in a chain over a craft's places.
+type Walk<'a, G> = dyn FnMut(&Place<G>) -> Result<Next<Place<G>>, SolveError> + 'a;
 
 /// How far a weighted cost must be below another to count as cheaper.
 const CHEAPER: f64 = 1e-9;
@@ -207,7 +214,7 @@ const CHEAPER: f64 = 1e-9;
 /// Fewer visits than this is rounding: the craft does not pass through the place.
 const VISITED: f64 = 1e-12;
 
-impl Craft {
+impl<G: Grade> Craft<G> {
     /// Reads the wiring: every exit wired once, to a step that exists and takes what it is handed.
     pub fn check(&self) -> Result<(), CraftError> {
         let Some(first) = self.steps.first() else {
@@ -252,7 +259,7 @@ impl Craft {
 
     /// The wire of the exit a node leaves a step through. `None` when the step's rule does not
     /// exit at this node.
-    pub fn wire(&self, kit: &Kit, step: usize, node: &Node) -> Option<(&'static str, Wire)> {
+    pub fn wire(&self, kit: &Kit<G>, step: usize, node: &Node<G>) -> Option<(&'static str, Wire)> {
         let this = &self.steps[step];
         let Move::Exit(exit) = this.method.rule(kit.target, node) else {
             return None;
@@ -261,7 +268,7 @@ impl Craft {
     }
 
     /// Where a node goes when it leaves a step.
-    fn wired(&self, kit: &Kit, step: usize, node: &Node) -> Place {
+    fn wired(&self, kit: &Kit<G>, step: usize, node: &Node<G>) -> Place<G> {
         match self.wire(kit, step, node) {
             Some((_, Wire::Next)) => Place::At {
                 step: step + 1,
@@ -278,7 +285,7 @@ impl Craft {
 
     /// One place of the craft as a chain of single orb uses: a use's outcomes stay in the step, an
     /// exit is a free move along its wire.
-    pub fn flat_next(&self, kit: &Kit, place: &Place) -> Result<Next<Place>, SolveError> {
+    pub fn flat_next(&self, kit: &Kit<G>, place: &Place<G>) -> Result<Next<Place<G>>, SolveError> {
         let Place::At { step, node } = place else {
             return Ok(Next::Exit);
         };
@@ -303,21 +310,40 @@ impl Craft {
         }))
     }
 
+    /// A place as its step's filter reads it: `step 1, rare desired+any / good`, or
+    /// `done, …` for a finished item.
+    pub fn describe(&self, place: &Place<G>) -> String {
+        match place {
+            Place::At { step, node } => {
+                format!(
+                    "step {step}, {}",
+                    self.steps[*step].method.view(node).label()
+                )
+            }
+            Place::Done(node) => format!("done, {}", node.label()),
+        }
+    }
+
     /// The craft, costed: one row per step, the total, and every other move.
-    pub fn report(&self, kit: &Kit, weights: &Weights) -> Result<Report, CraftError> {
+    pub fn report(&self, kit: &Kit<G>, weights: &Weights) -> Result<Report<G>, CraftError> {
         self.check()?;
         let start = Place::At {
             step: 0,
             node: Node::fresh(self.start),
         };
-        let step_of = |place: &Place| match place {
+        let step_of = |place: &Place<G>| match place {
             Place::At { step, .. } => Some(*step),
             Place::Done(_) => None,
         };
 
+        // An error names a place as its step's filter reads it.
+        let named = |place: &Place<G>| self.describe(place);
+        let solve =
+            |entry: &[(Place<G>, f64)], next: &mut Walk<G>| solve_named(entry, next, &named);
+
         // The nested chain: one place's arms are its whole method, solved. Solved once per place.
-        let mut solved: HashMap<Place, Vec<Arm<Place>>> = HashMap::new();
-        let mut nested = |place: &Place| -> Result<Next<Place>, SolveError> {
+        let mut solved: HashMap<Place<G>, Vec<Arm<Place<G>>>> = HashMap::new();
+        let mut nested = |place: &Place<G>| -> Result<Next<Place<G>>, SolveError> {
             let Place::At { step, node } = place else {
                 return Ok(Next::Exit);
             };
@@ -325,7 +351,7 @@ impl Craft {
                 return Ok(Next::Arms(arms.clone()));
             }
             let method = &*self.steps[*step].method;
-            let arms: Vec<Arm<Place>> = match method::next(method, kit, node)? {
+            let arms: Vec<Arm<Place<G>>> = match method::next(method, kit, node)? {
                 Next::Exit => vec![Arm {
                     to: self.wired(kit, *step, node),
                     chance: 1.0,
@@ -365,7 +391,7 @@ impl Craft {
                         _ => Ok(Next::Exit),
                     },
                 )?;
-            let handed: Vec<(Node, f64)> = lands
+            let handed: Vec<(Node<G>, f64)> = lands
                 .exits
                 .iter()
                 .zip(lands.exit_chances())
@@ -375,7 +401,7 @@ impl Craft {
                 })
                 .collect();
             let whole: f64 = handed.iter().map(|(_, chance)| chance).sum();
-            let handed: Vec<(Node, f64)> = handed
+            let handed: Vec<(Node<G>, f64)> = handed
                 .into_iter()
                 .map(|(node, chance)| (node, chance / whole))
                 .collect();
@@ -417,9 +443,9 @@ impl Craft {
             .clone();
 
         // The flat chain, and every other move from every place it passes through.
-        let mut flat_next = |place: &Place| self.flat_next(kit, place);
+        let mut flat_next = |place: &Place<G>| self.flat_next(kit, place);
         let walked = solve(std::slice::from_ref(&(start.clone(), 1.0)), &mut flat_next)?;
-        let mut moves: Vec<Alternative> = Vec::new();
+        let mut moves: Vec<Alternative<G>> = Vec::new();
         for place in &walked.inside {
             let Place::At { step, node } = place else {
                 continue;
@@ -460,12 +486,12 @@ impl Craft {
         // Every landing at weight zero, so the chain knows what to finish from each. When one
         // landing has no rule, the moves that land somewhere unruled are left out: each distinct
         // landing is tried once beside the start, and a move is kept when all of its landings solve.
-        let entry_of = |lands: &mut dyn Iterator<Item = &Place>| -> Vec<(Place, f64)> {
-            let mut entry: Vec<(Place, f64)> = vec![(start.clone(), 1.0)];
+        let entry_of = |lands: &mut dyn Iterator<Item = &Place<G>>| -> Vec<(Place<G>, f64)> {
+            let mut entry: Vec<(Place<G>, f64)> = vec![(start.clone(), 1.0)];
             entry.extend(lands.map(|place| (place.clone(), 0.0)));
             entry
         };
-        let landings = |moves: &[Alternative]| -> Vec<(Place, f64)> {
+        let landings = |moves: &[Alternative<G>]| -> Vec<(Place<G>, f64)> {
             entry_of(
                 &mut moves
                     .iter()
@@ -476,8 +502,8 @@ impl Craft {
             Ok(flat) => (flat, moves, 0),
             Err(_) => {
                 let before = moves.len();
-                let mut solves: HashMap<Place, bool> = HashMap::new();
-                let kept: Vec<Alternative> = moves
+                let mut solves: HashMap<Place<G>, bool> = HashMap::new();
+                let kept: Vec<Alternative<G>> = moves
                     .into_iter()
                     .filter(|alternative| {
                         alternative.lands.iter().all(|(land, _)| {
@@ -491,14 +517,14 @@ impl Craft {
                 (solve(&landings(&kept), &mut flat_next)?, kept, skipped)
             }
         };
-        let visits: HashMap<&Place, f64> = flat
+        let visits: HashMap<&Place<G>, f64> = flat
             .inside
             .iter()
             .zip(flat.visits.iter().copied())
             .collect();
 
         let weighed = |cost: &Cost| weights.value(&Spend::certain(cost));
-        let mut others: Vec<Other> = Vec::new();
+        let mut others: Vec<Other<G>> = Vec::new();
         for Alternative {
             place,
             planned,

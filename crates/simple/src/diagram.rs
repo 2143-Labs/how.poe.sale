@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 
 use crate::chain::Next;
+use crate::classes::Grade;
 use crate::cost::{Cost, CurrencyId, Spend};
 use crate::craft::{Craft, Place, Report, Wire};
 use crate::filter::Tier;
@@ -79,21 +80,25 @@ enum Cell {
 }
 
 impl Cell {
-    fn of(craft: &Craft, kit: &Kit, step: usize, node: &Node) -> Cell {
-        match craft.steps[step].method.rule(kit.target, node) {
+    /// The box a node is in: its move, and for a move that keeps the item, the grades the step's
+    /// filter sees.
+    fn of<G: Grade>(craft: &Craft<G>, kit: &Kit<G>, step: usize, node: &Node<G>) -> Cell {
+        let method = &craft.steps[step].method;
+        match method.rule(kit.target, node) {
             Move::Exit(exit) => Cell::Exit(exit),
             Move::Use(id) if FORGETS.contains(&id) => Cell::Forgets(node.rarity, id),
-            Move::Use(id) => Cell::Keeps(
-                node.rarity,
-                Side::BOTH.map(|side| {
-                    let mut held = node.side(side).to_vec();
-                    held.sort_by_key(|tier| std::cmp::Reverse(tier.rank()));
-                    held
-                }),
-                id,
-            ),
+            Move::Use(id) => Cell::Keeps(node.rarity, best_first(&method.view(node)), id),
         }
     }
+}
+
+/// A node's grades per side, best first.
+fn best_first(node: &Node) -> [Vec<Tier>; 2] {
+    Side::BOTH.map(|side| {
+        let mut held = node.side(side).to_vec();
+        held.sort_by_key(|tier| std::cmp::Reverse(tier.rank()));
+        held
+    })
 }
 
 /// The moves an item allows: its own, then every other currency that works on it, each with what
@@ -101,10 +106,15 @@ impl Cell {
 type Options = Vec<(CurrencyId, f64)>;
 
 /// The diagram of one step of a reported craft.
-pub fn diagram(
-    craft: &Craft,
-    kit: &Kit,
-    report: &Report,
+///
+/// Places are boxed by what the step's filter sees, so in a craft of several filters two places
+/// whose grades differ only under another block's filter share a box. A keeps box's costs are
+/// those of the first place the other-moves pass reached with its grades, as with one filter, where
+/// draw orders that sort alike share a box too.
+pub fn diagram<G: Grade>(
+    craft: &Craft<G>,
+    kit: &Kit<G>,
+    report: &Report<G>,
     step: usize,
     weights: &Weights,
 ) -> Diagram {
@@ -129,11 +139,7 @@ pub fn diagram(
         if other.step != step {
             continue;
         }
-        let mut key = [Vec::new(), Vec::new()];
-        for (at, side) in Side::BOTH.into_iter().enumerate() {
-            key[at] = other.node.side(side).to_vec();
-            key[at].sort_unstable_by_key(|tier| std::cmp::Reverse(tier.rank()));
-        }
+        let key = best_first(&craft.steps[step].method.view(&other.node));
         let entry = options.entry((other.node.rarity, key)).or_default();
         for (id, cost) in [
             (other.planned, &other.planned_to_go),

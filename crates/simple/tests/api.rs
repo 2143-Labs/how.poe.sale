@@ -1,6 +1,6 @@
 //! The API the Craft planner page calls, read as the page reads it: JSON in, JSON out.
 //!
-//! Every built-in craft is run with its built-in goal, the 3.30 prices and the whole built-in
+//! Every built-in craft is run with the built-in filters, the 3.30 prices and the whole built-in
 //! library, and must give the numbers its spike pinned (the slam's are at the built-in prices; see
 //! `ai_research/craft-planner-plan.md`, Verification).
 
@@ -26,16 +26,35 @@ fn builtin_craft(id: &str) -> Value {
     by_id(&catalog()["builtins"]["crafts"], id)
 }
 
-/// A run request for this craft under its own goal and prices, with the built-in library.
+/// A run request for this craft under its own prices, with the built-in filters and library.
 fn request(craft: Value) -> Value {
     let catalog = catalog();
     let builtins = &catalog["builtins"];
     json!({
-        "goal": by_id(&builtins["goals"], craft["goal"].as_str().expect("a goal id")),
+        "filters": builtins["filters"],
         "prices": by_id(&builtins["prices"], craft["prices"].as_str().expect("a prices id")),
         "craft": craft,
         "library": builtins["crafts"],
     })
+}
+
+/// The request's filter with this id, to edit.
+fn filter_mut<'a>(request: &'a mut Value, id: &str) -> &'a mut Value {
+    request["filters"]
+        .as_array_mut()
+        .expect("filters")
+        .iter_mut()
+        .find(|filter| filter["id"] == id)
+        .unwrap_or_else(|| panic!("{id} is not in the request"))
+}
+
+/// The request's goal filter, to edit.
+fn goal_mut(request: &mut Value) -> &mut Value {
+    let id = request["craft"]["goal"]
+        .as_str()
+        .expect("a goal id")
+        .to_string();
+    filter_mut(request, &id)
 }
 
 fn run(request: &Value) -> Result<Value, String> {
@@ -87,13 +106,13 @@ fn unweighted(spend: &Value, id: &str) -> Value {
 }
 
 #[test]
-fn the_catalog_lists_six_bases_ten_methods_and_eight_crafts() {
+fn the_catalog_lists_six_bases_ten_methods_and_nine_crafts() {
     let catalog = catalog();
     assert_eq!(catalog["bases"].as_array().unwrap().len(), 6);
     assert_eq!(catalog["methods"].as_array().unwrap().len(), 10);
     assert_eq!(catalog["currencies"].as_array().unwrap().len(), 11);
-    assert_eq!(catalog["builtins"]["crafts"].as_array().unwrap().len(), 8);
-    assert_eq!(catalog["builtins"]["goals"].as_array().unwrap().len(), 7);
+    assert_eq!(catalog["builtins"]["crafts"].as_array().unwrap().len(), 9);
+    assert_eq!(catalog["builtins"]["filters"].as_array().unwrap().len(), 9);
     assert_eq!(catalog["builtins"]["prices"].as_array().unwrap().len(), 2);
     assert_eq!(catalog["grades"], json!(["desired", "good", "any"]));
 }
@@ -251,7 +270,7 @@ fn a_craft_that_contains_itself_is_refused() {
 #[test]
 fn a_goal_must_name_the_bases_modifiers() {
     let mut request = request(builtin_craft("builtin:craft:shield-totem"));
-    request["goal"]["desired"] = json!(["NotAModifier"]);
+    goal_mut(&mut request)["desired"] = json!(["NotAModifier"]);
     assert_eq!(
         error(&request),
         r#""NotAModifier" is not a modifier of Supreme Spiked Shield"#
@@ -261,7 +280,7 @@ fn a_goal_must_name_the_bases_modifiers() {
 #[test]
 fn a_goal_cannot_ask_for_more_than_a_rare_holds() {
     let mut request = request(builtin_craft("builtin:craft:jewel"));
-    request["goal"]["prefixes"] = json!(["desired", "good", "any", "any"]);
+    goal_mut(&mut request)["prefixes"] = json!(["desired", "good", "any", "any"]);
     assert_eq!(
         error(&request),
         "the prefix floors ask for 4 modifiers, and a rare Jewel holds 2"
@@ -399,5 +418,121 @@ fn outputs_never_repeat_a_name() {
     assert_eq!(
         spec::outputs(&outer, &library).expect("outputs"),
         ["rare", "rare#2", "rare#2#2"]
+    );
+}
+
+/// The crown's goal is read at the end: of the crowns the essence hands over, the share that are
+/// the whole natural goal is the spike's pin.
+#[test]
+fn the_goal_share_is_the_finished_items_that_meet_the_goal() {
+    let view = run_builtin("builtin:craft:crown");
+    assert_eq!(view["goal"]["filter"], "builtin:goal:crown");
+    close(
+        &view["goal"]["share"],
+        0.00141161680898771,
+        "the natural goal",
+    );
+    let view = run_builtin("builtin:craft:boots-redeemer");
+    close(
+        &view["goal"]["share"],
+        1.0,
+        "every finished boot is the goal",
+    );
+}
+
+/// The Redeemer boots with two filters: alteration reads Onslaught alone, the exalts read Onslaught
+/// and movement speed. The first step is the one-filter alteration, to the digit; reading the goal
+/// there instead changes the craft.
+#[test]
+fn a_block_reads_its_own_filter() {
+    let view = run_builtin("builtin:craft:boots-redeemer-speed");
+    close(&view["total"]["value"], 69.07008101489289, "total");
+    close(&view["total"]["sd"], 66.64768520727074, "total sd");
+    close(
+        &view["goal"]["share"],
+        1.0,
+        "every finished boot is the goal",
+    );
+    assert_eq!(
+        view["steps"][0]["filter"],
+        "Two-Toned Boots (Redeemer): Onslaught"
+    );
+    assert_eq!(
+        view["steps"][1]["filter"],
+        "Two-Toned Boots (Redeemer): Onslaught and 30% movement speed"
+    );
+    let alone = run_builtin("builtin:craft:alt-until");
+    close(
+        &view["steps"][0]["reach"]["value"],
+        alone["total"]["value"].as_f64().unwrap(),
+        "alteration until Onslaught",
+    );
+
+    let mut craft = builtin_craft("builtin:craft:boots-redeemer-speed");
+    craft["blocks"][0]["filter"] = Value::Null;
+    let goal_only = run(&request(craft)).expect("the craft runs on its goal alone");
+    let (two, one) = (
+        view["total"]["value"].as_f64().unwrap(),
+        goal_only["total"]["value"].as_f64().unwrap(),
+    );
+    assert!((two - one).abs() > 0.01 * two, "{two} against {one}");
+}
+
+/// A goal no block reads splits the classes finer and changes nothing the blocks see.
+#[test]
+fn a_goal_no_block_reads_leaves_the_cost_alone() {
+    let mut craft = builtin_craft("builtin:craft:boots-redeemer");
+    craft["goal"] = json!("builtin:filter:boots-redeemer-speed");
+    craft["blocks"][1]["filter"] = json!("builtin:goal:boots-redeemer");
+    let view = run(&request(craft)).expect("the craft runs");
+    close(&view["total"]["value"], 28.5512854469249, "total");
+    close(&view["total"]["sd"], 26.0253700963052, "total sd");
+    let share = view["goal"]["share"].as_f64().unwrap();
+    assert!(
+        share > 0.0 && share < 1.0,
+        "some finished boots have the speed: {share}"
+    );
+}
+
+#[test]
+fn a_blocks_filter_must_be_known_and_for_the_crafts_base() {
+    let mut craft = builtin_craft("builtin:craft:boots-redeemer-speed");
+    craft["blocks"][0]["filter"] = json!("user:filter:gone");
+    assert_eq!(
+        error(&request(craft)),
+        r#"block "b1" uses an unknown filter "user:filter:gone""#
+    );
+
+    let mut craft = builtin_craft("builtin:craft:boots-redeemer-speed");
+    craft["blocks"][0]["filter"] = json!("builtin:goal:shield");
+    assert_eq!(
+        error(&request(craft)),
+        "filter \"Supreme Spiked Shield: the file's goal\" is for Supreme Spiked Shield, and the \
+         craft is for Two-Toned Boots (Redeemer)"
+    );
+
+    let mut craft = builtin_craft("builtin:craft:boots-redeemer");
+    craft["blocks"][0]["filter"] = json!("builtin:goal:boots-redeemer");
+    assert_eq!(
+        error(&request(craft)),
+        r#"block "b1": a craft block uses its own filters"#
+    );
+
+    let mut craft = builtin_craft("builtin:craft:flask");
+    craft["goal"] = json!("user:filter:gone");
+    assert_eq!(
+        error(&request(craft)),
+        r#"filter "user:filter:gone" is not in the request"#
+    );
+}
+
+/// A craft that can never finish names the item as its step's filter reads it.
+#[test]
+fn a_craft_that_cannot_finish_names_the_item_by_its_grades() {
+    let mut request = request(builtin_craft("builtin:craft:jewel"));
+    goal_mut(&mut request)["desired"] = json!(["PercentIncreasedLifeJewel"]);
+    assert_eq!(
+        error(&request),
+        "desired_pair at normal - / -: no exit can be reached from here"
     );
 }

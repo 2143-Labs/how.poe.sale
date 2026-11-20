@@ -57,6 +57,7 @@ pub use scouring::Scouring;
 pub use shapers_exalted::ShapersExalted;
 pub use transmutation::Transmutation;
 
+use crate::classes::Class;
 use crate::cost::{Cost, CurrencyId};
 use crate::item::{Item, Rarity};
 use crate::node::Node;
@@ -144,6 +145,16 @@ pub const ON_ITEMS: [&dyn Currency<Item>; 8] = [
 
 /// The orbs that can be used on an abstract item, in the same order.
 pub const ON_NODES: [&dyn Currency<Node>; 6] = [
+    &Transmutation,
+    &Alteration,
+    &Augmentation,
+    &Regal,
+    &Exalted,
+    &Scouring,
+];
+
+/// The same orbs, for nodes graded by a run's classes.
+pub const ON_CLASSED: [&dyn Currency<Node<Class>>; 6] = [
     &Transmutation,
     &Alteration,
     &Augmentation,

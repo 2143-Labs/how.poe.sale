@@ -22,6 +22,7 @@
 //! would not hold after it.
 
 use super::{Applied, Currency, Named, adds, mix};
+use crate::classes::Grade;
 use crate::cost::{Cost, CurrencyId};
 use crate::data::Data;
 use crate::item::{Affix, Item, Rarity, Side};
@@ -73,8 +74,8 @@ impl Currency<Item> for Essence {
     }
 }
 
-impl Currency<Node> for Essence {
-    fn apply(&self, rules: &Law, state: &Node) -> Result<Applied<Node>, Refusal> {
+impl<G: Grade> Currency<Node<G>> for Essence {
+    fn apply(&self, rules: &Law<G>, state: &Node<G>) -> Result<Applied<Node<G>>, Refusal> {
         guard(state)?;
         let (side, tier) = rules
             .placed(self.modifier)

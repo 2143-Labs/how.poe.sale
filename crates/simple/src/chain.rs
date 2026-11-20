@@ -137,6 +137,15 @@ pub fn solve<S: Clone + Eq + Hash + Debug>(
     entry: &[(S, f64)],
     next: &mut dyn FnMut(&S) -> Result<Next<S>, SolveError>,
 ) -> Result<Solved<S>, SolveError> {
+    solve_named(entry, next, &|state: &S| format!("{state:?}"))
+}
+
+/// [`solve`], with the states an error names written by `name` rather than by their `Debug`.
+pub fn solve_named<S: Clone + Eq + Hash + Debug>(
+    entry: &[(S, f64)],
+    next: &mut dyn FnMut(&S) -> Result<Next<S>, SolveError>,
+    name: &dyn Fn(&S) -> String,
+) -> Result<Solved<S>, SolveError> {
     let mut slots: HashMap<S, Slot> = HashMap::new();
     let mut inside: Vec<S> = Vec::new();
     let mut exits: Vec<S> = Vec::new();
@@ -159,7 +168,7 @@ pub fn solve<S: Clone + Eq + Hash + Debug>(
                 let sum: f64 = list.iter().map(|arm| arm.chance).sum();
                 if (sum - 1.0).abs() > WHOLE {
                     return Err(SolveError::NotWhole {
-                        at: format!("{state:?}"),
+                        at: name(&state),
                         sum,
                     });
                 }
@@ -224,7 +233,7 @@ pub fn solve<S: Clone + Eq + Hash + Debug>(
         }
     }
     let never_ends = |state: usize| SolveError::NeverEnds {
-        at: format!("{:?}", inside[state]),
+        at: name(&inside[state]),
     };
     if let Some(stuck) = ends.iter().position(|&ends| !ends) {
         return Err(never_ends(stuck));

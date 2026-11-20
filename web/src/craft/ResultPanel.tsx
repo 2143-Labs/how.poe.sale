@@ -5,12 +5,13 @@ import { chaos, count, percent } from './format'
 import type { SpendView } from './types'
 
 /** A spend as one weighted number, the orbs behind it, and the counts with no price. */
-function Spend({ spend, unit }: { spend: SpendView; unit: string }) {
+function Spend({ spend, unit, note }: { spend: SpendView; unit: string; note?: string }) {
   return (
     <div>
       <p className="target-summary">
         {chaos(spend.value)} ± {chaos(spend.sd)} {unit}
       </p>
+      {note && <p className="hint">{note}</p>}
       <table>
         <thead>
           <tr>
@@ -77,7 +78,7 @@ export function ResultPanel() {
           <h2>Result</h2>
           {busy && <span className="busy">Computing…</span>}
         </div>
-        <p className="hint">Pick a craft, its goal and its prices to see what it costs per finished item.</p>
+        <p className="hint">Pick a craft, its goal filter and its prices to see what it costs per finished item.</p>
       </aside>
     )
   }
@@ -109,7 +110,11 @@ export function ResultPanel() {
       )}
 
       <h3>Total</h3>
-      <Spend spend={result.total} unit={result.unit} />
+      <Spend
+        spend={result.total}
+        unit={result.unit}
+        note={`Meets goal (${result.goal.name}): ${percent(result.goal.share)}`}
+      />
 
       <h3>Outputs</h3>
       <table>
@@ -138,6 +143,7 @@ export function ResultPanel() {
             <th>Step</th>
             <th>Block</th>
             <th>Method</th>
+            <th>Filter</th>
             <th>Takes</th>
             <th className="num">Chance</th>
             <th className="num">Tries</th>
@@ -153,6 +159,7 @@ export function ResultPanel() {
                 <code>{entry.block}</code>
               </td>
               <td>{entry.name}</td>
+              <td>{entry.filter}</td>
               <td>{entry.takes.join(', ')}</td>
               <td className="num">{percent(entry.chance)}</td>
               <td className="num">{entry.tries === null ? '—' : count(entry.tries)}</td>

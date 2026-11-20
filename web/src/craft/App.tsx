@@ -1,6 +1,6 @@
 import { useCraft } from './context'
 import { CraftEditor } from './CraftEditor'
-import { GoalEditor } from './GoalEditor'
+import { FilterEditor } from './FilterEditor'
 import { LibraryPanel } from './Library'
 import { PriceEditor } from './PriceEditor'
 import { ResultPanel } from './ResultPanel'
@@ -8,7 +8,7 @@ import type { Tab } from './store'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'craft', label: 'Craft' },
-  { id: 'goal', label: 'Goal' },
+  { id: 'filters', label: 'Filters' },
   { id: 'prices', label: 'Prices' },
 ]
 
@@ -48,7 +48,7 @@ export function App() {
             ))}
           </div>
           {tab === 'craft' && <CraftEditor />}
-          {tab === 'goal' && <GoalEditor />}
+          {tab === 'filters' && <FilterEditor />}
           {tab === 'prices' && <PriceEditor />}
         </section>
 

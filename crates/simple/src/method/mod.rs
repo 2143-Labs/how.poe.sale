@@ -31,9 +31,11 @@ pub use exalt_to::ExaltTo;
 pub use regal_to::RegalTo;
 pub use shaper_slam::ShaperSlam;
 
-use crate::chain::{Arm, Next, SolveError, Solved, solve};
+use crate::chain::{Arm, Next, SolveError, Solved, solve_named};
+use crate::classes::{Class, Grade, Lens};
 use crate::cost::{CurrencyId, Spend};
 use crate::currency::{Currency, find};
+use crate::filter::Tier;
 use crate::item::Rarity;
 use crate::law::Law;
 use crate::node::Node;
@@ -57,12 +59,22 @@ pub struct ExitSpec {
 
 /// What a method is run with: the law its draws follow, the target it works toward, and the
 /// currencies it may name.
-#[derive(Clone, Copy)]
-pub struct Kit<'a> {
-    pub law: &'a Law,
+///
+/// A step that reads its own filter ([`Through`]) works toward that filter's target and ignores
+/// this one.
+pub struct Kit<'a, G: Grade = Tier> {
+    pub law: &'a Law<G>,
     pub target: &'a Target,
-    pub tools: &'a [&'a dyn Currency<Node>],
+    pub tools: &'a [&'a dyn Currency<Node<G>>],
 }
+
+impl<G: Grade> Clone for Kit<'_, G> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<G: Grade> Copy for Kit<'_, G> {}
 
 pub trait Method {
     fn name(&self) -> String;
@@ -76,10 +88,86 @@ pub trait Method {
     fn rule(&self, target: &Target, node: &Node) -> Move;
 }
 
+/// A method as a craft step runs it: over nodes of one kind of grade, and with a way of seeing a
+/// node as the method's filter grades it.
+///
+/// Every [`Method`] is one over a filter's tiers. A step of a run with several filters is a
+/// [`Through`]: the method, the lens of the filter its block reads, and that filter's target.
+pub trait StepMethod<G: Grade> {
+    fn name(&self) -> String;
+
+    /// The rarities it can be handed.
+    fn takes(&self) -> &'static [Rarity];
+
+    /// Every exit, and the rarity an item leaves with.
+    fn exits(&self) -> &'static [ExitSpec];
+
+    fn rule(&self, target: &Target, node: &Node<G>) -> Move;
+
+    /// The node as the method's filter grades it: what its rule reads, and what a report prints.
+    fn view(&self, node: &Node<G>) -> Node<Tier>;
+}
+
+impl<M: Method> StepMethod<Tier> for M {
+    fn name(&self) -> String {
+        Method::name(self)
+    }
+
+    fn takes(&self) -> &'static [Rarity] {
+        Method::takes(self)
+    }
+
+    fn exits(&self) -> &'static [ExitSpec] {
+        Method::exits(self)
+    }
+
+    fn rule(&self, target: &Target, node: &Node) -> Move {
+        Method::rule(self, target, node)
+    }
+
+    fn view(&self, node: &Node) -> Node {
+        node.clone()
+    }
+}
+
+/// A method run over a run's classes, reading them through one filter: its rule sees the node as
+/// that filter grades it and works toward that filter's target.
+pub struct Through {
+    pub method: Box<dyn StepMethod<Tier>>,
+    pub lens: Lens,
+    pub target: Target,
+}
+
+impl StepMethod<Class> for Through {
+    fn name(&self) -> String {
+        self.method.name()
+    }
+
+    fn takes(&self) -> &'static [Rarity] {
+        self.method.takes()
+    }
+
+    fn exits(&self) -> &'static [ExitSpec] {
+        self.method.exits()
+    }
+
+    fn rule(&self, _target: &Target, node: &Node<Class>) -> Move {
+        self.method.rule(&self.target, &self.lens.view(node))
+    }
+
+    fn view(&self, node: &Node<Class>) -> Node {
+        self.lens.view(node)
+    }
+}
+
 /// One node's move as arms: `Use` applies the currency, whose cost is certain; `Exit` ends the
 /// method.
-pub fn next(method: &dyn Method, kit: &Kit, node: &Node) -> Result<Next<Node>, SolveError> {
-    let at = || format!("{} at {}", method.name(), node.label());
+pub fn next<G: Grade>(
+    method: &dyn StepMethod<G>,
+    kit: &Kit<G>,
+    node: &Node<G>,
+) -> Result<Next<Node<G>>, SolveError> {
+    let at = || format!("{} at {}", method.name(), method.view(node).label());
     match method.rule(kit.target, node) {
         Move::Exit(exit) => {
             let Some(spec) = method.exits().iter().find(|spec| spec.name == exit) else {
@@ -126,10 +214,12 @@ pub fn next(method: &dyn Method, kit: &Kit, node: &Node) -> Result<Next<Node>, S
 
 /// The method solved from an entry mix: every node it can pass through, the chance of each exit
 /// node, and the spend.
-pub fn run(
-    method: &dyn Method,
-    kit: &Kit,
-    entry: &[(Node, f64)],
-) -> Result<Solved<Node>, SolveError> {
-    solve(entry, &mut |node| next(method, kit, node))
+pub fn run<G: Grade>(
+    method: &dyn StepMethod<G>,
+    kit: &Kit<G>,
+    entry: &[(Node<G>, f64)],
+) -> Result<Solved<Node<G>>, SolveError> {
+    solve_named(entry, &mut |node| next(method, kit, node), &|node| {
+        format!("{} at {}", method.name(), method.view(node).label())
+    })
 }

@@ -17,12 +17,11 @@ function catalogOf(bridge: CraftBridge): Catalog {
   return JSON.parse(bridge.catalog()) as Catalog
 }
 
-/** The request the page sends: the craft under its own goal and prices, with the built-in library. */
+/** The request the page sends: the craft under every built-in filter and its own prices. */
 function request(catalog: Catalog, craft: CraftSpec): RunRequest {
-  const goal = catalog.builtins.goals.find((entry) => entry.id === craft.goal)
   const prices = catalog.builtins.prices.find((entry) => entry.id === craft.prices)
-  if (!goal || !prices) throw new Error(`the catalog has no goal or prices for ${craft.id}`)
-  return { goal, prices, craft, library: catalog.builtins.crafts }
+  if (!prices) throw new Error(`the catalog has no prices for ${craft.id}`)
+  return { filters: catalog.builtins.filters, prices, craft, library: catalog.builtins.crafts }
 }
 
 function builtin(catalog: Catalog, id: string): CraftSpec {
@@ -36,7 +35,8 @@ describe('the craft engine in the browser', () => {
     const catalog = catalogOf(await engine())
     expect(catalog.bases).toHaveLength(6)
     expect(catalog.methods).toHaveLength(10)
-    expect(catalog.builtins.crafts).toHaveLength(8)
+    expect(catalog.builtins.crafts).toHaveLength(9)
+    expect(catalog.builtins.filters).toHaveLength(9)
     expect(catalog.grades).toEqual(['desired', 'good', 'any'])
   })
 
@@ -45,6 +45,19 @@ describe('the craft engine in the browser', () => {
     const catalog = catalogOf(bridge)
     const view = JSON.parse(bridge.run(JSON.stringify(request(catalog, builtin(catalog, 'builtin:craft:flask'))))) as RunView
     expect(view.total.value).toBeCloseTo(14.7555625, 9)
+  })
+
+  it('runs each block under its own filter', async () => {
+    const bridge = await engine()
+    const catalog = catalogOf(bridge)
+    const craft = builtin(catalog, 'builtin:craft:boots-redeemer-speed')
+    const view = JSON.parse(bridge.run(JSON.stringify(request(catalog, craft)))) as RunView
+    expect(view.total.value).toBeCloseTo(69.07008101489289, 7)
+    expect(view.steps.map((step) => step.filter)).toEqual([
+      'Two-Toned Boots (Redeemer): Onslaught',
+      'Two-Toned Boots (Redeemer): Onslaught and 30% movement speed',
+    ])
+    expect(view.goal.share).toBeCloseTo(1, 9)
   })
 
   it('refuses a craft that contains itself', async () => {

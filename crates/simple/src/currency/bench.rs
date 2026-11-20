@@ -16,14 +16,14 @@
 //! - the chosen modifier's family. `IncreasedLife` is held after the use, and later random draws
 //!   must avoid it; a node records grades, not families, so it does not.
 //! - the chosen modifier's identity. It is a `crafted`-domain modifier and is not in the
-//!   item-domain pool, so the filter cannot grade it: it is recorded as [`Tier::Any`], and only the
-//!   crafted flag says it is there at all.
+//!   item-domain pool, so no filter can grade it: it is recorded as the grade of a modifier no
+//!   filter names ([`Law::unlisted`]), and only the crafted flag says it is there at all.
 //!
 //! The flag is what an item does record: at most one crafted modifier. A second use is refused.
 
 use super::{Applied, Currency, Named};
+use crate::classes::Grade;
 use crate::cost::{Cost, CurrencyId};
-use crate::filter::Tier;
 use crate::item::{Rarity, Side};
 use crate::law::Law;
 use crate::node::Node;
@@ -42,8 +42,8 @@ impl Named for Bench {
     }
 }
 
-impl Currency<Node> for Bench {
-    fn apply(&self, rules: &Law, state: &Node) -> Result<Applied<Node>, Refusal> {
+impl<G: Grade> Currency<Node<G>> for Bench {
+    fn apply(&self, rules: &Law<G>, state: &Node<G>) -> Result<Applied<Node<G>>, Refusal> {
         if !matches!(state.rarity(), Rarity::Magic | Rarity::Rare) {
             return Err(Refusal("the crafting bench needs a magic or rare item"));
         }
@@ -54,7 +54,7 @@ impl Currency<Node> for Bench {
             return Err(Refusal("the item has no room for another prefix"));
         }
         Ok(Applied {
-            outcomes: Dist::one(state.with_crafted(Side::Prefix, Tier::Any)),
+            outcomes: Dist::one(state.with_crafted(Side::Prefix, rules.unlisted())),
             cost: Cost::of(CurrencyId::ALCHEMY, 4.0),
         })
     }

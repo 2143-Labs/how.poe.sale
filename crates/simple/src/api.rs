@@ -3,17 +3,20 @@
 //! Three entry points, all JSON out and JSON in:
 //!
 //! - [`catalog`] lists the six bases, the ten methods, the currencies a craft can pay with, the
-//!   essences a method can use, the grades a goal is written in, and the built-in presets.
+//!   essences a method can use, the grades a filter is written in, and the built-in presets.
 //! - [`mods`] lists one base's explicit modifiers, with their plain weight and their weight under
 //!   the base's offered influence.
-//! - [`run`] takes a goal, a price list, a craft and the library the craft nests, and reports what
-//!   that craft costs per finished item: every step, the whole total, the ways out, a diagram of
-//!   each method, and every other move priced.
+//! - [`run`] takes the mod filters, a price list, a craft and the library the craft nests, and
+//!   reports what that craft costs per finished item: every step, the whole total, the ways out,
+//!   the share of finished items that meet the craft's goal, a diagram of each method, and every
+//!   other move priced.
 //!
-//! A goal is the data file's own target, written out: the grade floors per side, and the modifier
-//! ids each grade is made of. A craft is a [`CraftSpec`] of blocks wired exit to block; this module
-//! compiles it through [`crate::craft::spec`] and builds the [`Kit`] it needs, adding the extras
-//! the compiled methods ask for (the bench, the Shaper's Exalted Orb, an essence).
+//! A mod filter is a target written out: a base, the grade floors per side, and the modifier ids
+//! each grade is made of. A craft is a [`CraftSpec`] of blocks wired exit to block, and each method
+//! block reads one filter — its own, or the craft's goal. This module compiles the craft through
+//! [`crate::craft::spec`], classes the base's modifiers by every filter the steps read
+//! ([`Classes`]), and builds the [`Kit`] it needs, adding the extras the compiled methods ask for
+//! (the bench, the Shaper's Exalted Orb, an essence).
 //!
 //! Nothing here caches a result: a catalog is small, and a run is cheap next to the page's wait.
 
@@ -22,10 +25,11 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::bases::{self, BaseFile};
+use crate::classes::{Class, Classes};
 use crate::cost::{Cost, CurrencyId, Spend};
 use crate::craft::spec::{self, BlockSpec, CraftSpec, Extra, MethodSpec, WireSpec};
-use crate::craft::{Report, Wire};
-use crate::currency::{Bench, Currency, ESSENCE_OF_HORROR, ON_NODES, ShapersExalted};
+use crate::craft::{Craft, Place, Report, Step, Wire};
+use crate::currency::{Bench, Currency, ESSENCE_OF_HORROR, ON_CLASSED, ShapersExalted};
 use crate::data::Data;
 use crate::diagram::{self, BoxKind, Diagram};
 use crate::filter::{ItemSetFilter, Tier};
@@ -33,7 +37,7 @@ use crate::item::{Influence, Item, Rarity, Side};
 use crate::law::{Law, LawError};
 use crate::method::{
     AltAugRegal, AltPair, AltToMod, BenchLife, DesiredPair, EssenceSpam, ExaltFull, ExaltTo, Kit,
-    Method, RegalTo, ShaperSlam,
+    Method, RegalTo, ShaperSlam, Through,
 };
 use crate::node::Node;
 use crate::target::Target;
@@ -42,23 +46,27 @@ use crate::weights::Weights;
 /// The price list the built-in crafts are costed at.
 const PRICES_330: &str = "builtin:prices:330";
 
-/// The goal a run is for: a base, the grade floors each side has to clear, and the modifiers each
-/// grade is made of. `id` and `name` are the preset's, and `influence` is `"none"` or one of the
-/// base's offered influences.
+/// The Redeemer boots filter that asks for Onslaught alone.
+const ONSLAUGHT: &str = "builtin:filter:boots-redeemer-onslaught";
+
+/// The Redeemer boots filter that asks for Onslaught and movement speed.
+const ONSLAUGHT_SPEED: &str = "builtin:filter:boots-redeemer-speed";
+
+/// A mod filter: a base, the grade floors each side has to clear, and the modifiers each grade is
+/// made of. `id` and `name` are the preset's. A method block reads one, and a craft's goal is one.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GoalSpec {
+pub struct FilterSpec {
     pub id: String,
     pub name: String,
     pub base: String,
-    pub influence: String,
     /// Grade names, best first: the prefix side's floors.
     pub prefixes: Vec<String>,
     /// Grade names, best first: the suffix side's floors.
     pub suffixes: Vec<String>,
-    /// The modifier ids the goal calls desired.
+    /// The modifier ids the filter calls desired.
     pub desired: Vec<String>,
-    /// The modifier ids the goal calls good.
+    /// The modifier ids the filter calls good.
     pub good: Vec<String>,
 }
 
@@ -73,19 +81,19 @@ pub struct PriceSpec {
     pub weights: BTreeMap<String, f64>,
 }
 
-/// One run: the goal it is for, the prices its orbs are weighed at, the craft to cost, and the
-/// library that craft's nested blocks name.
+/// One run: the mod filters its craft and library name, the prices its orbs are weighed at, the
+/// craft to cost, and the library that craft's nested blocks name.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunRequest {
-    pub goal: GoalSpec,
+    pub filters: Vec<FilterSpec>,
     pub prices: PriceSpec,
     pub craft: CraftSpec,
     pub library: Vec<CraftSpec>,
 }
 
 /// Everything the page needs to draw itself: the bases it offers, the methods it can put in a
-/// block, the currencies it prices, the essences a method can use, the grades a goal is written
+/// block, the currencies it prices, the essences a method can use, the grades a filter is written
 /// in, and the presets it starts from.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -108,7 +116,7 @@ pub struct BaseView {
     pub item_class: String,
     pub influences: Vec<&'static str>,
     pub caps: CapsView,
-    pub goal: GoalSpec,
+    pub goal: FilterSpec,
 }
 
 /// How many modifiers a side of the base may hold at each cap.
@@ -211,11 +219,12 @@ pub struct ModView {
     pub essence_only: bool,
 }
 
-/// The presets a page starts from: one goal per base and one more, two price lists, eight crafts.
+/// The presets a page starts from: one filter per base and three more, two price lists, nine
+/// crafts.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Builtins {
-    pub goals: Vec<GoalSpec>,
+    pub filters: Vec<FilterSpec>,
     pub prices: Vec<PriceSpec>,
     pub crafts: Vec<CraftSpec>,
 }
@@ -231,6 +240,8 @@ pub struct RunView {
     /// The law's warning, then the compile's.
     pub warnings: Vec<String>,
     pub total: SpendView,
+    /// How many finished items meet the craft's goal.
+    pub goal: GoalView,
     pub steps: Vec<StepView>,
     /// Every exit wired out of the craft.
     pub outputs: Vec<OutputView>,
@@ -239,6 +250,17 @@ pub struct RunView {
     /// Every other move the craft could make at a place it passes through.
     pub others: Vec<OtherView>,
     pub checked: CheckedView,
+}
+
+/// The craft's goal, and the share of finished items whose sides clear its floors, whatever their
+/// rarity.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalView {
+    /// The goal filter's id.
+    pub filter: String,
+    pub name: String,
+    pub share: f64,
 }
 
 /// A spend as one weighted number and the orb counts behind it.
@@ -281,6 +303,8 @@ pub struct StepView {
     /// The block's path in the spec, e.g. `b2/b1` for a step inside a nested craft.
     pub block: String,
     pub name: String,
+    /// The name of the mod filter the step reads.
+    pub filter: String,
     pub takes: Vec<&'static str>,
     /// The share of this step's runs that leave through a wire.
     pub chance: f64,
@@ -416,7 +440,7 @@ pub fn catalog() -> Result<Catalog, String> {
         }],
         grades: vec!["desired", "good", "any"],
         builtins: Builtins {
-            goals: builtin_goals()?,
+            filters: builtin_filters()?,
             prices: builtin_prices()?,
             crafts: builtin_crafts(),
         },
@@ -461,31 +485,64 @@ pub fn mods(base: &str) -> Result<Vec<ModView>, String> {
     Ok(views)
 }
 
-/// Runs one request: validates the goal, builds the law and the kit, compiles the craft, and
-/// reports it.
+/// Runs one request: validates the goal, compiles the craft, classes the modifiers by every filter
+/// its steps read, builds the law and the kit, and reports it.
 pub fn run(request: &str) -> Result<RunView, String> {
     let request: RunRequest =
         serde_json::from_str(request).map_err(|why| format!("the request is not valid: {why}"))?;
 
-    let file = bases::find(&request.goal.base)
-        .ok_or_else(|| format!("unknown base \"{}\"", request.goal.base))?;
-    let mut data = bases::data(file.key)?.clone();
-    apply_goal(&mut data, &request.goal, file)?;
-    let influence = influence_of(&request.goal, file)?;
+    let goal = request
+        .filters
+        .iter()
+        .find(|filter| filter.id == request.craft.goal)
+        .ok_or_else(|| format!("filter \"{}\" is not in the request", request.craft.goal))?;
+    let file = bases::find(&goal.base).ok_or_else(|| format!("unknown base \"{}\"", goal.base))?;
+    let data = bases::data(file.key)?;
+    let mut graded = vec![filter_of(data, goal, file)?];
+    let influence = influence_of(&request.craft.influence, file)?;
 
-    let start = Item::of_base(&data, 0, file.item_level, Rarity::Normal);
+    let start = Item::of_base(data, 0, file.item_level, Rarity::Normal);
     let start = match influence {
         Some(influence) => start.with_influence(influence),
         None => start,
     };
-    let filter = ItemSetFilter::from_data(&data);
-    let target = Target::from_data(&data);
+
+    let compiled = spec::compile(&request.craft, &request.library)?;
+
+    // Every filter the steps read, the goal first: each step's place in that list is its lens.
+    let mut used: Vec<&FilterSpec> = vec![goal];
+    let mut lens_of: Vec<usize> = Vec::with_capacity(compiled.filters.len());
+    for (path, id) in compiled.blocks.iter().zip(&compiled.filters) {
+        let filter = request
+            .filters
+            .iter()
+            .find(|filter| &filter.id == id)
+            .ok_or_else(|| format!("block \"{path}\" uses an unknown filter \"{id}\""))?;
+        if filter.base != goal.base {
+            let label = bases::find(&filter.base).map_or(filter.base.as_str(), |found| found.label);
+            return Err(format!(
+                "filter \"{}\" is for {label}, and the craft is for {}",
+                filter.name, file.label
+            ));
+        }
+        let at = match used.iter().position(|seen| seen.id == filter.id) {
+            Some(at) => at,
+            None => {
+                graded.push(filter_of(data, filter, file)?);
+                used.push(filter);
+                used.len() - 1
+            }
+        };
+        lens_of.push(at);
+    }
+    let filters: Vec<&ItemSetFilter> = graded.iter().map(|(filter, _)| filter).collect();
+    let classes = Classes::new(data, &filters)?;
 
     let mut warnings: Vec<String> = Vec::new();
-    let law = match Law::new(&data, &filter, &start) {
+    let law = match Law::classed(data, &classes, &start) {
         Ok(law) => law,
         Err(LawError::SharedGroup(_)) => {
-            let law = Law::sides_apart(&data, &filter, &start).map_err(|why| why.to_string())?;
+            let law = Law::classed_apart(data, &classes, &start).map_err(|why| why.to_string())?;
             warnings.push(format!(
                 "the {} family sits on both sides; chances read each side apart (up to 0.2% off \
                  per item)",
@@ -495,27 +552,25 @@ pub fn run(request: &str) -> Result<RunView, String> {
         }
         Err(why) => return Err(why.to_string()),
     };
-
-    let compiled = spec::compile(&request.craft, &request.library)?;
     warnings.extend(compiled.warnings.iter().cloned());
 
     // The tools the compiled craft names: the orbs every craft may use, then the extras.
-    let mut statics: Vec<&'static dyn Currency<Node>> = Vec::new();
-    let mut owned: Vec<Box<dyn Currency<Node>>> = Vec::new();
+    let mut statics: Vec<&'static dyn Currency<Node<Class>>> = Vec::new();
+    let mut owned: Vec<Box<dyn Currency<Node<Class>>>> = Vec::new();
     for extra in &compiled.extras {
         match extra {
             Extra::Bench => statics.push(&Bench),
             Extra::Essence(essence) => statics.push(*essence),
             Extra::ShapersExalted => {
-                let orb = ShapersExalted::new(&data, &filter, &start).map_err(|why| {
+                let orb = ShapersExalted::classed(data, &classes, &start).map_err(|why| {
                     format!("the Shaper's Exalted Orb cannot be used here: {why}")
                 })?;
                 owned.push(Box::new(orb));
             }
         }
     }
-    let mut tools: Vec<&dyn Currency<Node>> = Vec::new();
-    for tool in ON_NODES {
+    let mut tools: Vec<&dyn Currency<Node<Class>>> = Vec::new();
+    for tool in ON_CLASSED {
         tools.push(tool);
     }
     for tool in statics {
@@ -524,15 +579,34 @@ pub fn run(request: &str) -> Result<RunView, String> {
     for orb in &owned {
         tools.push(&**orb);
     }
+
+    // Each step reads its own filter's view of the classes, and works toward its target.
+    let craft: Craft<Class> = Craft {
+        name: compiled.craft.name,
+        start: compiled.craft.start,
+        steps: compiled
+            .craft
+            .steps
+            .into_iter()
+            .zip(&lens_of)
+            .map(|(step, &at)| Step {
+                method: Box::new(Through {
+                    method: step.method,
+                    lens: classes.lens(at),
+                    target: graded[at].1.clone(),
+                }),
+                wires: step.wires,
+            })
+            .collect(),
+    };
     let kit = Kit {
         law: &law,
-        target: &target,
+        target: &graded[0].1,
         tools: &tools,
     };
 
     let weights = weights_of(&request.prices)?;
-    let report = compiled
-        .craft
+    let report = craft
         .report(&kit, &weights)
         .map_err(|why| why.to_string())?;
 
@@ -544,6 +618,7 @@ pub fn run(request: &str) -> Result<RunView, String> {
             step,
             block: compiled.blocks.get(step).cloned().unwrap_or_default(),
             name: row.name.clone(),
+            filter: used[lens_of[step]].name.clone(),
             takes: row.takes.iter().map(|rarity| rarity.name()).collect(),
             chance: row.chance,
             tries: (row.chance != 0.0).then_some(row.tries),
@@ -576,35 +651,53 @@ pub fn run(request: &str) -> Result<RunView, String> {
 
     let diagrams = (0..report.rows.len())
         .map(|step| {
-            let source = diagram::diagram(&compiled.craft, &kit, &report, step, &weights);
+            let source = diagram::diagram(&craft, &kit, &report, step, &weights);
             diagram_view(step, &source)
         })
         .collect::<Vec<DiagramView>>();
 
+    let lens = classes.lens(0);
+    let (mut met, mut finished) = (0.0, 0.0);
+    for (place, chance) in report.flat.exits.iter().zip(report.flat.exit_chances()) {
+        if let Place::Done(node) = place {
+            finished += chance;
+            if lens.view(node).meets(&graded[0].1) {
+                met += chance;
+            }
+        }
+    }
+
     Ok(RunView {
-        craft: compiled.craft.name.clone(),
+        craft: craft.name.clone(),
         unit: weights.unit.clone(),
         warnings,
         total: spend_view(&report.total, &weights),
+        goal: GoalView {
+            filter: goal.id.clone(),
+            name: goal.name.clone(),
+            share: if finished > 0.0 { met / finished } else { 0.0 },
+        },
         steps,
         outputs,
         diagrams,
-        others: others_view(&report, &weights),
+        others: others_view(&craft, &report, &weights),
         checked: checked_view(&report),
     })
 }
 
-/// Validates a goal and writes it into the data's target: the floors' grade names and the two
-/// modifier lists, each id resolved to its modifier.
-///
-/// Validation comes before [`Target::from_data`], which asserts that the floors fit.
-fn apply_goal(data: &mut Data, goal: &GoalSpec, file: &BaseFile) -> Result<(), String> {
+/// Validates a mod filter and builds it: the floors' grade names and the two modifier lists, each
+/// id resolved to its modifier.
+fn filter_of(
+    data: &Data,
+    filter: &FilterSpec,
+    file: &BaseFile,
+) -> Result<(ItemSetFilter, Target), String> {
     let caps = data.base_at(0).caps;
     let mut floors: [Vec<Tier>; 2] = [Vec::new(), Vec::new()];
     for side in Side::BOTH {
         let names = match side {
-            Side::Prefix => &goal.prefixes,
-            Side::Suffix => &goal.suffixes,
+            Side::Prefix => &filter.prefixes,
+            Side::Suffix => &filter.suffixes,
         };
         for name in names {
             let tier = Tier::from_name(name).ok_or_else(|| format!("unknown grade \"{name}\""))?;
@@ -622,21 +715,25 @@ fn apply_goal(data: &mut Data, goal: &GoalSpec, file: &BaseFile) -> Result<(), S
             ));
         }
     }
-    let desired = resolve(data, &goal.desired, file)?;
-    let good = resolve(data, &goal.good, file)?;
-    for id in &goal.desired {
-        if goal.good.contains(id) {
+    let desired = resolve(data, &filter.desired, file)?;
+    let good = resolve(data, &filter.good, file)?;
+    for id in &filter.desired {
+        if filter.good.contains(id) {
             return Err(format!("\"{id}\" is both desired and good"));
         }
     }
-    data.target.prefixes = goal.prefixes.clone();
-    data.target.suffixes = goal.suffixes.clone();
-    data.target.desired = desired;
-    data.target.good = good;
-    Ok(())
+    let [prefixes, suffixes] = floors;
+    Ok((
+        ItemSetFilter::new(data, &desired, &good),
+        Target {
+            prefixes,
+            suffixes,
+            caps,
+        },
+    ))
 }
 
-/// A goal's modifier ids, resolved against the pool by name.
+/// A filter's modifier ids, resolved against the pool by name.
 fn resolve(data: &Data, ids: &[String], file: &BaseFile) -> Result<Vec<u16>, String> {
     ids.iter()
         .map(|id| {
@@ -646,19 +743,19 @@ fn resolve(data: &Data, ids: &[String], file: &BaseFile) -> Result<Vec<u16>, Str
         .collect()
 }
 
-/// The goal's influence, which must be one the base is offered.
-fn influence_of(goal: &GoalSpec, file: &BaseFile) -> Result<Option<Influence>, String> {
-    if goal.influence == "none" {
+/// The craft's influence, which must be one the base is offered.
+fn influence_of(influence: &str, file: &BaseFile) -> Result<Option<Influence>, String> {
+    if influence == "none" {
         return Ok(None);
     }
     match Influence::ALL
         .into_iter()
-        .find(|influence| influence.name() == goal.influence)
+        .find(|offered| offered.name() == influence)
     {
-        Some(influence) if file.influences.contains(&influence) => Ok(Some(influence)),
+        Some(found) if file.influences.contains(&found) => Ok(Some(found)),
         _ => Err(format!(
-            "{} has no {} pool in this file",
-            file.label, goal.influence
+            "{} has no {influence} pool in this file",
+            file.label
         )),
     }
 }
@@ -795,15 +892,16 @@ fn tiers(side: &[Tier]) -> Vec<String> {
     side.iter().map(|tier| tier.name().to_string()).collect()
 }
 
-/// Every other move, the most value it would save first.
-fn others_view(report: &Report, weights: &Weights) -> Vec<OtherView> {
+/// Every other move, the most value it would save first. A place is labelled as its step's filter
+/// sees it.
+fn others_view(craft: &Craft<Class>, report: &Report<Class>, weights: &Weights) -> Vec<OtherView> {
     let valued = |cost: &Cost| weights.value(&Spend::certain(cost)).value;
     let mut views: Vec<OtherView> = report
         .others
         .iter()
         .map(|other| OtherView {
             step: other.step,
-            item: other.node.label(),
+            item: craft.steps[other.step].method.view(&other.node).label(),
             visits: other.visits,
             planned: other.planned.0.to_string(),
             planned_cost: valued(&other.planned_to_go),
@@ -820,8 +918,8 @@ fn others_view(report: &Report, weights: &Weights) -> Vec<OtherView> {
 }
 
 /// What the other-moves pass checked.
-fn checked_view(report: &Report) -> CheckedView {
-    let mut places: Vec<(usize, &Node)> = report
+fn checked_view(report: &Report<Class>) -> CheckedView {
+    let mut places: Vec<(usize, &Node<Class>)> = report
         .others
         .iter()
         .map(|other| (other.step, &other.node))
@@ -865,18 +963,12 @@ fn base_view(file: &BaseFile) -> Result<BaseView, String> {
     })
 }
 
-/// A base's own goal: its file's floors, and the ids its lists name.
-fn goal_of(file: &BaseFile, data: &Data) -> GoalSpec {
-    GoalSpec {
+/// A base's own goal as a filter: its file's floors, and the ids its lists name.
+fn goal_of(file: &BaseFile, data: &Data) -> FilterSpec {
+    FilterSpec {
         id: format!("builtin:goal:{}", file.key),
         name: format!("{}: the file's goal", file.label),
         base: file.key.to_string(),
-        influence: file
-            .influences
-            .first()
-            .map(|influence| influence.name())
-            .unwrap_or("none")
-            .to_string(),
         prefixes: data.target.prefixes.clone(),
         suffixes: data.target.suffixes.clone(),
         desired: ids_of(data, &data.target.desired),
@@ -889,25 +981,51 @@ fn ids_of(data: &Data, ids: &[u16]) -> Vec<String> {
     ids.iter().map(|&m| data.mod_at(m).id.clone()).collect()
 }
 
-/// One goal per base, plus the shield's Shaper's Exalted Orb route.
-fn builtin_goals() -> Result<Vec<GoalSpec>, String> {
-    let mut goals: Vec<GoalSpec> = Vec::with_capacity(bases::BASES.len() + 1);
+/// One filter per base (its file's goal), the shield's Shaper's Exalted Orb route, and the two
+/// filters of the Redeemer boots' two-filter craft.
+fn builtin_filters() -> Result<Vec<FilterSpec>, String> {
+    let names =
+        |names: &[&str]| -> Vec<String> { names.iter().map(|name| name.to_string()).collect() };
+    let mut filters: Vec<FilterSpec> = Vec::with_capacity(bases::BASES.len() + 3);
     for file in bases::BASES.iter() {
-        goals.push(goal_of(file, bases::data(file.key)?));
+        filters.push(goal_of(file, bases::data(file.key)?));
     }
     let file = bases::find("shield").ok_or_else(|| "unknown base \"shield\"".to_string())?;
     let data = bases::data("shield")?;
-    goals.push(GoalSpec {
+    filters.push(FilterSpec {
         id: "builtin:goal:shield-slam".to_string(),
         name: format!("{}: the Shaper's Exalted Orb goal", file.label),
         base: "shield".to_string(),
-        influence: "none".to_string(),
-        prefixes: vec!["desired".to_string(), "good".to_string(), "any".to_string()],
-        suffixes: vec!["good".to_string(), "good".to_string(), "any".to_string()],
+        prefixes: names(&["desired", "good", "any"]),
+        suffixes: names(&["good", "good", "any"]),
         desired: ids_of(data, &data.target.desired),
         good: ids_of(data, &data.target.good),
     });
-    Ok(goals)
+    let onslaught = ["OnslaughtOnKillInfluence1", "OnslaughtOnKillInfluence2_"];
+    filters.push(FilterSpec {
+        id: ONSLAUGHT.to_string(),
+        name: "Two-Toned Boots (Redeemer): Onslaught".to_string(),
+        base: "boots-redeemer".to_string(),
+        prefixes: Vec::new(),
+        suffixes: names(&["desired"]),
+        desired: names(&onslaught),
+        good: Vec::new(),
+    });
+    filters.push(FilterSpec {
+        id: ONSLAUGHT_SPEED.to_string(),
+        name: "Two-Toned Boots (Redeemer): Onslaught and 30% movement speed".to_string(),
+        base: "boots-redeemer".to_string(),
+        prefixes: names(&["desired"]),
+        suffixes: names(&["desired"]),
+        desired: names(&[
+            onslaught[0],
+            onslaught[1],
+            "MovementVelocity5",
+            "MovementVelocity6",
+        ]),
+        good: Vec::new(),
+    });
+    Ok(filters)
 }
 
 /// The two price lists: the 3.30 figures, and the owner's placeholders.
@@ -957,13 +1075,16 @@ fn prices_placeholder() -> Result<PriceSpec, String> {
     })
 }
 
-/// The eight built-in crafts, all at the 3.30 prices and all starting from a normal item.
+/// The nine built-in crafts, all at the 3.30 prices and all starting from a normal item. A craft's
+/// influence is the one its goal's file was built for, except the Shaper's orb route, which needs
+/// an item with none.
 fn builtin_crafts() -> Vec<CraftSpec> {
     vec![
         craft_spec(
             "builtin:craft:shield-totem",
             "Shield: alt-aug-regal for +1 totems",
             "builtin:goal:shield",
+            "shaper",
             vec![block("b1", method_spec("alt_aug_regal"))],
             vec![
                 wire("b1", "magic", "done"),
@@ -975,6 +1096,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:shield-slam",
             "Shield: Shaper's Exalted Orb",
             "builtin:goal:shield-slam",
+            "none",
             vec![block("b1", method_spec("shaper_slam"))],
             vec![wire("b1", "shaped", "done")],
         ),
@@ -982,6 +1104,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:flask",
             "Flask: charges and freeze immunity",
             "builtin:goal:flask",
+            "none",
             vec![block("b1", method_spec("alt_pair"))],
             vec![wire("b1", "magic", "done")],
         ),
@@ -989,6 +1112,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:boots-hunter",
             "Hunter boots: Tailwind, regal, bench life",
             "builtin:goal:boots-hunter",
+            "hunter",
             vec![
                 block(
                     "b1",
@@ -1012,6 +1136,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:alt-until",
             "Alt until the desired modifier",
             "builtin:goal:boots-redeemer",
+            "redeemer",
             vec![block(
                 "b1",
                 MethodSpec {
@@ -1025,6 +1150,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:boots-redeemer",
             "Redeemer boots: restart on a miss",
             "builtin:goal:boots-redeemer",
+            "redeemer",
             vec![
                 nested("b1", "builtin:craft:alt-until"),
                 block("b2", method_spec("exalt_full")),
@@ -1040,6 +1166,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:jewel",
             "Viridian jewel: life and attack speed",
             "builtin:goal:jewel",
+            "none",
             vec![block("b1", method_spec("desired_pair"))],
             vec![wire("b1", "rare", "done")],
         ),
@@ -1047,6 +1174,7 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             "builtin:craft:crown",
             "Crown: Essence of Horror until Hypothermia",
             "builtin:goal:crown",
+            "shaper",
             vec![block(
                 "b1",
                 MethodSpec {
@@ -1056,6 +1184,31 @@ fn builtin_crafts() -> Vec<CraftSpec> {
             )],
             vec![wire("b1", "hit", "done")],
         ),
+        craft_spec(
+            "builtin:craft:boots-redeemer-speed",
+            "Redeemer boots: alt for Onslaught, exalt for speed",
+            ONSLAUGHT_SPEED,
+            "redeemer",
+            vec![
+                BlockSpec {
+                    filter: Some(ONSLAUGHT.to_string()),
+                    ..block(
+                        "b1",
+                        MethodSpec {
+                            augment: Some(false),
+                            ..method_spec("alt_to_mod")
+                        },
+                    )
+                },
+                block("b2", method_spec("exalt_full")),
+            ],
+            vec![
+                wire("b1", "magic", "b2"),
+                wire("b2", "done", "done"),
+                wire("b2", "miss", "b1"),
+                wire("b2", "scrap", "b1"),
+            ],
+        ),
     ]
 }
 
@@ -1064,6 +1217,7 @@ fn craft_spec(
     id: &str,
     name: &str,
     goal: &str,
+    influence: &str,
     blocks: Vec<BlockSpec>,
     wires: Vec<WireSpec>,
 ) -> CraftSpec {
@@ -1071,6 +1225,7 @@ fn craft_spec(
         id: id.to_string(),
         name: name.to_string(),
         goal: goal.to_string(),
+        influence: influence.to_string(),
         prices: PRICES_330.to_string(),
         start: "normal".to_string(),
         entry: "b1".to_string(),
@@ -1079,12 +1234,13 @@ fn craft_spec(
     }
 }
 
-/// A method block.
+/// A method block that reads its craft's goal.
 fn block(id: &str, method: MethodSpec) -> BlockSpec {
     BlockSpec {
         id: id.to_string(),
         method: Some(method),
         craft: None,
+        filter: None,
         position: None,
     }
 }
@@ -1095,6 +1251,7 @@ fn nested(id: &str, craft: &str) -> BlockSpec {
         id: id.to_string(),
         method: None,
         craft: Some(craft.to_string()),
+        filter: None,
         position: None,
     }
 }

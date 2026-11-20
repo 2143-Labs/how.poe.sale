@@ -7,7 +7,7 @@ interface Entry {
   name: string
 }
 
-const TITLES: Record<Kind, string> = { craft: 'Crafts', goal: 'Goals', prices: 'Price lists' }
+const TITLES: Record<Kind, string> = { craft: 'Crafts', filter: 'Filters', prices: 'Price lists' }
 
 /** One list of presets: pick one, copy it, or delete it when nothing uses it. */
 function Presets({ kind, entries }: { kind: Kind; entries: Entry[] }) {
@@ -43,7 +43,7 @@ function Presets({ kind, entries }: { kind: Kind; entries: Entry[] }) {
   )
 }
 
-/** The saved goals, price lists and crafts, and the import and export of the user's own. */
+/** The saved filters, price lists and crafts, and the import and export of the user's own. */
 export function LibraryPanel() {
   const library = useCraft((state) => state.library)
   const exportLibrary = useCraft((state) => state.exportLibrary)
@@ -72,7 +72,7 @@ export function LibraryPanel() {
         <h2>Library</h2>
       </div>
       <Presets kind="craft" entries={library.crafts} />
-      <Presets kind="goal" entries={library.goals} />
+      <Presets kind="filter" entries={library.filters} />
       <Presets kind="prices" entries={library.prices} />
       <div className="row-actions">
         <button type="button" onClick={download}>

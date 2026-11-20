@@ -108,10 +108,15 @@ pub struct ItemSetFilter {
 impl ItemSetFilter {
     /// The shield's goal: the data file's desired and good ids.
     pub fn from_data(data: &Data) -> ItemSetFilter {
+        ItemSetFilter::new(data, &data.target.desired, &data.target.good)
+    }
+
+    /// A filter of the file's modifiers: these ids desired, those good, the rest anything.
+    pub fn new(data: &Data, desired: &[u16], good: &[u16]) -> ItemSetFilter {
         let selector = |m: u16| ModSelector::Mod(m);
         let mut filter = ItemSetFilter {
-            desired: data.target.desired.iter().copied().map(selector).collect(),
-            good: data.target.good.iter().copied().map(selector).collect(),
+            desired: desired.iter().copied().map(selector).collect(),
+            good: good.iter().copied().map(selector).collect(),
             tiers: Vec::new(),
         };
         filter.tiers = (0..data.mods.len() as u16)

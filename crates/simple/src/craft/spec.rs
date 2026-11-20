@@ -14,6 +14,11 @@
 //! one of its outputs replaces the `done` wire that output ends on. A block the entry cannot reach
 //! is left out with a warning; its wires are ignored.
 //!
+//! Each method block reads one mod filter: the one it names, or its own craft's goal. A nested
+//! craft's blocks keep the filters that craft was saved with. [`Compiled::filters`] lists each
+//! step's filter id; the caller resolves them, so a craft whose blocks read different filters runs
+//! over their classes (see [`crate::classes`]).
+//!
 //! The method registry reads the one table of kinds the plan names; every other kind is an error.
 //! [`Extra`] lists the currencies the compiled methods name that are not among the six orbs usable
 //! on an abstract item, so a caller can build the tools a report needs.
@@ -25,10 +30,11 @@ use serde::{Deserialize, Serialize};
 use super::{Craft, Step, Wire};
 use crate::cost::CurrencyId;
 use crate::currency::{ESSENCE_OF_HORROR, Essence};
+use crate::filter::Tier;
 use crate::item::Rarity;
 use crate::method::{
     AltAugRegal, AltPair, AltToMod, BenchLife, DesiredPair, EssenceSpam, ExaltFull, ExaltTo,
-    Method, RegalTo, ShaperSlam,
+    RegalTo, ShaperSlam, StepMethod,
 };
 
 /// The most steps a flattened craft may have: nesting a craft twice per level doubles the steps,
@@ -42,8 +48,13 @@ const MAX_STEPS: usize = 512;
 pub struct CraftSpec {
     pub id: String,
     pub name: String,
-    /// The id of the goal the craft is built for.
+    /// The id of the mod filter the craft is built for: its finished items are checked against it,
+    /// and its base is the craft's. A method block that names no filter reads this one.
     pub goal: String,
+    /// The start item's influence: `none` or one the goal's base offers. A nested craft's is
+    /// ignored.
+    #[serde(default = "no_influence")]
+    pub influence: String,
     /// The id of the price list the craft is costed at.
     pub prices: String,
     /// The rarity the craft starts from: `normal`, `magic` or `rare`.
@@ -63,6 +74,10 @@ pub struct BlockSpec {
     pub method: Option<MethodSpec>,
     /// The id of the craft this block inlines, when it is a craft block.
     pub craft: Option<String>,
+    /// The id of the mod filter a method block reads, or `None` for its craft's goal. A craft
+    /// block reads its own blocks' filters and names none.
+    #[serde(default)]
+    pub filter: Option<String>,
     /// Where the page drew the block, kept for the next visit.
     pub position: Option<(f64, f64)>,
 }
@@ -108,6 +123,8 @@ pub struct Compiled {
     /// The block path of each step, e.g. `b1/b1` for the first block of the craft inlined at
     /// `b1`, or `b2` for a top-level block.
     pub blocks: Vec<String>,
+    /// The id of the mod filter each step reads.
+    pub filters: Vec<String>,
     /// The extra currencies the compiled methods need, in the order they are first used.
     pub extras: Vec<Extra>,
     /// A block the entry cannot reach, which was left out.
@@ -136,6 +153,7 @@ struct Flattener<'a> {
     stack: Vec<String>,
     steps: Vec<Step>,
     blocks: Vec<String>,
+    filters: Vec<String>,
     extras: Vec<Extra>,
     warnings: Vec<String>,
 }
@@ -150,6 +168,7 @@ pub fn compile(spec: &CraftSpec, library: &[CraftSpec]) -> Result<Compiled, Stri
         stack: vec![spec.id.clone()],
         steps: Vec::new(),
         blocks: Vec::new(),
+        filters: Vec::new(),
         extras: Vec::new(),
         warnings: Vec::new(),
     };
@@ -163,6 +182,7 @@ pub fn compile(spec: &CraftSpec, library: &[CraftSpec]) -> Result<Compiled, Stri
     Ok(Compiled {
         craft,
         blocks: flattener.blocks,
+        filters: flattener.filters,
         extras: flattener.extras,
         warnings: flattener.warnings,
     })
@@ -244,6 +264,11 @@ impl Flattener<'_> {
             match (&block.method, &block.craft) {
                 (Some(method), None) => {
                     method_of(method, &path)?;
+                }
+                (None, Some(_)) if block.filter.is_some() => {
+                    return Err(format!(
+                        "block \"{path}\": a craft block uses its own filters"
+                    ));
                 }
                 (None, Some(id)) => {
                     if !self.library.iter().any(|craft| &craft.id == id) {
@@ -335,8 +360,8 @@ impl Flattener<'_> {
             let path = format!("{prefix}{}", block.id);
             let at = self.steps.len();
             first.insert(block.id.as_str(), at);
-            if let Some(spec) = &block.method {
-                let method = method_of(spec, &path)?;
+            if let Some(named) = &block.method {
+                let method = method_of(named, &path)?;
                 let wires = method
                     .exits()
                     .iter()
@@ -344,10 +369,12 @@ impl Flattener<'_> {
                     .collect();
                 self.steps.push(Step { method, wires });
                 self.blocks.push(path);
+                self.filters
+                    .push(block.filter.clone().unwrap_or_else(|| spec.goal.clone()));
                 if self.steps.len() > MAX_STEPS {
                     return Err(format!("the craft has more than {MAX_STEPS} steps"));
                 }
-                if let Some(extra) = extra_for(&spec.kind) {
+                if let Some(extra) = extra_for(&named.kind) {
                     self.need(extra);
                 }
             } else {
@@ -434,8 +461,8 @@ impl Flattener<'_> {
 }
 
 /// The method a block names, with its parameters checked.
-fn method_of(spec: &MethodSpec, path: &str) -> Result<Box<dyn Method>, String> {
-    let method: Box<dyn Method> = match spec.kind.as_str() {
+fn method_of(spec: &MethodSpec, path: &str) -> Result<Box<dyn StepMethod<Tier>>, String> {
+    let method: Box<dyn StepMethod<Tier>> = match spec.kind.as_str() {
         "alt_aug_regal" => Box::new(AltAugRegal),
         "exalt_to" => match spec.modifiers {
             Some(modifiers @ 1..=6) => Box::new(ExaltTo { modifiers }),
@@ -486,6 +513,11 @@ fn same(a: &Extra, b: &Extra) -> bool {
         (Extra::Essence(a), Extra::Essence(b)) => a.id == b.id,
         _ => false,
     }
+}
+
+/// A craft saved before crafts carried an influence starts from an item with none.
+fn no_influence() -> String {
+    "none".to_string()
 }
 
 /// The rarity a craft start names.
