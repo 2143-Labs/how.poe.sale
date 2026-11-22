@@ -256,9 +256,9 @@ not restated beside it. That is the same rule the currency layer learned when `s
 stating here because the lumped state is the third place the temptation appears.
 
 The review also found a grading error in the goal fixture itself: `totem-shield`'s catch-all classes
-were graded `neutral`, which `solve::grade_value` scores the same as `good`, so the score path could
-not tell a junk prefix from a good one while the step filter could. A goal written in one vocabulary
-and scored in another is the same class of mistake at the data layer.
+were graded `neutral`, which `grade_value` (then in `solve`, now in `pattern`) scores the same as
+`good`, so the score path could not tell a junk prefix from a good one while the step filter could.
+A goal written in one vocabulary and scored in another is the same class of mistake at the data layer.
 
 ## The pricing adapter, specified
 
