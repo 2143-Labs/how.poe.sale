@@ -1,0 +1,25 @@
+{
+ "base": "Metadata/Items/Flasks/FlaskUtility6",
+ "itemLevel": 86,
+ "influences": [],
+ "target": {
+  "prefixes": ["desired"],
+  "suffixes": ["desired"],
+  "desired": [
+   "FlaskChargesUsed1",
+   "FlaskChargesUsed2",
+   "FlaskChargesUsed3__",
+   "FlaskChargesUsed4__",
+   "FlaskChargesUsed5",
+   "FlaskFreezeAndChillImmunityDuringEffect",
+   "FlaskFreezeAndChillImmunityDuringEffect2",
+   "FlaskFreezeAndChillImmunityDuringEffect3__"
+  ],
+  "good": []
+ },
+ "expect": {
+  "mods": 124,
+  "counts": {"prefix": 36, "suffix": 88},
+  "weights": {"prefix": 22800, "suffix": 62250}
+ }
+}

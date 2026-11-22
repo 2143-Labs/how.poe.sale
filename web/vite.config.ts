@@ -11,6 +11,7 @@ export default defineConfig({
         chooser: resolve(import.meta.dirname, 'index.html'),
         poe1: resolve(import.meta.dirname, 'poe1/index.html'),
         simple: resolve(import.meta.dirname, 'simple/index.html'),
+        craft: resolve(import.meta.dirname, 'craft/index.html'),
         poe2: resolve(import.meta.dirname, 'poe2/index.html'),
       },
     },

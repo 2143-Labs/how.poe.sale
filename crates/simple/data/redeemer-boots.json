@@ -1,0 +1,4373 @@
+{
+ "tags": [
+  "not_for_sale",
+  "atlas_base_type",
+  "bootsatlas2",
+  "str_dex_armour",
+  "boots",
+  "armour",
+  "default",
+  "boots_eyrie",
+  "resource",
+  "life",
+  "defences",
+  "evasion",
+  "speed",
+  "drop",
+  "endurance_charge",
+  "influence_mod",
+  "physical_damage",
+  "elemental_damage",
+  "damage",
+  "physical",
+  "elemental",
+  "cold",
+  "gem",
+  "ailment",
+  "critical",
+  "resistance",
+  "attribute",
+  "fire",
+  "flat_life_regen",
+  "lightning",
+  "chaos"
+ ],
+ "bases": [
+  {
+   "id": "Metadata/Items/Armours/Boots/BootsAtlas2",
+   "name": "Two-Toned Boots",
+   "itemClass": "Boots",
+   "dropLevel": 70,
+   "tags": [
+    "not_for_sale",
+    "atlas_base_type",
+    "bootsatlas2",
+    "str_dex_armour",
+    "boots",
+    "armour",
+    "default"
+   ],
+   "influenceTags": {
+    "shaper": "boots_shaper",
+    "elder": "boots_elder",
+    "crusader": "boots_crusader",
+    "redeemer": "boots_eyrie",
+    "hunter": "boots_basilisk",
+    "warlord": "boots_adjudicator"
+   },
+   "requirements": {
+    "level": 70,
+    "strength": 62,
+    "dexterity": 62,
+    "intelligence": 0
+   },
+   "defences": {
+    "armour": [
+     126,
+     145
+    ],
+    "evasion": [
+     126,
+     145
+    ],
+    "energyShield": null,
+    "ward": null
+   },
+   "implicits": [
+    "FireAndColdResistImplicitBoots1_"
+   ]
+  }
+ ],
+ "mods": [
+  {
+   "id": "IncreasedLife0",
+   "name": "Hale",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 3,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(3-9) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEvasionRating1",
+   "name": "Supple",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 5,
+     "max": 9
+    },
+    {
+     "id": "local_base_evasion_rating",
+     "min": 5,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(5-9) to Armour\n+(5-9) to Evasion Rating"
+  },
+  {
+   "id": "MovementVelocity1",
+   "name": "Runner's",
+   "kind": "prefix",
+   "level": 1,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 10,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "10% increased Movement Speed"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery1",
+   "name": "Beetle's",
+   "kind": "prefix",
+   "level": 2,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 6,
+     "max": 13
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 6,
+     "max": 7
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-13)% increased Armour and Evasion\n(6-7)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion1",
+   "name": "Scrapper's",
+   "kind": "prefix",
+   "level": 3,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 15,
+     "max": 26
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-26)% increased Armour and Evasion"
+  },
+  {
+   "id": "IncreasedLife1",
+   "name": "Healthy",
+   "kind": "prefix",
+   "level": 5,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 10,
+     "max": 24
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-24) to maximum Life"
+  },
+  {
+   "id": "IncreasedLife2",
+   "name": "Sanguine",
+   "kind": "prefix",
+   "level": 11,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 25,
+     "max": 39
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(25-39) to maximum Life"
+  },
+  {
+   "id": "MovementVelocity2",
+   "name": "Sprinter's",
+   "kind": "prefix",
+   "level": 15,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 15,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "15% increased Movement Speed"
+  },
+  {
+   "id": "IncreasedLife3",
+   "name": "Stalwart",
+   "kind": "prefix",
+   "level": 18,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 40,
+     "max": 54
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(40-54) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEvasionRating2",
+   "name": "Pliant",
+   "kind": "prefix",
+   "level": 18,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 10,
+     "max": 27
+    },
+    {
+     "id": "local_base_evasion_rating",
+     "min": 10,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(10-27) to Armour\n+(10-27) to Evasion Rating"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion2",
+   "name": "Brawler's",
+   "kind": "prefix",
+   "level": 19,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 27,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-42)% increased Armour and Evasion"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery2",
+   "name": "Crab's",
+   "kind": "prefix",
+   "level": 19,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 14,
+     "max": 20
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 8,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-20)% increased Armour and Evasion\n(8-9)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ItemFoundRarityIncreasePrefix1",
+   "name": "Magpie's",
+   "kind": "prefix",
+   "level": 20,
+   "groups": [
+    "ItemFoundRarityIncreasePrefix"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-12)% increased Rarity of Items found"
+  },
+  {
+   "id": "IncreasedLife4",
+   "name": "Stout",
+   "kind": "prefix",
+   "level": 24,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 55,
+     "max": 69
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(55-69) to maximum Life"
+  },
+  {
+   "id": "IncreasedLife5",
+   "name": "Robust",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 70,
+     "max": 84
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(70-84) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEvasionRating3",
+   "name": "Flexible",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 28,
+     "max": 48
+    },
+    {
+     "id": "local_base_evasion_rating",
+     "min": 28,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-48) to Armour\n+(28-48) to Evasion Rating"
+  },
+  {
+   "id": "LocalBaseArmourAndLife1",
+   "name": "Oyster's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 20,
+     "max": 32
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(20-32) to Armour\n+(18-23) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEvasionRatingAndLife1",
+   "name": "Flea's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_evasion_rating",
+     "min": 14,
+     "max": 20
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(14-20) to Evasion Rating\n+(18-23) to maximum Life"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion3",
+   "name": "Fencer's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 43,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(43-55)% increased Armour and Evasion"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery3",
+   "name": "Armadillo's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 21,
+     "max": 26
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 10,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(21-26)% increased Armour and Evasion\n(10-11)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "MovementVelocity3",
+   "name": "Stallion's",
+   "kind": "prefix",
+   "level": 30,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 20,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "20% increased Movement Speed"
+  },
+  {
+   "id": "IncreasedLife6",
+   "name": "Rotund",
+   "kind": "prefix",
+   "level": 36,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 85,
+     "max": 99
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(85-99) to maximum Life"
+  },
+  {
+   "id": "LocalBaseArmourAndEvasionRating4",
+   "name": "Durable",
+   "kind": "prefix",
+   "level": 38,
+   "groups": [
+    "BaseLocalDefences"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 49,
+     "max": 85
+    },
+    {
+     "id": "local_base_evasion_rating",
+     "min": 49,
+     "max": 85
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(49-85) to Armour\n+(49-85) to Evasion Rating"
+  },
+  {
+   "id": "ItemFoundRarityIncreasePrefix2",
+   "name": "Pirate's",
+   "kind": "prefix",
+   "level": 39,
+   "groups": [
+    "ItemFoundRarityIncreasePrefix"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 13,
+     "max": 18
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(13-18)% increased Rarity of Items found"
+  },
+  {
+   "id": "MovementVelocity4",
+   "name": "Gazelle's",
+   "kind": "prefix",
+   "level": 40,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 25,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "25% increased Movement Speed"
+  },
+  {
+   "id": "IncreasedLife7",
+   "name": "Virile",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 100,
+     "max": 114
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(100-114) to maximum Life"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion4",
+   "name": "Gladiator's",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 56,
+     "max": 67
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(56-67)% increased Armour and Evasion"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery4",
+   "name": "Rhino's",
+   "kind": "prefix",
+   "level": 44,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 27,
+     "max": 32
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 12,
+     "max": 13
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(27-32)% increased Armour and Evasion\n(12-13)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LocalBaseArmourAndLife2",
+   "name": "Urchin's",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_physical_damage_reduction_rating",
+     "min": 33,
+     "max": 48
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 24,
+     "max": 28
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "armour"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-48) to Armour\n+(24-28) to maximum Life"
+  },
+  {
+   "id": "LocalBaseEvasionRatingAndLife2",
+   "name": "Fawn's",
+   "kind": "prefix",
+   "level": 46,
+   "groups": [
+    "BaseLocalDefencesAndLife"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_base_evasion_rating",
+     "min": 21,
+     "max": 42
+    },
+    {
+     "id": "base_maximum_life",
+     "min": 24,
+     "max": 28
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life",
+    "defences",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(21-42) to Evasion Rating\n+(24-28) to maximum Life"
+  },
+  {
+   "id": "IncreasedLife8",
+   "name": "Athlete's",
+   "kind": "prefix",
+   "level": 54,
+   "groups": [
+    "IncreasedLife"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_maximum_life",
+     "min": 115,
+     "max": 129
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(115-129) to maximum Life"
+  },
+  {
+   "id": "MovementVelocity5",
+   "name": "Cheetah's",
+   "kind": "prefix",
+   "level": 55,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 30,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "30% increased Movement Speed"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion5",
+   "name": "Duelist's",
+   "kind": "prefix",
+   "level": 60,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 68,
+     "max": 79
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(68-79)% increased Armour and Evasion"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery5",
+   "name": "Elephant's",
+   "kind": "prefix",
+   "level": 60,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 33,
+     "max": 38
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 14,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(33-38)% increased Armour and Evasion\n(14-15)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "EnduranceChargeOnKillInfluence1",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "EnduranceChargeOnKillChance"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "endurance_charge_on_kill_%",
+     "min": 4,
+     "max": 6
+    }
+   ],
+   "implicitTags": [
+    "endurance_charge",
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(4-6)% chance to gain an Endurance Charge on Kill"
+  },
+  {
+   "id": "PhysicalAddedAsExtraColdBootsInfluence1",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "PhysicalAddedAsCold"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_damage_%_to_add_as_cold",
+     "min": 3,
+     "max": 5
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "elemental_damage",
+    "influence_mod",
+    "damage",
+    "physical",
+    "elemental",
+    "cold"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain (3-5)% of Physical Damage as Extra Cold Damage"
+  },
+  {
+   "id": "SocketedColdGemLevelInfluence1",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "IncreaseSpecificSocketedGemLevel"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_socketed_cold_gem_level_+",
+     "min": 2,
+     "max": 2
+    }
+   ],
+   "implicitTags": [
+    "influence_mod",
+    "elemental",
+    "cold",
+    "gem"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+2 to Level of Socketed Cold Gems"
+  },
+  {
+   "id": "UnaffectedByChilledGroundInfluence1",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 68,
+   "groups": [
+    "GroundEffectEffectiveness"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "unaffected_by_chilled_ground",
+     "min": 1,
+     "max": 1
+    }
+   ],
+   "implicitTags": [
+    "influence_mod",
+    "elemental",
+    "cold",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Unaffected by Chilled Ground"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion6",
+   "name": "Hero's",
+   "kind": "prefix",
+   "level": 72,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 80,
+     "max": 91
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(80-91)% increased Armour and Evasion"
+  },
+  {
+   "id": "ElusiveOnCriticalStrikeInfluence1",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "ElusiveOnCriticalStrike"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "gain_elusive_on_crit_%_chance",
+     "min": 5,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "influence_mod",
+    "critical"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(5-10)% chance to gain Elusive on Critical Strike"
+  },
+  {
+   "id": "PhysicalAddedAsExtraColdBootsInfluence2",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 75,
+   "groups": [
+    "PhysicalAddedAsCold"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "physical_damage_%_to_add_as_cold",
+     "min": 6,
+     "max": 8
+    }
+   ],
+   "implicitTags": [
+    "physical_damage",
+    "elemental_damage",
+    "influence_mod",
+    "damage",
+    "physical",
+    "elemental",
+    "cold"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Gain (6-8)% of Physical Damage as Extra Cold Damage"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasionAndStunRecovery6",
+   "name": "Mammoth's",
+   "kind": "prefix",
+   "level": 78,
+   "groups": [
+    "DefencesPercentAndStunRecovery"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 39,
+     "max": 42
+    },
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 16,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(39-42)% increased Armour and Evasion\n(16-17)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "EnduranceChargeOnKillInfluence2",
+   "name": "Redeemer's",
+   "kind": "prefix",
+   "level": 80,
+   "groups": [
+    "EnduranceChargeOnKillChance"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "endurance_charge_on_kill_%",
+     "min": 7,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "endurance_charge",
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(7-10)% chance to gain an Endurance Charge on Kill"
+  },
+  {
+   "id": "LocalIncreasedArmourAndEvasion7",
+   "name": "Legend's",
+   "kind": "prefix",
+   "level": 84,
+   "groups": [
+    "DefencesPercent"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_armour_and_evasion_+%",
+     "min": 92,
+     "max": 100
+    }
+   ],
+   "implicitTags": [
+    "defences",
+    "armour",
+    "evasion"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(92-100)% increased Armour and Evasion"
+  },
+  {
+   "id": "MovementVelocity6",
+   "name": "Hellion's",
+   "kind": "prefix",
+   "level": 86,
+   "groups": [
+    "MovementVelocity"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_movement_velocity_+%",
+     "min": 35,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "speed"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "35% increased Movement Speed"
+  },
+  {
+   "id": "ColdResist1",
+   "name": "of the Inuit",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Cold Resistance"
+  },
+  {
+   "id": "Dexterity1",
+   "name": "of the Mongoose",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-12) to Dexterity"
+  },
+  {
+   "id": "FireResist1",
+   "name": "of the Whelpling",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Fire Resistance"
+  },
+  {
+   "id": "LifeRegeneration1",
+   "name": "of the Newt",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 60,
+     "max": 120
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (1-2) Life per second"
+  },
+  {
+   "id": "LightningResist1",
+   "name": "of the Cloud",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 6,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(6-11)% to Lightning Resistance"
+  },
+  {
+   "id": "Strength1",
+   "name": "of the Brute",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-12) to Strength"
+  },
+  {
+   "id": "StunRecovery1",
+   "name": "of Thick Skin",
+   "kind": "suffix",
+   "level": 1,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 11,
+     "max": 13
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(11-13)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ItemFoundRarityIncrease1",
+   "name": "of Plunder",
+   "kind": "suffix",
+   "level": 3,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 6,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-10)% increased Rarity of Items found"
+  },
+  {
+   "id": "LifeRegeneration2",
+   "name": "of the Lizard",
+   "kind": "suffix",
+   "level": 7,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 126,
+     "max": 480
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (2.1-8) Life per second"
+  },
+  {
+   "id": "Dexterity2",
+   "name": "of the Lynx",
+   "kind": "suffix",
+   "level": 11,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 13,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(13-17) to Dexterity"
+  },
+  {
+   "id": "Strength2",
+   "name": "of the Wrestler",
+   "kind": "suffix",
+   "level": 11,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 13,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(13-17) to Strength"
+  },
+  {
+   "id": "FireResist2",
+   "name": "of the Salamander",
+   "kind": "suffix",
+   "level": 12,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist2",
+   "name": "of the Squall",
+   "kind": "suffix",
+   "level": 13,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist2",
+   "name": "of the Seal",
+   "kind": "suffix",
+   "level": 14,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 12,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(12-17)% to Cold Resistance"
+  },
+  {
+   "id": "ChaosResist1",
+   "name": "of the Lost",
+   "kind": "suffix",
+   "level": 16,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 5,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(5-10)% to Chaos Resistance"
+  },
+  {
+   "id": "StunRecovery2",
+   "name": "of Stone Skin",
+   "kind": "suffix",
+   "level": 17,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 14,
+     "max": 16
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(14-16)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "LifeRegeneration3",
+   "name": "of the Flatworm",
+   "kind": "suffix",
+   "level": 19,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 486,
+     "max": 960
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (8.1-16) Life per second"
+  },
+  {
+   "id": "Dexterity3",
+   "name": "of the Fox",
+   "kind": "suffix",
+   "level": 22,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 18,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-22) to Dexterity"
+  },
+  {
+   "id": "Strength3",
+   "name": "of the Bear",
+   "kind": "suffix",
+   "level": 22,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 18,
+     "max": 22
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-22) to Strength"
+  },
+  {
+   "id": "FireResist3",
+   "name": "of the Drake",
+   "kind": "suffix",
+   "level": 24,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist3",
+   "name": "of the Storm",
+   "kind": "suffix",
+   "level": 25,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist3",
+   "name": "of the Penguin",
+   "kind": "suffix",
+   "level": 26,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 18,
+     "max": 23
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(18-23)% to Cold Resistance"
+  },
+  {
+   "id": "StunRecovery3",
+   "name": "of Iron Skin",
+   "kind": "suffix",
+   "level": 28,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 17,
+     "max": 19
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(17-19)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ChaosResist2",
+   "name": "of Banishment",
+   "kind": "suffix",
+   "level": 30,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 11,
+     "max": 15
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(11-15)% to Chaos Resistance"
+  },
+  {
+   "id": "ItemFoundRarityIncrease2",
+   "name": "of Raiding",
+   "kind": "suffix",
+   "level": 30,
+   "groups": [
+    "ItemFoundRarityIncrease"
+   ],
+   "weights": [
+    [
+     "boots",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_item_found_rarity_+%",
+     "min": 11,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "drop"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(11-14)% increased Rarity of Items found"
+  },
+  {
+   "id": "LifeRegeneration4",
+   "name": "of the Starfish",
+   "kind": "suffix",
+   "level": 31,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 966,
+     "max": 1440
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (16.1-24) Life per second"
+  },
+  {
+   "id": "Dexterity4",
+   "name": "of the Falcon",
+   "kind": "suffix",
+   "level": 33,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 23,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(23-27) to Dexterity"
+  },
+  {
+   "id": "Strength4",
+   "name": "of the Lion",
+   "kind": "suffix",
+   "level": 33,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 23,
+     "max": 27
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(23-27) to Strength"
+  },
+  {
+   "id": "FireResist4",
+   "name": "of the Kiln",
+   "kind": "suffix",
+   "level": 36,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Fire Resistance"
+  },
+  {
+   "id": "ReducedLocalAttributeRequirements1",
+   "name": "of the Worthy",
+   "kind": "suffix",
+   "level": 36,
+   "groups": [
+    "LocalAttributeRequirements"
+   ],
+   "weights": [
+    [
+     "boots",
+     550
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_attribute_requirements_+%",
+     "min": -18,
+     "max": -18
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "18% reduced Attribute Requirements"
+  },
+  {
+   "id": "LightningResist4",
+   "name": "of the Thunderhead",
+   "kind": "suffix",
+   "level": 37,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist4",
+   "name": "of the Yeti",
+   "kind": "suffix",
+   "level": 38,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 24,
+     "max": 29
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(24-29)% to Cold Resistance"
+  },
+  {
+   "id": "StunRecovery4",
+   "name": "of Steel Skin",
+   "kind": "suffix",
+   "level": 42,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 20,
+     "max": 22
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-22)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ChaosResist3",
+   "name": "of Eviction",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 16,
+     "max": 20
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(16-20)% to Chaos Resistance"
+  },
+  {
+   "id": "Dexterity5",
+   "name": "of the Panther",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 28,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-32) to Dexterity"
+  },
+  {
+   "id": "LifeRegeneration5",
+   "name": "of the Hydra",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 1446,
+     "max": 1920
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (24.1-32) Life per second"
+  },
+  {
+   "id": "Strength5",
+   "name": "of the Gorilla",
+   "kind": "suffix",
+   "level": 44,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 28,
+     "max": 32
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(28-32) to Strength"
+  },
+  {
+   "id": "ChanceToSuppressSpells1_",
+   "name": "of Rebuttal",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "ChanceToSuppressSpells"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_spell_suppression_chance_%",
+     "min": 5,
+     "max": 6
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(5-6)% chance to Suppress Spell Damage"
+  },
+  {
+   "id": "LifeRegenerationRate1",
+   "name": "of Esprit",
+   "kind": "suffix",
+   "level": 46,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 9,
+     "max": 11
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(9-11)% increased Life Regeneration rate"
+  },
+  {
+   "id": "FireResist5",
+   "name": "of the Furnace",
+   "kind": "suffix",
+   "level": 48,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist5",
+   "name": "of the Tempest",
+   "kind": "suffix",
+   "level": 49,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Lightning Resistance"
+  },
+  {
+   "id": "ColdResist5",
+   "name": "of the Walrus",
+   "kind": "suffix",
+   "level": 50,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 30,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(30-35)% to Cold Resistance"
+  },
+  {
+   "id": "Dexterity6",
+   "name": "of the Leopard",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 33,
+     "max": 37
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-37) to Dexterity"
+  },
+  {
+   "id": "LifeRegeneration6",
+   "name": "of the Troll",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 1926,
+     "max": 2880
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (32.1-48) Life per second"
+  },
+  {
+   "id": "Strength6",
+   "name": "of the Goliath",
+   "kind": "suffix",
+   "level": 55,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 33,
+     "max": 37
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(33-37) to Strength"
+  },
+  {
+   "id": "ChaosResist4",
+   "name": "of Expulsion",
+   "kind": "suffix",
+   "level": 56,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 21,
+     "max": 25
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(21-25)% to Chaos Resistance"
+  },
+  {
+   "id": "StunRecovery5",
+   "name": "of Adamantite Skin",
+   "kind": "suffix",
+   "level": 56,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 23,
+     "max": 25
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(23-25)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "ChanceToSuppressSpells2",
+   "name": "of Snuffing",
+   "kind": "suffix",
+   "level": 57,
+   "groups": [
+    "ChanceToSuppressSpells"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_spell_suppression_chance_%",
+     "min": 7,
+     "max": 8
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(7-8)% chance to Suppress Spell Damage"
+  },
+  {
+   "id": "LifeRegenerationRate2",
+   "name": "of Perpetuity",
+   "kind": "suffix",
+   "level": 57,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 12,
+     "max": 14
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(12-14)% increased Life Regeneration rate"
+  },
+  {
+   "id": "ColdResist6",
+   "name": "of the Polar Bear",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist6",
+   "name": "of the Volcano",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist6",
+   "name": "of the Maelstrom",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 36,
+     "max": 41
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(36-41)% to Lightning Resistance"
+  },
+  {
+   "id": "ReducedLocalAttributeRequirements2",
+   "name": "of the Apt",
+   "kind": "suffix",
+   "level": 60,
+   "groups": [
+    "LocalAttributeRequirements"
+   ],
+   "weights": [
+    [
+     "boots",
+     550
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "local_attribute_requirements_+%",
+     "min": -32,
+     "max": -32
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "32% reduced Attribute Requirements"
+  },
+  {
+   "id": "ChaosResist5",
+   "name": "of Exile",
+   "kind": "suffix",
+   "level": 65,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 26,
+     "max": 30
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(26-30)% to Chaos Resistance"
+  },
+  {
+   "id": "Dexterity7",
+   "name": "of the Jaguar",
+   "kind": "suffix",
+   "level": 66,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 38,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(38-42) to Dexterity"
+  },
+  {
+   "id": "Strength7",
+   "name": "of the Leviathan",
+   "kind": "suffix",
+   "level": 66,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 38,
+     "max": 42
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(38-42) to Strength"
+  },
+  {
+   "id": "AvoidProjectilesInfluence1",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "ChanceToAvoidProjectiles"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_avoid_projectiles_%_chance",
+     "min": 6,
+     "max": 9
+    }
+   ],
+   "implicitTags": [
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(6-9)% chance to avoid Projectiles"
+  },
+  {
+   "id": "ChanceToSuppressSpells3",
+   "name": "of Revoking",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "ChanceToSuppressSpells"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_spell_suppression_chance_%",
+     "min": 9,
+     "max": 10
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(9-10)% chance to Suppress Spell Damage"
+  },
+  {
+   "id": "IncreasedAilmentEffectOnEnemiesInfluence1",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "IncreasedAilmentEffectOnEnemies"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "non_damaging_ailment_effect_+%",
+     "min": 30,
+     "max": 34
+    }
+   ],
+   "implicitTags": [
+    "influence_mod",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(30-34)% increased Effect of Non-Damaging Ailments"
+  },
+  {
+   "id": "LifeRegeneration7",
+   "name": "of Ryslatha",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 2886,
+     "max": 3840
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (48.1-64) Life per second"
+  },
+  {
+   "id": "LifeRegenerationRate3",
+   "name": "of Vivification",
+   "kind": "suffix",
+   "level": 68,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 15,
+     "max": 17
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(15-17)% increased Life Regeneration rate"
+  },
+  {
+   "id": "ColdResist7",
+   "name": "of the Ice",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist7",
+   "name": "of the Magma",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist7",
+   "name": "of the Lightning",
+   "kind": "suffix",
+   "level": 72,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 42,
+     "max": 45
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(42-45)% to Lightning Resistance"
+  },
+  {
+   "id": "AvoidProjectilesInfluence2",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 73,
+   "groups": [
+    "ChanceToAvoidProjectiles"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_avoid_projectiles_%_chance",
+     "min": 10,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(10-12)% chance to avoid Projectiles"
+  },
+  {
+   "id": "IncreasedAilmentEffectOnEnemiesInfluence2",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 73,
+   "groups": [
+    "IncreasedAilmentEffectOnEnemies"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "non_damaging_ailment_effect_+%",
+     "min": 35,
+     "max": 40
+    }
+   ],
+   "implicitTags": [
+    "influence_mod",
+    "ailment"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(35-40)% increased Effect of Non-Damaging Ailments"
+  },
+  {
+   "id": "Dexterity8",
+   "name": "of the Phantom",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 43,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(43-50) to Dexterity"
+  },
+  {
+   "id": "LifeRegeneration8_",
+   "name": "of the Phoenix",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "LifeRegeneration"
+   ],
+   "weights": [
+    [
+     "default",
+     1000
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_life_regeneration_rate_per_minute",
+     "min": 3846,
+     "max": 5760
+    }
+   ],
+   "implicitTags": [
+    "flat_life_regen",
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "Regenerate (64.1-96) Life per second"
+  },
+  {
+   "id": "Strength8",
+   "name": "of the Titan",
+   "kind": "suffix",
+   "level": 74,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 43,
+     "max": 50
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(43-50) to Strength"
+  },
+  {
+   "id": "OnslaughtOnKillInfluence1",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 75,
+   "groups": [
+    "ChanceToGainOnslaughtOnKill"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "chance_to_gain_onslaught_on_kill_%",
+     "min": 5,
+     "max": 7
+    }
+   ],
+   "implicitTags": [
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(5-7)% chance to gain Onslaught for 4 seconds on Kill"
+  },
+  {
+   "id": "ChanceToSuppressSpells4",
+   "name": "of Abjuration",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "ChanceToSuppressSpells"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_spell_suppression_chance_%",
+     "min": 11,
+     "max": 12
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(11-12)% chance to Suppress Spell Damage"
+  },
+  {
+   "id": "LifeRegenerationRate4",
+   "name": "of Youth",
+   "kind": "suffix",
+   "level": 76,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 18,
+     "max": 19
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(18-19)% increased Life Regeneration rate"
+  },
+  {
+   "id": "StunRecovery6",
+   "name": "of Corundum Skin",
+   "kind": "suffix",
+   "level": 79,
+   "groups": [
+    "StunRecovery"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_stun_recovery_+%",
+     "min": 26,
+     "max": 28
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(26-28)% increased Stun and Block Recovery"
+  },
+  {
+   "id": "OnslaughtOnKillInfluence2_",
+   "name": "of Redemption",
+   "kind": "suffix",
+   "level": 80,
+   "groups": [
+    "ChanceToGainOnslaughtOnKill"
+   ],
+   "weights": [
+    [
+     "boots_eyrie",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "chance_to_gain_onslaught_on_kill_%",
+     "min": 8,
+     "max": 10
+    }
+   ],
+   "implicitTags": [
+    "influence_mod"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(8-10)% chance to gain Onslaught for 4 seconds on Kill"
+  },
+  {
+   "id": "ChaosResist6",
+   "name": "of Bameth",
+   "kind": "suffix",
+   "level": 81,
+   "groups": [
+    "ChaosResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     250
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_chaos_damage_resistance_%",
+     "min": 31,
+     "max": 35
+    }
+   ],
+   "implicitTags": [
+    "chaos",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(31-35)% to Chaos Resistance"
+  },
+  {
+   "id": "Dexterity9",
+   "name": "of the Wind",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "Dexterity"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_dexterity",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(51-55) to Dexterity"
+  },
+  {
+   "id": "Strength9",
+   "name": "of the Gods",
+   "kind": "suffix",
+   "level": 82,
+   "groups": [
+    "Strength"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "additional_strength",
+     "min": 51,
+     "max": 55
+    }
+   ],
+   "implicitTags": [
+    "attribute"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(51-55) to Strength"
+  },
+  {
+   "id": "ColdResist8",
+   "name": "of Haast",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "ColdResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_cold_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Cold Resistance"
+  },
+  {
+   "id": "FireResist8",
+   "name": "of Tzteosh",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "FireResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_fire_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Fire Resistance"
+  },
+  {
+   "id": "LightningResist8",
+   "name": "of Ephij",
+   "kind": "suffix",
+   "level": 84,
+   "groups": [
+    "LightningResistance"
+   ],
+   "weights": [
+    [
+     "armour",
+     1000
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_lightning_damage_resistance_%",
+     "min": 46,
+     "max": 48
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "lightning",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(46-48)% to Lightning Resistance"
+  },
+  {
+   "id": "ChanceToSuppressSpells5__",
+   "name": "of Nullification",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "ChanceToSuppressSpells"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "base_spell_suppression_chance_%",
+     "min": 13,
+     "max": 14
+    }
+   ],
+   "implicitTags": [],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(13-14)% chance to Suppress Spell Damage"
+  },
+  {
+   "id": "LifeRegenerationRate5",
+   "name": "of Everlasting",
+   "kind": "suffix",
+   "level": 85,
+   "groups": [
+    "LifeRegenerationRate"
+   ],
+   "weights": [
+    [
+     "str_dex_armour",
+     500
+    ],
+    [
+     "default",
+     0
+    ]
+   ],
+   "stats": [
+    {
+     "id": "life_regeneration_rate_+%",
+     "min": 20,
+     "max": 21
+    }
+   ],
+   "implicitTags": [
+    "resource",
+    "life"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "(20-21)% increased Life Regeneration rate"
+  },
+  {
+   "id": "FireAndColdResistImplicitBoots1_",
+   "name": "",
+   "kind": "implicit",
+   "level": 78,
+   "groups": [
+    "FireAndColdResistance"
+   ],
+   "weights": [],
+   "stats": [
+    {
+     "id": "fire_and_cold_damage_resistance_%",
+     "min": 8,
+     "max": 12
+    }
+   ],
+   "implicitTags": [
+    "elemental",
+    "fire",
+    "cold",
+    "resistance"
+   ],
+   "addsTags": [],
+   "essenceOnly": false,
+   "text": "+(8-12)% to Fire and Cold Resistances"
+  }
+ ],
+ "target": {
+  "prefixes": [
+   "any",
+   "any",
+   "any"
+  ],
+  "suffixes": [
+   "desired",
+   "good",
+   "good"
+  ],
+  "desired": [
+   "OnslaughtOnKillInfluence1",
+   "OnslaughtOnKillInfluence2_"
+  ],
+  "good": [
+   "FireResist1",
+   "FireResist2",
+   "FireResist3",
+   "FireResist4",
+   "FireResist5",
+   "FireResist6",
+   "FireResist7",
+   "FireResist8",
+   "ColdResist1",
+   "ColdResist2",
+   "ColdResist3",
+   "ColdResist4",
+   "ColdResist5",
+   "ColdResist6",
+   "ColdResist7",
+   "ColdResist8",
+   "LightningResist1",
+   "LightningResist2",
+   "LightningResist3",
+   "LightningResist4",
+   "LightningResist5",
+   "LightningResist6",
+   "LightningResist7",
+   "LightningResist8",
+   "ChaosResist1",
+   "ChaosResist2",
+   "ChaosResist3",
+   "ChaosResist4",
+   "ChaosResist5",
+   "ChaosResist6",
+   "Strength1",
+   "Strength2",
+   "Strength3",
+   "Strength4",
+   "Strength5",
+   "Strength6",
+   "Strength7",
+   "Strength8",
+   "Strength9",
+   "Dexterity1",
+   "Dexterity2",
+   "Dexterity3",
+   "Dexterity4",
+   "Dexterity5",
+   "Dexterity6",
+   "Dexterity7",
+   "Dexterity8",
+   "Dexterity9",
+   "ChanceToSuppressSpells1_",
+   "ChanceToSuppressSpells2",
+   "ChanceToSuppressSpells3",
+   "ChanceToSuppressSpells4",
+   "ChanceToSuppressSpells5__"
+  ]
+ }
+}

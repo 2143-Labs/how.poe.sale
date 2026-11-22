@@ -1,0 +1,17 @@
+{
+ "base": "Metadata/Items/Jewels/JewelDex",
+ "itemLevel": 83,
+ "influences": [],
+ "target": {
+  "prefixes": ["desired", "any"],
+  "suffixes": ["desired", "any"],
+  "desired": ["PercentIncreasedLifeJewel", "AttackSpeedJewel"],
+  "good": []
+ },
+ "expect": {
+  "mods": 114,
+  "counts": {"prefix": 52, "suffix": 62},
+  "weights": {"prefix": 19550, "suffix": 19370},
+  "implicits": []
+ }
+}
