@@ -46,9 +46,9 @@
 //! lumped chain is still a separate question, which is why the machine reports distributions and
 //! not a single number; `Machine` keeps the concrete path, [`lumped::Lumped`] the coarse one.
 //!
-//! The module is separated from `solve`, which weighs a whole method tree; a `Machine` step is one
-//! currency applied to every live item, with the exact [`Fraction`](crate::currency::Fraction)
-//! weights the currencies already produce.
+//! A `Machine` step is one currency applied to every live item, with the exact
+//! [`Fraction`](crate::currency::Fraction) weights the currencies already produce; the same step on
+//! the coarse state is [`lumped::Lumped`], and [`run_loop`] drives it for a whole depth budget.
 
 pub mod lumped;
 pub mod machine;
@@ -60,9 +60,70 @@ pub use machine::{Machine, MachineError, Snapshot};
 pub use priced::{Move, Next, Node, Priced, PricedError, Prices, Report, Transition};
 pub use stage::Stage;
 
-use crate::currency::{ItemSetFilter, Tier};
+use crate::currency::{Fraction, ItemSetFilter, Tier};
 use crate::data::{Data, Rarity, Side};
 use crate::item::Item;
+
+/// How far the owner's loop got from one item, and where its mass ended up.
+///
+/// The depths are the steps that ran, in order. `absorbed` holds only the stages whose mass *left*
+/// the loop, summed over the depths: `desired` (absorbed the moment an item meets the goal) and the
+/// policy's two terminals `reset` and `stop`. Every other stage stays live, so summing it across
+/// depths would count the same mass once per step it stayed live.
+pub struct Loop {
+    /// The depths that ran, in order.
+    pub depths: Vec<Depth>,
+    /// The mass that left the loop, by stage: `desired`, `reset`, `stop`, in that order.
+    pub absorbed: Vec<(Stage, Fraction)>,
+    /// The mass still live after the last depth; one when no depth ran.
+    pub live: Fraction,
+    /// The depth that did not fit and the engine's reason; the depths before it are kept.
+    pub stopped: Option<(usize, String)>,
+}
+
+/// Runs the owner's loop from `start` for at most `depth` steps on the exact lumped state.
+///
+/// `loop-report` and the page's priced loop both go through this, so the two cannot disagree about
+/// what one step did or which mass left the loop. A depth the exact state cannot hold keeps the
+/// depths before it and records itself in [`Loop::stopped`]; only a `Fraction` overflow is an
+/// error.
+pub fn run_loop(
+    data: &Data,
+    filter: &ItemSetFilter,
+    start: Item,
+    depth: usize,
+) -> Result<Loop, String> {
+    let policy = LoopPolicy::new(filter);
+    let mut lumped = Lumped::new(data, filter.clone(), start);
+    let mut stopped = None;
+    for step in 1..=depth {
+        if lumped.state().is_empty() {
+            break;
+        }
+        if let Err(err) = lumped.step(&policy) {
+            stopped = Some((step, err.to_string()));
+            break;
+        }
+    }
+    let depths: Vec<Depth> = lumped.history().to_vec();
+    let mut absorbed = Vec::with_capacity(3);
+    for stage in [Stage::Desired, Stage::Reset, Stage::Stop] {
+        let mut sum = Fraction::ZERO;
+        for depth in &depths {
+            sum = sum.checked_add(depth.mass(stage)).ok_or_else(|| {
+                "the exact mass account does not fit in 128-bit fractions".to_string()
+            })?;
+        }
+        absorbed.push((stage, sum));
+    }
+    let live = depths.last().map_or(Fraction::ONE, Depth::live);
+    Ok(Loop {
+        depths,
+        absorbed,
+        live,
+        stopped,
+    })
+}
 
 /// A modelled currency, named by the method id the rules use (`currency/alteration`).
 ///

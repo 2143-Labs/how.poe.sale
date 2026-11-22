@@ -1,24 +1,19 @@
-//! Path of Exile 1 (3.29) crafting model, v2: the game-data bundle, concrete items, abstract item
-//! patterns, the crafting-method catalog and `apply(item, method) → outcome`.
+//! Path of Exile 1 (3.29) crafting model: the game-data bundle, concrete items, item patterns,
+//! `apply(item, method) → outcome`, and the v3 engines built on it — one file per currency with
+//! exact integer outcomes, the goal filter, and the lumped craft loop with its priced graph.
 
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
 pub mod api;
 pub mod apply;
-pub mod catalog;
 pub mod craft;
 pub mod currency;
 pub mod data;
-pub mod forward;
-pub mod invert;
 pub mod item;
 pub mod method;
 pub mod pattern;
 pub mod pool;
-pub mod preimages;
-pub mod render;
-pub mod solve;
 pub mod strands;
 pub mod text;
 

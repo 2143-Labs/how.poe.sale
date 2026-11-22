@@ -59,8 +59,8 @@ pub struct ClassSpec {
 
 /// How much a class is worth in its slot, in three categories: `Desired` is the best possible,
 /// `Good`, `Middling` and `Neutral` are good enough, and `Bad` is not good enough. The five names
-/// are kept so a pattern can say *why* a class is only good enough; `solve::grade_value` collapses
-/// them to the three the score uses.
+/// are kept so a pattern can say *why* a class is only good enough; [`grade_value`] collapses
+/// them to the three the goal filter and the score use.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum Grade {
@@ -69,6 +69,18 @@ pub enum Grade {
     Middling,
     Neutral,
     Bad,
+}
+
+/// What a class of this grade is worth, in the three categories every reader uses: the best
+/// possible (2), good enough (1), and not good enough (0). The pattern's five grades are authoring
+/// vocabulary — they say *why* a class is only good enough — and collapse onto these three here,
+/// once, so the goal filter and the score cannot disagree about which grades pair up.
+pub(crate) fn grade_value(grade: Grade) -> u8 {
+    match grade {
+        Grade::Desired => 2,
+        Grade::Good | Grade::Middling | Grade::Neutral => 1,
+        Grade::Bad => 0,
+    }
 }
 
 /// `serde` helper: omit a false flag from serialised patterns.
