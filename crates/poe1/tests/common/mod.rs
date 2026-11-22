@@ -2,12 +2,38 @@
 #![allow(dead_code)]
 
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
+use poe1::data::Data;
 use poe1::item::{Item, ItemSpec};
 use poe1::test_data;
 
 pub fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The Simple game's bundle: `games/simple` through the same pipeline as the pinned export,
+/// built on demand by the command the panic names. It is not committed, so a checkout that has
+/// never run `bundle` fails here with the command rather than with a serde error.
+pub fn simple_data() -> &'static Data {
+    static DATA: LazyLock<Data> = LazyLock::new(|| {
+        let path = root().join("data/simple.json");
+        let build = "nix develop -c cargo run -p cli --release -- bundle --raw games/simple/raw \
+                     --rules games/simple/rules --claims rules/claims.json --out data/simple.json";
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+            panic!(
+                "cannot read {}: {e}\nbuild it with:\n  {build}",
+                path.display()
+            )
+        });
+        Data::from_json(&text).unwrap_or_else(|e| {
+            panic!(
+                "{} does not load ({e})\nbuild it with:\n  {build}",
+                path.display()
+            )
+        })
+    });
+    &DATA
 }
 
 pub fn fixture_names() -> Vec<String> {

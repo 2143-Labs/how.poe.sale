@@ -12,13 +12,29 @@ pub fn spawn(m: &ModData, tags: &[u16]) -> u32 {
         .map_or(0, |&(_, w)| w)
 }
 
-/// The first generation entry whose tag is in `tags`, divided by 100; 1.0 when the list is empty
-/// or nothing matches.
-pub fn generation(m: &ModData, tags: &[u16]) -> f64 {
+/// The first generation entry whose tag is in `tags`, as its percent (100 means unmodified): 100
+/// when the list is empty or nothing matches.
+///
+/// This lookup is the one place that decides which generation entry applies, so the floating and
+/// the exact weights ([`weight`], [`weight_exact`]) cannot disagree about it.
+fn generation_percent(m: &ModData, tags: &[u16]) -> u32 {
     m.generation
         .iter()
         .find(|(t, _)| tags.binary_search(t).is_ok())
-        .map_or(1.0, |&(_, w)| f64::from(w) / 100.0)
+        .map_or(100, |&(_, w)| w)
+}
+
+/// The first generation entry whose tag is in `tags`, divided by 100; 1.0 when the list is empty
+/// or nothing matches.
+pub fn generation(m: &ModData, tags: &[u16]) -> f64 {
+    f64::from(generation_percent(m, tags)) / 100.0
+}
+
+/// Spawn weight × generation percent, as an exact integer: `weight` divides by 100, so that
+/// factor is common to every candidate and cancels in any ratio. A caller that must keep exact
+/// chances (the per-currency model) uses this instead of `weight`.
+pub fn weight_exact(m: &ModData, tags: &[u16]) -> u128 {
+    u128::from(spawn(m, tags)) * u128::from(generation_percent(m, tags))
 }
 
 /// Spawn weight × generation multiplier.

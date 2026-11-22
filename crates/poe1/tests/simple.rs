@@ -1,10 +1,8 @@
-//! The Simple game: a Bow and a Helmet with toy modifiers, built from `games/simple` by the same
-//! bundle pipeline and run by the same engine. Every test goes through `api::Chart`, the calls the
-//! page makes.
+//! The Simple game: a Bow and a Helmet with toy modifiers, plus the export's Supreme Spiked
+//! Shield, built from `games/simple` by the same bundle pipeline and run by the same engine.
+//! Every test goes through `api::Chart`, the calls the page makes.
 
 mod common;
-
-use std::sync::LazyLock;
 
 use poe1::api;
 use poe1::data::Data;
@@ -14,26 +12,8 @@ const ALTERATION: &str = "currency/alteration";
 const AUGMENTATION: &str = "currency/augmentation";
 const LOCK_SUFFIXES: &str = "bench/add/DexMasterItemGenerationCannotChangeSuffixes";
 
-static DATA: LazyLock<Data> = LazyLock::new(|| {
-    let path = common::root().join("data/simple.json");
-    let build = "nix develop -c cargo run -p cli --release -- bundle --raw games/simple/raw \
-                 --rules games/simple/rules --claims rules/claims.json --out data/simple.json";
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| {
-        panic!(
-            "cannot read {}: {e}\nbuild it with:\n  {build}",
-            path.display()
-        )
-    });
-    Data::from_json(&text).unwrap_or_else(|e| {
-        panic!(
-            "{} does not load ({e})\nbuild it with:\n  {build}",
-            path.display()
-        )
-    })
-});
-
 fn simple() -> &'static Data {
-    &DATA
+    common::simple_data()
 }
 fn close(got: f64, want: f64) -> bool {
     (got - want).abs() < 1e-12
@@ -54,9 +34,13 @@ fn assert_chances(applied: &api::AppliedView, want: &[f64]) {
     }
 }
 
+/// The two toy bases, plus the export's shield the crafting chances are checked against.
 #[test]
-fn the_simple_game_has_a_bow_and_a_helmet() {
-    assert_eq!(api::bases(simple()), ["Bow", "Helmet"]);
+fn the_simple_game_has_a_bow_a_helmet_and_the_shield() {
+    assert_eq!(
+        api::bases(simple()),
+        ["Bow", "Helmet", "Supreme Spiked Shield"]
+    );
 }
 
 /// A magic helmet with one prefix and one suffix, rerolled by Alteration: one or two modifiers at

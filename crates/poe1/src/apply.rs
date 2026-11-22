@@ -7,7 +7,10 @@
 //! rules not modelled yet stop at the item before their step. Whether an affix can change is
 //! decided in one place (`Guard`), from the method's `Protection`. An op with nothing to do
 //! outside a `Chance` branch refuses the method (owner, Q1); inside a branch it leaves that
-//! branch's item unchanged. `check` runs the same program as `apply`, so the two agree.
+//! branch's item unchanged. A step whose *whole outcome* is one item leaf no different from the
+//! input is refused too, with the reason the conditional op gave (claim `empty.refused`); the
+//! rule is about the outcome, so a branch that does nothing while another changes the item is a
+//! legitimate result. `check` runs the same program as `apply`, so the two agree.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -309,8 +312,10 @@ fn group_conflict(data: &Data, item: &Item, m: u32) -> Option<String> {
         .map(|&g| format!("the item already has a {} modifier", data.group(g)))
 }
 
-/// The essence's modifier for the item's class.
-fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
+/// The essence's modifier for the item's class. Public in the crate so a currency written as code
+/// (`essence/*`) asks the same question the `essenceFits` requirement and `Op::AddEssence` ask,
+/// rather than looking the class/mod table up a second way.
+pub(crate) fn essence_mod(data: &Data, item: &Item, essence: &str) -> Option<u32> {
     let class = data.base_at(item.base).class;
     data.essences[data.essence_by_name(essence)? as usize]
         .mods
@@ -368,7 +373,15 @@ pub fn pool_candidates(
     ignore_limits: bool,
     ignore_groups: bool,
 ) -> Vec<(u32, f64)> {
-    candidates(data, item, pool, side, ignore_limits, ignore_groups, false)
+    as_probabilities(candidates(
+        data,
+        item,
+        pool,
+        side,
+        ignore_limits,
+        ignore_groups,
+        false,
+    ))
 }
 
 /// The pool one random draw reaches: `pool_candidates` with the Memory Strands cut applied.
@@ -382,9 +395,59 @@ pub fn draw_candidates(
     ignore_limits: bool,
     ignore_groups: bool,
 ) -> Vec<(u32, f64)> {
+    as_probabilities(draw_weights(
+        data,
+        item,
+        pool,
+        side,
+        ignore_limits,
+        ignore_groups,
+    ))
+}
+
+/// The same pool as `draw_candidates`, as exact integer weights. Every chance the engine reports
+/// is a ratio of these integers, so a caller holding them can print exact percentages.
+pub fn draw_weights(
+    data: &Data,
+    item: &Item,
+    pool: &Pool,
+    side: SideReq,
+    ignore_limits: bool,
+    ignore_groups: bool,
+) -> Vec<(u32, u128)> {
     candidates(data, item, pool, side, ignore_limits, ignore_groups, true)
 }
 
+/// The mods of one implicit or enchantment kind a draw can take, as exact integer weights:
+/// `spawn × generation percent`, with each mod admitted exactly as `kind_pool` admits it —
+/// `level` caps the mod level at the item level, `extra` is the caller's own filter, and a zero
+/// weight is dropped.
+///
+/// This is `kind_pool` before normalisation, held as `u128` so a caller that must keep chances
+/// exactly (the per-currency model) divides by the total itself instead of accepting an `f64`
+/// rounding.
+pub(crate) fn kind_weights(
+    data: &Data,
+    item: &Item,
+    kind: ModKind,
+    level: bool,
+    extra: impl Fn(&ModData) -> bool,
+) -> Vec<(u32, u128)> {
+    let tags = item.tags(data);
+    data.mods_of_kind(kind)
+        .iter()
+        .filter_map(|&i| {
+            let m = data.mod_at(i);
+            let w = pool::weight_exact(m, &tags);
+            ((!level || m.level <= item.item_level) && extra(m) && w > 0).then_some((i, w))
+        })
+        .collect()
+}
+
+/// The pooled candidates with their exact integer weights, before normalisation: `spawn ×
+/// generation percent`, both straight out of data. `candidates` divides by the total to give the
+/// probabilities the engine uses; a caller that must hold exact chances divides by the same total
+/// itself instead of accepting an `f64` rounding.
 fn candidates(
     data: &Data,
     item: &Item,
@@ -393,7 +456,7 @@ fn candidates(
     ignore_limits: bool,
     ignore_groups: bool,
     cut: bool,
-) -> Vec<(u32, f64)> {
+) -> Vec<(u32, u128)> {
     let tags = item.tags(data);
     let base = data.base_at(item.base);
     let groups = item.explicit_groups(data);
@@ -459,12 +522,29 @@ fn candidates(
             continue;
         }
         let w = match pool {
-            Pool::Ducat { .. } => tag.map_or(0.0, |t| pool::weight_of_tag(m, t)),
-            _ => pool::weight(m, &tags),
+            Pool::Ducat { .. } => tag.map_or(0, |t| {
+                // Ducat pools weight by spawn alone; ×100 keeps one scale inside the pool.
+                u128::from(pool::weight_of_tag(m, t) as u32) * 100
+            }),
+            _ => pool::weight_exact(m, &tags),
         };
-        weighted.push((i, w));
+        if w > 0 {
+            weighted.push((i, w));
+        }
     }
-    pool::normalise(weighted)
+    weighted
+}
+
+/// Integer weights as probabilities: each weight over the total.
+fn as_probabilities(weighted: Vec<(u32, u128)>) -> Vec<(u32, f64)> {
+    let total: u128 = weighted.iter().map(|&(_, w)| w).sum();
+    if total == 0 {
+        return Vec::new();
+    }
+    weighted
+        .into_iter()
+        .map(|(m, w)| (m, w as f64 / total as f64))
+        .collect()
 }
 
 /// The candidates an `AddRandom` draws from, with their probabilities: the pool's mods, a side
@@ -831,6 +911,8 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         params,
         size: 0,
         in_choice: 0,
+        changed: false,
+        idle: None,
     };
     let start = State {
         item: inputs[0].clone(),
@@ -842,7 +924,44 @@ pub fn apply(data: &Data, m: &Method, inputs: &[Item], params: &Params) -> Resul
         then: None,
     };
     match run.exec(vec![(1.0, start)], root) {
-        Ok(leaves) => Ok(Outcome::from_leaves(leaves)),
+        Ok(leaves) => {
+            let outcome = Outcome::from_leaves(leaves);
+            // Claim `empty.refused`: using a currency on an item it has nothing to change is
+            // refused, and the currency is not consumed. The rule is about the *outcome*, not a
+            // branch: a `Chance` branch that does nothing is a legitimate result when the other
+            // branches change the item (25 % of a Vaal Orb is deliberately "nothing happens"),
+            // so only a whole outcome that is one item leaf — and that item no different from
+            // the input — is refused. Two forms of it:
+            //
+            // - the same item, which is what an add with an empty pool leaves behind inside a
+            //   `Chance` branch (the transmutation on a base with no available modifier), and
+            // - the same item with only its rarity raised and no explicit modifier to show for
+            //   it: a Magic item with no modifier is not an item any currency can have made, so
+            //   the raise did not change the item either. That is the transmutation on a base
+            //   whose every affix limit is closed (the Simplex Amulet).
+            //
+            // `changed` keeps this exact: a reroll whose one valid outcome is the item it started
+            // from (an Alteration on an item that already holds the only modifier it can draw)
+            // did change the item on the way, and the per-currency model treats it as a use of
+            // the currency (`ItemOutputSet::new`), so it is not refused here.
+            //
+            // A `Pending` leaf is never refused by this rule, even when its item is the input:
+            // the leaf says the model stopped *before* the step that would change the item, which
+            // is not the same claim as "nothing can change it" — and `Pending { TooLarge }`
+            // reports the input by construction.
+            if !run.changed
+                && outcome
+                    .item()
+                    .is_some_and(|item| unchanged(&inputs[0], item))
+            {
+                let reason = run
+                    .idle
+                    .take()
+                    .unwrap_or_else(|| "the method leaves the item unchanged".into());
+                return Err(Unmet { reason });
+            }
+            Ok(outcome)
+        }
         Err(Stop::Unmet(reason)) => Err(Unmet { reason }),
         Err(Stop::TooLarge) => Ok(Outcome {
             leaves: vec![(
@@ -980,7 +1099,84 @@ impl Guard {
 /// The protection `method` gives an `item`'s affixes. A method with no stated protection keeps
 /// nothing (`Policy::Ignore`), which is what a method that changes no explicits needs.
 pub(crate) fn guard_for(data: &Data, method: &Method, item: &Item) -> Guard {
-    let p = method.protect.unwrap_or(Protection::IGNORE_ALL);
+    guard_for_protection(data, method.protect.unwrap_or(Protection::IGNORE_ALL), item)
+}
+
+/// Removes every modifier `protection` lets a removal take, returning how many went: the predicate
+/// is `Guard::can_change`, the same one `Op::Scour` and `Op::Clear` use, so a currency written as
+/// code (`currency/scouring`, `currency/alteration`) cannot disagree with its op-declared twin
+/// about fractures or about a lock the method respects.
+pub(crate) fn clear_changeable(data: &Data, protection: Protection, item: &mut Item) -> usize {
+    let guard = guard_for_protection(data, protection, item);
+    let before = item.prefixes.len() + item.suffixes.len();
+    for side in Side::BOTH {
+        item.affixes_mut(side)
+            .retain(|a| !guard.can_change(data, side, a));
+    }
+    before - (item.prefixes.len() + item.suffixes.len())
+}
+
+/// Why `m` cannot go on the item: a mod of another base domain, no room on its side, a group the
+/// item has, or no crafted room for a crafted modifier. Public in the crate so a currency written
+/// as code (`essence/*`) refuses for exactly the reasons `Op::AddMod` and `Op::AddEssence` do.
+pub(crate) fn cannot_place(data: &Data, item: &Item, m: u32) -> Option<String> {
+    let md = data.mod_at(m);
+    let side = md.side?;
+    let own_domain = matches!(
+        md.domain.as_str(),
+        "item" | "misc" | "abyss_jewel" | "flask" | "tincture"
+    );
+    if own_domain && md.domain != data.base_at(item.base).domain.repoe() {
+        return Some(format!(
+            "{} cannot go on a {}",
+            md.id,
+            item.class(data).name
+        ));
+    }
+    if room(data, item, side) == 0 {
+        return Some(open_text(Some(side)).into());
+    }
+    if let Some(reason) = group_conflict(data, item, m) {
+        return Some(reason);
+    }
+    (md.kind == ModKind::Crafted && item.crafted_count(data) >= item.crafted_limit(data))
+        .then(|| "the item already has as many crafted modifiers as it can hold".into())
+}
+
+/// The affix positions `protection` lets a removal take, prefixes before suffixes but otherwise in
+/// item order: the predicate is `Guard::can_change`, so a currency that removes one modifier at
+/// random cannot disagree with `Op::RemoveRandom` about fractures or about a lock the method
+/// respects.
+pub(crate) fn removable(data: &Data, protection: Protection, item: &Item) -> Vec<(Side, usize)> {
+    let guard = guard_for_protection(data, protection, item);
+    let mut positions = Vec::new();
+    for side in Side::BOTH {
+        for (i, a) in item.affixes(side).iter().enumerate() {
+            if guard.can_change(data, side, a) {
+                positions.push((side, i));
+            }
+        }
+    }
+    positions
+}
+
+/// The affix positions a beastcraft fracture may take, prefixes before suffixes but otherwise in
+/// item order: every modifier that is not already fractured and is not an unrevealed `Veiled` one
+/// (a veiled modifier is not a modifier the item has yet). `Op::Fracture` and the currency written
+/// as code both read this, so they cannot disagree about which modifiers are on offer.
+pub(crate) fn fracturable(data: &Data, item: &Item) -> Vec<(Side, usize)> {
+    let mut positions = Vec::new();
+    for side in Side::BOTH {
+        for (i, a) in item.affixes(side).iter().enumerate() {
+            if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled {
+                positions.push((side, i));
+            }
+        }
+    }
+    positions
+}
+
+fn guard_for_protection(data: &Data, p: Protection, item: &Item) -> Guard {
     let locks = p.locks == Policy::Respect;
     let tags = p.cannot_roll == Policy::Respect;
     let tag_of = |meta: MetaMod, name: &str| {
@@ -1022,6 +1218,15 @@ struct Run<'a> {
     size: usize,
     /// Set while the ops after a player's choice run; they are conditional too.
     in_choice: usize,
+    /// Whether any op did its work: produced an item that differs from the one it was given, or
+    /// rolled values or an enchant (which the model may not be able to show as a different item).
+    /// A rarity-only raise with no explicit modifier is no change (see [`unchanged`]). A step
+    /// that never did any work is refused when its whole outcome is the input (claim
+    /// `empty.refused`).
+    changed: bool,
+    /// The reason a conditional op last had nothing to do, kept for that refusal: it names the
+    /// pool or the modifier that could not change.
+    idle: Option<String>,
 }
 
 /// The display-only and one-shot fields after an op: the pasted defence figures go once
@@ -1031,7 +1236,7 @@ struct Run<'a> {
 /// ability to foresee"), except under `keeps_foresight`: the 3.30 patch notes say creating an
 /// Imprint or Mirroring is no longer Modifying the item, so those steps and the imprint restore
 /// leave it alone.
-fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
+pub(crate) fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
     let fed = before.prefixes != after.prefixes
         || before.suffixes != after.suffixes
         || before.implicits != after.implicits
@@ -1047,6 +1252,22 @@ fn settle(before: &Item, after: &mut Item, keeps_foresight: bool) {
             after.foreseen = false;
         }
     }
+}
+
+/// Whether a step left the item as it was: the same item, or the same item with only its rarity
+/// changed and no explicit modifier to show for it. A Magic item with no explicit modifier is not
+/// an item a currency can have made, so raising Normal to Magic without adding one changed
+/// nothing (claim `empty.refused`).
+fn unchanged(before: &Item, after: &Item) -> bool {
+    if before == after {
+        return true;
+    }
+    if after.explicits().next().is_some() {
+        return false;
+    }
+    let mut same = before.clone();
+    same.rarity = after.rarity;
+    same == *after
 }
 
 /// The next tier up a Dominance upgrade gives `m`, or `None` when `m` is elevated already.
@@ -1172,9 +1393,12 @@ impl Run<'_> {
     }
 
     /// An op with nothing to do: refuse the method, or inside a Chance branch (or after a
-    /// player's choice) leave the state as it is.
-    fn nothing(&self, conditional: bool, state: State, reason: String) -> Result<Step, Stop> {
+    /// player's choice) leave the state as it is. The conditional reason is kept on the run: if
+    /// the whole method turns out to change nothing, it is the refusal's reason (claim
+    /// `empty.refused`).
+    fn nothing(&mut self, conditional: bool, state: State, reason: String) -> Result<Step, Stop> {
         if conditional {
+            self.idle = Some(reason);
             Ok(Step::Go(vec![(1.0, state)]))
         } else {
             Err(Stop::Unmet(reason))
@@ -1337,17 +1561,29 @@ impl Run<'_> {
             Ok(b) => b,
             Err(reason) => return self.nothing(conditional, state, reason),
         };
-        Ok(Step::Go(
-            branches
-                .into_iter()
-                .map(|(p, mut item, added)| {
-                    item.canonical(data);
-                    settle(&before, &mut item, matches!(op, Op::Imprint));
-                    let last_added = added.or(state.last_added);
-                    (p, State { item, last_added })
-                })
-                .collect(),
-        ))
+        // Whether the op did any work. A rarity raise that no explicit modifier backs is no
+        // change (see `unchanged`), and a clear that removed nothing is none either; but an op
+        // that rolls — values, an enchant — has done its work even when the item it produces
+        // compares equal to the one it was given, because the model does not carry the rolled
+        // figure (a Sacred Orb on an armour whose defence values are not stated rolls the base's
+        // range and comes back the same item). Refusing that would say the orb cannot be used.
+        let rolled = matches!(
+            op,
+            Op::RerollValues { .. } | Op::SetEnchant { .. } | Op::SetEnchantMod { .. }
+        );
+        let states: Vec<(f64, State)> = branches
+            .into_iter()
+            .map(|(p, mut item, added)| {
+                item.canonical(data);
+                settle(&before, &mut item, matches!(op, Op::Imprint));
+                if rolled || !unchanged(&before, &item) {
+                    self.changed = true;
+                }
+                let last_added = added.or(state.last_added);
+                (p, State { item, last_added })
+            })
+            .collect();
+        Ok(Step::Go(states))
     }
 
     /// The ops that change the item: (chance, item, the mod it added) per branch, or why the op
@@ -1596,14 +1832,10 @@ impl Run<'_> {
             }
             Op::Fracture => {
                 let mut items = Vec::new();
-                for s in Side::BOTH {
-                    for (i, a) in item.affixes(s).iter().enumerate() {
-                        if !a.fractured && data.mod_at(a.roll.m).kind != ModKind::Veiled {
-                            let mut it = item.clone();
-                            it.affixes_mut(s)[i].fractured = true;
-                            items.push(it);
-                        }
-                    }
+                for (side, index) in fracturable(data, item) {
+                    let mut it = item.clone();
+                    it.affixes_mut(side)[index].fractured = true;
+                    items.push(it);
                 }
                 if items.is_empty() {
                     return Err("no modifier can be fractured".into());
@@ -1824,35 +2056,14 @@ impl Run<'_> {
         }
     }
 
-    /// Why `m` cannot go on the item: a mod of another base domain, no room on its side, a
-    /// group the item has, or no crafted room for a crafted modifier.
+    /// Why `m` cannot go on the item; see the free [`cannot_place`], which is the one rule.
     fn cannot_place(&self, item: &Item, m: u32) -> Option<String> {
-        let data = self.data;
-        let md = data.mod_at(m);
-        let side = md.side?;
-        let own_domain = matches!(
-            md.domain.as_str(),
-            "item" | "misc" | "abyss_jewel" | "flask" | "tincture"
-        );
-        if own_domain && md.domain != data.base_at(item.base).domain.repoe() {
-            return Some(format!(
-                "{} cannot go on a {}",
-                md.id,
-                item.class(data).name
-            ));
-        }
-        if room(data, item, side) == 0 {
-            return Some(open_text(Some(side)).into());
-        }
-        if let Some(reason) = group_conflict(data, item, m) {
-            return Some(reason);
-        }
-        (md.kind == ModKind::Crafted && item.crafted_count(data) >= item.crafted_limit(data))
-            .then(|| "the item already has as many crafted modifiers as it can hold".into())
+        cannot_place(self.data, item, m)
     }
 
     /// The weighted pool of one implicit or enchantment kind, normalised; `level` caps mod level
-    /// at the item level.
+    /// at the item level. The candidates are [`kind_weights`]' exact integers, so this cannot
+    /// disagree with a currency that draws from the same pool.
     fn kind_pool(
         &self,
         item: &Item,
@@ -1860,11 +2071,9 @@ impl Run<'_> {
         level: bool,
         extra: impl Fn(&crate::data::ModData) -> bool,
     ) -> Vec<(u32, f64)> {
-        let data = self.data;
-        let tags = item.tags(data);
-        let w: Vec<(u32, f64)> = pool::weighted(data, &[kind], &tags)
-            .filter(|(_, m, _)| (!level || m.level <= item.item_level) && extra(m))
-            .map(|(i, _, w)| (i, w))
+        let w: Vec<(u32, f64)> = kind_weights(self.data, item, kind, level, extra)
+            .into_iter()
+            .map(|(i, weight)| (i, weight as f64))
             .collect();
         pool::normalise(w)
     }

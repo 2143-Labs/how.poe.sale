@@ -18,6 +18,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix|—|0, 1 / 0, 1, 2|no|
 
 ## `cobalt-jewel-normal`
 
@@ -33,6 +34,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `cobalt-jewel-rare-open`
 
@@ -48,6 +50,7 @@ Item Level: 1
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `cogwork-ring-fire`
 
@@ -70,6 +73,7 @@ Adds 15 to 29 Fire Damage to Attacks
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix|—|0, 1 / 0, 1, 2|no|
 
 ## `cogwork-ring-normal`
 
@@ -90,6 +94,7 @@ Implicit Modifiers Cannot Be Changed
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `crown-a`
 
@@ -117,6 +122,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|—|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|—|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|—|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0|no|
 
 ## `crown-a-corrupted`
 
@@ -145,6 +151,7 @@ Corrupted
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|—|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|—|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0|no|
 
 ## `crown-a-mana`
 
@@ -173,6 +180,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|any-crafted-prefix|hypothermia, essence-elemental, spell-crit|0, 1 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-crafted-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0, 1 / 0|no|
 
 ## `crown-actual`
 
@@ -209,6 +217,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|desired-veiled, ok-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|2 / none|no|
 |`crown-shaper-elder`|1.000000|no|desired-veiled, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|1, 2 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-actual-corrupted`
 
@@ -246,6 +255,7 @@ Corrupted
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|desired-veiled, ok-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|2 / none|no|
 |`crown-shaper-elder`|1.000000|no|desired-veiled, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|1, 2 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-c1`
 
@@ -275,6 +285,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-c2`
 
@@ -304,6 +315,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 1, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-c2-blocked`
 
@@ -334,6 +346,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 1 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-d2-scbc`
 
@@ -364,6 +377,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-d2-scbc-corrupted`
 
@@ -395,6 +409,7 @@ Corrupted
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-d2-scbc-fractured`
 
@@ -426,6 +441,7 @@ Fractured Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-ideal`
 
@@ -457,6 +473,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|desired-veiled, ok-prefix, any-crafted-prefix|hypothermia, essence-elemental, spell-crit|none / none|yes|
 |`crown-shaper-elder`|1.000000|no|desired-veiled, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|1 / none|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-l1`
 
@@ -486,6 +503,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-l2`
 
@@ -516,6 +534,7 @@ Shaper Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|yes|good-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|0, 2 / none|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|hypothermia, essence-elemental, good-spell-crit|0, 1, 2 / none|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-shaper-elder-ideal`
 
@@ -549,6 +568,7 @@ Elder Item
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|desired-veiled, any-crafted-prefix, any-other-prefix|hypothermia, essence-elemental, spell-crit|1 / none|no|
 |`crown-shaper-elder`|1.000000|yes|desired-veiled, very-good-prefix, any-crafted-prefix|hypothermia, essence-elemental, good-spell-crit|none / none|yes|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `crown-uninfluenced-fracture`
 
@@ -574,6 +594,7 @@ Veiled Prefix
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|good-prefix, any-crafted-prefix, any-other-prefix|any-other-suffix|0 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-crafted-prefix, any-other-prefix, any-other-prefix|any-other-suffix|0, 1 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|good-prefix, any-other-prefix, any-other-prefix|any-other-suffix|0 / 0, 1|no|
 
 ## `lapis-amulet-a`
 
@@ -594,6 +615,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix|any-other-suffix|0, 1 / 0, 1|no|
 
 ## `lapis-amulet-b`
 
@@ -614,6 +636,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|good-prefix|any-other-suffix|0, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|good-prefix|any-other-suffix|0, 2 / 0, 1|no|
 
 ## `lapis-amulet-fertile`
 
@@ -633,6 +656,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `lapis-amulet-normal`
 
@@ -650,6 +674,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `quicksilver-normal`
 
@@ -665,6 +690,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `simplex-normal`
 
@@ -685,6 +711,7 @@ Implicit Modifiers Cannot Be Changed
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `slink-boots-eldritch`
 
@@ -703,6 +730,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `slink-boots-eldritch-tie`
 
@@ -721,6 +749,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `slink-boots-normal`
 
@@ -736,6 +765,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `slink-boots-unique`
 
@@ -751,6 +781,7 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|—|—|0, 1, 2 / 0, 1, 2|no|
 
 ## `talisman-rare-four`
 
@@ -773,6 +804,7 @@ Adds 10 to 20 Physical Damage to Attacks
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `talisman-rare-six`
 
@@ -797,6 +829,7 @@ Adds 10 to 20 Physical Damage to Attacks
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix, any-other-prefix, any-other-prefix|any-other-suffix, any-other-suffix, any-other-suffix|0 / 0|no|
 
 ## `tincture-magic`
 
@@ -815,3 +848,4 @@ Item Level: 84
 |---|---|---|---|---|---|---|
 |`crown-shaper`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
 |`crown-shaper-elder`|1.000000|no|any-other-prefix|any-other-suffix|0, 1, 2 / 0, 1, 2|no|
+|`totem-shield`|1.000000|no|any-other-prefix|any-other-suffix|0, 1 / 0, 1|no|

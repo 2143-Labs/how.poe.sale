@@ -7,6 +7,8 @@ use std::sync::LazyLock;
 pub mod api;
 pub mod apply;
 pub mod catalog;
+pub mod craft;
+pub mod currency;
 pub mod data;
 pub mod forward;
 pub mod invert;

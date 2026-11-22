@@ -2,7 +2,9 @@
 //! `rules/`.
 
 mod bundle;
+mod loop_report;
 mod methods;
+mod pool_report;
 mod raw;
 
 use std::collections::BTreeMap;
@@ -10,7 +12,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, bail};
 
-const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]";
+const USAGE: &str = "usage: cli bundle --raw <dir> --rules <dir> [--claims <file>] --out <file>\n       cli catalog --bundle <file> --fixtures <dir> --out <dir>\n       cli solve --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli sources --bundle <file> --fixtures <dir> --pattern <pattern> (--item <fixture> | --paste <file>) [--all]\n       cli pool-report --bundle <file> --base <name> --item-level <n> [--influence <name>] --out <file>\n       cli loop-report --bundle <file> [--fixtures <dir>] --pattern <name> --base <name> --item-level <n> [--influence <name>] --depth <n>";
 
 /// Parses `--flag value` pairs; any flag not in `names` is an error.
 fn flag_map(
@@ -50,6 +52,21 @@ fn write(out: &std::path::Path, bytes: &[u8]) -> anyhow::Result<()> {
             .with_context(|| format!("creating {}", parent.display()))?;
     }
     std::fs::write(out, bytes).with_context(|| format!("writing {}", out.display()))
+}
+
+/// The bundle, or an error that says how to build one: the README's "Develop" section and the
+/// command's shape, with the path the caller asked for as `--out`. The hints name no dataset, so
+/// `--bundle data/simple.json` is told to write `data/simple.json`, not the game's own bundle.
+fn read_bundle(bundle: &std::path::Path) -> anyhow::Result<poe1::data::Data> {
+    let text = std::fs::read_to_string(bundle).with_context(|| {
+        format!(
+            "reading {} (build a bundle first — see the \"Develop\" section of README.md: \
+             `cargo run -p cli --release -- bundle --raw <raw-dir> --rules <rules-dir> --out {}`)",
+            bundle.display(),
+            bundle.display(),
+        )
+    })?;
+    poe1::data::Data::from_json(&text).with_context(|| format!("loading {}", bundle.display()))
 }
 
 /// Everything both report subcommands need: the bundle, the fixtures, the pattern and the item,
@@ -227,6 +244,113 @@ fn main() -> anyhow::Result<()> {
                 )
             );
             Ok(())
+        }
+        "pool-report" => {
+            let mut given = flag_map(
+                args,
+                &["--bundle", "--base", "--item-level", "--influence", "--out"],
+            )?;
+            let mut required = |name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let bundle = required("--bundle")?;
+            let base = required("--base")?;
+            let level = required("--item-level")?;
+            let out = required("--out")?;
+            let influence = given.remove("--influence");
+            let base = base
+                .to_str()
+                .with_context(|| format!("{} is not a base name", base.display()))?;
+            let level: u8 = level
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--item-level {} is not a number", level.display()))?;
+            let influence = influence
+                .map(|name| {
+                    let text = name
+                        .to_str()
+                        .with_context(|| format!("{} is not an influence name", name.display()))?;
+                    pool_report::influence(text).with_context(|| format!("no influence {text:?}"))
+                })
+                .transpose()?;
+            let data = read_bundle(&bundle)?;
+            let item = pool_report::item(&data, base, level, influence)?;
+            write(&out, pool_report::render(&data, &item).as_bytes())
+        }
+        "loop-report" => {
+            let mut given = flag_map(
+                args,
+                &[
+                    "--bundle",
+                    "--fixtures",
+                    "--pattern",
+                    "--base",
+                    "--item-level",
+                    "--influence",
+                    "--depth",
+                ],
+            )?;
+            let mut required = |name: &str| {
+                given
+                    .remove(name)
+                    .with_context(|| format!("missing {name}; {USAGE}"))
+            };
+            let bundle = required("--bundle")?;
+            let pattern = required("--pattern")?;
+            let base = required("--base")?;
+            let level = required("--item-level")?;
+            let depth = required("--depth")?;
+            // The pattern fixtures, at the same default `solve` and the catalog use.
+            let fixtures = given
+                .remove("--fixtures")
+                .unwrap_or_else(|| PathBuf::from("fixtures"));
+            let influence = given.remove("--influence");
+            let pattern = pattern
+                .to_str()
+                .with_context(|| format!("{} is not a pattern name", pattern.display()))?;
+            let base = base
+                .to_str()
+                .with_context(|| format!("{} is not a base name", base.display()))?;
+            let level: u8 = level
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--item-level {} is not a number", level.display()))?;
+            let depth: usize = depth
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .with_context(|| format!("--depth {} is not a number", depth.display()))?;
+            if depth == 0 {
+                bail!("--depth must be at least 1; {USAGE}");
+            }
+            let influence = influence
+                .map(|name| {
+                    let text = name
+                        .to_str()
+                        .with_context(|| format!("{} is not an influence name", name.display()))?;
+                    pool_report::influence(text).with_context(|| format!("no influence {text:?}"))
+                })
+                .transpose()?;
+            let data = read_bundle(&bundle)?;
+            let item = pool_report::item(&data, base, level, influence)?;
+            let pattern = loop_report::pattern(&data, &fixtures, pattern)?;
+            let report = loop_report::report(&data, &pattern, &item, depth)?;
+            print!("{}", report.text);
+            // The document is on stdout either way; a depth that did not fit still fails the
+            // command, so a script cannot read a partial account as a result.
+            match report.stopped {
+                Some(stop) => bail!(
+                    "depth {} of {} did not fit: {}; the report above covers the {} depth{} that \
+                     ran",
+                    stop.depth,
+                    depth,
+                    stop.reason,
+                    stop.depth - 1,
+                    if stop.depth == 2 { "" } else { "s" },
+                ),
+                None => Ok(()),
+            }
         }
         other => bail!("unknown command {other}; {USAGE}"),
     }
