@@ -62,6 +62,43 @@ pub trait Currency {
     fn apply(&self, item: &Item, filter: &Option<ItemSetFilter>) -> ItemOutputSet;
 }
 
+/// The currency ids this crate models, in the order the craft loop and the page list them.
+///
+/// Every one has an arm in [`modelled`]. Essences and eldritch embers are parameterised by a
+/// sub-kind and fracture is a service rather than a currency, so none of them is registered: the
+/// machine could not apply them from an id alone.
+pub const MODELLED: [&str; 7] = [
+    "currency/transmutation",
+    "currency/alteration",
+    "currency/augmentation",
+    "currency/regal",
+    "currency/exalted",
+    "currency/scouring",
+    "currency/annulment",
+];
+
+/// The registry: a modelled id resolved to the currency that id names.
+///
+/// This is the single place a currency is built, so a policy decides and the machine applies.
+/// Adding a currency is one arm here plus its id — nothing in `craft/`'s vocabulary changes, and a
+/// policy can name the new id the moment it is registered.
+///
+/// The lookup is a `match` on the id string, so the same id cannot be registered twice: a second
+/// arm for an id is an unreachable pattern, which the workspace's clippy denies. That is a
+/// property of the design, not something a test can add to the match to break.
+pub fn modelled<'d>(data: &'d Data, id: &str) -> Option<Box<dyn Currency + 'd>> {
+    Some(match id {
+        "currency/transmutation" => Box::new(Transmutation::new(data)),
+        "currency/alteration" => Box::new(Alteration::new(data)),
+        "currency/augmentation" => Box::new(Augmentation::new(data)),
+        "currency/regal" => Box::new(Regal::new(data)),
+        "currency/exalted" => Box::new(Exalted::new(data)),
+        "currency/scouring" => Box::new(Scouring::new(data)),
+        "currency/annulment" => Box::new(Annulment::new(data)),
+        _ => return None,
+    })
+}
+
 /// A step's result before it is folded into a set: the item, its weight, and the modifier the step
 /// added if it added one.
 pub type Weighted = (Item, u128, Option<(Side, u32)>);

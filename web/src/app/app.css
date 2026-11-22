@@ -1,0 +1,32 @@
+.prices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.price-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.price-row > span {
+  color: var(--muted);
+}
+
+.priced-total {
+  font-size: 16px;
+  color: var(--accent);
+  margin: 6px 0;
+}
+
+.loop-table {
+  overflow-x: auto;
+}
+
+.picker-chosen {
+  margin-bottom: 6px;
+}

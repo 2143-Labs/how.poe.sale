@@ -1,24 +1,23 @@
 # how.poe.sale
 
-A crafting solver for Path of Exile 1 (3.29, Curse of the Allflame). Paste an item and choose the item you want (a built-in pattern, a pasted item, or a pattern written as JSON), and it ranks every single craft the item allows by what that craft does for the goal, with exact odds where every outcome is computed. It also lists the inputs the item could have been made from one step earlier.
+A crafting calculator for Path of Exile 1 (3.29, Curse of the Allflame). Pick a base and a goal from the modifiers it can roll, and the page runs the owner's craft loop on an exact ladder of item classes: one row per step with the chance of each outcome, the mass still live, and — on request — the loop priced in chaos. A second panel applies one currency to the item and lists every outcome with its exact chance and the game text it produces.
 
-Live at <https://how.john2143.com>. Everything runs in your browser: the engine is Rust compiled to WebAssembly, running in a Web Worker. Your pattern and item are kept in `localStorage` and in the share link; the server only serves files.
+Live at <https://how.john2143.com>. Everything runs in your browser: the engine is Rust compiled to WebAssembly, running in a Web Worker. Your setup is kept in `localStorage` and in the share link; the server only serves files.
 
-## Two directions
+## What the page shows
 
-The most important feature of how.poe.sale is that it works in both directions on one chart.
+1. **The loop.** A white base, a goal written as modifiers, and the currencies the loop may use. The depth table is exact: every stage's mass is a `Fraction`, not a sample.
+2. **The price.** The same loop as a Markov decision process over a bounded class graph, costed from a price per currency. The closure of a real craft is far past the graph's budget, so the report says where it was cut and the cost is an upper bound.
+3. **One currency.** Every outcome of one currency on the item, with its exact chance and the text the game would show.
 
-1. **Forward: what can this make?** Given an item, or the inputs to a node, apply a currency or other crafting method and show every possible output in the flowchart, each with its chance.
-2. **Backward: what could have made this?** Given an item, show the steps that could have produced it.
-
-Forward comes first. Backward work waits until forward is mastered. Both directions grow the same chart: a node is a class of items, so a forward outcome and a backward input that land on the same class are the same node.
+The reverse direction — what could have made a given item — is not built on this engine yet.
 
 ## How it works
 
 | Path | What |
 |---|---|
-| `crates/poe1` | The PoE1 3.29 model: the data bundle, concrete items, patterns, every crafting method as data, `apply`, the one-step solver and its inverse, game text, the generated catalog and the JSON views the browser shows. See `crates/poe1/README.md`. |
-| `crates/cli` | Builds `data/bundle.json` from the pinned repoe export and `rules/`, and `data/simple.json` from `games/simple/`; writes `catalog/`, and runs the solver from the command line. |
+| `crates/poe1` | The item model, the per-currency crafting rules, the goal filter, and the lumped craft loop with its priced graph. `cargo run -p cli -- loop-report --bundle data/bundle.json --fixtures fixtures --pattern totem-shield --base "Supreme Spiked Shield" --item-level 87 --influence shaper --depth 6` prints the loop. |
+| `crates/cli` | Builds `data/bundle.json` from the pinned repoe export and `rules/`, and `data/simple.json` from `games/simple/`; prints the loop and pool reports. |
 | `crates/simple` | The crafting engine behind the Craft planner page: items, currencies with chances and a cost, methods, crafts wired exit to step with each block reading its own mod filter, and the solver that carries cost and spread through loops. Six bases are compiled in from `crates/simple/data/*.json`; add one by writing a `<name>.spec.json` and running `python3 crates/simple/data/gen_base.py data/raw crates/simple/data/<name>.spec.json > crates/simple/data/<name>.json`, then listing it in `src/bases.rs`. `cargo run -p simple` prints the shield's report (`crates/simple/craft.md`). |
 | `crates/wasm` | The `Bridge` the worker calls, and the `CraftBridge` the Craft planner's worker calls. |
 | `crates/server` | axum static server for the built front end, plus `/health`. |
@@ -46,13 +45,11 @@ cargo test --workspace --release
 cd web && npm run build && npm test
 ```
 
-A chart page can be kept as a test: press Share, save the copied link as `web/src/__tests__/charts/<name>.link`, and `npm test` replays it — the root, watch, pins and merges are all in the link — comparing the cards, the pinned steps and the chain's totals with its snapshot. `npm test -- -u` accepts a new snapshot once the diff has been read.
-
 Container image: `nix build .#container` writes a gzipped image tarball to `./result` (`podman load -i result`). The server reads `PORT` (default 8080) and `STATIC_DIR` (default `./web/dist`).
 
 ## Refreshing game data
 
-The data is pinned to the repoe-fork export of 3.29.3.3 (commit `d8635430f4005faccfed69c7957ef2fb9f8fb1fb`). To move to a new export, change the commit and the nine SRI hashes in both `flake.nix` and `scripts/fetch-data.sh` (compute them with `nix hash file --sri <file>`), regenerate the bundle and the catalog, and rerun the tests. Several tests assert exact pool weights, so expect to update them on a new patch.
+The data is pinned to the repoe-fork export of 3.29.3.3 (commit `d8635430f4005faccfed69c7957ef2fb9f8fb1fb`). To move to a new export, change the commit and the nine SRI hashes in both `flake.nix` and `scripts/fetch-data.sh` (compute them with `nix hash file --sri <file>`), regenerate the bundle, and rerun the tests. Several tests assert exact pool weights, so expect to update them on a new patch.
 
 ## Deploy
 
@@ -62,13 +59,14 @@ The data is pinned to the repoe-fork export of 3.29.3.3 (commit `d8635430f4005fa
 
 ## Limits of this version
 
-- One step of lookahead only: the solver ranks the next craft, not a whole route.
-- Reforges (Chaos Orb, essences, fossils and the like) are ranked from their certain part until the reforge fill lands.
-- Costs are listed in the reports. A craft's loop can now be priced, but only over the currencies
-  the craft engine implements and only on a *bounded* class graph: the reachable closure of a real
-  craft is over 500 000 classes, so the priced graph cuts at 1 000 and reports that it truncated. A
+- The app shows the priced loop and single-currency outcomes. The reverse direction (what could
+  have made an item) is not built on this engine yet.
+- Seven currencies are modelled exactly: transmutation, alteration, augmentation, regal, exalted,
+  scouring and annulment. Essences, eldritch embers and fracture are not in the loop.
+- The priced loop is solved on a *bounded* class graph: the reachable closure of a real craft is
+  over 500 000 classes, so the graph cuts at 1 000 and says how many classes it folded away. A
   priced report is therefore an upper bound on the truncated graph's optimum, not a market answer;
-  it still needs prices and a junk sell value from the owner.
+  it still needs a price from the owner (the page starts from the 3.30 currency prices).
 
 ## License
 

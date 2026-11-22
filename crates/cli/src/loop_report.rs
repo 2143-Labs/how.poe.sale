@@ -29,9 +29,8 @@ const PLACES: usize = 6;
 /// The pattern fixture named by `--pattern`, read from the `--fixtures` tree and compiled against
 /// the bundle.
 ///
-/// The fixture is the same file `solve` and the catalog read, so a loop report and a step report
-/// agree on what the goal is; the item comes from the flags rather than a fixture because the loop
-/// starts from a white base.
+/// The fixture is the goal the page's default also uses; the item comes from the flags rather than
+/// a fixture because the loop starts from a white base.
 pub fn pattern(data: &Data, fixtures: &Path, name: &str) -> anyhow::Result<Pattern> {
     let path = fixtures.join("patterns").join(format!("{name}.json"));
     let text = std::fs::read_to_string(&path).with_context(|| {
@@ -67,8 +66,8 @@ pub struct Stop {
 
 /// The whole document, after running up to `depth` steps (at least one) of the loop from `item`.
 ///
-/// The filter is derived from the pattern the same way the solver derives it, so the stages a
-/// depth records are the stages `solve` would grade.
+/// The filter is derived from the pattern by `ItemSetFilter::from_pattern`, so a depth's stages
+/// are the goal filter's own buckets.
 ///
 /// A depth too deep for the exact state does not throw the earlier depths away: they are rendered,
 /// the document says which depth stopped it and why, and [`Report::stopped`] carries the failure so

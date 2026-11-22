@@ -1,6 +1,5 @@
 //! Patterns: the owner's two Archdemon Crown patterns against the Crown fixtures, value
-//! thresholds on unrolled values, slot progress, the solver-grade state and its flat lift, and
-//! compile errors.
+//! thresholds on unrolled values, and compile errors.
 
 mod common;
 
@@ -730,18 +729,6 @@ fn a_target_leaves_out_a_veiled_placeholder() {
         ]
     );
     Pattern::compile(d, &spec).expect("compiles");
-}
-
-/// crown-l1 has five modifiers that are not veiled placeholders: five desired slots worth three
-/// each. crown-a holds the same three suffixes and no prefix, so it holds 9 of the 15.
-#[test]
-fn a_target_scores_by_its_own_slots() {
-    let d = test_data();
-    let spec = poe1::pattern::from_item(d, &item("crown-l1"));
-    assert_eq!(spec.prefixes.len() + spec.suffixes.len(), 5);
-    let pat = Pattern::compile(d, &spec).expect("compiles");
-    let progress = poe1::solve::item_progress(d, &pat, &item("crown-a"));
-    assert!((progress - 9.0 / 15.0).abs() < 1e-12, "{progress}");
 }
 
 /// A metamod is a crafted modifier, but not the modifier `{"crafted": true}` is looking for: it is

@@ -1,176 +1,84 @@
-//! What the browser shows, as JSON: a pasted item as the engine reads it, the steps that could
-//! have produced an abstract item (`preimages::preimages`), the modifiers a target can name, and
-//! the bases. Every number and word is chosen here; the page lays them out.
+//! What the browser shows, as JSON: the start view, a base's modifiers, the priced craft loop and
+//! one currency's outcomes. Every number and word is chosen here; the page lays them out.
+//!
+//! Exact masses cross the wire as strings on purpose: [`Fraction`] is a numerator and a
+//! denominator, and [`ItemOutputSet::total`] is a `u128`, both of which JavaScript would round if
+//! they arrived as numbers. A [`Mass`] therefore carries `exact` (`"num/den"`) and `percent` (six
+//! decimals, no sign) as text, and `apply_currency`'s `total` is a decimal string.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::apply;
-use crate::catalog::paid_cost;
+use crate::craft::{self, Priced, Prices, Report, Stage};
+use crate::currency::{self, Accept, Fraction, ItemOutputSet, ItemSetFilter, ModSelector};
 use crate::data::{Data, ModKind, Side};
-use crate::forward::{self, Kind};
-use crate::item::{AbsSpec, Influence, Item, ItemError, ItemSpec, Rarity, SlotSpec};
+use crate::item::{Influence, Item, ItemError, ItemSpec, Rarity};
 use crate::method::{Pool, SideReq};
-use crate::preimages::{self, AbsItem, Preimages, Slot};
 use crate::text;
 
-/// A pasted item as the engine read it.
-#[derive(Serialize, Debug, Clone, PartialEq)]
+/// A mass as the page reads it: the percentage is scale, the fraction beside it is the number.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct ItemView {
-    pub item: ItemSpec,
-    /// The item printed back as game text.
-    pub text: String,
-    /// Every line the reader could not explain.
-    pub warnings: Vec<String>,
+pub struct Mass {
+    /// `"num/den"`.
+    pub exact: String,
+    /// Six decimals, without a `%` sign.
+    pub percent: String,
 }
 
-/// A method that shows no input, and why.
+impl Mass {
+    fn of(mass: Fraction) -> Mass {
+        Mass {
+            exact: mass.to_string(),
+            percent: mass.percent_text(6),
+        }
+    }
+}
+
+/// One line item of a currency's cost, keyed by the currency metadata id `Prices::prices` uses.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct UnmetView {
-    pub method: String,
+pub struct CostView {
+    pub key: String,
     pub name: String,
-    pub reason: String,
+    pub amount: f64,
 }
 
-/// A class as the page shows it: names and modifier texts, not ids.
+/// A modelled currency: its id, its display name and what it costs.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct ClassView {
-    pub base: String,
-    pub item_level: u8,
-    pub rarity: String,
-    pub corrupted: bool,
+pub struct CurrencyView {
+    pub id: String,
+    pub name: String,
+    pub costs: Vec<CostView>,
+}
+
+/// A currency named only: `apply_currency`'s answer says which currency produced the outcomes.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CurrencyNameView {
+    pub id: String,
+    pub name: String,
+}
+
+/// What the page needs before its first request.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Start {
+    pub version: String,
+    /// The bundle's patch, so the page can say which game data it is running.
+    pub patch: String,
+    pub bases: Vec<String>,
     pub influences: Vec<String>,
-    /// The tracked modifiers, each `"… or better"` when it stands for its family.
-    pub prefixes: Vec<String>,
-    pub suffixes: Vec<String>,
-    pub any_prefixes: u8,
-    pub any_suffixes: u8,
-}
-
-/// A chart node: its class, and what it stands for.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct NodeView {
-    pub id: String,
-    pub spec: AbsSpec,
-    pub view: ClassView,
-    /// The items the node stands for, when it has any of its own.
-    pub members: Option<usize>,
-    pub approx: bool,
-    /// The step whose outcome gave the node its items, when a forward step did.
-    pub source: Option<SourceView>,
-}
-
-/// The forward step a node's items came from: the node it was used on, and the method.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct SourceView {
-    pub from: String,
-    pub method: String,
-}
-
-/// One outcome of a method applied to a node.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct OutcomeView {
-    pub key: String,
-    /// `item`, `destroyed`, `refused` or `notModelled`.
-    pub kind: String,
-    pub p: f64,
-    pub interval: Option<[f64; 2]>,
-    pub view: Option<ClassView>,
-    pub reason: Option<String>,
-}
-
-/// The chance a step's result holds a watched modifier.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct WatchView {
-    /// The watched modifier's text, or "at least one of these".
-    pub label: String,
-    pub p: f64,
-    pub interval: Option<[f64; 2]>,
-}
-
-/// One method's outcomes from a node.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct AppliedView {
-    pub node: String,
-    pub method: String,
-    pub name: String,
-    pub cost: String,
-    /// The reforges run, when the numbers are simulated.
-    pub simulated: Option<u32>,
-    /// The method can be used again on each result with the same odds, so a count of tries
-    /// means something.
-    pub repeatable: bool,
-    pub outcomes: Vec<OutcomeView>,
-    /// For each watched modifier the chance the result holds it, then, with two or more
-    /// watched, the chance it holds at least one: the outcomes split by every tracked slot and
-    /// untracked count, so these are their sums.
-    pub watched: Vec<WatchView>,
-}
-
-/// One input a method could have turned into a node.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct InputView {
-    pub key: String,
-    pub method: String,
-    pub name: String,
-    pub p: f64,
-    pub interval: Option<[f64; 2]>,
-    pub cost: String,
-    pub view: ClassView,
-    pub note: Option<String>,
-    /// The method used on this input can be used again on the node with the same odds.
-    pub repeatable: bool,
-}
-
-/// The inputs that could have produced a node, and the methods that show none.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct MadeByView {
-    pub node: String,
-    pub inputs: Vec<InputView>,
-    pub skipped: Vec<UnmetView>,
-}
-
-/// A method a node can be pushed through.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct MethodOptionView {
-    pub id: String,
-    pub name: String,
-    pub family: String,
-    pub cost: String,
-}
-
-/// A pinned step. Edges always run in crafting order.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct EdgeView {
-    pub from: String,
-    pub to: String,
-    pub method: String,
-    pub name: String,
-    pub p: f64,
-    pub interval: Option<[f64; 2]>,
-    /// The method can be used again on the step's result with the same odds.
-    pub repeatable: bool,
-}
-
-/// A node added to the chart, and the edge that added it.
-#[derive(Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct PinnedView {
-    pub node: NodeView,
-    pub edge: EdgeView,
+    /// The stage names a depth row can carry, in the order the page shows its columns.
+    pub stages: Vec<String>,
+    pub accepts: Vec<String>,
+    /// The modelled currencies, in [`currency::MODELLED`] order.
+    pub currencies: Vec<CurrencyView>,
+    /// Chaos per cost key, so the price panel opens with usable numbers.
+    pub price_defaults: BTreeMap<String, f64>,
 }
 
 /// A modifier a target can name.
@@ -186,39 +94,212 @@ pub struct ModOptionView {
     pub source: String,
 }
 
+/// One stage's mass in a depth row or in the totals.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct StageView {
+    pub stage: String,
+    pub mass: Mass,
+}
+
+/// One depth of the loop: what a step left live, and what mass it recorded per stage.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DepthView {
+    pub depth: usize,
+    pub classes: usize,
+    pub live: Mass,
+    /// Only the stages that took mass at this depth, as the CLI's report prints them.
+    pub stages: Vec<StageView>,
+}
+
+/// One currency's expected consumption on the way to the goal.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SpendView {
+    pub key: String,
+    pub name: String,
+    pub count: f64,
+}
+
+/// What the solved priced graph says.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PricedView {
+    pub expected_chaos: f64,
+    pub sd_chaos: f64,
+    /// Class nodes in the reachable closure.
+    pub closure: usize,
+    /// Outcome classes the node budget folded into the frontier.
+    pub truncated: usize,
+    /// Expected line items consumed, largest count first.
+    pub spend: Vec<SpendView>,
+}
+
+/// The whole loop report: the start item, one row per depth, the mass that left the loop, and the
+/// priced graph when the caller asked for it.
+#[derive(Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LoopView {
+    pub start: ItemLine,
+    pub depths: Vec<DepthView>,
+    /// Only `desired`, `reset` and `stop`: the stages whose mass left the loop.
+    pub totals: Vec<StageView>,
+    pub live: Mass,
+    pub stopped: Option<String>,
+    pub priced: Option<PricedView>,
+    /// Everything the request could not give a number for, old to new.
+    pub warnings: Vec<String>,
+}
+
+/// The item the loop starts from, as the engine reads it.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemLine {
+    pub text: String,
+    pub stage: String,
+}
+
+/// One outcome of one currency.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OutcomeView {
+    pub chance: Mass,
+    pub text: String,
+    /// The modifier the step added, as the game shows it.
+    pub added: Option<String>,
+}
+
+/// One currency's exact outcomes on one item.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyView {
+    pub currency: CurrencyNameView,
+    /// The weights' shared total, as a decimal string (`u128` outruns a JS number).
+    pub total: String,
+    /// Largest weight first, at most [`ROW_LIMIT`] rows.
+    pub outcomes: Vec<OutcomeView>,
+    /// How many outcomes the row limit left out.
+    pub more: usize,
+    /// The hidden outcomes' combined exact chance, taken from their weights over `total` rather
+    /// than as `1 - shown`, so rounding in the shown rows cannot hide in it. `0/1` when `more` is
+    /// zero.
+    pub rest: Mass,
+}
+
+/// The most outcomes `apply_currency` lists.
+const ROW_LIMIT: usize = 200;
+
 /// The most modifiers `mods` lists.
 const MOD_LIMIT: usize = 2000;
 
-/// Reads a pasted item: the item, with the warnings of the reader.
-fn read(data: &Data, text: &str) -> Result<(Item, Vec<String>), String> {
-    let parsed = text::parse(data, text).map_err(|e| format!("item: {e}"))?;
-    let item = Item::from_spec(data, &parsed.spec).map_err(|e| format!("item: {e}"))?;
-    Ok((item, parsed.warnings))
+/// Every stage a depth row or a total can carry, in enum order: the seven classifiers, then the
+/// loop's two terminals `reset` and `stop`, which no item classifies into but the loop's summary
+/// fills.
+const STAGES: [Stage; 9] = [
+    Stage::Desired,
+    Stage::GoodPair,
+    Stage::GoodPrefix,
+    Stage::GoodSuffix,
+    Stage::Other,
+    Stage::Spare,
+    Stage::SpentRare,
+    Stage::Reset,
+    Stage::Stop,
+];
+
+/// The `accept` values the request may name, in the order the page lists them.
+const ACCEPTS: [&str; 3] = ["has-desired", "desired-or-good-both-sides", "any"];
+
+/// The 3.30 chaos prices each modelled currency is listed at, so the price panel opens with the
+/// numbers the owner quoted rather than zeroes.
+const PRICE_DEFAULTS: [(&str, f64); 7] = [
+    ("currency/transmutation", 0.021),
+    ("currency/alteration", 0.091),
+    ("currency/augmentation", 0.067),
+    ("currency/regal", 0.217),
+    ("currency/exalted", 0.83),
+    ("currency/scouring", 0.625),
+    ("currency/annulment", 8.6),
+];
+
+/// What `buy` must say about the finished item when the caller gives no price for it.
+///
+/// `Priced::report` refuses a graph whose goal is not for sale, and the page has no market for the
+/// finished item — it prices a craft, not a trade. A large finite number keeps "buy the goal" out
+/// of the optimum without putting an infinity into the solve; the craft is still free to reach the
+/// goal through its own outcomes.
+const GOAL_NOT_FOR_SALE: f64 = 1e12;
+
+/// The warning the priced panel shows when the solved plan buys the finished item instead of
+/// crafting it: an empty or unreachable goal has no craft to price.
+const GOAL_UNREACHABLE: &str =
+    "the goal cannot be reached by crafting from this base, so the loop has no price";
+
+/// The whole start view.
+pub fn start(data: &Data) -> Start {
+    let mut currencies = Vec::with_capacity(currency::MODELLED.len());
+    let mut price_defaults = BTreeMap::new();
+    for &id in &currency::MODELLED {
+        let Some(method) = data.method(id) else {
+            continue;
+        };
+        let costs = apply::cost(data, method, &apply::Params::default()).unwrap_or_default();
+        if let Some(&(_, chaos)) = PRICE_DEFAULTS.iter().find(|(other, _)| *other == id) {
+            // A key shared by two methods keeps the first method's price, which is the order the
+            // table and `MODELLED` both have.
+            for cost in &costs {
+                price_defaults.entry(cost.key.clone()).or_insert(chaos);
+            }
+        }
+        currencies.push(CurrencyView {
+            id: id.to_string(),
+            name: method.name.clone(),
+            costs: costs
+                .into_iter()
+                .map(|cost| CostView {
+                    name: currency_name(data, &cost.key),
+                    key: cost.key,
+                    amount: cost.amount,
+                })
+                .collect(),
+        });
+    }
+    Start {
+        version: "0.1.0".to_string(),
+        patch: data.bundle.patch.clone(),
+        bases: bases(data),
+        influences: Influence::ALL.into_iter().map(influence_wire).collect(),
+        stages: STAGES
+            .iter()
+            .map(|stage| stage.name().to_string())
+            .collect(),
+        accepts: ACCEPTS.iter().map(|accept| (*accept).to_string()).collect(),
+        currencies,
+        price_defaults,
+    }
 }
 
-/// A pasted item as the engine reads it.
-pub fn read_item(data: &Data, text: &str) -> Result<ItemView, String> {
-    let (item, warnings) = read(data, text)?;
-    Ok(ItemView {
-        item: item.to_spec(data),
-        text: text::render(data, &item),
-        warnings,
-    })
+/// An influence as `ItemSpec`'s `influences` spell it, so a checkbox's value can go straight back
+/// into a request. The enum serialises `kebab-case`; [`Influence::name`] is the display form.
+fn influence_wire(influence: Influence) -> String {
+    serde_json::to_value(influence)
+        .ok()
+        .and_then(|value| value.as_str().map(str::to_string))
+        .unwrap_or_else(|| influence.name().to_string())
 }
 
+/// The currency metadata id's display name, or the key itself when the bundle names no currency
+/// under it (a beast tag, say): the page still has something to print.
+fn currency_name(data: &Data, key: &str) -> String {
+    data.currency_by_id(key)
+        .map_or_else(|| key.to_string(), |currency| currency.name.clone())
+}
+
+/// A method's display name, or its id when the data has no such method.
 fn name_of(data: &Data, method: &str) -> String {
     data.method(method)
         .map_or_else(|| method.to_string(), |m| m.name.clone())
-}
-
-fn unmet(data: &Data, list: &[(String, String)]) -> Vec<UnmetView> {
-    list.iter()
-        .map(|(method, reason)| UnmetView {
-            method: method.clone(),
-            name: name_of(data, method),
-            reason: reason.clone(),
-        })
-        .collect()
 }
 
 /// A modifier's text on one line, the way the game shows it: the unrevealed veiled placeholder
@@ -236,503 +317,6 @@ fn mod_text(data: &Data, m: u32) -> String {
     }
 }
 
-/// The backward methods a chart offers when the page names none.
-const BACKWARD: [&str; 4] = [
-    "currency/exalted",
-    "currency/annulment",
-    "bench/add/StrMasterItemGenerationCannotChangePrefixes",
-    "bench/add/DexMasterItemGenerationCannotChangeSuffixes",
-];
-
-/// The order the page lists method families in: the ones a crafter reaches for first, then the
-/// long tables of bench crafts and unveils.
-fn family_rank(family: &str) -> usize {
-    const ORDER: [&str; 8] = [
-        "currency", "essence", "harvest", "fossil", "catalyst", "beast", "bench", "unveil",
-    ];
-    ORDER
-        .iter()
-        .position(|f| *f == family)
-        .unwrap_or(ORDER.len())
-}
-
-/// One chart: a root class, the modifiers it tracks, and every class reachable from the root in
-/// either direction. A node's id is its class, so a forward step and a backward step that reach
-/// the same class are one node.
-pub struct Chart {
-    tracked: Vec<Slot>,
-    /// The modifiers the page watches for ("Also track"), in its order, less the root's own.
-    watched: Vec<u32>,
-    nodes: BTreeMap<String, (AbsItem, Option<forward::Node>)>,
-    /// For each node a forward step gave its items: that step's node and method.
-    sources: BTreeMap<String, (String, String)>,
-    last: Option<(String, String, forward::Applied)>,
-    made_by: Option<(String, Preimages)>,
-}
-
-impl Chart {
-    pub fn start(
-        data: &Data,
-        root_json: &str,
-        watch_json: &str,
-    ) -> Result<(Chart, NodeView), String> {
-        let spec: AbsSpec = serde_json::from_str(root_json).map_err(|e| format!("root: {e}"))?;
-        let watch: Vec<SlotSpec> =
-            serde_json::from_str(watch_json).map_err(|e| format!("watch: {e}"))?;
-        let tracked = preimages::tracked(data, &spec, &watch).map_err(|e| format!("track: {e}"))?;
-        let in_root: BTreeSet<&str> = spec
-            .prefixes
-            .iter()
-            .chain(&spec.suffixes)
-            .map(|s| s.id.as_str())
-            .collect();
-        let mut watched = Vec::new();
-        for w in watch.iter().filter(|w| !in_root.contains(w.id.as_str())) {
-            if let Some(slot) = tracked.iter().find(|s| data.mod_at(s.m).id == w.id)
-                && !watched.contains(&slot.m)
-            {
-                watched.push(slot.m);
-            }
-        }
-        let target = AbsItem::from_spec(data, &spec).map_err(|e| format!("root: the item {e}"))?;
-        target
-            .validate(data)
-            .map_err(|e| format!("root: the item {e}"))?;
-        let id = preimages::abs_key(data, &target);
-        let members = concrete(&target).then(|| forward::Node {
-            members: vec![(target.item.clone(), 1.0)],
-            approx: false,
-        });
-        let mut nodes = BTreeMap::new();
-        nodes.insert(id.clone(), (target, members));
-        let chart = Chart {
-            tracked,
-            watched,
-            nodes,
-            sources: BTreeMap::new(),
-            last: None,
-            made_by: None,
-        };
-        let view = chart.node_view(data, &id)?;
-        Ok((chart, view))
-    }
-
-    /// The methods a node can be pushed through: every one-input method `apply` accepts for at
-    /// least one of the node's heaviest items.
-    pub fn methods(&mut self, data: &Data, node: &str) -> Result<Vec<MethodOptionView>, String> {
-        let state = self.members(data, node)?;
-        let mut heaviest: Vec<&Item> = state.members.iter().map(|(item, _)| item).collect();
-        heaviest.sort_by(|a, b| {
-            let weight = |item: &Item| {
-                state
-                    .members
-                    .iter()
-                    .find(|(other, _)| other == item)
-                    .map_or(0.0, |(_, w)| *w)
-            };
-            weight(b).total_cmp(&weight(a))
-        });
-        let probe = &heaviest[..heaviest.len().min(20)];
-        let mut out: Vec<MethodOptionView> = data
-            .methods
-            .iter()
-            .filter(|m| m.inputs == 1)
-            .filter(|m| {
-                probe.iter().any(|item| {
-                    apply::check(
-                        data,
-                        m,
-                        std::slice::from_ref(*item),
-                        &apply::Params::default(),
-                    )
-                    .is_ok()
-                })
-            })
-            .map(|m| MethodOptionView {
-                id: m.id.clone(),
-                name: m.name.clone(),
-                family: serde_json::to_value(m.family)
-                    .ok()
-                    .and_then(|v| v.as_str().map(str::to_string))
-                    .unwrap_or_default(),
-                cost: paid_cost(
-                    data,
-                    &apply::cost(data, m, &apply::Params::default()).unwrap_or_default(),
-                ),
-            })
-            .collect();
-        out.sort_by_cached_key(|m| (family_rank(&m.family), m.name.clone(), m.id.clone()));
-        Ok(out)
-    }
-
-    /// Every class `method` reaches from `node`.
-    pub fn forward(
-        &mut self,
-        data: &Data,
-        node: &str,
-        method: &str,
-    ) -> Result<AppliedView, String> {
-        let applied = self.applied(data, node, method)?;
-        self.applied_view(data, node, &applied)
-    }
-
-    /// Every input that could have produced `node`, over the methods named (`[]` for the
-    /// chart's own set: the two orbs, the two lock crafts and every essence).
-    pub fn made_by(
-        &mut self,
-        data: &Data,
-        node: &str,
-        methods: &[String],
-    ) -> Result<MadeByView, String> {
-        let found = self.backward(data, node, methods)?;
-        self.made_by_view(data, node, &found)
-    }
-
-    /// Adds the outcome `key` of `method` on `node` to the chart.
-    pub fn pin_forward(
-        &mut self,
-        data: &Data,
-        node: &str,
-        method: &str,
-        key: &str,
-    ) -> Result<PinnedView, String> {
-        let applied = self.applied(data, node, method)?;
-        let group = applied
-            .groups
-            .iter()
-            .find(|g| g.kind.key(data) == key)
-            .ok_or_else(|| format!("chart: the step has no outcome \"{key}\""))?;
-        let Kind::Item(class) = &group.kind else {
-            return Err("chart: only an item outcome can be pinned".into());
-        };
-        let id = preimages::abs_key(data, class);
-        let fresh = if members_of_forward(group) {
-            Some(forward::child(group, forward::seed_for(&id, "")))
-        } else {
-            None
-        };
-        let gives = fresh.is_some();
-        let gave = match self.nodes.get_mut(&id) {
-            Some((_, slot @ None)) => {
-                if gives {
-                    *slot = fresh;
-                }
-                gives
-            }
-            Some(_) => false,
-            None => {
-                self.nodes.insert(id.clone(), (class.clone(), fresh));
-                gives
-            }
-        };
-        if gave {
-            self.sources
-                .insert(id.clone(), (node.to_string(), method.to_string()));
-        }
-        let name = name_of(data, method);
-        Ok(PinnedView {
-            node: self.node_view(data, &id)?,
-            edge: EdgeView {
-                from: node.to_string(),
-                to: id,
-                method: method.to_string(),
-                name,
-                p: group.p,
-                interval: group.interval,
-                repeatable: applied.repeatable,
-            },
-        })
-    }
-
-    /// Adds the input `key` of `method` to the chart, above `node`.
-    pub fn pin_backward(
-        &mut self,
-        data: &Data,
-        node: &str,
-        method: &str,
-        key: &str,
-    ) -> Result<PinnedView, String> {
-        let found = self.backward(data, node, &[])?;
-        let step = found
-            .steps
-            .iter()
-            .find(|s| s.method == method && preimages::abs_key(data, &s.input) == key)
-            .ok_or_else(|| format!("chart: no input \"{key}\" for {method}"))?;
-        let class = step.input.clone();
-        let id = key.to_string();
-        let repeatable = self.repeats_into(data, &step.method, &class, node);
-        if !self.nodes.contains_key(&id) {
-            let members = concrete(&class).then(|| forward::Node {
-                members: vec![(class.item.clone(), 1.0)],
-                approx: false,
-            });
-            self.nodes.insert(id.clone(), (class, members));
-        }
-        Ok(PinnedView {
-            node: self.node_view(data, &id)?,
-            edge: EdgeView {
-                from: id,
-                to: node.to_string(),
-                method: step.method.clone(),
-                name: step.name.clone(),
-                p: step.p,
-                interval: step.interval,
-                repeatable,
-            },
-        })
-    }
-
-    /// Whether `method`, used on `input` to reach `node`, can be used again on `node`'s class
-    /// with the same odds (`forward::repeats`).
-    fn repeats_into(&self, data: &Data, method: &str, input: &AbsItem, node: &str) -> bool {
-        let Some((class, _)) = self.nodes.get(node) else {
-            return false;
-        };
-        data.method(method)
-            .is_some_and(|m| forward::repeats(data, m, &input.item, &class.item))
-    }
-
-    fn node_view(&self, data: &Data, id: &str) -> Result<NodeView, String> {
-        let (class, members) = self
-            .nodes
-            .get(id)
-            .ok_or_else(|| format!("chart: no node \"{id}\""))?;
-        Ok(NodeView {
-            id: id.to_string(),
-            spec: class.to_spec(data),
-            view: class_view(data, &self.tracked, class),
-            members: members.as_ref().map(|n| n.members.len()),
-            approx: members.as_ref().is_some_and(|n| n.approx),
-            source: self.sources.get(id).map(|(from, method)| SourceView {
-                from: from.clone(),
-                method: method.clone(),
-            }),
-        })
-    }
-
-    /// The node's items, realised from the class when it has none of its own.
-    fn members(&mut self, data: &Data, id: &str) -> Result<forward::Node, String> {
-        let class = self
-            .nodes
-            .get(id)
-            .map(|(class, _)| class.clone())
-            .ok_or_else(|| format!("chart: no node \"{id}\""))?;
-        if let Some((_, Some(state))) = self.nodes.get(id) {
-            return Ok(state.clone());
-        }
-        let state = forward::realise(data, &class, &self.tracked, forward::seed_for(id, ""));
-        if let Some((_, slot)) = self.nodes.get_mut(id) {
-            *slot = Some(state.clone());
-        }
-        Ok(state)
-    }
-
-    fn applied(
-        &mut self,
-        data: &Data,
-        node: &str,
-        method: &str,
-    ) -> Result<forward::Applied, String> {
-        if let Some((at, by, applied)) = &self.last
-            && at == node
-            && by == method
-        {
-            return Ok(applied.clone());
-        }
-        let Some(m) = data.method(method) else {
-            return Err(format!("chart: unknown method \"{method}\""));
-        };
-        if m.inputs != 1 {
-            return Err(format!("chart: {method} takes two items"));
-        }
-        let state = self.members(data, node)?;
-        let seed = forward::seed_for(node, method);
-        let applied = forward::apply_node(data, &state, m, &self.tracked, seed);
-        self.last = Some((node.to_string(), method.to_string(), applied.clone()));
-        Ok(applied)
-    }
-
-    fn backward(
-        &mut self,
-        data: &Data,
-        node: &str,
-        methods: &[String],
-    ) -> Result<Preimages, String> {
-        let class = self
-            .nodes
-            .get(node)
-            .map(|(class, _)| class.clone())
-            .ok_or_else(|| format!("chart: no node \"{node}\""))?;
-        let ids: Vec<String> = if methods.is_empty() {
-            let mut ids: Vec<String> = BACKWARD.iter().map(|m| m.to_string()).collect();
-            ids.extend(
-                data.methods
-                    .iter()
-                    .filter(|m| m.id.starts_with("essence/"))
-                    .map(|m| m.id.clone()),
-            );
-            ids
-        } else {
-            methods.to_vec()
-        };
-        if let Some((at, found)) = &self.made_by
-            && at == node
-        {
-            return Ok(found.clone());
-        }
-        let names: Vec<&str> = ids.iter().map(String::as_str).collect();
-        let found = preimages::preimages(data, &class, &self.tracked, &names);
-        self.made_by = Some((node.to_string(), found.clone()));
-        Ok(found)
-    }
-
-    fn applied_view(
-        &self,
-        data: &Data,
-        node: &str,
-        applied: &forward::Applied,
-    ) -> Result<AppliedView, String> {
-        Ok(AppliedView {
-            node: node.to_string(),
-            method: applied.method.clone(),
-            name: name_of(data, &applied.method),
-            cost: paid_cost(
-                data,
-                &data
-                    .method(&applied.method)
-                    .and_then(|m| apply::cost(data, m, &apply::Params::default()).ok())
-                    .unwrap_or_default(),
-            ),
-            simulated: applied.simulated,
-            repeatable: applied.repeatable,
-            outcomes: applied
-                .groups
-                .iter()
-                .map(|group| {
-                    let (kind, view, reason) = match &group.kind {
-                        Kind::Item(class) => {
-                            ("item", Some(class_view(data, &self.tracked, class)), None)
-                        }
-                        Kind::Destroyed => ("destroyed", None, None),
-                        Kind::Refused(why) => ("refused", None, Some(why.clone())),
-                        Kind::NotModelled(why) => ("notModelled", None, Some(why.clone())),
-                    };
-                    OutcomeView {
-                        key: group.kind.key(data),
-                        kind: kind.to_string(),
-                        p: group.p,
-                        interval: group.interval,
-                        view,
-                        reason,
-                    }
-                })
-                .collect(),
-            watched: self.watched_view(data, applied),
-        })
-    }
-
-    /// The chance the step's result holds each watched modifier, and with two or more watched,
-    /// the chance it holds at least one of them.
-    fn watched_view(&self, data: &Data, applied: &forward::Applied) -> Vec<WatchView> {
-        let chance = |hit: &dyn Fn(&AbsItem) -> bool| -> f64 {
-            applied
-                .groups
-                .iter()
-                .filter_map(|g| match &g.kind {
-                    Kind::Item(class) if hit(class) => Some(g.p),
-                    _ => None,
-                })
-                .sum()
-        };
-        let holds = |class: &AbsItem, m: u32| class.item.explicits().any(|a| a.roll.m == m);
-        let view = |label: String, p: f64| WatchView {
-            label,
-            p,
-            interval: applied.simulated.map(|n| forward::interval(p, n)),
-        };
-        let mut out: Vec<WatchView> = self
-            .watched
-            .iter()
-            .filter_map(|&m| {
-                let slot = self.tracked.iter().find(|s| s.m == m)?;
-                Some(view(slot.text(data), chance(&|c| holds(c, m))))
-            })
-            .collect();
-        if self.watched.len() > 1 {
-            let any = chance(&|c| self.watched.iter().any(|&m| holds(c, m)));
-            out.push(view("at least one of these".into(), any));
-        }
-        out
-    }
-
-    fn made_by_view(
-        &self,
-        data: &Data,
-        node: &str,
-        found: &Preimages,
-    ) -> Result<MadeByView, String> {
-        Ok(MadeByView {
-            node: node.to_string(),
-            inputs: found
-                .steps
-                .iter()
-                .map(|s| InputView {
-                    key: preimages::abs_key(data, &s.input),
-                    method: s.method.clone(),
-                    name: s.name.clone(),
-                    p: s.p,
-                    interval: s.interval,
-                    cost: paid_cost(data, &s.cost),
-                    view: class_view(data, &self.tracked, &s.input),
-                    note: s.note.clone(),
-                    repeatable: self.repeats_into(data, &s.method, &s.input, node),
-                })
-                .collect(),
-            skipped: unmet(data, &found.skipped),
-        })
-    }
-}
-
-/// Whether a forward group's members are worth keeping: a reforge's simulation samples them,
-/// and an exact step's are the items itself.
-fn members_of_forward(group: &forward::Group) -> bool {
-    !group.members.is_empty()
-}
-
-/// Whether a class names every modifier: only then does it have one item of its own.
-fn concrete(class: &AbsItem) -> bool {
-    class.any == [0, 0] && class.better.is_empty()
-}
-
-fn class_view(data: &Data, tracked: &[Slot], class: &AbsItem) -> ClassView {
-    let texts = |side: Side| -> Vec<String> {
-        class
-            .item
-            .affixes(side)
-            .iter()
-            .map(|a| match tracked.iter().find(|slot| slot.m == a.roll.m) {
-                Some(slot) => slot.text(data),
-                None => mod_text(data, a.roll.m),
-            })
-            .collect()
-    };
-    ClassView {
-        base: data.base_at(class.item.base).name.clone(),
-        item_level: class.item.item_level,
-        rarity: class.item.rarity.name().to_string(),
-        corrupted: class.item.corrupted,
-        influences: Influence::ALL
-            .into_iter()
-            .filter(|i| class.item.has_influence(*i))
-            .map(|i| i.name().to_string())
-            .collect(),
-        prefixes: texts(Side::Prefix),
-        suffixes: texts(Side::Suffix),
-        any_prefixes: class.any[0],
-        any_suffixes: class.any[1],
-    }
-}
-
 /// Every modifier a rare `base` at `item_level` with these influences can roll, and every
 /// essence modifier for its class: prefixes first, then by level and text.
 pub fn mods(
@@ -741,19 +325,31 @@ pub fn mods(
     item_level: u8,
     influences: &[Influence],
 ) -> Result<Vec<ModOptionView>, String> {
-    let spec = AbsSpec {
+    let spec = ItemSpec {
         base: base.to_string(),
         item_level,
         rarity: Rarity::Rare,
         influences: influences.to_vec(),
+        quality: 0,
+        catalyst: None,
+        defences: None,
+        implicits: Vec::new(),
+        enchants: Vec::new(),
         prefixes: Vec::new(),
         suffixes: Vec::new(),
-        any_prefixes: 0,
-        any_suffixes: 0,
+        sockets: String::new(),
         corrupted: false,
+        mirrored: false,
+        split: false,
+        synthesised: false,
+        foreseen: false,
+        memory_strands: 0,
+        intangibility: 0,
+        imprint: None,
+        note: None,
     };
-    let item = match AbsItem::from_spec(data, &spec) {
-        Ok(abs) => abs.item,
+    let item = match Item::from_spec(data, &spec) {
+        Ok(item) => item,
         Err(ItemError::UnknownBase(_)) => return Err(format!("mods: unknown base \"{base}\"")),
         Err(e) => return Err(format!("mods: {e}")),
     };
@@ -794,7 +390,7 @@ pub fn mods(
 
 /// Every base a target can name, sorted: its name, or its metadata id when several bases share
 /// the name (as `Item::to_spec` writes it).
-pub fn bases(data: &Data) -> Vec<String> {
+fn bases(data: &Data) -> Vec<String> {
     let mut out: Vec<String> = data
         .bases
         .iter()
@@ -809,4 +405,256 @@ pub fn bases(data: &Data) -> Vec<String> {
     out.sort();
     out.dedup();
     out
+}
+
+/// One goal modifier, named by its id.
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SelectorSpec {
+    /// `"prefix"` or `"suffix"`.
+    pub side: String,
+    /// A modifier id, resolved with `Data::mod_by_id`.
+    pub id: String,
+    #[serde(default)]
+    pub or_better: bool,
+}
+
+/// The goal, as the two buckets and the acceptance rule the loop reads.
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GoalSpec {
+    pub desired: Vec<SelectorSpec>,
+    pub good: Vec<SelectorSpec>,
+    pub accept: String,
+}
+
+/// One loop request, as the page sends it.
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LoopRequest {
+    pub item: ItemSpec,
+    pub goal: GoalSpec,
+    #[serde(default)]
+    pub prices: Prices,
+    pub depth: usize,
+    /// `false` skips the priced graph, which is the slow part: every setup change asks for the
+    /// depth table only, and the "Price the loop" button asks for both.
+    #[serde(default)]
+    pub price: bool,
+}
+
+/// One currency on one item, as the page sends it.
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ApplyRequest {
+    pub item: ItemSpec,
+    /// A [`CurrencyView::id`], e.g. `currency/transmutation`.
+    pub currency: String,
+}
+
+/// Parses a request, or says so in the one wording every view uses.
+fn parse<T: for<'de> Deserialize<'de>>(request: &str) -> Result<T, String> {
+    serde_json::from_str(request).map_err(|e| format!("the request is not valid: {e}"))
+}
+
+/// The goal selectors as the filter holds them: an exact modifier, or its family at this level or
+/// better.
+fn selectors(data: &Data, specs: &[SelectorSpec]) -> Result<Vec<ModSelector>, String> {
+    specs
+        .iter()
+        .map(|spec| {
+            let side = match spec.side.as_str() {
+                "prefix" => Side::Prefix,
+                "suffix" => Side::Suffix,
+                other => return Err(format!("unknown side \"{other}\"")),
+            };
+            let m = data
+                .mod_by_id(&spec.id)
+                .ok_or_else(|| format!("unknown modifier \"{}\"", spec.id))?;
+            Ok(if spec.or_better {
+                ModSelector::or_better(side, m)
+            } else {
+                ModSelector::exact(side, m)
+            })
+        })
+        .collect()
+}
+
+/// The acceptance rule, from its wire name.
+fn accept(name: &str) -> Result<Accept, String> {
+    match name {
+        "has-desired" => Ok(Accept::HasDesired),
+        "desired-or-good-both-sides" => Ok(Accept::DesiredOrGoodBothSides),
+        "any" => Ok(Accept::Any),
+        other => Err(format!("unknown accept \"{other}\"")),
+    }
+}
+
+/// The loop from a white base toward a goal: `LoopRequest` JSON in, [`LoopView`] JSON out.
+///
+/// The depth table comes from the lumped state and is cheap, so every setup change can ask for it.
+/// The priced graph expands a thousand classes and solves a dense system — seconds on the real
+/// bundle — so it is built only when the request asks for it, and its failure is a warning rather
+/// than a lost depth table.
+pub fn loop_report(data: &Data, request: &str) -> Result<LoopView, String> {
+    let request: LoopRequest = parse(request)?;
+    let item = Item::from_spec(data, &request.item).map_err(|e| e.to_string())?;
+    let filter = ItemSetFilter::new(
+        selectors(data, &request.goal.desired)?,
+        selectors(data, &request.goal.good)?,
+        accept(&request.goal.accept)?,
+    );
+    let depth = request.depth.clamp(1, 20);
+    let run = craft::run_loop(data, &filter, item.clone(), depth)?;
+
+    let depths: Vec<DepthView> = run
+        .depths
+        .iter()
+        .map(|depth| DepthView {
+            depth: depth.index,
+            classes: depth.classes.len(),
+            live: Mass::of(depth.live()),
+            stages: depth
+                .chances
+                .iter()
+                .map(|(stage, mass)| StageView {
+                    stage: stage.name().to_string(),
+                    mass: Mass::of(*mass),
+                })
+                .collect(),
+        })
+        .collect();
+    let totals: Vec<StageView> = run
+        .absorbed
+        .iter()
+        .map(|(stage, mass)| StageView {
+            stage: stage.name().to_string(),
+            mass: Mass::of(*mass),
+        })
+        .collect();
+
+    let start = ItemLine {
+        text: text::render(data, &item),
+        stage: Stage::classify(data, &filter, &item).name().to_string(),
+    };
+
+    let mut warnings = Vec::new();
+    let mut priced = None;
+    if request.price {
+        // The page can author currency prices but not a class key, so the two entries
+        // `Priced::report` insists on are supplied here: the base is already held (zero) and the
+        // finished item is not for sale. A caller that did price them keeps its numbers.
+        let mut prices = request.prices;
+        let start_key = Priced::start_key(data, &filter, &item);
+        prices.buy.entry(start_key).or_insert(0.0);
+        prices
+            .buy
+            .entry(craft::priced::GOAL_KEY.to_string())
+            .or_insert(GOAL_NOT_FOR_SALE);
+        match Priced::build(data, filter, &item, prices) {
+            Ok(graph) => {
+                if graph.truncated() > 0 {
+                    warnings.push(format!(
+                        "the priced graph was cut at {} classes; the cost is an upper bound",
+                        graph.truncated()
+                    ));
+                }
+                match graph.report() {
+                    // The only way to "reach" the goal at this price is to buy it, so the loop has
+                    // no crafting price to show. That is not a figure — it is the absence of one,
+                    // and the page says so rather than printing a huge number.
+                    Ok(report) if report.expected_chaos >= GOAL_NOT_FOR_SALE / 2.0 => {
+                        warnings.push(GOAL_UNREACHABLE.to_string())
+                    }
+                    Ok(report) => priced = Some(priced_view(data, &report)),
+                    Err(e) => warnings.push(e.to_string()),
+                }
+            }
+            Err(e) => warnings.push(e.to_string()),
+        }
+    }
+
+    Ok(LoopView {
+        start,
+        depths,
+        totals,
+        live: Mass::of(run.live),
+        stopped: run
+            .stopped
+            .as_ref()
+            .map(|(depth, why)| format!("depth {depth} did not fit: {why}")),
+        priced,
+        warnings,
+    })
+}
+
+/// The solved graph as the page reads it, spend largest first.
+fn priced_view(data: &Data, report: &Report) -> PricedView {
+    let mut spend: Vec<SpendView> = report
+        .expected_spend
+        .iter()
+        .map(|(key, count)| SpendView {
+            key: key.clone(),
+            name: currency_name(data, key),
+            count: *count,
+        })
+        .collect();
+    spend.sort_by(|a, b| b.count.total_cmp(&a.count));
+    PricedView {
+        expected_chaos: report.expected_chaos,
+        sd_chaos: report.sd_chaos,
+        closure: report.closure,
+        truncated: report.truncated,
+        spend,
+    }
+}
+
+/// One currency on one item, exactly: `ApplyRequest` JSON in, [`ApplyView`] JSON out.
+///
+/// A currency the item refuses is an error carrying the engine's reason; the outcomes come back
+/// largest weight first, capped at [`ROW_LIMIT`] rows with `more` counting the rest.
+pub fn apply_currency(data: &Data, request: &str) -> Result<ApplyView, String> {
+    let request: ApplyRequest = parse(request)?;
+    let item = Item::from_spec(data, &request.item).map_err(|e| e.to_string())?;
+    let currency = currency::modelled(data, &request.currency)
+        .ok_or_else(|| format!("unknown currency \"{}\"", request.currency))?;
+    let name = name_of(data, &request.currency);
+    let (outcomes, total) = match currency.apply(&item, &None) {
+        ItemOutputSet::Refused(why) => return Err(why.to_owned()),
+        ItemOutputSet::Outcomes { outcomes, total } => (outcomes, total),
+    };
+    let mut rows: Vec<(u128, OutcomeView)> = outcomes
+        .iter()
+        .map(|outcome| {
+            let chance = Fraction::new(outcome.weight, total)
+                .ok_or_else(|| "the outcome's chance does not fit in 128 bits".to_string())?;
+            Ok((
+                outcome.weight,
+                OutcomeView {
+                    chance: Mass::of(chance),
+                    text: text::render(data, &outcome.item),
+                    added: outcome.added.map(|(_, m)| mod_text(data, m)),
+                },
+            ))
+        })
+        .collect::<Result<_, String>>()?;
+    rows.sort_by_key(|(weight, _)| std::cmp::Reverse(*weight));
+    let more = rows.len().saturating_sub(ROW_LIMIT);
+    let hidden = rows[ROW_LIMIT.min(rows.len())..]
+        .iter()
+        .try_fold(0u128, |sum, &(weight, _)| sum.checked_add(weight))
+        .ok_or_else(|| "the hidden outcomes do not fit in 128 bits".to_string())?;
+    let rest = Fraction::new(hidden, total)
+        .ok_or_else(|| "the hidden chance does not fit in 128 bits".to_string())?;
+    rows.truncate(ROW_LIMIT);
+    Ok(ApplyView {
+        currency: CurrencyNameView {
+            id: request.currency,
+            name,
+        },
+        total: total.to_string(),
+        outcomes: rows.into_iter().map(|(_, view)| view).collect(),
+        more,
+        rest: Mass::of(rest),
+    })
 }

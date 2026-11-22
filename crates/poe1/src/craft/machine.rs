@@ -37,10 +37,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use super::{Action, CurrencyId, Policy, Stage};
-use crate::currency::{
-    Alteration, Annulment, Augmentation, Currency, Exalted, Fraction, ItemOutputSet, ItemSetFilter,
-    Regal, Scouring, Transmutation,
-};
+use crate::currency::{Fraction, ItemOutputSet, ItemSetFilter};
 use crate::data::Data;
 use crate::item::Item;
 
@@ -237,31 +234,10 @@ fn terminal_stage(data: &Data, filter: &ItemSetFilter, item: &Item, action: Acti
     }
 }
 
-/// The currency registry: a [`CurrencyId`] resolved to the currency that id names.
-///
-/// This is the single place a currency is built, so a policy decides and the machine applies. Adding
-/// a currency is one arm here plus its id — nothing in `craft/`'s vocabulary changes, and a policy
-/// can name the new id the moment it is registered.
-///
-/// The lookup is a `match` on the id string, so the same id cannot be registered twice: a second arm
-/// for an id is an unreachable pattern, which the workspace's clippy denies. That is a property of
-/// the design, not something a test can add to the match to break.
-fn currency<'d>(data: &'d Data, id: CurrencyId) -> Option<Box<dyn Currency + 'd>> {
-    Some(match id.0 {
-        "currency/transmutation" => Box::new(Transmutation::new(data)),
-        "currency/alteration" => Box::new(Alteration::new(data)),
-        "currency/augmentation" => Box::new(Augmentation::new(data)),
-        "currency/regal" => Box::new(Regal::new(data)),
-        "currency/exalted" => Box::new(Exalted::new(data)),
-        "currency/scouring" => Box::new(Scouring::new(data)),
-        "currency/annulment" => Box::new(Annulment::new(data)),
-        _ => return None,
-    })
-}
-
 /// One move, applied: the registered currency's exact distribution of the item.
 fn apply(data: &Data, id: CurrencyId, item: &Item) -> Result<ItemOutputSet, MachineError> {
-    let modelled = currency(data, id).ok_or(MachineError::UnknownCurrency(id.0))?;
+    let modelled =
+        crate::currency::modelled(data, id.0).ok_or(MachineError::UnknownCurrency(id.0))?;
     Ok(modelled.apply(item, &None))
 }
 

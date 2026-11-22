@@ -205,16 +205,16 @@ impl ItemSetFilter {
     /// The same filter, taken from a pattern's classes: its `Desired` classes become the desired
     /// selectors, and its `Good`, `Middling` and `Neutral` ones the good selectors, so a goal is
     /// written once, in the pattern language the rest of the repository already speaks, and the
-    /// step filter reads it. The buckets come from `solve::grade_value` — the score's own
-    /// collapse of the five authoring grades onto best (2), good enough (1) and not good enough
-    /// (0) — rather than restating which grades pair up, so the filter and the score cannot
-    /// disagree about whether a class is good enough. A `Bad` class needs no selector: its
-    /// modifiers are `Tier::Any`, the fallback bucket.
+    /// step filter reads it. The buckets come from [`pattern::grade_value`] — the one collapse of
+    /// the five authoring grades onto best (2), good enough (1) and not good enough (0) — rather
+    /// than restating which grades pair up, so the filter and the score cannot disagree about
+    /// whether a class is good enough. A `Bad` class needs no selector: its modifiers are
+    /// `Tier::Any`, the fallback bucket.
     pub fn from_pattern(pattern: &Pattern, accept: Accept) -> ItemSetFilter {
         let mut desired = Vec::new();
         let mut good = Vec::new();
         for class in &pattern.classes {
-            let target = match crate::solve::grade_value(class.grade) {
+            let target = match pattern::grade_value(class.grade) {
                 2 => &mut desired,
                 1 => &mut good,
                 _ => continue,

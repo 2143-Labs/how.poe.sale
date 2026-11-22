@@ -1196,19 +1196,6 @@ fn guard_for_protection(data: &Data, p: Protection, item: &Item) -> Guard {
     }
 }
 
-/// The explicit modifiers per side `method` may remove from `item`: what `Guard` accepts. This
-/// is the count `uniform` removal divides by, so an Orb of Annulment's chance of taking a named
-/// modifier is one over the sum.
-pub(crate) fn changeable(data: &Data, method: &Method, item: &Item) -> [usize; 2] {
-    let guard = guard_for(data, method, item);
-    Side::BOTH.map(|side| {
-        item.affixes(side)
-            .iter()
-            .filter(|a| guard.can_change(data, side, a))
-            .count()
-    })
-}
-
 struct Run<'a> {
     data: &'a Data,
     method: &'a Method,
